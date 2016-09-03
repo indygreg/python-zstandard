@@ -1,0 +1,10 @@
+syntax: glob
+
+*.pyd
+*.so
+*.orig
+*.pyc
+build
+dist
+venv
+zstandard.egg-info
