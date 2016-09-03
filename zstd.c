@@ -536,7 +536,11 @@ static int pyzstd_compresswriter_init(pyzstd_compresswriter* self, PyObject* arg
 	self->cparams = NULL;
 	self->entered = 0;
 
+#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iy#O!", kwlist,
+#else
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|is#O!", kwlist,
+#endif
 		&writer, &compressionLevel, &dictData, &dictSize,
 		&CompressionParametersType, &params)) {
 		return -1;
@@ -834,7 +838,11 @@ static int pyzstd_decompesswriter_init(pyzstd_decompresswriter* self, PyObject* 
 	self->entered = 0;
 
 	/* TODO support for setting dstream parameters (currently just max window size */
+#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|y#", kwlist,
+#else
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|s#", kwlist,
+#endif
 		&writer, &dictData, &dictSize)) {
 		return -1;
 	}
