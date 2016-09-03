@@ -8,8 +8,5 @@ python:
   - "3.5dev"
   - "nightly"
 
-install: "pip install hypothesis"
-script:
-  - "python setup.py build_ext -i"
-  - "nosetests"
-
+install: pip install tox-travis
+script: tox
