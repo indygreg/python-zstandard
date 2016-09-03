@@ -1,6 +1,13 @@
+import sys
 import unittest
 
 import zstd
+
+
+if sys.version_info[0] >= 3:
+    int_type = int
+else:
+    int_type = long
 
 
 class TestTrainDictionary(unittest.TestCase):
@@ -29,4 +36,4 @@ class TestTrainDictionary(unittest.TestCase):
         self.assertLessEqual(len(d), 8192)
 
         dict_id = zstd.dictionary_id(d)
-        self.assertIsInstance(dict_id, int)
+        self.assertIsInstance(dict_id, int_type)
