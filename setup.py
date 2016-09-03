@@ -28,12 +28,12 @@ sources = zstd_sources + ['zstd.c']
 # TODO compile with optimizations.
 
 ext = Extension('zstd', sources,
-    extra_compile_args=[
-        '-Izstd',
-        '-Izstd/common',
-        '-Izstd/compress',
-        '-Izstd/decompress',
-        '-Izstd/dictBuilder',
+    include_dirs=[
+        'zstd',
+        'zstd/common',
+        'zstd/compress',
+        'zstd/decompress',
+        'zstd/dictBuilder',
     ],
 )
 
