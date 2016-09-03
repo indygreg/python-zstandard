@@ -17,88 +17,403 @@
 #include "zstd.h"
 #include "zstd/dictBuilder/zdict.h"
 
-static PyStructSequence_Field compression_parameters_fields[] = {
-	{ "window_log", "largest match distance" },
-	{ "chain_log", "fully searched segment" },
-	{ "hash_log", "dispatch table" },
-	{ "search_log", "number of searches" },
-	{ "search_length", "match length searched" },
-	{ "target_length", "acceptable match size for optimal parser" },
-	{ "strategy", "compression strategy" },
-	{ 0 }
+PyDoc_STRVAR(CompressionParameters__doc__,
+"CompressionParameters: low-level control over zstd compression");
+
+typedef struct {
+	PyObject_HEAD
+	unsigned windowLog;
+	unsigned chainLog;
+	unsigned hashLog;
+	unsigned searchLog;
+	unsigned searchLength;
+	unsigned targetLength;
+	ZSTD_strategy strategy;
+} CompressionParametersObject;
+
+static PyObject* CompressionParameters_new(PyTypeObject* subtype, PyObject* args, PyObject* kwargs) {
+	CompressionParametersObject* self;
+	unsigned windowLog;
+	unsigned chainLog;
+	unsigned hashLog;
+	unsigned searchLog;
+	unsigned searchLength;
+	unsigned targetLength;
+	unsigned strategy;
+
+	if (!PyArg_ParseTuple(args, "IIIIIII", &windowLog, &chainLog, &hashLog, &searchLog,
+		&searchLength, &targetLength, &strategy)) {
+		return NULL;
+	}
+
+	if (windowLog < ZSTD_WINDOWLOG_MIN || windowLog > ZSTD_WINDOWLOG_MAX) {
+		PyErr_SetString(PyExc_ValueError, "invalid window log value");
+		return NULL;
+	}
+
+	if (chainLog < ZSTD_CHAINLOG_MIN || chainLog > ZSTD_CHAINLOG_MAX) {
+		PyErr_SetString(PyExc_ValueError, "invalid chain log value");
+		return NULL;
+	}
+
+	if (hashLog < ZSTD_HASHLOG_MIN || hashLog > ZSTD_HASHLOG_MAX) {
+		PyErr_SetString(PyExc_ValueError, "invalid hash log value");
+		return NULL;
+	}
+
+	if (searchLog < ZSTD_SEARCHLOG_MIN || searchLog > ZSTD_SEARCHLOG_MAX) {
+		PyErr_SetString(PyExc_ValueError, "invalid search log value");
+		return NULL;
+	}
+
+	if (searchLength < ZSTD_SEARCHLENGTH_MIN || searchLength > ZSTD_SEARCHLENGTH_MAX) {
+		PyErr_SetString(PyExc_ValueError, "invalid search length value");
+		return NULL;
+	}
+
+	if (targetLength < ZSTD_TARGETLENGTH_MIN || targetLength > ZSTD_TARGETLENGTH_MAX) {
+		PyErr_SetString(PyExc_ValueError, "invalid target length value");
+		return NULL;
+	}
+
+	if (strategy < ZSTD_fast || strategy > ZSTD_btopt) {
+		PyErr_SetString(PyExc_ValueError, "invalid strategy value");
+		return NULL;
+	}
+
+	self = (CompressionParametersObject*)subtype->tp_alloc(subtype, 1);
+	if (!self) {
+		return NULL;
+	}
+
+	self->windowLog = windowLog;
+	self->chainLog = chainLog;
+	self->hashLog = hashLog;
+	self->searchLog = searchLog;
+	self->searchLength = searchLength;
+	self->targetLength = targetLength;
+	self->strategy = strategy;
+
+	return (PyObject*)self;
+}
+
+static void CompressionParameters_dealloc(PyObject* self) {
+	PyObject_Del(self);
+}
+
+static Py_ssize_t CompressionParameters_length(PyObject* self) {
+	return 7;
 };
 
-PyDoc_STRVAR(compression_parameters__doc__,
-"zstd.CompressionParameters: low-level control over zstd compression");
+static PyObject* CompressionParameters_item(PyObject* o, Py_ssize_t i) {
+	CompressionParametersObject* self = (CompressionParametersObject*)o;
 
-static PyStructSequence_Desc compression_parameters_desc = {
-	"zstd.CompressionParameters",
-	compression_parameters__doc__,
-	compression_parameters_fields,
-	7,
+	switch (i) {
+	case 0:
+		return PyLong_FromLong(self->windowLog);
+	case 1:
+		return PyLong_FromLong(self->chainLog);
+	case 2:
+		return PyLong_FromLong(self->hashLog);
+	case 3:
+		return PyLong_FromLong(self->searchLog);
+	case 4:
+		return PyLong_FromLong(self->searchLength);
+	case 5:
+		return PyLong_FromLong(self->targetLength);
+	case 6:
+		return PyLong_FromLong(self->strategy);
+	default:
+		PyErr_SetString(PyExc_IndexError, "index out of range");
+		return NULL;
+	}
+}
+
+static PySequenceMethods CompressionParameters_sq = {
+	CompressionParameters_length, /* sq_length */
+	0,							  /* sq_concat */
+	0,                            /* sq_repeat */
+	CompressionParameters_item,   /* sq_item */
+	0,                            /* sq_ass_item */
+	0,                            /* sq_contains */
+	0,                            /* sq_inplace_concat */
+	0                             /* sq_inplace_repeat */
 };
 
-static PyTypeObject CompressionParametersType;
-
-static PyStructSequence_Field frame_parameters_fields[] = {
-	{ "content_size_flag", "whether content size will be in frame header" },
-	{ "checksum_flag", "whether 22-bit checksum will be at end of frame" },
-	{ "no_dict_id_flag", "whether dictionary ID will not be saved in frame header" },
-	{ 0 }
+PyTypeObject CompressionParametersType = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"CompressionParameters", /* tp_name */
+	sizeof(CompressionParametersObject), /* tp_basicsize */
+	0,                         /* tp_itemsize */
+	(destructor)CompressionParameters_dealloc, /* tp_dealloc */
+	0,                         /* tp_print */
+	0,                         /* tp_getattr */
+	0,                         /* tp_setattr */
+	0,                         /* tp_compare */
+	0,                         /* tp_repr */
+	0,                         /* tp_as_number */
+	&CompressionParameters_sq, /* tp_as_sequence */
+	0,                         /* tp_as_mapping */
+	0,                         /* tp_hash  */
+	0,                         /* tp_call */
+	0,                         /* tp_str */
+	0,                         /* tp_getattro */
+	0,                         /* tp_setattro */
+	0,                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,        /* tp_flags */
+	CompressionParameters__doc__, /* tp_doc */
+	0,                         /* tp_traverse */
+	0,                         /* tp_clear */
+	0,                         /* tp_richcompare */
+	0,                         /* tp_weaklistoffset */
+	0,                         /* tp_iter */
+	0,                         /* tp_iternext */
+	0,                         /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	0,                         /* tp_init */
+	0,                         /* tp_alloc */
+	CompressionParameters_new, /* tp_new */
 };
 
-PyDoc_STRVAR(frame_parameters__doc__,
-"zstd.FrameParameters: low-level control over zstd framing protocol");
+PyDoc_STRVAR(FrameParameters__doc__,
+	"FrameParameters: low-level control over zstd framing");
 
-static PyStructSequence_Desc frame_parameters_desc = {
-	"zstd.FrameParameters",
-	frame_parameters__doc__,
-	frame_parameters_fields,
-	3
+typedef struct {
+	PyObject_HEAD
+	unsigned contentSizeFlag;
+	unsigned checksumFlag;
+	unsigned noDictIDFlag;
+} FrameParametersObject;
+
+static PyObject* FrameParameters_new(PyTypeObject* subtype, PyObject* args, PyObject* kwargs) {
+	FrameParametersObject* self;
+	unsigned contentSizeFlag;
+	unsigned checksumFlag;
+	unsigned noDictIDFlag;
+
+	if (!PyArg_ParseTuple(args, "III", &contentSizeFlag, &checksumFlag, &noDictIDFlag)) {
+		return NULL;
+	}
+
+	self = (FrameParametersObject*)subtype->tp_alloc(subtype, 1);
+	if (!self) {
+		return NULL;
+	}
+
+	self->contentSizeFlag = contentSizeFlag;
+	self->checksumFlag = checksumFlag;
+	self->noDictIDFlag = noDictIDFlag;
+
+	return (PyObject*)self;
+}
+
+static void FrameParameters_dealloc(PyObject* self) {
+	PyObject_Del(self);
+}
+
+static Py_ssize_t FrameParameters_length(PyObject* self) {
+	return 3;
 };
 
-static PyTypeObject FrameParametersType;
+static PyObject* FrameParameters_item(PyObject* o, Py_ssize_t i) {
+	FrameParametersObject* self = (FrameParametersObject*)o;
 
-static PyStructSequence_Field dict_parameters_fields[] = {
-	{ "selectivity_level", "0 means default; larger means to select more" },
-	{ "compression_level", "which zstd compression level to target "},
-	{ "notification_level", "write debug info to stderr" },
-	{ "dict_id", "dictionary ID value" },
-	{ 0 }
+	switch (i) {
+	case 0:
+		return PyLong_FromLong(self->contentSizeFlag);
+	case 1:
+		return PyLong_FromLong(self->checksumFlag);
+	case 2:
+		return PyLong_FromLong(self->noDictIDFlag);
+	default:
+		PyErr_SetString(PyExc_IndexError, "index out of range");
+		return NULL;
+	}
+}
+
+static PySequenceMethods FrameParameters_sq = {
+	FrameParameters_length, /* sq_length */
+	0,					    /* sq_concat */
+	0,                      /* sq_repeat */
+	FrameParameters_item,   /* sq_item */
+	0,                      /* sq_ass_item */
+	0,                      /* sq_contains */
+	0,                      /* sq_inplace_concat */
+	0                       /* sq_inplace_repeat */
 };
 
-PyDoc_STRVAR(dict_parameters__doc__,
-"zstd.DictParameters: low-level control over dictionary training");
-
-static PyStructSequence_Desc dict_parameters_desc = {
-	"zstd.DictParameters",
-	dict_parameters__doc__,
-	dict_parameters_fields,
-	4
+PyTypeObject FrameParametersType = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"FrameParameters", /* tp_name */
+	sizeof(FrameParametersObject), /* tp_basicsize */
+	0,                         /* tp_itemsize */
+	(destructor)FrameParameters_dealloc, /* tp_dealloc */
+	0,                         /* tp_print */
+	0,                         /* tp_getattr */
+	0,                         /* tp_setattr */
+	0,                         /* tp_compare */
+	0,                         /* tp_repr */
+	0,                         /* tp_as_number */
+	&FrameParameters_sq,       /* tp_as_sequence */
+	0,                         /* tp_as_mapping */
+	0,                         /* tp_hash  */
+	0,                         /* tp_call */
+	0,                         /* tp_str */
+	0,                         /* tp_getattro */
+	0,                         /* tp_setattro */
+	0,                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,        /* tp_flags */
+	FrameParameters__doc__,    /* tp_doc */
+	0,                         /* tp_traverse */
+	0,                         /* tp_clear */
+	0,                         /* tp_richcompare */
+	0,                         /* tp_weaklistoffset */
+	0,                         /* tp_iter */
+	0,                         /* tp_iternext */
+	0,                         /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	0,                         /* tp_init */
+	0,                         /* tp_alloc */
+	FrameParameters_new,      /* tp_new */
 };
 
-static PyTypeObject DictParametersType;
+PyDoc_STRVAR(DictParameters__doc__,
+	"DictParameters: low-level control over dictionary generation");
+
+typedef struct {
+	PyObject_HEAD
+	unsigned selectivityLevel;
+	int compressionLevel;
+	unsigned notificationLevel;
+	unsigned dictID;
+} DictParametersObject;
+
+static PyObject* DictParameters_new(PyTypeObject* subtype, PyObject* args, PyObject* kwargs) {
+	DictParametersObject* self;
+	unsigned selectivityLevel;
+	int compressionLevel;
+	unsigned notificationLevel;
+	unsigned dictID;
+
+	if (!PyArg_ParseTuple(args, "IiII", &selectivityLevel, &compressionLevel,
+		&notificationLevel, &dictID)) {
+		return NULL;
+	}
+
+	self = (DictParametersObject*)subtype->tp_alloc(subtype, 1);
+	if (!self) {
+		return NULL;
+	}
+
+	self->selectivityLevel = selectivityLevel;
+	self->compressionLevel = compressionLevel;
+	self->notificationLevel = notificationLevel;
+	self->dictID = dictID;
+
+	return (PyObject*)self;
+}
+
+static void DictParameters_dealloc(PyObject* self) {
+	PyObject_Del(self);
+}
+
+static Py_ssize_t DictParameters_length(PyObject* self) {
+	return 4;
+};
+
+static PyObject* DictParameters_item(PyObject* o, Py_ssize_t i) {
+	DictParametersObject* self = (DictParametersObject*)o;
+
+	switch (i) {
+	case 0:
+		return PyLong_FromLong(self->selectivityLevel);
+	case 1:
+		return PyLong_FromLong(self->compressionLevel);
+	case 2:
+		return PyLong_FromLong(self->notificationLevel);
+	case 3:
+		return PyLong_FromLong(self->dictID);
+	default:
+		PyErr_SetString(PyExc_IndexError, "index out of range");
+		return NULL;
+	}
+}
+
+static PySequenceMethods DictParameters_sq = {
+	DictParameters_length, /* sq_length */
+	0,	                   /* sq_concat */
+	0,                     /* sq_repeat */
+	DictParameters_item,   /* sq_item */
+	0,                     /* sq_ass_item */
+	0,                     /* sq_contains */
+	0,                     /* sq_inplace_concat */
+	0                      /* sq_inplace_repeat */
+};
+
+PyTypeObject DictParametersType = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"DictParameters", /* tp_name */
+	sizeof(DictParametersObject), /* tp_basicsize */
+	0,                         /* tp_itemsize */
+	(destructor)DictParameters_dealloc, /* tp_dealloc */
+	0,                         /* tp_print */
+	0,                         /* tp_getattr */
+	0,                         /* tp_setattr */
+	0,                         /* tp_compare */
+	0,                         /* tp_repr */
+	0,                         /* tp_as_number */
+	&DictParameters_sq,        /* tp_as_sequence */
+	0,                         /* tp_as_mapping */
+	0,                         /* tp_hash  */
+	0,                         /* tp_call */
+	0,                         /* tp_str */
+	0,                         /* tp_getattro */
+	0,                         /* tp_setattro */
+	0,                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,        /* tp_flags */
+	DictParameters__doc__,     /* tp_doc */
+	0,                         /* tp_traverse */
+	0,                         /* tp_clear */
+	0,                         /* tp_richcompare */
+	0,                         /* tp_weaklistoffset */
+	0,                         /* tp_iter */
+	0,                         /* tp_iternext */
+	0,                         /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	0,                         /* tp_init */
+	0,                         /* tp_alloc */
+	DictParameters_new,        /* tp_new */
+};
+
 
 static PyObject *ZstdError;
 
-static int ztopy_compression_parameters(PyObject* params, ZSTD_compressionParameters* zparams) {
-	unsigned long strategy;
-
-	zparams->windowLog = PyLong_AsUnsignedLong(PyTuple_GetItem(params, 0));
-	zparams->chainLog = PyLong_AsUnsignedLong(PyTuple_GetItem(params, 1));
-	zparams->hashLog = PyLong_AsUnsignedLong(PyTuple_GetItem(params, 2));
-	zparams->searchLog = PyLong_AsUnsignedLong(PyTuple_GetItem(params, 3));
-	zparams->searchLength = PyLong_AsUnsignedLong(PyTuple_GetItem(params, 4));
-	zparams->targetLength = PyLong_AsUnsignedLong(PyTuple_GetItem(params, 5));
-
-	strategy = PyLong_AsUnsignedLong(PyTuple_GetItem(params, 6));
-	if (strategy < ZSTD_fast || strategy > ZSTD_btopt) {
-		PyErr_SetString(PyExc_ValueError, "invalid strategy value");
-		return -1;
-	}
-
-	zparams->strategy = strategy;
-	return 0;
+static inline void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams) {
+	zparams->windowLog = params->windowLog;
+	zparams->chainLog = params->chainLog;
+	zparams->hashLog = params->hashLog;
+	zparams->searchLog = params->searchLog;
+	zparams->searchLength = params->searchLength;
+	zparams->targetLength = params->targetLength;
+	zparams->strategy = params->strategy;
 }
 
 PyDoc_STRVAR(compress__doc__,
@@ -175,7 +490,7 @@ typedef struct {
 	int compressionLevel;
 	void* dictData;
 	size_t dictSize;
-	PyObject* cparams;
+	CompressionParametersObject* cparams;
 	int entered;
 } pyzstd_compresswriter;
 
@@ -212,7 +527,7 @@ static int pyzstd_compresswriter_init(pyzstd_compresswriter* self, PyObject* arg
 	int compressionLevel = 3;
 	const char* dictData;
 	Py_ssize_t dictSize = 0;
-	PyObject* params = NULL;
+	CompressionParametersObject* params = NULL;
 
 	self->writer = NULL;
 	self->cstream = NULL;
@@ -221,8 +536,9 @@ static int pyzstd_compresswriter_init(pyzstd_compresswriter* self, PyObject* arg
 	self->cparams = NULL;
 	self->entered = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iy#O", kwlist,
-		&writer, &compressionLevel, &dictData, &dictSize, &params)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iy#O!", kwlist,
+		&writer, &compressionLevel, &dictData, &dictSize,
+		&CompressionParametersType, &params)) {
 		return -1;
 	}
 
@@ -240,11 +556,6 @@ static int pyzstd_compresswriter_init(pyzstd_compresswriter* self, PyObject* arg
 	if (!PyObject_HasAttrString(writer, "write")) {
 		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
 		/* TODO need DecRef on writer? */
-		return -1;
-	}
-
-	if (params && !PyObject_IsInstance(params, (PyObject*)&CompressionParametersType)) {
-		PyErr_SetString(PyExc_ValueError, "compression_params must be a CompressionParameters instance");
 		return -1;
 	}
 
@@ -305,9 +616,7 @@ static PyObject* pyzstd_compresswriter_enter(pyzstd_compresswriter* self, PyObje
 
 	if (self->cparams) {
 		memset(&zparams, 0, sizeof(zparams));
-		if (ztopy_compression_parameters(self->cparams, &zparams.cParams)) {
-			return NULL;
-		}
+		ztopy_compression_parameters(self->cparams, &zparams.cParams);
 		zresult = ZSTD_initCStream_advanced(self->cstream,
 			self->dictData, self->dictSize, zparams, 0);
 	}
@@ -731,24 +1040,15 @@ PyDoc_STRVAR(estimate_compress_context_size__doc__,
 "CompressionParameters instance");
 
 static PyObject* pyzstd_estimate_compression_context_size(PyObject* self, PyObject* args) {
-	PyObject* params;
+	CompressionParametersObject* params;
 	ZSTD_compressionParameters zparams;
 	PyObject* result;
 
-	if (!PyArg_ParseTuple(args, "O", &params)) {
-		PyErr_SetString(PyExc_ValueError, "must pass a CompressionParameters instance");
+	if (!PyArg_ParseTuple(args, "O!", &CompressionParametersType, &params)) {
 		return NULL;
 	}
 
-	if (!PyObject_IsInstance(params, (PyObject*)&CompressionParametersType)) {
-		PyErr_SetString(PyExc_ValueError, "must pass a CompressionParameters instance");
-		return NULL;
-	}
-
-	if (ztopy_compression_parameters(params, &zparams)) {
-		return NULL;
-	}
-
+	ztopy_compression_parameters(params, &zparams);
 	result = PyLong_FromSize_t(ZSTD_estimateCCtxSize(zparams));
 	Py_INCREF(result);
 	return result;
@@ -760,12 +1060,12 @@ PyDoc_STRVAR(get_compression_parameters__doc__,
 "Obtains a ``CompressionParameters`` instance from a compression level and\n"
 "optional input size and dictionary size");
 
-static PyObject* pyzstd_get_compression_parameters(PyObject* self, PyObject* args) {
+static CompressionParametersObject* pyzstd_get_compression_parameters(PyObject* self, PyObject* args) {
 	int compressionLevel;
 	unsigned PY_LONG_LONG sourceSize = 0;
 	Py_ssize_t dictSize = 0;
 	ZSTD_compressionParameters params;
-	PyObject* result;
+	CompressionParametersObject* result;
 
 	if (!PyArg_ParseTuple(args, "i|Kn", &compressionLevel, &sourceSize, &dictSize)) {
 		return NULL;
@@ -773,14 +1073,18 @@ static PyObject* pyzstd_get_compression_parameters(PyObject* self, PyObject* arg
 
 	params = ZSTD_getCParams(compressionLevel, sourceSize, dictSize);
 
-	result = PyStructSequence_New(&CompressionParametersType);
-	PyStructSequence_SetItem(result, 0, PyLong_FromLong(params.windowLog));
-	PyStructSequence_SetItem(result, 1, PyLong_FromLong(params.chainLog));
-	PyStructSequence_SetItem(result, 2, PyLong_FromLong(params.hashLog));
-	PyStructSequence_SetItem(result, 3, PyLong_FromLong(params.searchLog));
-	PyStructSequence_SetItem(result, 4, PyLong_FromLong(params.searchLength));
-	PyStructSequence_SetItem(result, 5, PyLong_FromLong(params.targetLength));
-	PyStructSequence_SetItem(result, 6, PyLong_FromLong((ZSTD_strategy)params.strategy));
+	result = PyObject_New(CompressionParametersObject, &CompressionParametersType);
+	if (!result) {
+		return NULL;
+	}
+
+	result->windowLog = params.windowLog;
+	result->chainLog = params.chainLog;
+	result->hashLog = params.hashLog;
+	result->searchLog = params.searchLog;
+	result->searchLength = params.searchLength;
+	result->targetLength = params.targetLength;
+	result->strategy = params.strategy;
 
 	return result;
 }
@@ -942,6 +1246,21 @@ PyMODINIT_FUNC initzstd(void)
 	PyObject *m;
 	PyObject* version;
 
+	Py_TYPE(&CompressionParametersType) = &PyType_Type;
+	if (PyType_Ready(&CompressionParametersType) < 0) {
+		return NULL;
+	}
+
+	Py_TYPE(&FrameParametersType) = &PyType_Type;
+	if (PyType_Ready(&FrameParametersType) < 0) {
+		return NULL;
+	}
+
+	Py_TYPE(&DictParametersType) = &PyType_Type;
+	if (PyType_Ready(&DictParametersType) < 0) {
+		return NULL;
+	}
+
 	Py_TYPE(&CompressWriterType) = &PyType_Type;
 	if (PyType_Ready(&CompressWriterType) < 0) {
 		return NULL;
@@ -971,18 +1290,13 @@ PyMODINIT_FUNC initzstd(void)
 	Py_IncRef(version);
 	PyModule_AddObject(m, "ZSTD_VERSION", version);
 
-	PyStructSequence_InitType(&CompressionParametersType,
-		&compression_parameters_desc);
-	Py_INCREF((PyObject*)&CompressionParametersType);
+	Py_IncRef((PyObject*)&CompressionParametersType);
 	PyModule_AddObject(m, "CompressionParameters", (PyObject*)&CompressionParametersType);
 
-	PyStructSequence_InitType(&FrameParametersType,
-		&frame_parameters_desc);
-	Py_INCREF((PyObject*)&FrameParametersType);
+	Py_IncRef((PyObject*)&FrameParametersType);
 	PyModule_AddObject(m, "FrameParameters", (PyObject*)&FrameParametersType);
 
-	PyStructSequence_InitType(&DictParametersType, &dict_parameters_desc);
-	Py_INCREF((PyObject*)&DictParametersType);
+	Py_IncRef((PyObject*)&DictParametersType);
 	PyModule_AddObject(m, "DictParameters", (PyObject*)&DictParametersType);
 
 	Py_INCREF(&CompressWriterType);

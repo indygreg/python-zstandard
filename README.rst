@@ -282,7 +282,7 @@ by calling ``zstd.get_compression_parameters()``. e.g.::
 
 You can also construct compression parameters from their low-level components::
 
-    params = zstd.CompressionParameters((20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST))
+    params = zstd.CompressionParameters(20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST)
 
 (You'll likely want to read the Zstandard source code for what these parameters
 do.)

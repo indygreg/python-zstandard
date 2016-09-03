@@ -51,7 +51,7 @@ class TestCompressWriter(unittest.TestCase):
         self.assertEqual(h, '1c5bcd25181bcd8c1a73ea8773323e0056129f92')
 
     def test_compression_params(self):
-        params = zstd.CompressionParameters((20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST))
+        params = zstd.CompressionParameters(20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST)
 
         buffer = io.BytesIO()
         with zstd.compresswriter(buffer, compression_params=params) as compressor:
