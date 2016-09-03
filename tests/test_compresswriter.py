@@ -2,7 +2,11 @@ from __future__ import unicode_literals
 
 import hashlib
 import io
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 import zstd
 

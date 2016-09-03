@@ -1,7 +1,15 @@
 language: python
 python:
-  - 3.5
+  - "2.6"
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.5dev"
+  - "nightly"
 
 install: "pip install hypothesis"
-script: "python setup.py test"
+script:
+  - "python setup.py build_ext -i"
+  - "nosetests"
 

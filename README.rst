@@ -24,14 +24,11 @@ crashes may occur.
 
 The API is also not guaranteed to be stable. Expect changes.
 
-Only Python 3.5 is heavily tested so far. Support for older versions of
-Python is coming.
-
 Requirements
 ============
 
-This extension is designed to run with Python 2.6, 2.7, 3.4, and 3.5. However,
-not all versions may run while the project is in alpha state.
+This extension is designed to run with Python 2.6, 2.7, 3.3, 3.4, and 3.5.
+However, not all versions may run while the project is in alpha state.
 
 Comparison to Other Python Bindings
 ===================================

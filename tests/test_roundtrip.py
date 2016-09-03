@@ -1,8 +1,15 @@
 import io
-import unittest
 
-import hypothesis
-import hypothesis.strategies as strategies
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
+try:
+    import hypothesis
+    import hypothesis.strategies as strategies
+except ImportError:
+    raise unittest.SkipTest('hypothesis not available')
 
 import zstd
 
