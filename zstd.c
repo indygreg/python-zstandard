@@ -559,7 +559,6 @@ static int pyzstd_compresswriter_init(pyzstd_compresswriter* self, PyObject* arg
 
 	if (!PyObject_HasAttrString(writer, "write")) {
 		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
-		/* TODO need DecRef on writer? */
 		return -1;
 	}
 
@@ -635,7 +634,7 @@ static PyObject* pyzstd_compresswriter_enter(pyzstd_compresswriter* self, PyObje
 	if (ZSTD_isError(zresult)) {
 		ZSTD_freeCStream(self->cstream);
 		self->cstream = NULL;
-		PyErr_SetString(ZstdError, "cannot init CStream");
+		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
 		return NULL;
 	}
 
@@ -684,7 +683,7 @@ static PyObject* pyzstd_compresswriter_compress(pyzstd_compresswriter* self, PyO
 
 		if (ZSTD_isError(zresult)) {
 			free(output.dst);
-			PyErr_SetString(ZstdError, "zstd decompress error");
+			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
 			return NULL;
 		}
 
@@ -706,21 +705,35 @@ static PyObject* pyzstd_compresswriter_compress(pyzstd_compresswriter* self, PyO
 }
 
 static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObject* args) {
+	PyObject* exc_type;
+	PyObject* exc_value;
+	PyObject* exc_tb;
 	size_t zresult;
 	ZSTD_outBuffer output;
+
+	if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_value, &exc_tb)) {
+		return NULL;
+	}
+
 	self->entered = 0;
 
-	if (self->cstream) {
-		/* TODO only do this if no exception thrown in context manager */
+	/* Compression context may have buffered memory. Flush on context manager
+	   exit. Buf only if an exception didn't occur because it would be
+	   pointless and risky to do work otherwise. */
+	if (self->cstream && exc_type == Py_None && exc_value == Py_None &&
+		exc_tb == Py_None) {
 		output.dst = malloc(self->outsize);
-		/* TODO check malloc result */
+		if (!output.dst) {
+			return PyErr_NoMemory();
+		}
 		output.size = self->outsize;
 		output.pos = 0;
 
 		while (1) {
 			zresult = ZSTD_endStream(self->cstream, &output);
 			if (ZSTD_isError(zresult)) {
-				/* TODO raise */
+				PyErr_Format(ZstdError, "error ending compression stream: %s",
+					ZSTD_getErrorName(zresult));
 				return NULL;
 			}
 
@@ -741,12 +754,11 @@ static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObjec
 		}
 
 		free(output.dst);
-
 		ZSTD_freeCStream(self->cstream);
 		self->cstream = NULL;
 	}
 
-	Py_RETURN_NONE;
+	Py_RETURN_FALSE;
 }
 
 static PyMethodDef pyzstd_compresswriter_methods[] = {
@@ -909,7 +921,7 @@ static PyObject* pyzstd_decompresswriter_enter(pyzstd_decompresswriter* self, Py
 	if (ZSTD_isError(zresult)) {
 		ZSTD_freeDStream(self->dstream);
 		self->dstream = NULL;
-		PyErr_SetString(ZstdError, "cannot init DStream");
+		PyErr_Format(ZstdError, "cannot init DStream: %s", ZSTD_getErrorName(zresult));
 		return NULL;
 	}
 
@@ -958,7 +970,7 @@ static PyObject* pyzstd_decompresswriter_decompress(pyzstd_decompresswriter* sel
 
 		if (ZSTD_isError(zresult)) {
 			free(output.dst);
-			PyErr_SetString(ZstdError, "zstd decompress error");
+			PyErr_Format(ZstdError, "zstd decompress error: %s", ZSTD_getErrorName(zresult));
 			return NULL;
 		}
 
@@ -987,7 +999,7 @@ static PyObject* pyzstd_decompresswriter_exit(pyzstd_decompresswriter* self, PyO
 		self->dstream = NULL;
 	}
 
-	Py_RETURN_NONE;
+	Py_RETURN_FALSE;
 }
 
 static PyMethodDef pyzstd_decompresswriter_methods[] = {
@@ -1058,7 +1070,6 @@ static PyObject* pyzstd_estimate_compression_context_size(PyObject* self, PyObje
 
 	ztopy_compression_parameters(params, &zparams);
 	result = PyLong_FromSize_t(ZSTD_estimateCCtxSize(zparams));
-	Py_INCREF(result);
 	return result;
 }
 
