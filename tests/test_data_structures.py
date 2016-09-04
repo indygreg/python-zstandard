@@ -1,3 +1,5 @@
+import io
+
 try:
     import unittest2 as unittest
 except ImportError:
@@ -74,3 +76,31 @@ if hypothesis:
             self.assertEqual(tuple(p),
                              (windowlog, chainlog, hashlog, searchlog,
                               searchlength, targetlength, strategy))
+
+            # Verify we can instantiate a compressor with the supplied values.
+            # ZSTD_checkCParams moves the goal posts on us from what's advertised
+            # in the constants. So move along with them.
+            if searchlength == zstd.SEARCHLENGTH_MIN and strategy in (zstd.STRATEGY_FAST, zstd.STRATEGY_GREEDY):
+                searchlength += 1
+                p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
+                                searchlog, searchlength,
+                                targetlength, strategy)
+            elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
+                searchlength -= 1
+                p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
+                                searchlog, searchlength,
+                                targetlength, strategy)
+
+            with zstd.compresswriter(io.BytesIO(), compression_params=p) as compressor:
+                pass
+
+        @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
+                          s_searchlength, s_targetlength, s_strategy)
+        def test_estimate_compression_context_size(self, windowlog, chainlog,
+                                                   hashlog, searchlog,
+                                                   searchlength, targetlength,
+                                                   strategy):
+            p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
+                                searchlog, searchlength,
+                                targetlength, strategy)
+            size = zstd.estimate_compression_context_size(p)
