@@ -650,6 +650,7 @@ static PyObject* pyzstd_compresswriter_compress(pyzstd_compresswriter* self, PyO
 	size_t zresult = 0;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
+	PyObject* res;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
@@ -690,11 +691,12 @@ static PyObject* pyzstd_compresswriter_compress(pyzstd_compresswriter* self, PyO
 		/* Write data from output buffer to writer. */
 		if (output.pos) {
 #if PY_MAJOR_VERSION >= 3
-			PyObject_CallMethod(self->writer, "write", "y#",
+			res = PyObject_CallMethod(self->writer, "write", "y#",
 #else
-			PyObject_CallMethod(self->writer, "write", "s#",
+			res = PyObject_CallMethod(self->writer, "write", "s#",
 #endif
 				output.dst, output.pos);
+			Py_XDECREF(res);
 		}
 		output.pos = 0;
 	}
@@ -710,6 +712,7 @@ static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObjec
 	PyObject* exc_tb;
 	size_t zresult;
 	ZSTD_outBuffer output;
+	PyObject* res;
 
 	if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_value, &exc_tb)) {
 		return NULL;
@@ -739,11 +742,12 @@ static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObjec
 
 			if (output.pos) {
 #if PY_MAJOR_VERSION >= 3
-				PyObject_CallMethod(self->writer, "write", "y#",
+				res = PyObject_CallMethod(self->writer, "write", "y#",
 #else
-				PyObject_CallMethod(self->writer, "write", "s#",
+				res = PyObject_CallMethod(self->writer, "write", "s#",
 #endif
 					output.dst, output.pos);
+				Py_XDECREF(res);
 			}
 
 			if (!zresult) {
@@ -937,6 +941,7 @@ static PyObject* pyzstd_decompresswriter_decompress(pyzstd_decompresswriter* sel
 	size_t zresult = 0;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
+	PyObject* res;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
@@ -977,11 +982,12 @@ static PyObject* pyzstd_decompresswriter_decompress(pyzstd_decompresswriter* sel
 		/* Write data from output buffer to writer. */
 		if (output.pos) {
 #if PY_MAJOR_VERSION >= 3
-			PyObject_CallMethod(self->writer, "write", "y#",
+			res = PyObject_CallMethod(self->writer, "write", "y#",
 #else
-			PyObject_CallMethod(self->writer, "write", "s#",
+			res = PyObject_CallMethod(self->writer, "write", "s#",
 #endif
 				output.dst, output.pos);
+			Py_XDECREF(res);
 		}
 		output.pos = 0;
 	}
