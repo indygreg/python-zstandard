@@ -17,7 +17,24 @@ class TestCompressionParameters(unittest.TestCase):
             zstd.CompressionParameters()
 
         with self.assertRaises(TypeError):
-            zstd.CompressionParameters((0, 1))
+            zstd.CompressionParameters(0, 1)
+
+    def test_bounds(self):
+        zstd.CompressionParameters(zstd.WINDOWLOG_MIN,
+                                   zstd.CHAINLOG_MIN,
+                                   zstd.HASHLOG_MIN,
+                                   zstd.SEARCHLOG_MIN,
+                                   zstd.SEARCHLENGTH_MIN,
+                                   zstd.TARGETLENGTH_MIN,
+                                   zstd.STRATEGY_FAST)
+
+        zstd.CompressionParameters(zstd.WINDOWLOG_MAX,
+                                   zstd.CHAINLOG_MAX,
+                                   zstd.HASHLOG_MAX,
+                                   zstd.SEARCHLOG_MAX,
+                                   zstd.SEARCHLENGTH_MAX,
+                                   zstd.TARGETLENGTH_MAX,
+                                   zstd.STRATEGY_BTOPT)
 
     def test_get_compression_parameters(self):
         p = zstd.get_compression_parameters(1)
