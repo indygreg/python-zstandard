@@ -1333,26 +1333,19 @@ static struct PyModuleDef zstd_module = {
 	zstd_methods
 };
 
-PyMODINIT_FUNC PyInit_zstd(void)
-#else
-PyMODINIT_FUNC initzstd(void)
-#endif
-{
-	PyObject *m;
-
-#if PY_MAJOR_VERSION >= 3
-	m = PyModule_Create(&zstd_module);
-#else
-	m = Py_InitModule3("zstd", zstd_methods, zstd_doc);
-#endif
-
-	if (!m) {
-		return NULL;
+PyMODINIT_FUNC PyInit_zstd(void) {
+	PyObject *m = PyModule_Create(&zstd_module);
+	if (m) {
+		zstd_module_init(m);
 	}
-
-	zstd_module_init(m);
-
-#if PY_MAJOR_VERSION >= 3
 	return m;
-#endif
 }
+#else
+PyMODINIT_FUNC initzstd(void) {
+	PyObject *m = Py_InitModule3("zstd", zstd_methods, zstd_doc);
+	if (m) {
+		zstd_module_init(m);
+	}
+}
+#endif
+
