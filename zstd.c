@@ -1237,57 +1237,34 @@ static PyMethodDef zstd_methods[] = {
 	{ NULL, NULL }
 };
 
-#if PY_MAJOR_VERSION >= 3
-static struct PyModuleDef zstd_module = {
-	PyModuleDef_HEAD_INIT,
-	"zstd",
-	zstd_doc,
-	-1,
-	zstd_methods
-};
-
-PyMODINIT_FUNC PyInit_zstd(void)
-#else
-PyMODINIT_FUNC initzstd(void)
-#endif
-{
-	PyObject *m;
+void zstd_module_init(PyObject* m) {
 	PyObject* version;
 
 	Py_TYPE(&CompressionParametersType) = &PyType_Type;
 	if (PyType_Ready(&CompressionParametersType) < 0) {
-		return NULL;
+		return;
 	}
 
 	Py_TYPE(&FrameParametersType) = &PyType_Type;
 	if (PyType_Ready(&FrameParametersType) < 0) {
-		return NULL;
+		return;
 	}
 
 	Py_TYPE(&DictParametersType) = &PyType_Type;
 	if (PyType_Ready(&DictParametersType) < 0) {
-		return NULL;
+		return;
 	}
 
 	Py_TYPE(&CompressWriterType) = &PyType_Type;
 	if (PyType_Ready(&CompressWriterType) < 0) {
-		return NULL;
+		return;
 	}
 
 	Py_TYPE(&DecompressWriterType) = &PyType_Type;
 	if (PyType_Ready(&DecompressWriterType) < 0) {
-		return NULL;
+		return;
 	}
 
-#if PY_MAJOR_VERSION >= 3
-	m = PyModule_Create(&zstd_module);
-#else
-	m = Py_InitModule3("zstd", zstd_methods, zstd_doc);
-#endif
-
-	if (!m) {
-		return NULL;
-	}
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
 
 	/* For now, the version is a simple tuple instead of a dedicated type. */
@@ -1345,6 +1322,35 @@ PyMODINIT_FUNC initzstd(void)
 	PyModule_AddIntConstant(m, "STRATEGY_LAZY2", ZSTD_lazy2);
 	PyModule_AddIntConstant(m, "STRATEGY_BTLAZY2", ZSTD_btlazy2);
 	PyModule_AddIntConstant(m, "STRATEGY_BTOPT", ZSTD_btopt);
+}
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef zstd_module = {
+	PyModuleDef_HEAD_INIT,
+	"zstd",
+	zstd_doc,
+	-1,
+	zstd_methods
+};
+
+PyMODINIT_FUNC PyInit_zstd(void)
+#else
+PyMODINIT_FUNC initzstd(void)
+#endif
+{
+	PyObject *m;
+
+#if PY_MAJOR_VERSION >= 3
+	m = PyModule_Create(&zstd_module);
+#else
+	m = Py_InitModule3("zstd", zstd_methods, zstd_doc);
+#endif
+
+	if (!m) {
+		return NULL;
+	}
+
+	zstd_module_init(m);
 
 #if PY_MAJOR_VERSION >= 3
 	return m;
