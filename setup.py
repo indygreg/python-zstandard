@@ -8,6 +8,12 @@
 import os
 from setuptools import setup, Extension
 
+try:
+    import cffi
+except ImportError:
+    cffi = None
+
+
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 zstd_sources = ['zstd/%s' % p for p in (
@@ -40,6 +46,12 @@ ext = Extension('zstd', sources,
     )],
 )
 
+extensions = [ext]
+
+if cffi:
+    import make_cffi
+    extensions.append(make_cffi.ffi.distutils_extension())
+
 setup(
     name='zstandard',
     version='0.0.1',
@@ -61,6 +73,6 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     keywords='zstandard zstd compression',
-    ext_modules=[ext],
+    ext_modules=extensions,
     test_suite='tests',
 )
