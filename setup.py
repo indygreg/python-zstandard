@@ -5,7 +5,10 @@
 # This software may be modified and distributed under the terms
 # of the BSD license. See the LICENSE file for details.
 
+import os
 from setuptools import setup, Extension
+
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 zstd_sources = ['zstd/%s' % p for p in (
     'common/entropy_common.c',
@@ -28,13 +31,13 @@ sources = zstd_sources + ['zstd.c']
 # TODO compile with optimizations.
 
 ext = Extension('zstd', sources,
-    include_dirs=[
+    include_dirs=[os.path.join(HERE, d) for d in (
         'zstd',
         'zstd/common',
         'zstd/compress',
         'zstd/decompress',
         'zstd/dictBuilder',
-    ],
+    )],
 )
 
 setup(
