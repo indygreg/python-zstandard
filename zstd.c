@@ -416,162 +416,134 @@ static inline void ztopy_compression_parameters(CompressionParametersObject* par
 	zparams->strategy = params->strategy;
 }
 
-PyDoc_STRVAR(compress__doc__,
-"compress(string[, level]) -- Compress a string with compression level.\n"
-"\n"
-"This is the simplest mechanism to perform zstd compression. The passed\n"
-"string will be compressed and the result returned.\n"
-"\n"
-"An optional integer compression level can be specified.\n"
-"\n"
-"Compression is performed in a single operation. For larger inputs, it\n"
-"is recommended to use the streaming compression interface to compress\n"
-"in chunks");
+typedef struct {
+	PyObject_HEAD
 
-static PyObject *pyzstd_compress(PyObject* self, PyObject *args) {
-	const char* source;
-	Py_ssize_t sourceSize;
-	int compressionLevel = 3;
-	size_t destSize;
-	PyObject* output;
-	char* dest;
+	int compressionLevel;
+	void* dictData;
+	size_t dictSize;
+	CompressionParametersObject* cparams;
+
+	size_t insize;
+	size_t outsize;
+} ZstdCompressor;
+
+struct ZstdCompressionWriter;
+
+/**
+* Initialize a zstd CStream from a ZstdCompressor instance.
+*
+* Returns a ZSTD_CStream on success or NULL on failure. If NULL, a Python
+* exception will be set.
+*/
+static ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor) {
+	ZSTD_CStream* cstream;
+	ZSTD_parameters zparams;
 	size_t zresult;
 
-#if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#|i:compress", &source, &sourceSize, &compressionLevel)) {
-#else
-	if (!PyArg_ParseTuple(args, "s#|i:compress", &source, &sourceSize, &compressionLevel)) {
-#endif
+	cstream = ZSTD_createCStream();
+	if (!cstream) {
+		PyErr_SetString(ZstdError, "cannot create CStream");
 		return NULL;
 	}
 
-	if (compressionLevel < 1) {
-		PyErr_SetString(PyExc_ValueError, "compressionlevel must be greater than 0");
-		return NULL;
+	if (compressor->cparams) {
+		memset(&zparams, 0, sizeof(zparams));
+		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
+		zresult = ZSTD_initCStream_advanced(cstream,
+			compressor->dictData, compressor->dictSize, zparams, 0);
 	}
-
-	if (compressionLevel > ZSTD_maxCLevel()) {
-		PyErr_Format(PyExc_ValueError, "compressionlevel must be less than %d",
-				     ZSTD_maxCLevel() + 1);
-		return NULL;
-	}
-
-	destSize = ZSTD_compressBound(sourceSize);
-
-	output = PyBytes_FromStringAndSize(NULL, destSize);
-	if (!output) {
-		return NULL;
-	}
-
-	dest = PyBytes_AsString(output);
-
-	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_compress(dest, destSize, source, sourceSize, compressionLevel);
-	Py_END_ALLOW_THREADS
-
-	if (ZSTD_isError(zresult)) {
-		PyErr_SetString(ZstdError, "compression error");
-		Py_CLEAR(output);
+	else if (compressor->dictData) {
+		zresult = ZSTD_initCStream_usingDict(cstream,
+			compressor->dictData, compressor->dictSize, compressor->compressionLevel);
 	}
 	else {
-		Py_SIZE(output) = zresult;
+		zresult = ZSTD_initCStream(cstream, compressor->compressionLevel);
 	}
 
-	return output;
+	if (ZSTD_isError(zresult)) {
+		ZSTD_freeCStream(cstream);
+		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
+		return NULL;
+	}
+
+	return cstream;
 }
 
 typedef struct {
 	PyObject_HEAD
 
+	ZstdCompressor* compressor;
 	PyObject* writer;
 	ZSTD_CStream* cstream;
-	size_t insize;
-	size_t outsize;
-	int compressionLevel;
-	void* dictData;
-	size_t dictSize;
-	CompressionParametersObject* cparams;
 	int entered;
-} pyzstd_compresswriter;
+} ZstdCompressionWriter;
 
-PyDoc_STRVAR(compresswriter__doc__,
-"compresswriter(writer, compression_level=3, dict_data=None, compression_params=None)\n"
-"Compress data to a writer object.\n"
+static PyTypeObject ZstdCompressionWriterType;
+
+PyDoc_STRVAR(ZstdCompressor__doc__,
+"ZstdCompressor(level=None, dict_data=None, compression_params=None)\n"
 "\n"
-"Used as a context manager, the ``compresswriter`` is instantiated with an\n"
-"object providing a ``write()`` method. As data is fed to the compresswriter\n"
-"instance, compressed data is written to the writer.\n"
+"Create an object used to perform Zstandard compression.\n"
 "\n"
-"Callers can customize compression behavior by passing additional optional\n"
-"arguments:\n"
+"An instance can compress data various ways. Instances can be used multiple\n"
+"times. Each compression operation will use the compression parameters\n"
+"defined at construction time.\n"
 "\n"
-"compression_level\n"
+"Compression can be configured via the following names arguments:\n"
+"\n"
+"level\n"
 "   Integer compression level.\n"
 "dict_data\n"
 "   Binary data holding a computed compression dictionary.\n"
 "compression_params\n"
-"   A ``CompressionParameters`` instance. If specified, this will overwrite\n"
-"   the ``compression_level`` argument.\n"
+"   A ``CompressionParameters`` instance defining low-level compression"
+"   parameters. If defined, this will overwrite the ``level`` argument.\n"
 );
 
-static int pyzstd_compresswriter_init(pyzstd_compresswriter* self, PyObject* args, PyObject* kwargs) {
+static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
-		"writer",
-		"compression_level",
+		"level",
 		"dict_data",
 		"compression_params",
 		NULL
 	};
 
-	PyObject* writer;
-	int compressionLevel = 3;
+	int level = 3;
 	const char* dictData;
 	Py_ssize_t dictSize = 0;
 	CompressionParametersObject* params = NULL;
 
-	self->writer = NULL;
-	self->cstream = NULL;
 	self->dictData = NULL;
 	self->dictSize = 0;
 	self->cparams = NULL;
-	self->entered = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iy#O!", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!", kwlist,
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|is#O!", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|is#O!", kwlist,
 #endif
-		&writer, &compressionLevel, &dictData, &dictSize,
+		&level, &dictData, &dictSize,
 		&CompressionParametersType, &params)) {
 		return -1;
 	}
 
-	if (compressionLevel < 1) {
-		PyErr_SetString(PyExc_ValueError, "compressionlevel must be greater than 0");
+	if (level < 1) {
+		PyErr_SetString(PyExc_ValueError, "level must be greater than 0");
 		return -1;
 	}
 
-	if (compressionLevel > ZSTD_maxCLevel()) {
-		PyErr_Format(PyExc_ValueError, "compressionlevel must be less than %d",
+	if (level > ZSTD_maxCLevel()) {
+		PyErr_Format(PyExc_ValueError, "level must be less than %d",
 			ZSTD_maxCLevel() + 1);
 		return -1;
 	}
 
-	if (!PyObject_HasAttrString(writer, "write")) {
-		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
-		return -1;
-	}
-
-	self->writer = writer;
-	Py_INCREF(writer);
-
 	self->insize = ZSTD_CStreamInSize();
 	self->outsize = ZSTD_CStreamOutSize();
-	self->compressionLevel = compressionLevel;
+	self->compressionLevel = level;
 
-	/* If we have dictionary data, copy it to an internal buffer.
-	   We could potentially reference the PyObject here. Meh.
-	*/
+	/* TODO consider reusing Python object's memory. */
 	if (dictSize) {
 		self->dictData = malloc(dictSize);
 		if (!self->dictData) {
@@ -590,8 +562,7 @@ static int pyzstd_compresswriter_init(pyzstd_compresswriter* self, PyObject* arg
 	return 0;
 }
 
-static void pyzstd_compresswriter_dealloc(pyzstd_compresswriter* self) {
-	Py_XDECREF(self->writer);
+static void ZstdCompressor_dealloc(ZstdCompressor* self) {
 	Py_XDECREF(self->cparams);
 
 	if (self->dictData) {
@@ -602,55 +573,178 @@ static void pyzstd_compresswriter_dealloc(pyzstd_compresswriter* self) {
 	PyObject_Del(self);
 }
 
-static PyObject* pyzstd_compresswriter_enter(pyzstd_compresswriter* self, PyObject* args) {
-	size_t zresult;
-	ZSTD_parameters zparams;
+PyDoc_STRVAR(ZstdCompressor_copy_stream__doc__,
+"copy_stream(ifh, ofh) -- compress data between streams\n"
+"\n"
+"Data will be read from ``ifh``, compressed, and written to ``ofh``.\n"
+"``ifh`` must have a ``read(size)`` method. ``ofh`` must have a ``write(data)``\n"
+"method.\n"
+);
 
-	if (self->entered) {
-		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
-		return NULL;
-	}
-
-	self->cstream = ZSTD_createCStream();
-	if (!self->cstream) {
-		PyErr_SetString(ZstdError, "cannot create CStream");
-		return NULL;
-	}
-
-	if (self->cparams) {
-		memset(&zparams, 0, sizeof(zparams));
-		ztopy_compression_parameters(self->cparams, &zparams.cParams);
-		zresult = ZSTD_initCStream_advanced(self->cstream,
-			self->dictData, self->dictSize, zparams, 0);
-	}
-	else if (self->dictData) {
-		zresult = ZSTD_initCStream_usingDict(self->cstream,
-			self->dictData, self->dictSize, self->compressionLevel);
-	}
-	else {
-		zresult = ZSTD_initCStream(self->cstream, self->compressionLevel);
-	}
-
-	if (ZSTD_isError(zresult)) {
-		ZSTD_freeCStream(self->cstream);
-		self->cstream = NULL;
-		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
-		return NULL;
-	}
-
-	self->entered = 1;
-
-	Py_INCREF(self);
-	return (PyObject*)self;
-}
-
-static PyObject* pyzstd_compresswriter_compress(pyzstd_compresswriter* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
-	size_t zresult = 0;
+static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args) {
+	PyObject* source;
+	PyObject* dest;
+	ZSTD_CStream* cstream;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
-	PyObject* res;
+	Py_ssize_t totalRead = 0;
+	Py_ssize_t totalWrite = 0;
+	PyObject* readSizeArg = NULL;
+	char* readBuffer;
+	Py_ssize_t readSize;
+	PyObject* readResult;
+	PyObject* res = NULL;
+	size_t zresult;
+	PyObject* writeResult;
+
+	if (!PyArg_ParseTuple(args, "OO", &source, &dest)) {
+		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(source, "read")) {
+		PyErr_SetString(PyExc_ValueError, "first argument must have a read() method");
+		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(dest, "write")) {
+		PyErr_SetString(PyExc_ValueError, "second argument must have a write() method");
+		return NULL;
+	}
+
+	cstream = CStream_from_ZstdCompressor(self);
+	if (!cstream) {
+		res = NULL;
+		goto finally;
+	}
+
+	output.dst = malloc(self->outsize);
+	if (!output.dst) {
+		PyErr_NoMemory();
+		res = NULL;
+		goto finally;
+	}
+	output.size = self->outsize;
+	output.pos = 0;
+
+	readSizeArg = PyLong_FromSize_t(self->insize);
+
+	while (1) {
+		/* Try to read from source stream. */
+		readResult = PyObject_CallMethod(source, "read", "I", readSizeArg);
+		if (!readResult) {
+			PyErr_SetString(ZstdError, "could not read() from source");
+			goto finally;
+		}
+
+		PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+
+		/* If no data was read, we're at EOF. */
+		if (0 == readSize) {
+			break;
+		}
+
+		totalRead += readSize;
+
+		/* Send data to compressor */
+		input.src = readBuffer;
+		input.size = readSize;
+		input.pos = 0;
+
+		while (input.pos < input.size) {
+			Py_BEGIN_ALLOW_THREADS
+			zresult = ZSTD_compressStream(cstream, &output, &input);
+			Py_END_ALLOW_THREADS
+
+			if (ZSTD_isError(zresult)) {
+				res = NULL;
+				PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
+				goto finally;
+			}
+
+			if (output.pos) {
+#if PY_MAJOR_VERSION >= 3
+				writeResult = PyObject_CallMethod(dest, "write", "y#",
+#else
+				writeResult = PyObject_CallMethod(dest, "write", "s#",
+#endif
+					output.dst, output.pos);
+				/* TODO check result type */
+				totalWrite += PyLong_AsSsize_t(writeResult);
+				Py_XDECREF(writeResult);
+				output.pos = 0;
+			}
+		}
+	}
+
+	/* We've finished reading. Now flush the compressor stream. */
+	while (1) {
+		zresult = ZSTD_endStream(cstream, &output);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "error ending compression stream: %s",
+				ZSTD_getErrorName(zresult));
+			res = NULL;
+			goto finally;
+		}
+
+		if (output.pos) {
+#if PY_MAJOR_VERSION >= 3
+			writeResult = PyObject_CallMethod(dest, "write", "y#",
+#else
+			writeResult = PyObject_CallMethod(dest, "write", "s#",
+#endif
+				output.dst, output.pos);
+			/* TODO check result type */
+			totalWrite += PyLong_AsSsize_t(writeResult);
+			Py_XDECREF(writeResult);
+			output.pos = 0;
+		}
+
+		if (!zresult) {
+			break;
+		}
+	}
+
+	ZSTD_freeCStream(cstream);
+	cstream = NULL;
+
+	res = PyTuple_Pack(2, PyLong_FromSsize_t(totalRead), PyLong_FromSsize_t(totalWrite));
+
+finally:
+	Py_XDECREF(readSizeArg);
+
+	if (output.dst) {
+		free(output.dst);
+	}
+
+	if (cstream) {
+		ZSTD_freeCStream(cstream);
+	}
+
+	return res;
+}
+
+PyDoc_STRVAR(ZstdCompressor_compress__doc__,
+"compress(data)\n"
+"\n"
+"Compress data in a single operation.\n"
+"\n"
+"This is the simplest mechanism to perform compression: simply pass in a\n"
+"value and get a compressed value back. It is almost the most prone to abuse.\n"
+"The input and output values must fit in memory, so passing in very large\n"
+"values can result in excessive memory usage. For this reason, one of the\n"
+"streaming based APIs is preferred for larger values.\n"
+);
+
+static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
+	const char* source;
+	Py_ssize_t sourceSize;
+	size_t destSize;
+	ZSTD_CCtx* cctx;
+	PyObject* output;
+	char* dest;
+	size_t zresult;
+	ZSTD_compressionParameters cparams;
+	ZSTD_parameters zparams;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
@@ -660,57 +754,177 @@ static PyObject* pyzstd_compresswriter_compress(pyzstd_compresswriter* self, PyO
 		return NULL;
 	}
 
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "compress must be called from an active context manager");
+	destSize = ZSTD_compressBound(sourceSize);
+	output = PyBytes_FromStringAndSize(NULL, destSize);
+	if (!output) {
 		return NULL;
 	}
 
-	output.dst = malloc(self->outsize);
-	if (!output.dst) {
-		return PyErr_NoMemory();
-	}
-	output.size = self->outsize;
-	output.pos = 0;
+	dest = PyBytes_AsString(output);
 
-	/* Feed data from input argument */
-	input.src = source;
-	input.size = sourceSize;
-	input.pos = 0;
-
-	while ((ssize_t)input.pos < sourceSize) {
-		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compressStream(self->cstream, &output, &input);
-		Py_END_ALLOW_THREADS
-
-		if (ZSTD_isError(zresult)) {
-			free(output.dst);
-			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
-		}
-
-		/* Write data from output buffer to writer. */
-		if (output.pos) {
-#if PY_MAJOR_VERSION >= 3
-			res = PyObject_CallMethod(self->writer, "write", "y#",
-#else
-			res = PyObject_CallMethod(self->writer, "write", "s#",
-#endif
-				output.dst, output.pos);
-			Py_XDECREF(res);
-		}
-		output.pos = 0;
+	cctx = ZSTD_createCCtx();
+	if (!cctx) {
+		PyErr_SetString(ZstdError, "could not create CCtx");
+		return NULL;
 	}
 
-	free(output.dst);
+	memset(&zparams, 0, sizeof(zparams));
+	if (!self->cparams) {
+		zparams.cParams = ZSTD_getCParams(self->compressionLevel, sourceSize, self->dictSize);
+	}
+	else {
+		ztopy_compression_parameters(self->cparams, &cparams);
+		zparams.cParams = cparams;
+	}
 
-	Py_RETURN_NONE;
+	Py_BEGIN_ALLOW_THREADS
+	zresult = ZSTD_compress_advanced(cctx, dest, destSize, source, sourceSize,
+		self->dictData, self->dictSize, zparams);
+	Py_END_ALLOW_THREADS
+
+	ZSTD_freeCCtx(cctx);
+
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "cannot compress: %s", ZSTD_getErrorName(zresult));
+		Py_CLEAR(output);
+		return NULL;
+	}
+	else {
+		Py_SIZE(output) = zresult;
+	}
+
+	return output;
 }
 
-static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObject* args) {
+PyDoc_STRVAR(ZstdCompressor_write_to___doc__,
+"Create a context manager to write compressed data to an object.\n"
+"\n"
+"The passed object must have a ``write()`` method.\n"
+"\n"
+"The caller feeds input data to the object by calling ``compress(data)``.\n"
+"Compressed data is written to the argument given to this function.\n"
+);
+
+static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyObject* args) {
+	PyObject* writer;
+	ZstdCompressionWriter* result;
+
+	if (!PyArg_ParseTuple(args, "O", &writer)) {
+		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(writer, "write")) {
+		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
+		return NULL;
+	}
+
+	result = PyObject_New(ZstdCompressionWriter, &ZstdCompressionWriterType);
+	if (!result) {
+		return NULL;
+	}
+
+	result->compressor = self;
+	Py_INCREF(result->compressor);
+
+	result->writer = writer;
+	Py_INCREF(result->writer);
+
+	result->entered = 0;
+	result->cstream = NULL;
+
+	return result;
+}
+
+static PyMethodDef ZstdCompressor_methods[] = {
+	{ "compress", (PyCFunction)ZstdCompressor_compress, METH_VARARGS,
+	ZstdCompressor_compress__doc__ },
+	{ "copy_stream", (PyCFunction)ZstdCompressor_copy_stream, METH_VARARGS,
+	ZstdCompressor_copy_stream__doc__ },
+	{ "write_to", (PyCFunction)ZstdCompressor_write_to, METH_VARARGS,
+	ZstdCompressor_write_to___doc__ },
+	{ NULL, NULL }
+};
+
+static PyTypeObject ZstdCompressorType = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"zstd.ZstdCompressor",         /* tp_name */
+	sizeof(ZstdCompressor),        /* tp_basicsize */
+	0,                              /* tp_itemsize */
+	(destructor)ZstdCompressor_dealloc, /* tp_dealloc */
+	0,                              /* tp_print */
+	0,                              /* tp_getattr */
+	0,                              /* tp_setattr */
+	0,                              /* tp_compare */
+	0,                              /* tp_repr */
+	0,                              /* tp_as_number */
+	0,                              /* tp_as_sequence */
+	0,                              /* tp_as_mapping */
+	0,                              /* tp_hash */
+	0,                              /* tp_call */
+	0,                              /* tp_str */
+	0,                              /* tp_getattro */
+	0,                              /* tp_setattro */
+	0,                              /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	ZstdCompressor__doc__,          /* tp_doc */
+	0,                              /* tp_traverse */
+	0,                              /* tp_clear */
+	0,                              /* tp_richcompare */
+	0,                              /* tp_weaklistoffset */
+	0,                              /* tp_iter */
+	0,                              /* tp_iternext */
+	ZstdCompressor_methods,         /* tp_methods */
+	0,                              /* tp_members */
+	0,                              /* tp_getset */
+	0,                              /* tp_base */
+	0,                              /* tp_dict */
+	0,                              /* tp_descr_get */
+	0,                              /* tp_descr_set */
+	0,                              /* tp_dictoffset */
+	(initproc)ZstdCompressor_init,  /* tp_init */
+	0,                              /* tp_alloc */
+	PyType_GenericNew,              /* tp_new */
+};
+
+PyDoc_STRVAR(ZstdCompresssionWriter__doc__,
+"""A context manager used for writing compressed output to a writer.\n"
+);
+
+static void ZstdCompressionWriter_dealloc(ZstdCompressionWriter* self) {
+	Py_XDECREF(self->compressor);
+	Py_XDECREF(self->writer);
+
+	if (self->cstream) {
+		ZSTD_freeCStream(self->cstream);
+		self->cstream = NULL;
+	}
+
+	PyObject_Del(self);
+}
+
+static PyObject* ZstdCompressionWriter_enter(ZstdCompressionWriter* self) {
+	if (self->entered) {
+		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
+		return NULL;
+	}
+
+	self->cstream = CStream_from_ZstdCompressor(self->compressor);
+	if (!self->cstream) {
+		return NULL;
+	}
+
+	self->entered = 1;
+
+	Py_INCREF(self);
+	return (PyObject*)self;
+}
+
+static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObject* args) {
 	PyObject* exc_type;
 	PyObject* exc_value;
 	PyObject* exc_tb;
 	size_t zresult;
+
 	ZSTD_outBuffer output;
 	PyObject* res;
 
@@ -720,16 +934,14 @@ static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObjec
 
 	self->entered = 0;
 
-	/* Compression context may have buffered memory. Flush on context manager
-	   exit. Buf only if an exception didn't occur because it would be
-	   pointless and risky to do work otherwise. */
 	if (self->cstream && exc_type == Py_None && exc_value == Py_None &&
 		exc_tb == Py_None) {
-		output.dst = malloc(self->outsize);
+
+		output.dst = malloc(self->compressor->outsize);
 		if (!output.dst) {
 			return PyErr_NoMemory();
 		}
-		output.size = self->outsize;
+		output.size = self->compressor->outsize;
 		output.pos = 0;
 
 		while (1) {
@@ -737,6 +949,7 @@ static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObjec
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "error ending compression stream: %s",
 					ZSTD_getErrorName(zresult));
+				free(output.dst);
 				return NULL;
 			}
 
@@ -765,22 +978,84 @@ static PyObject* pyzstd_compresswriter_exit(pyzstd_compresswriter* self, PyObjec
 	Py_RETURN_FALSE;
 }
 
-static PyMethodDef pyzstd_compresswriter_methods[] = {
-	{ "__enter__", (PyCFunction)pyzstd_compresswriter_enter, METH_NOARGS,
+static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObject* args) {
+	const char* source;
+	Py_ssize_t sourceSize;
+	size_t zresult;
+	ZSTD_inBuffer input;
+	ZSTD_outBuffer output;
+	PyObject* res;
+
+#if PY_MAJOR_VERSION >= 3
+	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
+#else
+	if (!PyArg_ParseTuple(args, "s#", &source, &sourceSize)) {
+#endif
+		return NULL;
+	}
+
+	if (!self->entered) {
+		PyErr_SetString(ZstdError, "compress must be called from an active context manager");
+		return NULL;
+	}
+
+	output.dst = malloc(self->compressor->outsize);
+	if (!output.dst) {
+		return PyErr_NoMemory();
+	}
+	output.size = self->compressor->outsize;
+	output.pos = 0;
+
+	input.src = source;
+	input.size = sourceSize;
+	input.pos = 0;
+
+	while ((ssize_t)input.pos < sourceSize) {
+		Py_BEGIN_ALLOW_THREADS
+		zresult = ZSTD_compressStream(self->cstream, &output, &input);
+		Py_END_ALLOW_THREADS
+
+		if (ZSTD_isError(zresult)) {
+			free(output.dst);
+			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
+			return NULL;
+		}
+
+		/* Copy data from output buffer to writer. */
+		if (output.pos) {
+#if PY_MAJOR_VERSION >= 3
+			res = PyObject_CallMethod(self->writer, "write", "y#",
+#else
+			res = PyObject_CallMethod(self->writer, "write", "s#",
+#endif
+				output.dst, output.pos);
+			Py_XDECREF(res);
+		}
+		output.pos = 0;
+	}
+
+	free(output.dst);
+
+	/* TODO return bytes written */
+	Py_RETURN_NONE;
+}
+
+static PyMethodDef ZstdCompressionWriter_methods[] = {
+	{ "__enter__", (PyCFunction)ZstdCompressionWriter_enter, METH_NOARGS,
 	PyDoc_STR("Enter a compression context.") },
-	{ "__exit__", (PyCFunction)pyzstd_compresswriter_exit, METH_VARARGS,
+	{ "__exit__", (PyCFunction)ZstdCompressionWriter_exit, METH_VARARGS,
 	PyDoc_STR("Exit a compression context.") },
-	{ "compress", (PyCFunction)pyzstd_compresswriter_compress, METH_VARARGS,
-	PyDoc_STR("compress a data chunk.") },
+	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS,
+	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
 };
 
-static PyTypeObject CompressWriterType = {
+static PyTypeObject ZstdCompressionWriterType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"zstd.compresswriter",         /* tp_name */
-	sizeof(pyzstd_compresswriter), /* tp_basicsize */
+	"zstd.ZstdCompressionWriter",  /* tp_name */
+	sizeof(ZstdCompressionWriter),  /* tp_basicsize */
 	0,                              /* tp_itemsize */
-	(destructor)pyzstd_compresswriter_dealloc, /* tp_dealloc */
+	(destructor)ZstdCompressionWriter_dealloc, /* tp_dealloc */
 	0,                              /* tp_print */
 	0,                              /* tp_getattr */
 	0,                              /* tp_setattr */
@@ -796,14 +1071,14 @@ static PyTypeObject CompressWriterType = {
 	0,                              /* tp_setattro */
 	0,                              /* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	compresswriter__doc__,          /* tp_doc */
+	ZstdCompresssionWriter__doc__,  /* tp_doc */
 	0,                              /* tp_traverse */
 	0,                              /* tp_clear */
 	0,                              /* tp_richcompare */
 	0,                              /* tp_weaklistoffset */
 	0,                              /* tp_iter */
 	0,                              /* tp_iternext */
-	pyzstd_compresswriter_methods,  /* tp_methods */
+	ZstdCompressionWriter_methods,  /* tp_methods */
 	0,                              /* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
@@ -811,70 +1086,86 @@ static PyTypeObject CompressWriterType = {
 	0,                              /* tp_descr_get */
 	0,                              /* tp_descr_set */
 	0,                              /* tp_dictoffset */
-	(initproc)pyzstd_compresswriter_init, /* tp_init */
+	0,                              /* tp_init */
 	0,                              /* tp_alloc */
 	PyType_GenericNew,              /* tp_new */
 };
 
-/* Represents a decompresswriter instance. */
 typedef struct {
 	PyObject_HEAD
 
-	PyObject* writer;
-	ZSTD_DStream* dstream;
 	void* dictData;
 	size_t dictSize;
 	size_t insize;
 	size_t outsize;
+} ZstdDecompressor;
+
+typedef struct {
+	PyObject_HEAD
+
+	ZstdDecompressor* decompressor;
+	PyObject* writer;
+	ZSTD_DStream* dstream;
 	int entered;
-} pyzstd_decompresswriter;
+} ZstdDecompressionWriter;
 
-PyDoc_STRVAR(decompress_writer__doc__,
-"decompresswriter(writer) -- Decompress data to a writer object.\n"
+static PyTypeObject ZstdDecompressionWriterType;
+
+static ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor) {
+	ZSTD_DStream* dstream;
+	size_t zresult;
+
+	dstream = ZSTD_createDStream();
+	if (!dstream) {
+		PyErr_SetString(ZstdError, "could not create DStream");
+		return NULL;
+	}
+
+	if (decompressor->dictData) {
+		zresult = ZSTD_initDStream_usingDict(dstream,
+			decompressor->dictData, decompressor->dictSize);
+	}
+	else {
+		zresult = ZSTD_initDStream(dstream);
+	}
+
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "could not initialize DStream: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
+	}
+
+	return dstream;
+}
+
+PyDoc_STRVAR(ZstdDecompressor__doc__,
+"ZstdDecompressor(dict_data=None)\n"
 "\n"
-"Used as a context manager, the ``decompresswriter`` is instantiated with an\n"
-"object providing a ``write()`` method. As compressed data is fed to the\n"
-"decompresswriter instance, uncompressed data is written to the writer.");
+"Create an object used to perform Zstandard decompression.\n"
+"\n"
+"An instance can perform multiple decompression operations."
+);
 
-static int pyzstd_decompesswriter_init(pyzstd_decompresswriter* self, PyObject* args, PyObject* kwargs) {
+static int ZstdDecompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
-		"writer",
 		"dict_data",
 		NULL
 	};
 
-	PyObject* writer;
 	const char* dictData;
 	Py_ssize_t dictSize = 0;
 
-	self->writer = NULL;
-	self->dstream = NULL;
 	self->dictData = NULL;
 	self->dictSize = 0;
-	self->entered = 0;
 
-	/* TODO support for setting dstream parameters (currently just max window size */
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|y#", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|y#", kwlist,
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|s#", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|s#", kwlist,
 #endif
-		&writer, &dictData, &dictSize)) {
+		&dictData, &dictSize)) {
 		return -1;
 	}
-
-	if (!PyObject_HasAttrString(writer, "write")) {
-		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
-		return -1;
-	}
-
-	self->writer = writer;
-	Py_INCREF(writer);
-
-	self->dstream = NULL;
-	self->entered = 0;
-	self->insize = ZSTD_DStreamInSize();
-	self->outsize = ZSTD_DStreamOutSize();
 
 	if (dictData) {
 		self->dictData = malloc(dictSize);
@@ -887,12 +1178,13 @@ static int pyzstd_decompesswriter_init(pyzstd_decompresswriter* self, PyObject* 
 		self->dictSize = dictSize;
 	}
 
+	self->insize = ZSTD_DStreamInSize();
+	self->outsize = ZSTD_DStreamOutSize();
+
 	return 0;
 }
 
-static void pyzstd_decompresswriter_dealloc(pyzstd_decompresswriter* self) {
-	Py_XDECREF(self->writer);
-
+static void ZstdDecompressor_dealloc(ZstdDecompressor* self) {
 	if (self->dictData) {
 		free(self->dictData);
 		self->dictData = NULL;
@@ -902,30 +1194,244 @@ static void pyzstd_decompresswriter_dealloc(pyzstd_decompresswriter* self) {
 	PyObject_Del(self);
 }
 
-static PyObject* pyzstd_decompresswriter_enter(pyzstd_decompresswriter* self, PyObject* args) {
-	size_t zresult;
+PyDoc_STRVAR(ZstdDecompressor_copy_stream__doc__,
+"copy_stream(ifh, ofh) -- decompress data between streams\n"
+"\n"
+"Compressed data will be read from ``ifh``, decompressed, and written to\n"
+"``ofh``. ``ifh`` must have a ``read(size)`` method. ``ofh`` must have a\n"
+"``write(data)`` method.\n"
+);
 
+static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* args) {
+	PyObject* source;
+	PyObject* dest;
+	ZSTD_DStream* dstream;
+	ZSTD_inBuffer input;
+	ZSTD_outBuffer output;
+	Py_ssize_t totalRead = 0;
+	Py_ssize_t totalWrite = 0;
+	PyObject* readSizeArg = NULL;
+	char* readBuffer;
+	Py_ssize_t readSize;
+	PyObject* readResult;
+	PyObject* res = NULL;
+	size_t zresult = 0;
+	PyObject* writeResult;
+
+	if (!PyArg_ParseTuple(args, "OO", &source, &dest)) {
+		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(source, "read")) {
+		PyErr_SetString(PyExc_ValueError, "first argument must have a read() method");
+		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(dest, "write")) {
+		PyErr_SetString(PyExc_ValueError, "second argument must have a write() method");
+		return NULL;
+	}
+
+	dstream = DStream_from_ZstdDecompressor(self);
+	if (!dstream) {
+		res = NULL;
+		goto finally;
+	}
+
+	output.dst = malloc(self->outsize);
+	if (!output.dst) {
+		PyErr_NoMemory();
+		res = NULL;
+		goto finally;
+	}
+	output.size = self->outsize;
+	output.pos = 0;
+
+	readSizeArg = PyLong_FromSize_t(self->insize);
+
+	/* Read source stream until EOF */
+	while (1) {
+		readResult = PyObject_CallMethod(source, "read", "I", readSizeArg);
+		if (!readResult) {
+			PyErr_SetString(ZstdError, "could not read() from source");
+			goto finally;
+		}
+
+		PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+
+		/* If no data was read, we're at EOF. */
+		if (0 == readSize) {
+			break;
+		}
+
+		totalRead += readSize;
+
+		/* Send data to decompressor */
+		input.src = readBuffer;
+		input.size = readSize;
+		input.pos = 0;
+
+		while (input.pos < input.size || zresult == 1) {
+			Py_BEGIN_ALLOW_THREADS
+			zresult = ZSTD_decompressStream(dstream, &output, &input);
+			Py_END_ALLOW_THREADS
+
+			if (ZSTD_isError(zresult)) {
+				PyErr_Format(ZstdError, "zstd decompressor error: %s",
+					ZSTD_getErrorName(zresult));
+				res = NULL;
+				goto finally;
+			}
+
+			if (output.pos) {
+#if PY_MAJOR_VERSION >= 3
+				writeResult = PyObject_CallMethod(dest, "write", "y#",
+#else
+				writeResult = PyObject_CallMethod(dest, "write", "s#",
+#endif
+					output.dst, output.pos);
+
+				/* TODO check result type */
+				totalWrite += PyLong_AsSsize_t(writeResult);
+				Py_XDECREF(writeResult);
+				output.pos = 0;
+			}
+		}
+	}
+
+	/* Source stream is exhausted. Finish up. */
+
+	ZSTD_freeDStream(dstream);
+	dstream = NULL;
+
+	res = PyTuple_Pack(2, PyLong_FromSsize_t(totalRead), PyLong_FromSsize_t(totalWrite));
+
+finally:
+	Py_XDECREF(readSizeArg);
+
+	if (output.dst) {
+		free(output.dst);
+	}
+
+	if (dstream) {
+		ZSTD_freeDStream(dstream);
+	}
+
+	return res;
+}
+
+PyDoc_STRVAR(ZstdDecompressor_write_to__doc__,
+"Create a context manager to write decompressed data to an object.\n"
+"\n"
+"The passed object must have a ``write()`` method.\n"
+"\n"
+"The caller feeds intput data to the object by calling ``write(data)``.\n"
+"Decompressed data is written to the argument given as it is decompressed.\n"
+);
+
+static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self, PyObject* args) {
+	PyObject* writer;
+	ZstdDecompressionWriter* result;
+
+	if (!PyArg_ParseTuple(args, "O", &writer)) {
+		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(writer, "write")) {
+		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
+		return NULL;
+	}
+
+	result = PyObject_New(ZstdDecompressionWriter, &ZstdDecompressionWriterType);
+	if (!result) {
+		return NULL;
+	}
+
+	result->decompressor = self;
+	Py_INCREF(result->decompressor);
+
+	result->writer = writer;
+	Py_INCREF(result->writer);
+
+	result->entered = 0;
+	result->dstream = NULL;
+
+	return result;
+}
+
+static PyMethodDef ZstdDecompressor_methods[] = {
+	{ "copy_stream", (PyCFunction)ZstdDecompressor_copy_stream, METH_VARARGS,
+	  ZstdDecompressor_copy_stream__doc__ },
+	{ "write_to", (PyCFunction)ZstdDecompressor_write_to, METH_VARARGS,
+	  ZstdDecompressor_write_to__doc__ },
+	{ NULL, NULL }
+};
+
+static PyTypeObject ZstdDecompressorType = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"zstd.ZstdDecompressor",        /* tp_name */
+	sizeof(ZstdDecompressor),       /* tp_basicsize */
+	0,                              /* tp_itemsize */
+	(destructor)ZstdDecompressor_dealloc, /* tp_dealloc */
+	0,                              /* tp_print */
+	0,                              /* tp_getattr */
+	0,                              /* tp_setattr */
+	0,                              /* tp_compare */
+	0,                              /* tp_repr */
+	0,                              /* tp_as_number */
+	0,                              /* tp_as_sequence */
+	0,                              /* tp_as_mapping */
+	0,                              /* tp_hash */
+	0,                              /* tp_call */
+	0,                              /* tp_str */
+	0,                              /* tp_getattro */
+	0,                              /* tp_setattro */
+	0,                              /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	ZstdDecompressor__doc__,        /* tp_doc */
+	0,                              /* tp_traverse */
+	0,                              /* tp_clear */
+	0,                              /* tp_richcompare */
+	0,                              /* tp_weaklistoffset */
+	0,                              /* tp_iter */
+	0,                              /* tp_iternext */
+	ZstdDecompressor_methods,       /* tp_methods */
+	0,                              /* tp_members */
+	0,                              /* tp_getset */
+	0,                              /* tp_base */
+	0,                              /* tp_dict */
+	0,                              /* tp_descr_get */
+	0,                              /* tp_descr_set */
+	0,                              /* tp_dictoffset */
+	(initproc)ZstdDecompressor_init,  /* tp_init */
+	0,                              /* tp_alloc */
+	PyType_GenericNew,              /* tp_new */
+};
+
+PyDoc_STRVAR(ZstdDecompressionWriter__doc,
+"""A context manager used for writing decompressed output.\n"
+);
+
+static void ZstdDecompressionWriter_dealloc(ZstdDecompressionWriter* self) {
+	Py_XDECREF(self->decompressor);
+	Py_XDECREF(self->writer);
+
+	if (self->dstream) {
+		ZSTD_freeDStream(self->dstream);
+		self->dstream = NULL;
+	}
+
+	PyObject_Del(self);
+}
+
+static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
 	if (self->entered) {
 		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
 		return NULL;
 	}
 
-	self->dstream = ZSTD_createDStream();
+	self->dstream = DStream_from_ZstdDecompressor(self->decompressor);
 	if (!self->dstream) {
-		PyErr_SetString(ZstdError, "cannot create DStream");
-		return NULL;
-	}
-
-	if (self->dictData) {
-		zresult = ZSTD_initDStream_usingDict(self->dstream, self->dictData, self->dictSize);
-	}
-	else {
-		zresult = ZSTD_initDStream(self->dstream);
-	}
-	if (ZSTD_isError(zresult)) {
-		ZSTD_freeDStream(self->dstream);
-		self->dstream = NULL;
-		PyErr_Format(ZstdError, "cannot init DStream: %s", ZSTD_getErrorName(zresult));
 		return NULL;
 	}
 
@@ -935,7 +1441,18 @@ static PyObject* pyzstd_decompresswriter_enter(pyzstd_decompresswriter* self, Py
 	return (PyObject*)self;
 }
 
-static PyObject* pyzstd_decompresswriter_decompress(pyzstd_decompresswriter* self, PyObject* args) {
+static PyObject* ZstdDecompressionWriter_exit(ZstdDecompressionWriter* self, PyObject* args) {
+	self->entered = 0;
+
+	if (self->dstream) {
+		ZSTD_freeDStream(self->dstream);
+		self->dstream = NULL;
+	}
+
+	Py_RETURN_FALSE;
+}
+
+static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args) {
 	const char* source;
 	Py_ssize_t sourceSize;
 	size_t zresult = 0;
@@ -952,18 +1469,17 @@ static PyObject* pyzstd_decompresswriter_decompress(pyzstd_decompresswriter* sel
 	}
 
 	if (!self->entered) {
-		PyErr_SetString(ZstdError, "decompress must be called from an active context manager");
+		PyErr_SetString(ZstdError, "write must be called from an active context manager");
 		return NULL;
 	}
 
-	output.dst = malloc(self->outsize);
+	output.dst = malloc(self->decompressor->outsize);
 	if (!output.dst) {
 		return PyErr_NoMemory();
 	}
-	output.size = self->outsize;
+	output.size = self->decompressor->outsize;
 	output.pos = 0;
 
-	/* Feed data from input argument */
 	input.src = source;
 	input.size = sourceSize;
 	input.pos = 0;
@@ -975,11 +1491,11 @@ static PyObject* pyzstd_decompresswriter_decompress(pyzstd_decompresswriter* sel
 
 		if (ZSTD_isError(zresult)) {
 			free(output.dst);
-			PyErr_Format(ZstdError, "zstd decompress error: %s", ZSTD_getErrorName(zresult));
+			PyErr_Format(ZstdError, "zstd decompress error: %s",
+				ZSTD_getErrorName(zresult));
 			return NULL;
 		}
 
-		/* Write data from output buffer to writer. */
 		if (output.pos) {
 #if PY_MAJOR_VERSION >= 3
 			res = PyObject_CallMethod(self->writer, "write", "y#",
@@ -988,42 +1504,32 @@ static PyObject* pyzstd_decompresswriter_decompress(pyzstd_decompresswriter* sel
 #endif
 				output.dst, output.pos);
 			Py_XDECREF(res);
+			output.pos = 0;
 		}
-		output.pos = 0;
 	}
 
 	free(output.dst);
 
+	/* TODO return bytes written */
 	Py_RETURN_NONE;
 }
 
-static PyObject* pyzstd_decompresswriter_exit(pyzstd_decompresswriter* self, PyObject* args) {
-	self->entered = 0;
-
-	if (self->dstream) {
-		ZSTD_freeDStream(self->dstream);
-		self->dstream = NULL;
-	}
-
-	Py_RETURN_FALSE;
-}
-
-static PyMethodDef pyzstd_decompresswriter_methods[] = {
-	{ "__enter__", (PyCFunction)pyzstd_decompresswriter_enter, METH_NOARGS,
-		PyDoc_STR("Enter a decompression context.") },
-	{ "__exit__", (PyCFunction)pyzstd_decompresswriter_exit, METH_VARARGS,
-		PyDoc_STR("Exit a decompression context.") },
-	{ "decompress", (PyCFunction)pyzstd_decompresswriter_decompress, METH_VARARGS,
-		PyDoc_STR("Decompress a data chunk.") },
+static PyMethodDef ZstdDecompressionWriter_methods[] = {
+	{ "__enter__", (PyCFunction)ZstdDecompressionWriter_enter, METH_NOARGS,
+	PyDoc_STR("Enter a decompression context.") },
+	{ "__exit__", (PyCFunction)ZstdDecompressionWriter_exit, METH_VARARGS,
+	PyDoc_STR("Exit a decompression context.") },
+	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS,
+	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
 };
 
-static PyTypeObject DecompressWriterType = {
+static PyTypeObject ZstdDecompressionWriterType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"zstd.decompresswriter",         /* tp_name */
-	sizeof(pyzstd_decompresswriter), /* tp_basicsize */
+	"zstd.ZstdDecompressionWriter", /* tp_name */
+	sizeof(ZstdDecompressionWriter),/* tp_basicsize */
 	0,                              /* tp_itemsize */
-	(destructor)pyzstd_decompresswriter_dealloc, /* tp_dealloc */
+	(destructor)ZstdDecompressionWriter_dealloc, /* tp_dealloc */
 	0,                              /* tp_print */
 	0,                              /* tp_getattr */
 	0,                              /* tp_setattr */
@@ -1039,14 +1545,14 @@ static PyTypeObject DecompressWriterType = {
 	0,                              /* tp_setattro */
 	0,                              /* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	decompress_writer__doc__,       /* tp_doc */
+	ZstdDecompressionWriter__doc,   /* tp_doc */
 	0,                              /* tp_traverse */
 	0,                              /* tp_clear */
 	0,                              /* tp_richcompare */
 	0,                              /* tp_weaklistoffset */
 	0,                              /* tp_iter */
 	0,                              /* tp_iternext */
-	pyzstd_decompresswriter_methods, /* tp_methods */
+	ZstdDecompressionWriter_methods,/* tp_methods */
 	0,                              /* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
@@ -1054,7 +1560,7 @@ static PyTypeObject DecompressWriterType = {
 	0,                              /* tp_descr_get */
 	0,                              /* tp_descr_set */
 	0,                              /* tp_dictoffset */
-	(initproc)pyzstd_decompesswriter_init, /* tp_init */
+	0,                              /* tp_init */
 	0,                              /* tp_alloc */
 	PyType_GenericNew,              /* tp_new */
 };
@@ -1246,7 +1752,6 @@ static PyObject* pyzstd_dictionary_id(PyObject* self, PyObject* args) {
 static char zstd_doc[] = "Interface to zstandard";
 
 static PyMethodDef zstd_methods[] = {
-	{ "compress", (PyCFunction)pyzstd_compress, METH_VARARGS, compress__doc__ },
 	{ "estimate_compression_context_size", (PyCFunction)pyzstd_estimate_compression_context_size, METH_VARARGS, estimate_compress_context_size__doc__ },
 	{ "get_compression_parameters", (PyCFunction)pyzstd_get_compression_parameters, METH_VARARGS, get_compression_parameters__doc__ },
 	{ "train_dictionary", (PyCFunction)pyzstd_train_dictionary, METH_VARARGS, train_dictionary__doc__ },
@@ -1272,13 +1777,23 @@ void zstd_module_init(PyObject* m) {
 		return;
 	}
 
-	Py_TYPE(&CompressWriterType) = &PyType_Type;
-	if (PyType_Ready(&CompressWriterType) < 0) {
+	Py_TYPE(&ZstdCompressorType) = &PyType_Type;
+	if (PyType_Ready(&ZstdCompressorType) < 0) {
 		return;
 	}
 
-	Py_TYPE(&DecompressWriterType) = &PyType_Type;
-	if (PyType_Ready(&DecompressWriterType) < 0) {
+	Py_TYPE(&ZstdCompressionWriterType) = &PyType_Type;
+	if (PyType_Ready(&ZstdCompressionWriterType) < 0) {
+		return;
+	}
+
+	Py_TYPE(&ZstdDecompressorType) = &PyType_Type;
+	if (PyType_Ready(&ZstdDecompressorType) < 0) {
+		return;
+	}
+
+	Py_TYPE(&ZstdDecompressionWriterType) = &PyType_Type;
+	if (PyType_Ready(&ZstdDecompressionWriterType) < 0) {
 		return;
 	}
 
@@ -1301,11 +1816,11 @@ void zstd_module_init(PyObject* m) {
 	Py_IncRef((PyObject*)&DictParametersType);
 	PyModule_AddObject(m, "DictParameters", (PyObject*)&DictParametersType);
 
-	Py_INCREF(&CompressWriterType);
-	PyModule_AddObject(m, "compresswriter", (PyObject*)&CompressWriterType);
+	Py_INCREF((PyObject*)&ZstdCompressorType);
+	PyModule_AddObject(m, "ZstdCompressor", (PyObject*)&ZstdCompressorType);
 
-	Py_INCREF(&DecompressWriterType);
-	PyModule_AddObject(m, "decompresswriter", (PyObject*)&DecompressWriterType);
+	Py_INCREF((PyObject*)&ZstdDecompressorType);
+	PyModule_AddObject(m, "ZstdDecompressor", (PyObject*)&ZstdDecompressorType);
 
 	PyModule_AddIntConstant(m, "MAX_COMPRESSION_LEVEL", ZSTD_maxCLevel());
 	PyModule_AddIntConstant(m, "COMPRESSION_RECOMMENDED_INPUT_SIZE",

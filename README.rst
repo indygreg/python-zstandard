@@ -79,55 +79,87 @@ API
 The compiled C extension provides a ``zstd`` Python module. This module
 exposes the following interfaces.
 
-Streaming Compression
----------------------
+ZstdCompressor
+--------------
 
-The preferred mechanism to compress and decompress data involves *streaming*
-data into a function one chunk at a time. This approach is advantageous
-because it establishes an upper bound on memory usage.
+The ``ZstdCompressor`` class provides an interface for performing
+compression operations.
 
-The current implementation of streaming relies on a *writer* pattern. A
-*writer* is an object that exposes a ``write(data)`` method. This method
-will be called periodically with the output data. File objects and various
-other built-in Python types (such as ``io.BytesIO``) provide such an interface.
+Each instance is associated with parameters that control compression
+behavior. These come from the following named arguments (all optional):
 
-Here is an example showing how to stream data into a compressor::
+level
+   Integer compression level. Valid values are between 1 and 22.
+dict_data
+   Compression dictionary to use.
+compression_params
+   A ``CompressionParameters`` instance (overrides the ``level`` value).
 
-    with open(input_path, 'rb') as ifh:
-        with open(output_path, 'wb') as ofh:
-            with zstd.compresswriter(ofh) as compressor:
-                while True:
-                     chunk = ifh.read(8192)
-                     if not chunk:
-                         break
+Instances expose a simple ``compress(data)`` method that will return
+compressed data. e.g.
 
-                    compressor.compress(chunk)
+   cctx = zstd.ZsdCompressor()
+   compressed = cctx.compress('data to compress')
 
-And here is the same thing going in reverse::
+There is also a context manager that allows you to feed data in incrementally
+and have this data written to another object::
 
-    with open(input_path, 'rb') as ifh:
-        with open(output_path, 'wb') as ofh:
-            with zstd.decompresswriter(ofh) as decompressor:
-                while True:
-                    chunk = ifh.read(8192)
-                    if not chunk:
-                        break
+   cctx = zstd.ZstdCompressor(level=10)
+   with cctx.write_to(fh) as compressor:
+       compressor.write('chunk 0')
+	   compressor.write('chunk 1')
+	   ...
 
-                    decompressor.decompress(chunk)
+``write_to(fh)`` accepts an object with a ``write(data)`` method. When the
+``write(data)`` method is called, compressed data is sent to the passed argument
+by calling its ``write()`` method. Many common Python types implement
+``write()``, including open file handles and ``BytesIO``. So this makes it
+simple to *stream* compressed data without having to write extra code to
+marshall data around.
 
-Simple Compression
-------------------
+It is common to want to perform compression across 2 streams, reading raw data
+from 1 and writing compressed data to another. There is a simple API that
+performs this operation::
 
-A simple API is provided to turn input bytes into compressed output bytes::
+   cctx = zstd.ZstdCompressor()
+   cctx.copy_stream(ifh, ofh)
 
-    compress(data[, level])
+For example, say you wish to compress a file::
 
-This is a one-shot API: the entirety of the input data will be consumed
-and returned as compressed bytes.
+   cctx = zstd.ZstdCompressor()
+   with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
+	   cctx.copy_stream(ifh, ofh)
 
-**When compressing large amounts of data, it is recommended to use streaming
-compression, as it avoids large allocations necessary to hold the input and
-output buffers.**
+ZstdDecompressor
+----------------
+
+The ``ZstdDecompressor`` class provides an interface for perform decompression.
+
+Each instance is associated with parameters that control decompression. These
+come from the following names arguments (all optional):
+
+dict_data
+   Compression dictionary to use.
+
+The interface of this class is very similar to ``ZstdCompressor`` (by design).
+
+To incrementally send uncompressed output to another object via its ``write()``
+method, use ``write_to()``::
+
+    dctx = zstd.ZstdDecompressor()
+    with dctx.write_to(fh) as decompressor:
+        decompressor.write(compressed_data)
+
+You can also copy data between 2 streams::
+
+    dctx = zstd.ZstdDecompressor()
+    dctx.copy_stream(ifh, ofh)
+
+e.g. to decompress a file to another file::
+
+    dctx = zstd.ZstdDecompressor()
+    with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
+        dctx.copy_stream(ifh, ofh)
 
 Misc Functionality
 ==================
@@ -255,13 +287,15 @@ It is possible to pass dictionary data to a compressor and decompressor.
 For example::
 
     d = zstd.train_dictionary(16384, samples)
+    cctx = zstd.ZstdCompressor(dict_data=d)
     buffer = io.BytesIO()
-    with zstd.compresswriter(buffer, dict_data=d) as compressor:
-        compressor.compress(data_to_compress_with_dictionary)
+    with cctz.write_to(buffer) as compressor:
+        compressor.write(data_to_compress_with_dictionary)
 
-    buffer = io.BytesIO()
-    with zstd.decompresswriter(buffer, dict_data=d) as decompressor:
-        decompressor.decompress(data_to_decompress_with_dictionary)
+    buffer = io.BytesIO(
+    dctx = zstd.ZstdDecompressor(dict_data=d)
+    with dctx.write_to(buffer) as decompressor:)
+        decompressor.write(data_to_decompress_with_dictionary)
 
 Explicit Compression Parameters
 -------------------------------
@@ -286,5 +320,5 @@ do.)
 
 You can then configure a compressor to use the custom parameters::
 
-    with zstd.compresswriter(writer, compression_params=params) as compressor:
-        ...
+    cctx = zstd.ZstdCompressor(compression_params=params)
+    ...

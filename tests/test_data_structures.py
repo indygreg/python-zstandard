@@ -91,7 +91,8 @@ if hypothesis:
                                 searchlog, searchlength,
                                 targetlength, strategy)
 
-            with zstd.compresswriter(io.BytesIO(), compression_params=p) as compressor:
+            cctx = zstd.ZstdCompressor(compression_params=p)
+            with cctx.write_to(io.BytesIO()):
                 pass
 
         @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
