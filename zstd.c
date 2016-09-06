@@ -1752,10 +1752,14 @@ static PyObject* pyzstd_dictionary_id(PyObject* self, PyObject* args) {
 static char zstd_doc[] = "Interface to zstandard";
 
 static PyMethodDef zstd_methods[] = {
-	{ "estimate_compression_context_size", (PyCFunction)pyzstd_estimate_compression_context_size, METH_VARARGS, estimate_compress_context_size__doc__ },
-	{ "get_compression_parameters", (PyCFunction)pyzstd_get_compression_parameters, METH_VARARGS, get_compression_parameters__doc__ },
-	{ "train_dictionary", (PyCFunction)pyzstd_train_dictionary, METH_VARARGS, train_dictionary__doc__ },
-	{ "dictionary_id", (PyCFunction)pyzstd_dictionary_id, METH_VARARGS, dictionary_id__doc__ },
+	{ "estimate_compression_context_size", (PyCFunction)pyzstd_estimate_compression_context_size,
+	METH_VARARGS, estimate_compress_context_size__doc__ },
+	{ "get_compression_parameters", (PyCFunction)pyzstd_get_compression_parameters,
+	METH_VARARGS, get_compression_parameters__doc__ },
+	{ "train_dictionary", (PyCFunction)pyzstd_train_dictionary,
+	METH_VARARGS | METH_KEYWORDS, train_dictionary__doc__ },
+	{ "dictionary_id", (PyCFunction)pyzstd_dictionary_id, METH_VARARGS,
+	dictionary_id__doc__ },
 	{ NULL, NULL }
 };
 
