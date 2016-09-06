@@ -55,49 +55,50 @@ lines = [l.rstrip() for l in lines if l.strip()]
 
 # Strip preprocessor directives - they aren't important for our needs.
 lines = [l for l in lines
-         if not l.startswith(('#if', '#else', '#endif', '#include'))]
+         if not l.startswith((b'#if', b'#else', b'#endif', b'#include'))]
 
 # Remove extern C block
-lines = [l for l in lines if l not in ('extern "C" {', '}')]
+lines = [l for l in lines if l not in (b'extern "C" {', b'}')]
 
 # The version #defines don't parse and aren't necessary. Strip them.
 lines = [l for l in lines if not l.startswith((
-    '#define ZSTD_H_235446',
-    '#define ZSTD_LIB_VERSION',
-    '#define ZSTD_QUOTE',
-    '#define ZSTD_EXPAND_AND_QUOTE',
-    '#define ZSTD_VERSION_STRING',
-    '#define ZSTD_VERSION_NUMBER'))]
+    b'#define ZSTD_H_235446',
+    b'#define ZSTD_LIB_VERSION',
+    b'#define ZSTD_QUOTE',
+    b'#define ZSTD_EXPAND_AND_QUOTE',
+    b'#define ZSTD_VERSION_STRING',
+    b'#define ZSTD_VERSION_NUMBER'))]
 
 # The C parser also doesn't like some constant defines referencing
 # other constants.
 # TODO we pick the 64-bit constants here. We should assert somewhere
 # we're compiling for 64-bit.
 def fix_constants(l):
-    if l.startswith('#define ZSTD_WINDOWLOG_MAX '):
-        return '#define ZSTD_WINDOWLOG_MAX 27'
-    elif l.startswith('#define ZSTD_CHAINLOG_MAX '):
-        return '#define ZSTD_CHAINLOG_MAX 28'
-    elif l.startswith('#define ZSTD_HASHLOG_MAX '):
-        return '#define ZSTD_HASHLOG_MAX 27'
-    elif l.startswith('#define ZSTD_SEARCHLOG_MAX '):
-        return '#define ZSTD_SEARCHLOG_MAX 26'
-    elif l.startswith('#define ZSTD_BLOCKSIZE_ABSOLUTEMAX '):
-        return '#define ZSTD_BLOCKSIZE_ABSOLUTEMAX 131072'
+    if l.startswith(b'#define ZSTD_WINDOWLOG_MAX '):
+        return b'#define ZSTD_WINDOWLOG_MAX 27'
+    elif l.startswith(b'#define ZSTD_CHAINLOG_MAX '):
+        return b'#define ZSTD_CHAINLOG_MAX 28'
+    elif l.startswith(b'#define ZSTD_HASHLOG_MAX '):
+        return b'#define ZSTD_HASHLOG_MAX 27'
+    elif l.startswith(b'#define ZSTD_SEARCHLOG_MAX '):
+        return b'#define ZSTD_SEARCHLOG_MAX 26'
+    elif l.startswith(b'#define ZSTD_BLOCKSIZE_ABSOLUTEMAX '):
+        return b'#define ZSTD_BLOCKSIZE_ABSOLUTEMAX 131072'
     else:
         return l
 lines = map(fix_constants, lines)
 
 # ZSTDLIB_API isn't handled correctly. Strip it.
-lines = [l for l in lines if not l.startswith('#  define ZSTDLIB_API')]
+lines = [l for l in lines if not l.startswith(b'#  define ZSTDLIB_API')]
 def strip_api(l):
-    if l.startswith('ZSTDLIB_API '):
-        return l[len('ZSTDLIB_API '):]
+    if l.startswith(b'ZSTDLIB_API '):
+        return l[len(b'ZSTDLIB_API '):]
     else:
         return l
 lines = map(strip_api, lines)
 
-ffi.cdef('\n'.join(lines))
+source = b'\n'.join(lines)
+ffi.cdef(source.decode('latin1'))
 
 
 if __name__ == '__main__':
