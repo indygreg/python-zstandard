@@ -66,8 +66,9 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
         cctx = zstd.ZstdCompressor(level=1)
         r, w = cctx.copy_stream(source, dest)
-        self.assertEqual(r, 0)
-        self.assertEqual(w, 9)
+        self.assertEqual(int(r), 0)
+        # Python 2.6 doesn't report bytes written :(
+        self.assertIn(w, (0, 9))
 
         self.assertEqual(dest.getvalue(),
                          b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
@@ -83,7 +84,8 @@ class TestCompressor_copy_stream(unittest.TestCase):
         r, w = cctx.copy_stream(source, dest)
 
         self.assertEqual(r, 255 * 16384)
-        self.assertEqual(w, 999)
+        # Python 2.6 doesn't report bytes written :(
+        self.assertIn(w, (0, 999))
 
 
 def compress(data, level):

@@ -596,6 +596,8 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	PyObject* res = NULL;
 	size_t zresult;
 	PyObject* writeResult;
+	PyObject* totalReadPy;
+	PyObject* totalWritePy;
 
 	if (!PyArg_ParseTuple(args, "OO", &source, &dest)) {
 		return NULL;
@@ -668,8 +670,9 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 				writeResult = PyObject_CallMethod(dest, "write", "s#",
 #endif
 					output.dst, output.pos);
-				/* TODO check result type */
-				totalWrite += PyLong_AsSsize_t(writeResult);
+				if (PyLong_Check(writeResult)) {
+					totalWrite += PyLong_AsSsize_t(writeResult);
+				}
 				Py_XDECREF(writeResult);
 				output.pos = 0;
 			}
@@ -693,8 +696,9 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 			writeResult = PyObject_CallMethod(dest, "write", "s#",
 #endif
 				output.dst, output.pos);
-			/* TODO check result type */
-			totalWrite += PyLong_AsSsize_t(writeResult);
+			if (PyLong_Check(writeResult)) {
+				totalWrite += PyLong_AsSsize_t(writeResult);
+			}
 			Py_XDECREF(writeResult);
 			output.pos = 0;
 		}
@@ -707,7 +711,11 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	ZSTD_freeCStream(cstream);
 	cstream = NULL;
 
-	res = PyTuple_Pack(2, PyLong_FromSsize_t(totalRead), PyLong_FromSsize_t(totalWrite));
+	totalReadPy = PyLong_FromSsize_t(totalRead);
+	totalWritePy = PyLong_FromSsize_t(totalWrite);
+	res = PyTuple_Pack(2, totalReadPy, totalWritePy);
+	Py_DecRef(totalReadPy);
+	Py_DecRef(totalWritePy);
 
 finally:
 	Py_XDECREF(readSizeArg);
@@ -1217,6 +1225,8 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 	PyObject* res = NULL;
 	size_t zresult = 0;
 	PyObject* writeResult;
+	PyObject* totalReadPy;
+	PyObject* totalWritePy;
 
 	if (!PyArg_ParseTuple(args, "OO", &source, &dest)) {
 		return NULL;
@@ -1291,8 +1301,9 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 #endif
 					output.dst, output.pos);
 
-				/* TODO check result type */
-				totalWrite += PyLong_AsSsize_t(writeResult);
+				if (PyLong_Check(writeResult)) {
+					totalWrite += PyLong_AsSsize_t(writeResult);
+				}
 				Py_XDECREF(writeResult);
 				output.pos = 0;
 			}
@@ -1304,7 +1315,11 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 	ZSTD_freeDStream(dstream);
 	dstream = NULL;
 
-	res = PyTuple_Pack(2, PyLong_FromSsize_t(totalRead), PyLong_FromSsize_t(totalWrite));
+	totalReadPy = PyLong_FromSsize_t(totalRead);
+	totalWritePy = PyLong_FromSsize_t(totalWrite);
+	res = PyTuple_Pack(2, totalReadPy, totalWritePy);
+	Py_DecRef(totalReadPy);
+	Py_DecRef(totalWritePy);
 
 finally:
 	Py_XDECREF(readSizeArg);
