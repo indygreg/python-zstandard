@@ -15,20 +15,42 @@ of the C API while not sacrificing usability or safety that Python provides.
 State of Project
 ================
 
-The project is still in alpha state.
+The project is officially in alpha state. The main reason for this is
+the author wishes to reserve the right to change the Python API. At the
+time all desired functionality has been implemented and the project author
+is satisfied with the Python API, the project will enter beta status.
 
-Implemented functionality should work. However, the code hasn't undergone
-a rigorous audit for memory leaks, common mistakes in Python C extensions,
-etc. If good inputs are used, things should work. If bad inputs are used,
-crashes may occur.
+There is continuous automation for Python versions 2.6, 2.7, and 3.3+
+on Linux x86_x64. The author also develops with Python 3.5 on Windows 10.
+The author is reasonably confident the extension is stable and works as
+advertised on these platforms.
 
-The API is also not guaranteed to be stable. Expect changes.
+Expected Changes
+----------------
+
+The author is reasonably confident in the current state of what's
+implemented on the  ``ZstdCompressor`` and ``ZstdDecompressor`` types.
+Those APIs likely won't change significantly. Some low-level behavior
+(such as naming and types expected by arguments) may change.
+
+The simple decompress API (non-streaming) needs implemented.
+
+A dedicated type to represent dictionaries will likely be introduced.
+This will likely result in changes to Python APIs related to dictionaries.
+
+Functions for estimating context sizes need to be implemented.
+
+The author is on the fence as to whether to support the extremely
+low level compression and decompression APIs. It could be useful to
+support compression without the framing headers. But the author doesn't
+believe it a high priority at this time.
 
 Requirements
 ============
 
-This extension is designed to run with Python 2.6, 2.7, 3.3, 3.4, and 3.5.
-However, not all versions may run while the project is in alpha state.
+This extension is designed to run with Python 2.6, 2.7, 3.3, 3.4, and 3.5
+on common platforms (Linux, Windows, and OS X). Only x86_64 is currently
+well-tested as an architecture.
 
 Comparison to Other Python Bindings
 ===================================
@@ -142,8 +164,8 @@ compressed data. e.g.::
    cctx = zstd.ZsdCompressor()
    compressed = cctx.compress('data to compress')
 
-There is also a context manager that allows you to feed data in incrementally
-and have this data written to another object::
+There is also a context manager that allows you to *stream* data into the
+compressor as well as to an output object::
 
    cctx = zstd.ZstdCompressor(level=10)
    with cctx.write_to(fh) as compressor:
@@ -151,12 +173,12 @@ and have this data written to another object::
 	   compressor.write('chunk 1')
 	   ...
 
-``write_to(fh)`` accepts an object with a ``write(data)`` method. When the
-``write(data)`` method is called, compressed data is sent to the passed argument
-by calling its ``write()`` method. Many common Python types implement
-``write()``, including open file handles and ``BytesIO``. So this makes it
-simple to *stream* compressed data without having to write extra code to
-marshall data around.
+``write_to(fh)`` accepts an object with a ``write(data)`` method. When
+``write(data)`` method is called on the object returned by the ``write_to``
+call, compressed data is sent to the passed argument by calling its ``write()``
+method. Many common Python types implement ``write()``, including open file
+handles and ``BytesIO``. So this makes it simple to *stream* compressed data
+without having to write extra code to marshall data around.
 
 If the size of the data being fed to this streaming compressor is known,
 you can declare it before compression begins::
@@ -187,13 +209,19 @@ It is also possible to declare the size of the source stream::
    cctx = zstd.ZstdCompressor()
    cctx.copy_stream(ifh, ofh, size=len_of_input)
 
+The stream copier returns a 2-tuple of bytes read and written::
+
+   cctx = zstd.ZstdCompressor()
+   read_count, write_count = cctx.copy_stream(ifh, ofh)
+
 ZstdDecompressor
 ----------------
 
-The ``ZstdDecompressor`` class provides an interface for perform decompression.
+The ``ZstdDecompressor`` class provides an interface for performing
+decompression.
 
 Each instance is associated with parameters that control decompression. These
-come from the following names arguments (all optional):
+come from the following named arguments (all optional):
 
 dict_data
    Compression dictionary to use.
@@ -218,30 +246,99 @@ e.g. to decompress a file to another file::
     with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
         dctx.copy_stream(ifh, ofh)
 
+Dictionary Creation and Management
+----------------------------------
+
+Zstandard allows *dictionaries* to be used when compressing and
+decompressing data. The idea is that if you are compressing a lot of similar
+data, you can precompute common properties of that data (such as recurring
+byte sequences) to achieve better compression ratios.
+
+Dictionaries are created by *training* them on samples::
+
+   dict_data = zstd.train_dictionary(size, samples)
+
+This takes a list of bytes instances and creates and returns dictionary
+bytes that is at most ``size`` bytes long.
+
+Once you have a dictionary, you can pass it to the objects performing
+compression and decompression::
+
+   dict_data = zstd.train_dictionary(16384, samples)
+
+   cctx = zstd.ZstdCompressor(dict_data=data)
+   for source_data in input_data:
+       compressed = cctx.compress(source_data)
+	   # Do something with compressed data.
+
+   dctx = zstd.ZstdDecompressor(dict_data=dict_data)
+   for compressed_data in input_data:
+       buffer = io.BytesIO()
+       with dctx.write_to(buffer) as decompressor:
+	       decompressor.write(compressed_data)
+	   # Do something with raw data in ``buffer``.
+
+Dictionaries have unique integer IDs. You can retrieve this ID via::
+
+   dict_id = zstd.dictionary_id(dict_data)
+
+Explicit Compression Parameters
+-------------------------------
+
+Zstandard's integer compression levels along with the input size and dictionary
+size are converted into a data structure defining multiple parameters to tune
+behavior of the compression algorithm. It is possible to use define this
+data structure explicitly to have lower-level control over compression behavior.
+
+The ``zstd.CompressionParameters`` type represents this data structure.
+You can see how Zstandard converts compression levels to this data structure
+by calling ``zstd.get_compression_parameters()``. e.g.::
+
+    params = zstd.get_compression_parameters(5)
+
+This function also accepts the uncompressed data size and dictionary size
+to adjust parameters::
+
+    params = zstd.get_compression_parameters(3, source_size=len(data), dict_size=len(dict_data))
+
+You can also construct compression parameters from their low-level components::
+
+    params = zstd.CompressionParameters(20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST)
+
+You can then configure a compressor to use the custom parameters::
+
+    cctx = zstd.ZstdCompressor(compression_params=params)
+
+The members of the ``CompressionParameters`` tuple are as follows::
+
+* 0 - Window log
+* 1 - Chain log
+* 2 - Hash log
+* 3 - Search log
+* 4 - Search length
+* 5 - Target length
+* 6 - Strategy (one of the ``zstd.STRATEGY_`` constants)
+
+You'll need to read the Zstandard documentation for what these parameters
+do.
+
 Misc Functionality
-==================
+------------------
 
-ZSTD_VERSION
-    This module attribute exposes a 3-tuple of the Zstandard version. e.g.
-    ``(1, 0, 0)``.
+estimate_compression_context_size(CompressionParameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Experimental API
-================
-
-The functionality described in this section comes from the Zstandard
-*experimental* API. As such, it may change as the bundled Zstandard release
-is updated.
-
-**Use this functionality at your own risk, as its API may change with
-future releases of this C extension.** It is highly recommended to pin the
-version of this extension in your Python projects to guard against unwanted
-changes.
+Given a ``CompressionParameters`` struct, estimate the memory size required
+to perform compression.
 
 Constants
 ---------
 
-The following constants are exposed:
+The following module constants/attributes are exposed:
 
+ZSTD_VERSION
+    This module attribute exposes a 3-tuple of the Zstandard version. e.g.
+    ``(1, 0, 0)``
 MAX_COMPRESSION_LEVEL
     Integer max compression level accepted by compression functions
 COMPRESSION_RECOMMENDED_INPUT_SIZE
@@ -254,9 +351,10 @@ DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE
     Recommended chunk size for decompression output
 
 FRAME_HEADER
-    bytes containing header of the Zstandard frame.
+    bytes containing header of the Zstandard frame
 MAGIC_NUMBER
-    Frame header as an integer.
+    Frame header as an integer
+
 WINDOWLOG_MIN
     Minimum value for compression parameter
 WINDOWLOG_MAX
@@ -296,83 +394,21 @@ STRATEGY_BTLAZY2
 STRATEGY_BTOPT
     Compression strategory
 
-Structs
--------
+Note on Zstandard's *Experimental* API
+======================================
 
-CompressionParameters
-^^^^^^^^^^^^^^^^^^^^^
+Many of the Zstandard APIs used by this module are marked as *experimental*
+within the Zstandard project. This includes a large number of useful
+features, such as compression and frame parameters and parts of dictionary
+compression.
 
-This struct provides advanced control over compression. This can be specified
-instead of a compression level to adjust how compression behaves.
+It is unclear how Zstandard's C API will evolve over time, especially with
+regards to this *experimental* functionality. We will try to maintain
+backwards compatibility at the Python API level. However, we cannot
+guarantee this for things not under our control.
 
-Functions
----------
-
-estimate_compression_context_size(CompressionParameters)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Given a ``CompressionParameters`` struct, estimate the memory size required
-to perform compression.
-
-get_compression_parameters(compression_level[, source_size[, dict_size]])
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Obtain a ``CompressionParameters`` struct given an integer compression level and
-optional input and dictionary sizes.
-
-train_dictionary(size, samples)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Train a compression dictionary on samples, which must be a list of bytes
-instances.
-
-Returns binary data constituting the dictionary. The dictionary will be at
-most ``size`` bytes long.
-
-dictionary_id(data)
-^^^^^^^^^^^^^^^^^^^
-
-Given raw data of a compression dictionary, return its integer ID.
-
-Using Dictionaries for Compression and Decompression
-----------------------------------------------------
-
-It is possible to pass dictionary data to a compressor and decompressor.
-For example::
-
-    d = zstd.train_dictionary(16384, samples)
-    cctx = zstd.ZstdCompressor(dict_data=d)
-    buffer = io.BytesIO()
-    with cctz.write_to(buffer) as compressor:
-        compressor.write(data_to_compress_with_dictionary)
-
-    buffer = io.BytesIO(
-    dctx = zstd.ZstdDecompressor(dict_data=d)
-    with dctx.write_to(buffer) as decompressor:)
-        decompressor.write(data_to_decompress_with_dictionary)
-
-Explicit Compression Parameters
--------------------------------
-
-Zstandard's integer compression levels along with the input size and dictionary
-size are converted into a data structure defining multiple parameters to tune
-behavior of the compression algorithm. It is possible to use define this
-data structure explicitly to have fine control over the compression algorithm.
-
-The ``zstd.CompressionParameters`` named tuple represents this data structure.
-You can see how Zstandard converts compression levels to this data structure
-by calling ``zstd.get_compression_parameters()``. e.g.::
-
-    zstd.get_compression_parameters(5)
-
-You can also construct compression parameters from their low-level components::
-
-    params = zstd.CompressionParameters(20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST)
-
-(You'll likely want to read the Zstandard source code for what these parameters
-do.)
-
-You can then configure a compressor to use the custom parameters::
-
-    cctx = zstd.ZstdCompressor(compression_params=params)
-    ...
+Since a copy of the Zstandard source code is distributed with this
+module and since we compile against it, the behavior of a specific
+version of this module should be constant for all of time. So if you
+pin the version of this module used in your projects (which is a Python
+best practice), you should be buffered from unwanted future changes.
