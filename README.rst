@@ -275,11 +275,6 @@ CompressionParameters
 This struct provides advanced control over compression. This can be specified
 instead of a compression level to adjust how compression behaves.
 
-FrameParameters
-^^^^^^^^^^^^^^^
-
-This struct controls the behavior of Zstandards framing protocol.
-
 Functions
 ---------
 

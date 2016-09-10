@@ -181,114 +181,6 @@ PyTypeObject CompressionParametersType = {
 	CompressionParameters_new, /* tp_new */
 };
 
-PyDoc_STRVAR(FrameParameters__doc__,
-	"FrameParameters: low-level control over zstd framing");
-
-typedef struct {
-	PyObject_HEAD
-	unsigned contentSizeFlag;
-	unsigned checksumFlag;
-	unsigned noDictIDFlag;
-} FrameParametersObject;
-
-static PyObject* FrameParameters_new(PyTypeObject* subtype, PyObject* args, PyObject* kwargs) {
-	FrameParametersObject* self;
-	unsigned contentSizeFlag;
-	unsigned checksumFlag;
-	unsigned noDictIDFlag;
-
-	if (!PyArg_ParseTuple(args, "III", &contentSizeFlag, &checksumFlag, &noDictIDFlag)) {
-		return NULL;
-	}
-
-	self = (FrameParametersObject*)subtype->tp_alloc(subtype, 1);
-	if (!self) {
-		return NULL;
-	}
-
-	self->contentSizeFlag = contentSizeFlag;
-	self->checksumFlag = checksumFlag;
-	self->noDictIDFlag = noDictIDFlag;
-
-	return (PyObject*)self;
-}
-
-static void FrameParameters_dealloc(PyObject* self) {
-	PyObject_Del(self);
-}
-
-static Py_ssize_t FrameParameters_length(PyObject* self) {
-	return 3;
-};
-
-static PyObject* FrameParameters_item(PyObject* o, Py_ssize_t i) {
-	FrameParametersObject* self = (FrameParametersObject*)o;
-
-	switch (i) {
-	case 0:
-		return PyLong_FromLong(self->contentSizeFlag);
-	case 1:
-		return PyLong_FromLong(self->checksumFlag);
-	case 2:
-		return PyLong_FromLong(self->noDictIDFlag);
-	default:
-		PyErr_SetString(PyExc_IndexError, "index out of range");
-		return NULL;
-	}
-}
-
-static PySequenceMethods FrameParameters_sq = {
-	FrameParameters_length, /* sq_length */
-	0,					    /* sq_concat */
-	0,                      /* sq_repeat */
-	FrameParameters_item,   /* sq_item */
-	0,                      /* sq_ass_item */
-	0,                      /* sq_contains */
-	0,                      /* sq_inplace_concat */
-	0                       /* sq_inplace_repeat */
-};
-
-PyTypeObject FrameParametersType = {
-	PyVarObject_HEAD_INIT(NULL, 0)
-	"FrameParameters", /* tp_name */
-	sizeof(FrameParametersObject), /* tp_basicsize */
-	0,                         /* tp_itemsize */
-	(destructor)FrameParameters_dealloc, /* tp_dealloc */
-	0,                         /* tp_print */
-	0,                         /* tp_getattr */
-	0,                         /* tp_setattr */
-	0,                         /* tp_compare */
-	0,                         /* tp_repr */
-	0,                         /* tp_as_number */
-	&FrameParameters_sq,       /* tp_as_sequence */
-	0,                         /* tp_as_mapping */
-	0,                         /* tp_hash  */
-	0,                         /* tp_call */
-	0,                         /* tp_str */
-	0,                         /* tp_getattro */
-	0,                         /* tp_setattro */
-	0,                         /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,        /* tp_flags */
-	FrameParameters__doc__,    /* tp_doc */
-	0,                         /* tp_traverse */
-	0,                         /* tp_clear */
-	0,                         /* tp_richcompare */
-	0,                         /* tp_weaklistoffset */
-	0,                         /* tp_iter */
-	0,                         /* tp_iternext */
-	0,                         /* tp_methods */
-	0,                         /* tp_members */
-	0,                         /* tp_getset */
-	0,                         /* tp_base */
-	0,                         /* tp_dict */
-	0,                         /* tp_descr_get */
-	0,                         /* tp_descr_set */
-	0,                         /* tp_dictoffset */
-	0,                         /* tp_init */
-	0,                         /* tp_alloc */
-	FrameParameters_new,      /* tp_new */
-};
-
 PyDoc_STRVAR(DictParameters__doc__,
 	"DictParameters: low-level control over dictionary generation");
 
@@ -1846,11 +1738,6 @@ void zstd_module_init(PyObject* m) {
 		return;
 	}
 
-	Py_TYPE(&FrameParametersType) = &PyType_Type;
-	if (PyType_Ready(&FrameParametersType) < 0) {
-		return;
-	}
-
 	Py_TYPE(&DictParametersType) = &PyType_Type;
 	if (PyType_Ready(&DictParametersType) < 0) {
 		return;
@@ -1888,9 +1775,6 @@ void zstd_module_init(PyObject* m) {
 
 	Py_IncRef((PyObject*)&CompressionParametersType);
 	PyModule_AddObject(m, "CompressionParameters", (PyObject*)&CompressionParametersType);
-
-	Py_IncRef((PyObject*)&FrameParametersType);
-	PyModule_AddObject(m, "FrameParameters", (PyObject*)&FrameParametersType);
 
 	Py_IncRef((PyObject*)&DictParametersType);
 	PyModule_AddObject(m, "DictParameters", (PyObject*)&DictParametersType);
