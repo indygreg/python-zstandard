@@ -57,12 +57,14 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         # Python 2.6 doesn't report bytes written :(
         self.assertIn(w, (0, len(source.getvalue())))
 
+
 def decompress_via_writer(data):
     buffer = io.BytesIO()
     dctx = zstd.ZstdDecompressor()
     with dctx.write_to(buffer) as decompressor:
         decompressor.write(data)
     return buffer.getvalue()
+
 
 class TestDecompressor_write_to(unittest.TestCase):
     def test_empty_roundtrip(self):
