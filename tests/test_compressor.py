@@ -50,6 +50,14 @@ class TestCompressor_compress(unittest.TestCase):
 
         self.assertEqual(len(with_checksum), len(no_checksum) + 4)
 
+    def test_write_content_size(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        no_size = cctx.compress(b'foobar' * 256)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        with_size = cctx.compress(b'foobar' * 256)
+
+        self.assertEqual(len(with_size), len(no_size) + 1)
+
     def test_no_dict_id(self):
         samples = []
         for i in range(128):
@@ -126,6 +134,22 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(len(with_checksum.getvalue()),
                          len(no_checksum.getvalue()) + 4)
 
+    def test_write_content_size(self):
+        source = io.BytesIO(b'foobar' * 256)
+        no_size = io.BytesIO()
+
+        cctx = zstd.ZstdCompressor(level=1)
+        cctx.copy_stream(source, no_size)
+
+        source.seek(0)
+        with_size = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        cctx.copy_stream(source, with_size)
+
+        # Source content size is unknown, so no content size written.
+        self.assertEqual(len(with_size.getvalue()),
+                         len(no_size.getvalue()))
+
 
 def compress(data, level):
     buffer = io.BytesIO()
@@ -200,6 +224,22 @@ class TestCompressor_write_to(unittest.TestCase):
 
         self.assertEqual(len(with_checksum.getvalue()),
                          len(no_checksum.getvalue()) + 4)
+
+    def test_write_content_size(self):
+        no_size = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1)
+        with cctx.write_to(no_size) as compressor:
+            compressor.write(b'foobar' * 256)
+
+        with_size = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        with cctx.write_to(with_size) as compressor:
+            compressor.write(b'foobar' * 256)
+
+        # Source size is not known in streaming mode, so header not
+        # written.
+        self.assertEqual(len(with_size.getvalue()),
+                         len(no_size.getvalue()))
 
     def test_no_dict_id(self):
         samples = []

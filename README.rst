@@ -98,6 +98,11 @@ write_checksum
    Whether a 4 byte checksum should be written with the compressed data.
    Defaults to False. If True, the decompressor can verify that decompressed
    data matches the original input data.
+write_content_size
+   Whether the size of the uncompressed data will be written into the
+   header of compressed data. Defaults to False. The data will only be
+   written if the compressor knows the size of the input data. This is
+   likely not true for streaming compression.
 write_dict_id
    Whether to write the dictionary ID into the compressed data.
    Defaults to True. The dictionary ID is only written if a dictionary

@@ -502,6 +502,10 @@ PyDoc_STRVAR(ZstdCompressor__doc__,
 "write_checksum\n"
 "   If True, a 4 byte content checksum will be written with the compressed\n"
 "   data, allowing the decompressor to perform content verification.\n"
+"write_content_size\n"
+"   If True, the decompressed content size will be included in the header of\n"
+"   the compressed data. This data will only be written if the compressor\n"
+"   knows the size of the input data.\n"
 "write_dict_id\n"
 "   Determines whether the dictionary ID will be written into the compressed\n"
 "   data. Defaults to True. Only adds content to the compressed data if\n"
@@ -514,6 +518,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		"dict_data",
 		"compression_params",
 		"write_checksum",
+		"write_content_size",
 		"write_dict_id",
 		NULL
 	};
@@ -523,6 +528,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	Py_ssize_t dictSize = 0;
 	CompressionParametersObject* params = NULL;
 	PyObject* writeChecksum = NULL;
+	PyObject* writeContentSize = NULL;
 	PyObject* writeDictID = NULL;
 
 	self->dictData = NULL;
@@ -530,13 +536,13 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	self->cparams = NULL;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!OO", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!OOO", kwlist,
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|is#O!OO", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|is#O!OOO", kwlist,
 #endif
 		&level, &dictData, &dictSize,
 		&CompressionParametersType, &params,
-		&writeChecksum, &writeDictID)) {
+		&writeChecksum, &writeContentSize, &writeDictID)) {
 		return -1;
 	}
 
@@ -575,6 +581,9 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 
 	if (writeChecksum && PyObject_IsTrue(writeChecksum)) {
 		self->fparams.checksumFlag = 1;
+	}
+	if (writeContentSize && PyObject_IsTrue(writeContentSize)) {
+		self->fparams.contentSizeFlag = 1;
 	}
 	if (writeDictID && PyObject_Not(writeDictID)) {
 		self->fparams.noDictIDFlag = 1;
