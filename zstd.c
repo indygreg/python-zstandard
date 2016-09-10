@@ -451,6 +451,8 @@ static ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_
 	memset(&zparams, 0, sizeof(zparams));
 	if (compressor->cparams) {
 		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
+		/* Do NOT call ZSTD_adjustCParams() here because the compression params
+		   come from the user. */
 	}
 	else {
 		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, sourceSize, compressor->dictSize);
@@ -823,6 +825,8 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	}
 	else {
 		ztopy_compression_parameters(self->cparams, &zparams.cParams);
+		/* Do NOT call ZSTD_adjustCParams() here because the compression params
+		come from the user. */
 	}
 
 	zparams.fParams = self->fparams;
