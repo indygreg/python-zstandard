@@ -39,5 +39,5 @@ class TestTrainDictionary(unittest.TestCase):
         d = zstd.train_dictionary(8192, samples)
         self.assertLessEqual(len(d), 8192)
 
-        dict_id = zstd.dictionary_id(d)
+        dict_id = d.dict_id()
         self.assertIsInstance(dict_id, int_type)

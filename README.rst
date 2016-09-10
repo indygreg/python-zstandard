@@ -35,9 +35,6 @@ Those APIs likely won't change significantly. Some low-level behavior
 
 The simple decompress API (non-streaming) needs implemented.
 
-A dedicated type to represent dictionaries will likely be introduced.
-This will likely result in changes to Python APIs related to dictionaries.
-
 The author would like to implement compression and decompression APIs
 returning an iterator of output chunks. This would allow streaming
 without the need for a "writer" object to ``.write()`` output to:
@@ -271,12 +268,24 @@ decompressing data. The idea is that if you are compressing a lot of similar
 data, you can precompute common properties of that data (such as recurring
 byte sequences) to achieve better compression ratios.
 
-Dictionaries are created by *training* them on samples::
+In Python, compression dictionaries are represented as the
+``ZstdCompressionDict`` type.
+
+Instances can be constructed from bytes::
+
+   dict_data = zstd.ZstdCompressionDict(data)
+
+More interestingly, instances can be created by *training* on sample data::
 
    dict_data = zstd.train_dictionary(size, samples)
 
-This takes a list of bytes instances and creates and returns dictionary
-bytes that is at most ``size`` bytes long.
+This takes a list of bytes instances and creates and returns a
+``ZstdCompressionDict``.
+
+You can see how many bytes are in the dictionary by calling ``len()``::
+
+   dict_data = zstd.train_dictionary(size, samples)
+   dict_size = len(dict_data)  # will not be larger than ``size``
 
 Once you have a dictionary, you can pass it to the objects performing
 compression and decompression::
