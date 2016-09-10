@@ -69,9 +69,31 @@ Once you have the source code, the extension can be built via setup.py::
 
    $ python setup.py build_ext
 
-To test, use your Python test runner of choice on the ``tests`` directory::
+We recommend testing with ``nose``::
 
-   $ python -m unittest discover
+   $ nosetests
+
+A Tox configuration is present to test against multiple Python versions::
+
+   $ tox
+
+Tests use the ``hypothesis`` Python package to perform fuzzing. If you
+don't have it, those tests won't run.
+
+There is also an experimental CFFI module. You need the ``cffi`` Python
+package installed to build and test that.
+
+To create a virtualenv with all development dependencies, do something
+like the following::
+
+  # Python 2
+  $ virtualenv venv
+
+  # Python 3
+  $ python3 -m venv venv
+
+  $ source venv/bin/activate
+  $ pip install cffi hypothesis nose tox
 
 API
 ===
