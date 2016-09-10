@@ -38,8 +38,6 @@ The simple decompress API (non-streaming) needs implemented.
 A dedicated type to represent dictionaries will likely be introduced.
 This will likely result in changes to Python APIs related to dictionaries.
 
-Functions for estimating context sizes need to be implemented.
-
 The author is on the fence as to whether to support the extremely
 low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
@@ -343,6 +341,11 @@ estimate_compression_context_size(CompressionParameters)
 
 Given a ``CompressionParameters`` struct, estimate the memory size required
 to perform compression.
+
+estimate_decompression_context_size()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Estimate the memory size requirements for a decompressor instance.
 
 Constants
 ---------
