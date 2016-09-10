@@ -38,6 +38,12 @@ The simple decompress API (non-streaming) needs implemented.
 A dedicated type to represent dictionaries will likely be introduced.
 This will likely result in changes to Python APIs related to dictionaries.
 
+The author would like to implement compression and decompression APIs
+returning an iterator of output chunks. This would allow streaming
+without the need for a "writer" object to ``.write()`` output to:
+the consumer could just grab data as needed, allowing the source stream
+to be lazily consumed.
+
 The author is on the fence as to whether to support the extremely
 low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
