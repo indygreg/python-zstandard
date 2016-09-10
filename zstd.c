@@ -437,7 +437,7 @@ struct ZstdCompressionWriter;
 * Returns a ZSTD_CStream on success or NULL on failure. If NULL, a Python
 * exception will be set.
 */
-static ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor) {
+static ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize) {
 	ZSTD_CStream* cstream;
 	ZSTD_parameters zparams;
 	size_t zresult;
@@ -453,13 +453,13 @@ static ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor) {
 		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
 	}
 	else {
-		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, 0, compressor->dictSize);
+		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, sourceSize, compressor->dictSize);
 	}
 
 	zparams.fParams = compressor->fparams;
 
 	zresult = ZSTD_initCStream_advanced(cstream, compressor->dictData,
-		compressor->dictSize, zparams, 0);
+		compressor->dictSize, zparams, sourceSize);
 
 	if (ZSTD_isError(zresult)) {
 		ZSTD_freeCStream(cstream);
@@ -643,7 +643,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
-	cstream = CStream_from_ZstdCompressor(self);
+	cstream = CStream_from_ZstdCompressor(self, 0);
 	if (!cstream) {
 		res = NULL;
 		goto finally;
@@ -946,7 +946,7 @@ static PyObject* ZstdCompressionWriter_enter(ZstdCompressionWriter* self) {
 		return NULL;
 	}
 
-	self->cstream = CStream_from_ZstdCompressor(self->compressor);
+	self->cstream = CStream_from_ZstdCompressor(self->compressor, 0);
 	if (!self->cstream) {
 		return NULL;
 	}
