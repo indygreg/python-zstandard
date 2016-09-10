@@ -1757,7 +1757,6 @@ static PyObject* pyzstd_train_dictionary(PyObject* self, PyObject* args, PyObjec
 		return NULL;
 	}
 
-	/* TODO reference counting foo */
 	return PyBytes_FromStringAndSize((char*)dict, zresult);
 }
 
