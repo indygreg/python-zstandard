@@ -150,6 +150,14 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(len(with_size.getvalue()),
                          len(no_size.getvalue()))
 
+        source.seek(0)
+        with_size = io.BytesIO()
+        cctx.copy_stream(source, with_size, size=len(source.getvalue()))
+
+        # We specified source size, so content size header is present.
+        self.assertEqual(len(with_size.getvalue()),
+                         len(no_size.getvalue()) + 1)
+
 
 def compress(data, level):
     buffer = io.BytesIO()
@@ -240,6 +248,14 @@ class TestCompressor_write_to(unittest.TestCase):
         # written.
         self.assertEqual(len(with_size.getvalue()),
                          len(no_size.getvalue()))
+
+        # Declaring size will write the header.
+        with_size = io.BytesIO()
+        with cctx.write_to(with_size, size=len(b'foobar' * 256)) as compressor:
+            compressor.write(b'foobar' * 256)
+
+        self.assertEqual(len(with_size.getvalue()),
+                         len(no_size.getvalue()) + 1)
 
     def test_no_dict_id(self):
         samples = []

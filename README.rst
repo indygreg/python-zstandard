@@ -130,6 +130,17 @@ by calling its ``write()`` method. Many common Python types implement
 simple to *stream* compressed data without having to write extra code to
 marshall data around.
 
+If the size of the data being fed to this streaming compressor is known,
+you can declare it before compression begins::
+
+   cctx = zstd.ZstdCompressor()
+   with cctx.write_to(fh, size=len(data)) as compressor:
+       compressor.write(data)
+
+Declaring the size of the source data allows compression parameters to
+be tuned. And if ``write_content_size`` is used, it also results in the
+content size being written.
+
 It is common to want to perform compression across 2 streams, reading raw data
 from 1 and writing compressed data to another. There is a simple API that
 performs this operation::
@@ -142,6 +153,11 @@ For example, say you wish to compress a file::
    cctx = zstd.ZstdCompressor()
    with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
 	   cctx.copy_stream(ifh, ofh)
+
+It is also possible to declare the size of the source stream::
+
+   cctx = zstd.ZstdCompressor()
+   cctx.copy_stream(ifh, ofh, size=len_of_input)
 
 ZstdDecompressor
 ----------------

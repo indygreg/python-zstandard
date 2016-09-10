@@ -475,6 +475,7 @@ typedef struct {
 
 	ZstdCompressor* compressor;
 	PyObject* writer;
+	Py_ssize_t sourceSize;
 	ZSTD_CStream* cstream;
 	int entered;
 } ZstdCompressionWriter;
@@ -604,16 +605,27 @@ static void ZstdCompressor_dealloc(ZstdCompressor* self) {
 }
 
 PyDoc_STRVAR(ZstdCompressor_copy_stream__doc__,
-"copy_stream(ifh, ofh) -- compress data between streams\n"
+"copy_stream(ifh, ofh[, size=0]) -- compress data between streams\n"
 "\n"
 "Data will be read from ``ifh``, compressed, and written to ``ofh``.\n"
 "``ifh`` must have a ``read(size)`` method. ``ofh`` must have a ``write(data)``\n"
 "method.\n"
+"\n"
+"An optional ``size`` argument specifies the size of the source stream.\n"
+"If defined, compression parameters will be tuned based on the size.\n"
 );
 
-static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args) {
+static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"ifh",
+		"ofh",
+		"size",
+		NULL
+	};
+
 	PyObject* source;
 	PyObject* dest;
+	Py_ssize_t sourceSize = 0;
 	ZSTD_CStream* cstream;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
@@ -629,7 +641,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	PyObject* totalReadPy;
 	PyObject* totalWritePy;
 
-	if (!PyArg_ParseTuple(args, "OO", &source, &dest)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|n", kwlist, &source, &dest, &sourceSize)) {
 		return NULL;
 	}
 
@@ -643,7 +655,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
-	cstream = CStream_from_ZstdCompressor(self, 0);
+	cstream = CStream_from_ZstdCompressor(self, sourceSize);
 	if (!cstream) {
 		res = NULL;
 		goto finally;
@@ -841,13 +853,25 @@ PyDoc_STRVAR(ZstdCompressor_write_to___doc__,
 "\n"
 "The caller feeds input data to the object by calling ``compress(data)``.\n"
 "Compressed data is written to the argument given to this function.\n"
+"\n"
+"The function takes an optional ``size`` argument indicating the total size\n"
+"of the eventual input. If specified, the size will influence compression\n"
+"parameter tuning and could result in the size being written into the\n"
+"header of the compressed data.\n"
 );
 
-static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyObject* args) {
+static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"writer",
+		"size",
+		NULL
+	};
+
 	PyObject* writer;
 	ZstdCompressionWriter* result;
+	Py_ssize_t sourceSize = 0;
 
-	if (!PyArg_ParseTuple(args, "O", &writer)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n", kwlist, &writer, &sourceSize)) {
 		return NULL;
 	}
 
@@ -867,6 +891,8 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 	result->writer = writer;
 	Py_INCREF(result->writer);
 
+	result->sourceSize = sourceSize;
+
 	result->entered = 0;
 	result->cstream = NULL;
 
@@ -876,10 +902,10 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 static PyMethodDef ZstdCompressor_methods[] = {
 	{ "compress", (PyCFunction)ZstdCompressor_compress, METH_VARARGS,
 	ZstdCompressor_compress__doc__ },
-	{ "copy_stream", (PyCFunction)ZstdCompressor_copy_stream, METH_VARARGS,
-	ZstdCompressor_copy_stream__doc__ },
-	{ "write_to", (PyCFunction)ZstdCompressor_write_to, METH_VARARGS,
-	ZstdCompressor_write_to___doc__ },
+	{ "copy_stream", (PyCFunction)ZstdCompressor_copy_stream,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_copy_stream__doc__ },
+	{ "write_to", (PyCFunction)ZstdCompressor_write_to,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_write_to___doc__ },
 	{ NULL, NULL }
 };
 
@@ -946,7 +972,7 @@ static PyObject* ZstdCompressionWriter_enter(ZstdCompressionWriter* self) {
 		return NULL;
 	}
 
-	self->cstream = CStream_from_ZstdCompressor(self->compressor, 0);
+	self->cstream = CStream_from_ZstdCompressor(self->compressor, self->sourceSize);
 	if (!self->cstream) {
 		return NULL;
 	}
