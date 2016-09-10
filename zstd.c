@@ -707,6 +707,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 
 	cctx = ZSTD_createCCtx();
 	if (!cctx) {
+		Py_DECREF(output);
 		PyErr_SetString(ZstdError, "could not create CCtx");
 		return NULL;
 	}
