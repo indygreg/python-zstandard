@@ -1934,6 +1934,7 @@ void zstd_module_init(PyObject* m) {
 	}
 
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
+	PyModule_AddObject(m, "ZstdError", ZstdError);
 
 	/* For now, the version is a simple tuple instead of a dedicated type. */
 	version = PyTuple_New(3);
