@@ -291,3 +291,11 @@ class TestCompressor_write_to(unittest.TestCase):
 
         self.assertEqual(len(with_dict_id.getvalue()),
                          len(no_dict_id.getvalue()) + 4)
+
+    def test_memory_size(self):
+        cctx = zstd.ZstdCompressor(level=3)
+        buffer = io.BytesIO()
+        with cctx.write_to(buffer) as compressor:
+            size = compressor.memory_size()
+
+        self.assertGreater(size, 100000)

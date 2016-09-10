@@ -191,6 +191,13 @@ Declaring the size of the source data allows compression parameters to
 be tuned. And if ``write_content_size`` is used, it also results in the
 content size being written.
 
+To see how much memory is being used by the streaming compressor::
+
+    cctx = zstd.ZstdCompressor()
+	with cctx.write_to(fh) as compressor:
+	    ...
+		byte_size = compressor.memory_size()
+
 It is common to want to perform compression across 2 streams, reading raw data
 from 1 and writing compressed data to another. There is a simple API that
 performs this operation::

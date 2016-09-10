@@ -974,6 +974,16 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 	Py_RETURN_FALSE;
 }
 
+static PyObject* ZstdCompressionWriter_memory_size(ZstdCompressionWriter* self) {
+	if (!self->cstream) {
+		PyErr_SetString(ZstdError, "cannot determine size of an inactive compressor; "
+								   "call when a context manager is active");
+		return NULL;
+	}
+
+	return PyLong_FromSize_t(ZSTD_sizeof_CStream(self->cstream));
+}
+
 static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObject* args) {
 	const char* source;
 	Py_ssize_t sourceSize;
@@ -1041,6 +1051,8 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	PyDoc_STR("Enter a compression context.") },
 	{ "__exit__", (PyCFunction)ZstdCompressionWriter_exit, METH_VARARGS,
 	PyDoc_STR("Exit a compression context.") },
+	{ "memory_size", (PyCFunction)ZstdCompressionWriter_memory_size, METH_NOARGS,
+	PyDoc_STR("Obtain the memory size of the underlying compressor") },
 	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS,
 	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
