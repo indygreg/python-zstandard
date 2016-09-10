@@ -163,15 +163,15 @@ Instances expose a simple ``compress(data)`` method that will return
 compressed data. e.g.::
 
    cctx = zstd.ZsdCompressor()
-   compressed = cctx.compress('data to compress')
+   compressed = cctx.compress(b'data to compress')
 
 There is also a context manager that allows you to *stream* data into the
 compressor as well as to an output object::
 
    cctx = zstd.ZstdCompressor(level=10)
    with cctx.write_to(fh) as compressor:
-       compressor.write('chunk 0')
-	   compressor.write('chunk 1')
+       compressor.write(b'chunk 0')
+	   compressor.write(b'chunk 1')
 	   ...
 
 ``write_to(fh)`` accepts an object with a ``write(data)`` method. When
