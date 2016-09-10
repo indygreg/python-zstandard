@@ -314,6 +314,7 @@ typedef struct {
 	int compressionLevel;
 	void* dictData;
 	size_t dictSize;
+	ZSTD_CDict* cdict;
 	CompressionParametersObject* cparams;
 	ZSTD_frameParameters fparams;
 
@@ -429,6 +430,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	self->dictData = NULL;
 	self->dictSize = 0;
 	self->cparams = NULL;
+	self->cdict = NULL;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!OOO", kwlist,
@@ -489,6 +491,11 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 
 static void ZstdCompressor_dealloc(ZstdCompressor* self) {
 	Py_XDECREF(self->cparams);
+
+	if (self->cdict) {
+		ZSTD_freeCDict(self->cdict);
+		self->cdict = NULL;
+	}
 
 	if (self->dictData) {
 		free(self->dictData);
@@ -688,6 +695,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	char* dest;
 	size_t zresult;
 	ZSTD_parameters zparams;
+	ZSTD_customMem zmem;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
@@ -724,9 +732,40 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 
 	zparams.fParams = self->fparams;
 
+	/* The raw dict data has to be processed before it can be used. Since this
+	   adds overhead - especially if multiple dictionary compression operations
+	   are performed on the same ZstdCompressor instance - we create a
+	   ZSTD_CDict once and reuse it for all operations. */
+
+	/* TODO the zparams (which can be derived from the source data size) used
+	   on first invocation are effectively reused for subsequent operations. This
+	   may not be appropriate if input sizes vary significantly and could affect
+	   chosen compression parameters.
+	   https://github.com/facebook/zstd/issues/358 tracks this issue. */
+	if (self->dictData && !self->cdict) {
+		Py_BEGIN_ALLOW_THREADS
+		memset(&zmem, 0, sizeof(zmem));
+		self->cdict = ZSTD_createCDict_advanced(self->dictData, self->dictSize,
+			zparams, zmem);
+		Py_END_ALLOW_THREADS
+
+		if (!self->cdict) {
+			Py_DECREF(output);
+			ZSTD_freeCCtx(cctx);
+			PyErr_SetString(ZstdError, "could not create compression dictionary");
+			return NULL;
+		}
+	}
+
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_compress_advanced(cctx, dest, destSize, source, sourceSize,
-		self->dictData, self->dictSize, zparams);
+	if (self->cdict) {
+		zresult = ZSTD_compress_usingCDict(cctx, dest, destSize,
+			source, sourceSize, self->cdict);
+	}
+	else {
+		zresult = ZSTD_compress_advanced(cctx, dest, destSize,
+			source, sourceSize,	self->dictData, self->dictSize, zparams);
+	}
 	Py_END_ALLOW_THREADS
 
 	ZSTD_freeCCtx(cctx);

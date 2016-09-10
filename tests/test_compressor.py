@@ -75,6 +75,21 @@ class TestCompressor_compress(unittest.TestCase):
 
         self.assertEqual(len(with_dict_id), len(no_dict_id) + 4)
 
+    def test_compress_dict_multiple(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(8192, samples)
+
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d)
+
+        for i in range(32):
+            cctx.compress(b'foo bar foobar foo bar foobar')
+
+
 class TestCompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
         source = object()

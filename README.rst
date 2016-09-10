@@ -92,6 +92,12 @@ level
    Integer compression level. Valid values are between 1 and 22.
 dict_data
    Compression dictionary to use.
+
+   Note: When using dictionary data and ``compress()`` is called multiple
+   times, the ``CompressionParameters`` derived from an integer compression
+   ``level`` and the first compressed data's size will be reused for all
+   subsequent operations. This may not be desirable if source data size
+   varies significantly.
 compression_params
    A ``CompressionParameters`` instance (overrides the ``level`` value).
 write_checksum
