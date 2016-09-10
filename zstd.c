@@ -423,6 +423,7 @@ typedef struct {
 	void* dictData;
 	size_t dictSize;
 	CompressionParametersObject* cparams;
+	ZSTD_frameParameters fparams;
 
 	size_t insize;
 	size_t outsize;
@@ -447,19 +448,18 @@ static ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor) {
 		return NULL;
 	}
 
+	memset(&zparams, 0, sizeof(zparams));
 	if (compressor->cparams) {
-		memset(&zparams, 0, sizeof(zparams));
 		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
-		zresult = ZSTD_initCStream_advanced(cstream,
-			compressor->dictData, compressor->dictSize, zparams, 0);
-	}
-	else if (compressor->dictData) {
-		zresult = ZSTD_initCStream_usingDict(cstream,
-			compressor->dictData, compressor->dictSize, compressor->compressionLevel);
 	}
 	else {
-		zresult = ZSTD_initCStream(cstream, compressor->compressionLevel);
+		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, 0, compressor->dictSize);
 	}
+
+	zparams.fParams = compressor->fparams;
+
+	zresult = ZSTD_initCStream_advanced(cstream, compressor->dictData,
+		compressor->dictSize, zparams, 0);
 
 	if (ZSTD_isError(zresult)) {
 		ZSTD_freeCStream(cstream);
@@ -499,6 +499,9 @@ PyDoc_STRVAR(ZstdCompressor__doc__,
 "compression_params\n"
 "   A ``CompressionParameters`` instance defining low-level compression"
 "   parameters. If defined, this will overwrite the ``level`` argument.\n"
+"write_checksum\n"
+"   If True, a 4 byte content checksum will be written with the compressed\n"
+"   data, allowing the decompressor to perform content verification.\n"
 );
 
 static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
@@ -506,6 +509,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		"level",
 		"dict_data",
 		"compression_params",
+		"write_checksum",
 		NULL
 	};
 
@@ -513,18 +517,20 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	const char* dictData;
 	Py_ssize_t dictSize = 0;
 	CompressionParametersObject* params = NULL;
+	PyObject* writeChecksum = NULL;
 
 	self->dictData = NULL;
 	self->dictSize = 0;
 	self->cparams = NULL;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!O", kwlist,
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|is#O!", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|is#O!O", kwlist,
 #endif
 		&level, &dictData, &dictSize,
-		&CompressionParametersType, &params)) {
+		&CompressionParametersType, &params,
+		&writeChecksum)) {
 		return -1;
 	}
 
@@ -557,6 +563,12 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	if (params) {
 		self->cparams = params;
 		Py_INCREF(params);
+	}
+
+	memset(&self->fparams, 0, sizeof(self->fparams));
+
+	if (writeChecksum && PyObject_IsTrue(writeChecksum)) {
+		self->fparams.checksumFlag = 1;
 	}
 
 	return 0;
@@ -782,6 +794,8 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	else {
 		ztopy_compression_parameters(self->cparams, &zparams.cParams);
 	}
+
+	zparams.fParams = self->fparams;
 
 	Py_BEGIN_ALLOW_THREADS
 	zresult = ZSTD_compress_advanced(cctx, dest, destSize, source, sourceSize,

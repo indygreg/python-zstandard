@@ -42,6 +42,14 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(len(result), 999)
         self.assertEqual(result[0:4], b'\x28\xb5\x2f\xfd')
 
+    def test_write_checksum(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        no_checksum = cctx.compress(b'foobar')
+        cctx = zstd.ZstdCompressor(level=1, write_checksum=True)
+        with_checksum = cctx.compress(b'foobar')
+
+        self.assertEqual(len(with_checksum), len(no_checksum) + 4)
+
 
 class TestCompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
@@ -86,6 +94,21 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(r, 255 * 16384)
         # Python 2.6 doesn't report bytes written :(
         self.assertIn(w, (0, 999))
+
+    def test_write_checksum(self):
+        source = io.BytesIO(b'foobar')
+        no_checksum = io.BytesIO()
+
+        cctx = zstd.ZstdCompressor(level=1)
+        cctx.copy_stream(source, no_checksum)
+
+        source.seek(0)
+        with_checksum = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1, write_checksum=True)
+        cctx.copy_stream(source, with_checksum)
+
+        self.assertEqual(len(with_checksum.getvalue()),
+                         len(no_checksum.getvalue()) + 4)
 
 
 def compress(data, level):
@@ -148,3 +171,16 @@ class TestCompressor_write_to(unittest.TestCase):
         h = hashlib.sha1(compressed).hexdigest()
         self.assertEqual(h, '1ae31f270ed7de14235221a604b31ecd517ebd99')
 
+    def test_write_checksum(self):
+        no_checksum = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1)
+        with cctx.write_to(no_checksum) as compressor:
+            compressor.write(b'foobar')
+
+        with_checksum = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1, write_checksum=True)
+        with cctx.write_to(with_checksum) as compressor:
+            compressor.write(b'foobar')
+
+        self.assertEqual(len(with_checksum.getvalue()),
+                         len(no_checksum.getvalue()) + 4)

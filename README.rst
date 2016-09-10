@@ -94,6 +94,10 @@ dict_data
    Compression dictionary to use.
 compression_params
    A ``CompressionParameters`` instance (overrides the ``level`` value).
+write_checksum
+   Whether a 4 byte checksum should be written with the compressed data.
+   Defaults to False. If True, the decompressor can verify that decompressed
+   data matches the original input data.
 
 Instances expose a simple ``compress(data)`` method that will return
 compressed data. e.g.
