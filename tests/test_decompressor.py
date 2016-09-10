@@ -54,8 +54,7 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         r, w = dctx.copy_stream(compressed, dest)
 
         self.assertEqual(r, len(compressed.getvalue()))
-        # Python 2.6 doesn't report bytes written :(
-        self.assertIn(w, (0, len(source.getvalue())))
+        self.assertEqual(w, len(source.getvalue()))
 
 
 def decompress_via_writer(data):

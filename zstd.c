@@ -613,10 +613,8 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 				writeResult = PyObject_CallMethod(dest, "write", "s#",
 #endif
 					output.dst, output.pos);
-				if (PyLong_Check(writeResult)) {
-					totalWrite += PyLong_AsSsize_t(writeResult);
-				}
 				Py_XDECREF(writeResult);
+				totalWrite += output.pos;
 				output.pos = 0;
 			}
 		}
@@ -639,9 +637,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 			writeResult = PyObject_CallMethod(dest, "write", "s#",
 #endif
 				output.dst, output.pos);
-			if (PyLong_Check(writeResult)) {
-				totalWrite += PyLong_AsSsize_t(writeResult);
-			}
+			totalWrite += output.pos;
 			Py_XDECREF(writeResult);
 			output.pos = 0;
 		}
@@ -1293,10 +1289,8 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 #endif
 					output.dst, output.pos);
 
-				if (PyLong_Check(writeResult)) {
-					totalWrite += PyLong_AsSsize_t(writeResult);
-				}
 				Py_XDECREF(writeResult);
+				totalWrite += output.pos;
 				output.pos = 0;
 			}
 		}
