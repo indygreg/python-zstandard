@@ -502,6 +502,10 @@ PyDoc_STRVAR(ZstdCompressor__doc__,
 "write_checksum\n"
 "   If True, a 4 byte content checksum will be written with the compressed\n"
 "   data, allowing the decompressor to perform content verification.\n"
+"write_dict_id\n"
+"   Determines whether the dictionary ID will be written into the compressed\n"
+"   data. Defaults to True. Only adds content to the compressed data if\n"
+"   a dictionary is being used.\n"
 );
 
 static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
@@ -510,6 +514,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		"dict_data",
 		"compression_params",
 		"write_checksum",
+		"write_dict_id",
 		NULL
 	};
 
@@ -518,19 +523,20 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	Py_ssize_t dictSize = 0;
 	CompressionParametersObject* params = NULL;
 	PyObject* writeChecksum = NULL;
+	PyObject* writeDictID = NULL;
 
 	self->dictData = NULL;
 	self->dictSize = 0;
 	self->cparams = NULL;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!O", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iy#O!OO", kwlist,
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|is#O!O", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|is#O!OO", kwlist,
 #endif
 		&level, &dictData, &dictSize,
 		&CompressionParametersType, &params,
-		&writeChecksum)) {
+		&writeChecksum, &writeDictID)) {
 		return -1;
 	}
 
@@ -569,6 +575,9 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 
 	if (writeChecksum && PyObject_IsTrue(writeChecksum)) {
 		self->fparams.checksumFlag = 1;
+	}
+	if (writeDictID && PyObject_Not(writeDictID)) {
+		self->fparams.noDictIDFlag = 1;
 	}
 
 	return 0;

@@ -98,6 +98,10 @@ write_checksum
    Whether a 4 byte checksum should be written with the compressed data.
    Defaults to False. If True, the decompressor can verify that decompressed
    data matches the original input data.
+write_dict_id
+   Whether to write the dictionary ID into the compressed data.
+   Defaults to True. The dictionary ID is only written if a dictionary
+   is being used.
 
 Instances expose a simple ``compress(data)`` method that will return
 compressed data. e.g.

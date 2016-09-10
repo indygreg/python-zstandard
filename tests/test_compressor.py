@@ -50,6 +50,22 @@ class TestCompressor_compress(unittest.TestCase):
 
         self.assertEqual(len(with_checksum), len(no_checksum) + 4)
 
+    def test_no_dict_id(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(1024, samples)
+
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d)
+        with_dict_id = cctx.compress(b'foobarfoobar')
+
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_dict_id=False)
+        no_dict_id = cctx.compress(b'foobarfoobar')
+
+        self.assertEqual(len(with_dict_id), len(no_dict_id) + 4)
 
 class TestCompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
@@ -184,3 +200,25 @@ class TestCompressor_write_to(unittest.TestCase):
 
         self.assertEqual(len(with_checksum.getvalue()),
                          len(no_checksum.getvalue()) + 4)
+
+    def test_no_dict_id(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(1024, samples)
+
+        with_dict_id = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d)
+        with cctx.write_to(with_dict_id) as compressor:
+            compressor.write(b'foobarfoobar')
+
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_dict_id=False)
+        no_dict_id = io.BytesIO()
+        with cctx.write_to(no_dict_id) as compressor:
+            compressor.write(b'foobarfoobar')
+
+        self.assertEqual(len(with_dict_id.getvalue()),
+                         len(no_dict_id.getvalue()) + 4)
