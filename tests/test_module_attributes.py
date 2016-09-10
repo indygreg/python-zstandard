@@ -13,6 +13,7 @@ class TestModuleAttributes(unittest.TestCase):
 
     def test_constants(self):
         self.assertEqual(zstd.MAX_COMPRESSION_LEVEL, 22)
+        self.assertEqual(zstd.FRAME_HEADER, b'\x28\xb5\x2f\xfd')
 
     def test_hasattr(self):
         attrs = (

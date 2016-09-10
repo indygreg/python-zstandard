@@ -231,8 +231,10 @@ DECOMPRESSION_RECOMMENDED_INPUT_SIZE
 DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE
     Recommended chunk size for decompression output
 
+FRAME_HEADER
+    bytes containing header of the Zstandard frame.
 MAGIC_NUMBER
-    Frame header
+    Frame header as an integer.
 WINDOWLOG_MIN
     Minimum value for compression parameter
 WINDOWLOG_MAX

@@ -1770,8 +1770,16 @@ static PyMethodDef zstd_methods[] = {
 	{ NULL, NULL }
 };
 
+static char frame_header[] = {
+	'\x28',
+	'\xb5',
+	'\x2f',
+	'\xfd',
+};
+
 void zstd_module_init(PyObject* m) {
 	PyObject* version;
+	PyObject* frameHeader;
 
 	Py_TYPE(&CompressionParametersType) = &PyType_Type;
 	if (PyType_Ready(&CompressionParametersType) < 0) {
@@ -1824,6 +1832,14 @@ void zstd_module_init(PyObject* m) {
 
 	Py_INCREF((PyObject*)&ZstdDecompressorType);
 	PyModule_AddObject(m, "ZstdDecompressor", (PyObject*)&ZstdDecompressorType);
+
+	frameHeader = PyBytes_FromStringAndSize(frame_header, sizeof(frame_header));
+	if (frameHeader) {
+		PyModule_AddObject(m, "FRAME_HEADER", frameHeader);
+	}
+	else {
+		PyErr_Format(PyExc_ValueError, "could not create frame header object");
+	}
 
 	PyModule_AddIntConstant(m, "MAX_COMPRESSION_LEVEL", ZSTD_maxCLevel());
 	PyModule_AddIntConstant(m, "COMPRESSION_RECOMMENDED_INPUT_SIZE",
