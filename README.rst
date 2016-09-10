@@ -33,8 +33,6 @@ implemented on the  ``ZstdCompressor`` and ``ZstdDecompressor`` types.
 Those APIs likely won't change significantly. Some low-level behavior
 (such as naming and types expected by arguments) may change.
 
-The simple decompress API (non-streaming) needs implemented.
-
 The author would like to implement compression and decompression APIs
 returning an iterator of output chunks. This would allow streaming
 without the need for a "writer" object to ``.write()`` output to:
@@ -235,6 +233,39 @@ dict_data
    Compression dictionary to use.
 
 The interface of this class is very similar to ``ZstdCompressor`` (by design).
+
+To decompress an entire compressed zstd frame::
+
+    dctx = zstd.ZstdDecompressor()
+	uncompressed = dctx.decompress(data)
+
+Please note that by default ``decompress(data)`` will only work on data
+written with the content size encoded in its header. This can be achieved
+by creating a ``ZstdCompressor`` with ``write_content_size=True``. If
+compressed data without an embedded content size is seen, ``zstd.ZstdError``
+will be raised.
+
+To attempt decompression without the content size in the input data,
+pass ``max_output_size`` to the method to specify the maximum byte size
+of decompressed output::
+
+    dctx = zstd.ZstdDecompressor()
+	uncompressed = dctx.decompress(data, max_output_size=1048576)
+
+Ideally, ``max_output_size`` will be identical to the uncompressed output
+size. If ``max_output_size`` is too small to hold the decompressed data,
+``zstd.ZstdError`` will be raised.
+
+Please note that an allocation of the requested ``max_output_size`` will be
+performed. Setting to a very large value could result in a lot of work
+for the memory allocator and may result in ``MemoryError`` being raised
+if the allocation fails.
+
+If ``max_output_size`` is larger than the decompressed data, the allocated
+output buffer will be resized to only use the space required.
+
+It is **strongly** recommended to use a streaming decompression API instead
+of guessing the output size.
 
 To incrementally send uncompressed output to another object via its ``write()``
 method, use ``write_to()``::

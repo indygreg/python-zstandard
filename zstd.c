@@ -1217,6 +1217,7 @@ typedef struct {
 	PyObject_HEAD
 
 	ZstdCompressionDict* dict;
+	ZSTD_DDict* ddict;
 	size_t insize;
 	size_t outsize;
 } ZstdDecompressor;
@@ -1282,6 +1283,7 @@ static int ZstdDecompressor_init(ZstdDecompressor* self, PyObject* args, PyObjec
 	ZstdCompressionDict* dict = NULL;
 
 	self->dict = NULL;
+	self->ddict = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!", kwlist,
 		&ZstdCompressionDictType, &dict)) {
@@ -1301,6 +1303,12 @@ static int ZstdDecompressor_init(ZstdDecompressor* self, PyObject* args, PyObjec
 
 static void ZstdDecompressor_dealloc(ZstdDecompressor* self) {
 	Py_XDECREF(self->dict);
+
+	if (self->ddict) {
+		ZSTD_freeDDict(self->ddict);
+		self->ddict = NULL;
+	}
+
 	PyObject_Del(self);
 }
 
@@ -1435,6 +1443,139 @@ finally:
 	return res;
 }
 
+PyDoc_STRVAR(ZstdDecompressor_decompress__doc__,
+"decompress(data[, max_output_size=None]) -- Decompress data in its entirety\n"
+"\n"
+"This method will decompress the entirety of the argument and return the\n"
+"result.\n"
+"\n"
+"The input bytes are expected to contain a full Zstandard frame (something\n"
+"compressed with ``ZstdCompressor.compress()`` or similar). If the input does\n"
+"not contain a full frame, an exception will be raised.\n"
+"\n"
+"If the frame header of the compressed data does not contain the content size\n"
+"``max_output_size`` must be specified or ``ZstdError`` will be raised. An\n"
+"allocation of size ``max_output_size`` will be performed and an attempt will\n"
+"be made to perform decompression into that buffer. If the buffer is too\n"
+"small or cannot be allocated, ``ZstdError`` will be raised. The buffer will\n"
+"be resized if it is too large.\n"
+"\n"
+"Uncompressed data could be much larger than compressed data. As a result,\n"
+"calling this function could result in a very large memory allocation being\n"
+"performed to hold the uncompressed data. Therefore it is **highly**\n"
+"recommended to use a streaming decompression method instead of this one.\n"
+);
+
+PyObject* ZstdDecompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		"max_output_size",
+		NULL
+	};
+
+	const char* source;
+	Py_ssize_t sourceSize;
+	Py_ssize_t maxOutputSize = 0;
+	unsigned long long decompressedSize;
+	size_t destCapacity;
+	PyObject* result = NULL;
+	ZSTD_DCtx* dctx = NULL;
+	void* dictData = NULL;
+	size_t dictSize = 0;
+	size_t zresult;
+
+#if PY_MAJOR_VERSION >= 3
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y#|n", kwlist,
+#else
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|n", kwlist,
+#endif
+		&source, &sourceSize, &maxOutputSize)) {
+		return NULL;
+	}
+
+	dctx = ZSTD_createDCtx();
+	if (!dctx) {
+		PyErr_SetString(ZstdError, "could not create DCtx");
+		return NULL;
+	}
+
+	if (self->dict) {
+		dictData = self->dict->dictData;
+		dictSize = self->dict->dictSize;
+	}
+
+	if (dictData && !self->ddict) {
+		Py_BEGIN_ALLOW_THREADS
+		self->ddict = ZSTD_createDDict(dictData, dictSize);
+		Py_END_ALLOW_THREADS
+
+		if (!self->ddict) {
+			PyErr_SetString(ZstdError, "could not create decompression dict");
+			goto except;
+		}
+	}
+
+	decompressedSize = ZSTD_getDecompressedSize(source, sourceSize);
+	/* 0 returned if content size not in the zstd frame header */
+	if (0 == decompressedSize) {
+		if (0 == maxOutputSize) {
+			PyErr_SetString(ZstdError, "input data invalid or missing content size "
+				"in frame header");
+			goto except;
+		}
+		else {
+			result = PyBytes_FromStringAndSize(NULL, maxOutputSize);
+			destCapacity = maxOutputSize;
+		}
+	}
+	else {
+		result = PyBytes_FromStringAndSize(NULL, decompressedSize);
+		destCapacity = decompressedSize;
+	}
+
+	if (!result) {
+		goto except;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	if (self->ddict) {
+		zresult = ZSTD_decompress_usingDDict(dctx, PyBytes_AsString(result), destCapacity,
+			source, sourceSize, self->ddict);
+	}
+	else {
+		zresult = ZSTD_decompress(PyBytes_AsString(result), destCapacity, source, sourceSize);
+	}
+	Py_END_ALLOW_THREADS
+
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "decompression error: %s", ZSTD_getErrorName(zresult));
+		goto except;
+	}
+	else if (decompressedSize && zresult != decompressedSize) {
+		PyErr_Format(ZstdError, "decompression error: decompressed %d bytes; expected %d",
+			zresult, decompressedSize);
+		goto except;
+	}
+	else if (zresult < destCapacity) {
+		if (_PyBytes_Resize(&result, zresult)) {
+			goto except;
+		}
+	}
+
+	goto finally;
+
+except:
+	Py_DecRef(result);
+	result = NULL;
+
+finally:
+	if (dctx) {
+		ZSTD_freeDCtx(dctx);
+	}
+
+	return result;
+}
+
 PyDoc_STRVAR(ZstdDecompressor_write_to__doc__,
 "Create a context manager to write decompressed data to an object.\n"
 "\n"
@@ -1477,6 +1618,8 @@ static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self
 static PyMethodDef ZstdDecompressor_methods[] = {
 	{ "copy_stream", (PyCFunction)ZstdDecompressor_copy_stream, METH_VARARGS,
 	  ZstdDecompressor_copy_stream__doc__ },
+	{ "decompress", (PyCFunction)ZstdDecompressor_decompress, METH_VARARGS | METH_KEYWORDS,
+	  ZstdDecompressor_decompress__doc__ },
 	{ "write_to", (PyCFunction)ZstdDecompressor_write_to, METH_VARARGS,
 	  ZstdDecompressor_write_to__doc__ },
 	{ NULL, NULL }

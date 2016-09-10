@@ -9,6 +9,104 @@ except ImportError:
 import zstd
 
 
+class TestDecompressor_decompress(unittest.TestCase):
+    def test_empty_input(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'input data invalid'):
+            dctx.decompress(b'')
+
+    def test_invalid_input(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'input data invalid'):
+            dctx.decompress(b'foobar')
+
+    def test_no_content_size_in_frame(self):
+        cctx = zstd.ZstdCompressor(write_content_size=False)
+        compressed = cctx.compress(b'foobar')
+
+        dctx = zstd.ZstdDecompressor()
+        with self.assertRaisesRegexp(zstd.ZstdError, 'input data invalid'):
+            dctx.decompress(compressed)
+
+    def test_content_size_present(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+        compressed = cctx.compress(b'foobar')
+
+        dctx = zstd.ZstdDecompressor()
+        decompressed  = dctx.decompress(compressed)
+        self.assertEqual(decompressed, b'foobar')
+
+    def test_max_output_size(self):
+        cctx = zstd.ZstdCompressor(write_content_size=False)
+        source = b'foobar' * 256
+        compressed = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+        # Will fit into buffer exactly the size of input.
+        decompressed = dctx.decompress(compressed, max_output_size=len(source))
+        self.assertEqual(decompressed, source)
+
+        # Input size - 1 fails
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Destination buffer is too small'):
+            dctx.decompress(compressed, max_output_size=len(source) - 1)
+
+        # Input size + 1 works
+        decompressed = dctx.decompress(compressed, max_output_size=len(source) + 1)
+        self.assertEqual(decompressed, source)
+
+        # A much larger buffer works.
+        decompressed = dctx.decompress(compressed, max_output_size=len(source) * 64)
+        self.assertEqual(decompressed, source)
+
+    def test_stupidly_large_output_buffer(self):
+        cctx = zstd.ZstdCompressor(write_content_size=False)
+        compressed = cctx.compress(b'foobar' * 256)
+        dctx = zstd.ZstdDecompressor()
+
+        with self.assertRaises(MemoryError):
+            dctx.decompress(compressed, max_output_size=2**62)
+
+    def test_dictionary(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(8192, samples)
+
+        orig = b'foobar' * 16384
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_content_size=True)
+        compressed = cctx.compress(orig)
+
+        dctx = zstd.ZstdDecompressor(dict_data=d)
+        decompressed = dctx.decompress(compressed)
+
+        self.assertEqual(decompressed, orig)
+
+    def test_dictionary_multiple(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(8192, samples)
+
+        sources = (b'foobar' * 8192, b'foo' * 8192, b'bar' * 8192)
+        compressed = []
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_content_size=True)
+        for source in sources:
+            compressed.append(cctx.compress(source))
+
+        dctx = zstd.ZstdDecompressor(dict_data=d)
+        for i in range(len(sources)):
+            decompressed = dctx.decompress(compressed[i])
+            self.assertEqual(decompressed, sources[i])
+
+
 class TestDecompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
         source = object()
