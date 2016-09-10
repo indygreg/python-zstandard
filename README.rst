@@ -109,7 +109,7 @@ write_dict_id
    is being used.
 
 Instances expose a simple ``compress(data)`` method that will return
-compressed data. e.g.
+compressed data. e.g.::
 
    cctx = zstd.ZsdCompressor()
    compressed = cctx.compress('data to compress')
