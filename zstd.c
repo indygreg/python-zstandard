@@ -751,7 +751,6 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	PyObject* output;
 	char* dest;
 	size_t zresult;
-	ZSTD_compressionParameters cparams;
 	ZSTD_parameters zparams;
 
 #if PY_MAJOR_VERSION >= 3
@@ -781,8 +780,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 		zparams.cParams = ZSTD_getCParams(self->compressionLevel, sourceSize, self->dictSize);
 	}
 	else {
-		ztopy_compression_parameters(self->cparams, &cparams);
-		zparams.cParams = cparams;
+		ztopy_compression_parameters(self->cparams, &zparams.cParams);
 	}
 
 	Py_BEGIN_ALLOW_THREADS
