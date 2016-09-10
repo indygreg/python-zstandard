@@ -124,3 +124,11 @@ class TestDecompressor_write_to(unittest.TestCase):
             decompressor.write(compressed)
 
         self.assertEqual(buffer.getvalue(), orig)
+
+    def test_memory_size(self):
+        dctx = zstd.ZstdDecompressor()
+        buffer = io.BytesIO()
+        with dctx.write_to(buffer) as decompressor:
+            size = decompressor.memory_size()
+
+        self.assertGreater(size, 100000)

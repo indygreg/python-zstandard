@@ -242,6 +242,12 @@ method, use ``write_to()``::
     with dctx.write_to(fh) as decompressor:
         decompressor.write(compressed_data)
 
+You can see how much memory is being used by the decompressor::
+
+    dctx = zstd.ZstdDecompressor()
+	with dctx.write_to(fh) as decompressor:
+	    byte_size = decompressor.memory_size()
+
 You can also copy data between 2 streams::
 
     dctx = zstd.ZstdDecompressor()

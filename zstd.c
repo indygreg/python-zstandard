@@ -1465,6 +1465,16 @@ static PyObject* ZstdDecompressionWriter_exit(ZstdDecompressionWriter* self, PyO
 	Py_RETURN_FALSE;
 }
 
+static PyObject* ZstdDecompressionWriter_memory_size(ZstdDecompressionWriter* self) {
+	if (!self->dstream) {
+		PyErr_SetString(ZstdError, "cannot determine size of inactive decompressor; "
+			"call when context manager is active");
+		return NULL;
+	}
+
+	return PyLong_FromSize_t(ZSTD_sizeof_DStream(self->dstream));
+}
+
 static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args) {
 	const char* source;
 	Py_ssize_t sourceSize;
@@ -1532,6 +1542,8 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	PyDoc_STR("Enter a decompression context.") },
 	{ "__exit__", (PyCFunction)ZstdDecompressionWriter_exit, METH_VARARGS,
 	PyDoc_STR("Exit a decompression context.") },
+	{ "memory_size", (PyCFunction)ZstdDecompressionWriter_memory_size, METH_NOARGS,
+	PyDoc_STR("Obtain the memory size in bytes of the underlying decompressor.") },
 	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS,
 	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
