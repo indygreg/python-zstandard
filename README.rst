@@ -39,6 +39,10 @@ without the need for a "writer" object to ``.write()`` output to:
 the consumer could just grab data as needed, allowing the source stream
 to be lazily consumed.
 
+There will likely be arguments added to control the input and output
+buffer sizes (currently, certain operations read and write in chunk
+sizes using zstd's preferred defaults).
+
 The author is on the fence as to whether to support the extremely
 low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
