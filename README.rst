@@ -203,6 +203,29 @@ To see how much memory is being used by the streaming compressor::
 	    ...
 		byte_size = compressor.memory_size()
 
+If you prefer to stream data out of a compressor as an iterator,
+``read_from(reader)`` can be used::
+
+   cctx = zstd.ZstdCompressor()
+   for chunk in cctx.read_from(fh):
+        # Do something with emitted data.
+
+``read_from()`` will call ``.read(size)`` on the passed object to obtain
+uncompressed data to feed into the compressor. The returned iterator consists
+of chunks of compressed data.
+
+One of the advantages of ``read_from()`` is the caller is in control of when
+data is compressed: data won't be read from the reader and fed into the
+compressor until the returned iterator is advanced. This means CPU cycles
+won't be spent compressing data until the consumer has asked for them.
+
+Like ``write_to()``, ``read_from()`` also accepts a ``size`` argument
+declaring the size of the input stream::
+
+    cctx = zstd.ZstdCompressor()
+	for chunk in cctx.read_from(fh, size=some_int):
+	    pass
+
 It is common to want to perform compression across 2 streams, reading raw data
 from 1 and writing compressed data to another. There is a simple API that
 performs this operation::

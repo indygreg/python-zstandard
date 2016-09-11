@@ -1,6 +1,7 @@
 import hashlib
 import io
 import struct
+import sys
 
 try:
     import unittest2 as unittest
@@ -8,6 +9,12 @@ except ImportError:
     import unittest
 
 import zstd
+
+
+if sys.version_info[0] >= 3:
+    next = lambda it: it.__next__()
+else:
+    next = lambda it: it.next()
 
 
 class TestCompressor(unittest.TestCase):
@@ -299,3 +306,50 @@ class TestCompressor_write_to(unittest.TestCase):
             size = compressor.memory_size()
 
         self.assertGreater(size, 100000)
+
+
+class TestCompressor_read_from(unittest.TestCase):
+    def test_read_empty(self):
+        cctx = zstd.ZstdCompressor(level=1)
+
+        source = io.BytesIO()
+        it = cctx.read_from(source)
+        chunks = list(it)
+        self.assertEqual(len(chunks), 1)
+        compressed = b''.join(chunks)
+        self.assertEqual(compressed, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
+
+    def test_read_large(self):
+        cctx = zstd.ZstdCompressor(level=1)
+
+        source = io.BytesIO()
+        source.write(b'f' * zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE)
+        source.write(b'o')
+        source.seek(0)
+
+        # Creating an iterator should not perform any compression until
+        # first read.
+        it = cctx.read_from(source, size=len(source.getvalue()))
+        self.assertEqual(source.tell(), 0)
+
+        # We should have exactly 2 output chunks.
+        chunks = []
+        chunk = next(it)
+        self.assertIsNotNone(chunk)
+        self.assertEqual(source.tell(), zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE)
+        chunks.append(chunk)
+        chunk = next(it)
+        self.assertIsNotNone(chunk)
+        chunks.append(chunk)
+
+        self.assertEqual(source.tell(), len(source.getvalue()))
+
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        # And again for good measure.
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        # We should get the same output as the one-shot compression mechanism.
+        self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
