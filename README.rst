@@ -9,8 +9,7 @@ The primary goal of the extension is to provide a Pythonic interface to
 the underlying C API. This means exposing most of the features and flexibility
 of the C API while not sacrificing usability or safety that Python provides.
 
-.. image:: https://travis-ci.org/indygreg/python-zstandard.svg?branch=master
-    :target: https://travis-ci.org/indygreg/python-zstandard
+|  |ci-status| |win-ci-status|
 
 State of Project
 ================
@@ -586,3 +585,10 @@ module and since we compile against it, the behavior of a specific
 version of this module should be constant for all of time. So if you
 pin the version of this module used in your projects (which is a Python
 best practice), you should be buffered from unwanted future changes.
+
+.. |ci-status| image:: https://travis-ci.org/indygreg/python-zstandard.svg?branch=master
+    :target: https://travis-ci.org/indygreg/python-zstandard
+
+.. |win-ci-status| image:: https://ci.appveyor.com/api/projects/status/github/indygreg/python-zstandard?svg=true
+    :target: https://ci.appveyor.com/project/indygreg/python-zstandard
+    :alt: Windows build status
