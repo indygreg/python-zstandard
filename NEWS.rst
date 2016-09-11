@@ -14,3 +14,12 @@ automation configured. 0.0.1 release on PyPI.
 
 2016-09-05 - After the compressor and decompressor APIs were changed, 0.2
 was released to PyPI.
+
+2016-09-10 - 0.3 is released with a bunch of new features. ZstdCompressor
+now accepts arguments controlling frame parameters. The source size can now
+be declared when performing streaming compression. ZstdDecompressor.decompress()
+is implemented. Compression dictionaries are now cached when using the simple
+compression and decompression APIs. Memory size APIs added.
+ZstdCompressor.read_from() and ZstdDecompressor.read_from() have been
+implemented. This rounds out the major compression/decompression APIs planned
+by the author.
