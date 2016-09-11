@@ -73,7 +73,9 @@ class TestDecompressor_decompress(unittest.TestCase):
         compressed = cctx.compress(b'foobar' * 256)
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaises(MemoryError):
+        # Will get OverflowError on some Python distributions that can't
+        # handle really large integers.
+        with self.assertRaises((MemoryError, OverflowError)):
             dctx.decompress(compressed, max_output_size=2**62)
 
     def test_dictionary(self):
