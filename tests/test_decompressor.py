@@ -1,5 +1,7 @@
 import io
+import random
 import struct
+import sys
 
 try:
     import unittest2 as unittest
@@ -7,6 +9,12 @@ except ImportError:
     import unittest
 
 import zstd
+
+
+if sys.version_info[0] >= 3:
+    next = lambda it: it.__next__()
+else:
+    next = lambda it: it.next()
 
 
 class TestDecompressor_decompress(unittest.TestCase):
@@ -230,3 +238,100 @@ class TestDecompressor_write_to(unittest.TestCase):
             size = decompressor.memory_size()
 
         self.assertGreater(size, 100000)
+
+
+class TestDecompressor_read_from(unittest.TestCase):
+    def test_empty_input(self):
+        dctx = zstd.ZstdDecompressor()
+
+        source = io.BytesIO()
+        it = dctx.read_from(source)
+        # TODO this is arguably wrong. Should get an error about missing frame foo.
+        with self.assertRaises(StopIteration):
+            next(it)
+
+    def test_invalid_input(self):
+        dctx = zstd.ZstdDecompressor()
+
+        source = io.BytesIO(b'foobar')
+        it = dctx.read_from(source)
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Unknown frame descriptor'):
+            next(it)
+
+    def test_empty_roundtrip(self):
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
+        empty = cctx.compress(b'')
+
+        source = io.BytesIO(empty)
+        source.seek(0)
+
+        dctx = zstd.ZstdDecompressor()
+        it = dctx.read_from(source)
+
+        chunk = next(it)
+        self.assertIsNotNone(chunk)
+        self.assertEqual(chunk, b'')
+
+        # Should only emit a single chunk.
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        # Again for good measure.
+        with self.assertRaises(StopIteration):
+            next(it)
+
+    def test_large_output(self):
+        source = io.BytesIO()
+        source.write(b'f' * zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
+        source.write(b'o')
+        source.seek(0)
+
+        cctx = zstd.ZstdCompressor(level=1)
+        compressed = io.BytesIO(cctx.compress(source.getvalue()))
+        compressed.seek(0)
+
+        dctx = zstd.ZstdDecompressor()
+        it = dctx.read_from(compressed)
+
+        chunks = []
+        chunks.append(next(it))
+        chunks.append(next(it))
+
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        decompressed = b''.join(chunks)
+        self.assertEqual(decompressed, source.getvalue())
+
+    def test_large_input(self):
+        bytes = list(struct.Struct('>B').pack(i) for i in range(256))
+        compressed = io.BytesIO()
+        input_size = 0
+        cctx = zstd.ZstdCompressor(level=1)
+        with cctx.write_to(compressed) as compressor:
+            while True:
+                compressor.write(random.choice(bytes))
+                input_size += 1
+
+                have_compressed = len(compressed.getvalue()) > zstd.DECOMPRESSION_RECOMMENDED_INPUT_SIZE
+                have_raw = input_size > zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE * 2
+                if have_compressed and have_raw:
+                    break
+
+        compressed.seek(0)
+        self.assertGreater(len(compressed.getvalue()),
+                           zstd.DECOMPRESSION_RECOMMENDED_INPUT_SIZE)
+
+        dctx = zstd.ZstdDecompressor()
+        it = dctx.read_from(compressed)
+
+        chunks = []
+        chunks.append(next(it))
+        chunks.append(next(it))
+        chunks.append(next(it))
+
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        decompressed = b''.join(chunks)
+        self.assertEqual(len(decompressed), input_size)

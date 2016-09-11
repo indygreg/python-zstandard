@@ -33,12 +33,6 @@ implemented on the ``ZstdCompressor`` and ``ZstdDecompressor`` types.
 Those APIs likely won't change significantly. Some low-level behavior
 (such as naming and types expected by arguments) may change.
 
-The author would like to implement compression and decompression APIs
-returning an iterator of output chunks. This would allow streaming
-without the need for a "writer" object to ``.write()`` output to:
-the consumer could just grab data as needed, allowing the source stream
-to be lazily consumed.
-
 There will likely be arguments added to control the input and output
 buffer sizes (currently, certain operations read and write in chunk
 sizes using zstd's preferred defaults).
@@ -308,6 +302,20 @@ You can see how much memory is being used by the decompressor::
     dctx = zstd.ZstdDecompressor()
 	with dctx.write_to(fh) as decompressor:
 	    byte_size = decompressor.memory_size()
+
+It is also possible to stream data out of a decompressor via ``read_from(fh)``::
+
+    dctx = zstd.ZstdDecompressor()
+	for chunk in dctx.read_from(fh):
+	    # Do something with original data.
+
+``read_from()`` accepts an object with a ``read(size)`` method that will
+return compressed bytes. It returns an iterator whose elements are chunks
+of the uncompressed data.
+
+Similarly to ``ZstdCompressor.read_from()``, the consumer of the iterator
+controls when data is decompressed. If the iterator isn't consumed,
+decompression is put on hold.
 
 You can also copy data between 2 streams::
 

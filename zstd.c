@@ -1499,6 +1499,21 @@ typedef struct {
 
 static PyTypeObject ZstdDecompressionWriterType;
 
+typedef struct {
+	PyObject_HEAD
+
+	ZstdDecompressor* decompressor;
+	PyObject* reader;
+	ZSTD_DStream* dstream;
+	ZSTD_inBuffer input;
+	ZSTD_outBuffer output;
+	Py_ssize_t readCount;
+	int finishedInput;
+	int finishedOutput;
+} ZstdDecompressorIterator;
+
+static PyTypeObject ZstdDecompressorIteratorType;
+
 static ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor) {
 	ZSTD_DStream* dstream;
 	void* dictData = NULL;
@@ -1842,6 +1857,68 @@ finally:
 	return result;
 }
 
+PyDoc_STRVAR(ZstdDecompressor_read_from__doc__,
+"read_from(reader) -- Read compressed data and return an iterator\n"
+"\n"
+"Returns an iterator of decompressed data chunks produced from reading from\n"
+"the ``reader``.\n"
+"\n"
+"Compressed data will be obtained from ``reader`` by calling the\n"
+"``read(size)`` metho of it. The source data will be streamed into a\n"
+"decompressor. As decompressed data is available, it will be exposed to the\n"
+"return iterator.\n"
+);
+
+static ZstdDecompressorIterator* ZstdDecompressor_read_from(ZstdDecompressor* self, PyObject* args) {
+	PyObject* reader;
+	ZstdDecompressorIterator* result;
+
+	if (!PyArg_ParseTuple(args, "O", &reader)) {
+		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(reader, "read")) {
+		PyErr_SetString(PyExc_ValueError, "must pass an object with a read() method");
+		return NULL;
+	}
+
+	result = PyObject_New(ZstdDecompressorIterator, &ZstdDecompressorIteratorType);
+	if (!result) {
+		return NULL;
+	}
+
+	result->decompressor = self;
+	Py_INCREF(result->decompressor);
+
+	result->reader = reader;
+	Py_INCREF(result->reader);
+
+	result->dstream = DStream_from_ZstdDecompressor(self);
+	if (!result->dstream) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	result->input.src = malloc(self->insize);
+	if (!result->input.src) {
+		Py_DECREF(result);
+		PyErr_NoMemory();
+		return NULL;
+	}
+	result->input.size = 0;
+	result->input.pos = 0;
+
+	result->output.dst = NULL;
+	result->output.size = 0;
+	result->output.pos = 0;
+
+	result->readCount = 0;
+	result->finishedInput = 0;
+	result->finishedOutput = 0;
+
+	return result;
+}
+
 PyDoc_STRVAR(ZstdDecompressor_write_to__doc__,
 "Create a context manager to write decompressed data to an object.\n"
 "\n"
@@ -1886,6 +1963,8 @@ static PyMethodDef ZstdDecompressor_methods[] = {
 	  ZstdDecompressor_copy_stream__doc__ },
 	{ "decompress", (PyCFunction)ZstdDecompressor_decompress, METH_VARARGS | METH_KEYWORDS,
 	  ZstdDecompressor_decompress__doc__ },
+	{ "read_from", (PyCFunction)ZstdDecompressor_read_from, METH_VARARGS,
+	  ZstdDecompressor_read_from__doc__ },
 	{ "write_to", (PyCFunction)ZstdDecompressor_write_to, METH_VARARGS,
 	  ZstdDecompressor_write_to__doc__ },
 	{ NULL, NULL }
@@ -2100,6 +2179,207 @@ static PyTypeObject ZstdDecompressionWriterType = {
 	0,                              /* tp_alloc */
 	PyType_GenericNew,              /* tp_new */
 };
+
+PyDoc_STRVAR(ZstdDecompressorIterator__doc__,
+"Represents an iterator of decompressed data.\n"
+);
+
+static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator* self) {
+	Py_XDECREF(self->decompressor);
+	Py_XDECREF(self->reader);
+
+	if (self->dstream) {
+		ZSTD_freeDStream(self->dstream);
+		self->dstream = NULL;
+	}
+
+	if (self->input.src) {
+		free((void*)self->input.src);
+		self->input.src = NULL;
+	}
+
+	PyObject_Del(self);
+}
+
+static PyObject* ZstdDecompressorIterator_iter(PyObject* self) {
+	Py_INCREF(self);
+	return self;
+}
+
+static PyObject* ZstdDecompressorIterator_iternext(ZstdDecompressorIterator* self) {
+	size_t zresult;
+	PyObject* readResult;
+	PyObject* chunk;
+	char* readBuffer;
+	Py_ssize_t readSize;
+
+	if (self->finishedOutput) {
+		PyErr_SetString(PyExc_StopIteration, "output flushed");
+		return NULL;
+	}
+
+	/* If we have data left in the input, consume it. */
+	if (self->input.pos < self->input.size) {
+		Py_BEGIN_ALLOW_THREADS
+		zresult = ZSTD_decompressStream(self->dstream, &self->output, &self->input);
+		Py_END_ALLOW_THREADS
+
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "zstd decompress error: %s",
+				ZSTD_getErrorName(zresult));
+			return NULL;
+		}
+
+		/* If it produced output data, emit it. */
+		if (self->output.pos) {
+			chunk = PyBytes_FromStringAndSize(self->output.dst, self->output.pos);
+			self->output.pos = 0;
+			return chunk;
+		}
+
+		/* Else fall through to get more data from input stream. */
+	}
+
+read_from_source:
+
+	if (!self->finishedInput) {
+		readResult = PyObject_CallMethod(self->reader, "read", "I", self->decompressor->insize);
+		if (!readResult) {
+			return NULL;
+		}
+
+		PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+
+		if (readSize) {
+			/* Copy input into previously allocated buffer because it can live longer
+			than a single function call and we don't want to keep a ref to a Python
+			object around. This could be changed... */
+			memcpy((void*)self->input.src, readBuffer, readSize);
+			self->input.size = readSize;
+			self->input.pos = 0;
+		}
+		/* No bytes on first read must mean an empty input stream. */
+		else if (!self->readCount) {
+			self->finishedInput = 1;
+			self->finishedOutput = 1;
+			Py_DECREF(readResult);
+			PyErr_SetString(PyExc_StopIteration, "empty input");
+			return NULL;
+		}
+		else {
+			self->finishedInput = 1;
+		}
+
+		/* We've copied the data managed by memory. Discard the Python object. */
+		Py_DECREF(readResult);
+	}
+
+	chunk = PyBytes_FromStringAndSize(NULL, self->decompressor->outsize);
+	if (!chunk) {
+		return NULL;
+	}
+
+	self->output.dst = PyBytes_AsString(chunk);
+	self->output.size = self->decompressor->outsize;
+	self->output.pos = 0;
+
+	Py_BEGIN_ALLOW_THREADS
+	zresult = ZSTD_decompressStream(self->dstream, &self->output, &self->input);
+	Py_END_ALLOW_THREADS
+
+	if (ZSTD_isError(zresult)) {
+		self->output.dst = NULL;
+		Py_DECREF(chunk);
+		PyErr_Format(ZstdError, "zstd decompressor error: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
+	}
+
+	self->readCount += self->input.pos;
+
+	/* Frame is fully decoded. */
+	if (0 == zresult) {
+		if (self->output.pos < self->decompressor->outsize) {
+			if (_PyBytes_Resize(&chunk, self->output.pos)) {
+				return NULL;
+			}
+		}
+
+		self->finishedInput = 1;
+		self->finishedOutput = 1;
+		return chunk;
+	}
+	/* Input exhausted. Only have data in the internal zstd buffer. */
+	else if (1 == zresult) {
+		self->finishedInput = 1;
+	}
+
+	/* No output recorded. Likely held up inside zstd's internal buffers. Try
+	   giving it more data if available. This is preferable to emitting an
+	   empty chunk from the iterator. */
+	if (!self->output.pos) {
+		Py_DECREF(chunk);
+
+		if (!self->finishedInput) {
+			goto read_from_source;
+		}
+		else {
+			PyErr_SetString(PyExc_StopIteration, "input exhausted");
+			return NULL;
+		}
+	}
+
+	/* Readjust chunk size if needed. */
+	if (self->output.pos < self->decompressor->outsize) {
+		if (_PyBytes_Resize(&chunk, self->output.pos)) {
+			return NULL;
+		}
+	}
+
+	return chunk;
+}
+
+static PyTypeObject ZstdDecompressorIteratorType = {
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"zstd.ZstdDecompressorIterator",   /* tp_name */
+	sizeof(ZstdDecompressorIterator),  /* tp_basicsize */
+	0,                                 /* tp_itemsize */
+	(destructor)ZstdDecompressorIterator_dealloc, /* tp_dealloc */
+	0,                                 /* tp_print */
+	0,                                 /* tp_getattr */
+	0,                                 /* tp_setattr */
+	0,                                 /* tp_compare */
+	0,                                 /* tp_repr */
+	0,                                 /* tp_as_number */
+	0,                                 /* tp_as_sequence */
+	0,                                 /* tp_as_mapping */
+	0,                                 /* tp_hash */
+	0,                                 /* tp_call */
+	0,                                 /* tp_str */
+	0,                                 /* tp_getattro */
+	0,                                 /* tp_setattro */
+	0,                                 /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	ZstdDecompressorIterator__doc__,   /* tp_doc */
+	0,                                 /* tp_traverse */
+	0,                                 /* tp_clear */
+	0,                                 /* tp_richcompare */
+	0,                                 /* tp_weaklistoffset */
+	ZstdDecompressorIterator_iter,     /* tp_iter */
+	(iternextfunc)ZstdDecompressorIterator_iternext, /* tp_iternext */
+	0,                                 /* tp_methods */
+	0,                                 /* tp_members */
+	0,                                 /* tp_getset */
+	0,                                 /* tp_base */
+	0,                                 /* tp_dict */
+	0,                                 /* tp_descr_get */
+	0,                                 /* tp_descr_set */
+	0,                                 /* tp_dictoffset */
+	0,                                 /* tp_init */
+	0,                                 /* tp_alloc */
+	PyType_GenericNew,                /* tp_new */
+};
+
 
 PyDoc_STRVAR(estimate_compression_context_size__doc__,
 "estimate_compression_context_size(compression_parameters)\n"
@@ -2347,6 +2627,11 @@ void zstd_module_init(PyObject* m) {
 		return;
 	}
 
+	Py_TYPE(&ZstdDecompressorIteratorType) = &PyType_Type;
+	if (PyType_Ready(&ZstdDecompressorIteratorType) < 0) {
+		return;
+	}
+
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
 	PyModule_AddObject(m, "ZstdError", ZstdError);
 
@@ -2439,4 +2724,3 @@ PyMODINIT_FUNC initzstd(void) {
 	}
 }
 #endif
-
