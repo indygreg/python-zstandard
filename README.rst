@@ -29,7 +29,7 @@ Expected Changes
 ----------------
 
 The author is reasonably confident in the current state of what's
-implemented on the  ``ZstdCompressor`` and ``ZstdDecompressor`` types.
+implemented on the ``ZstdCompressor`` and ``ZstdDecompressor`` types.
 Those APIs likely won't change significantly. Some low-level behavior
 (such as naming and types expected by arguments) may change.
 
