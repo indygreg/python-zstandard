@@ -44,6 +44,8 @@ low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
 believe it a high priority at this time.
 
+The CFFI bindings are half-baked and need to be finished.
+
 Requirements
 ============
 
