@@ -53,6 +53,34 @@ This extension is designed to run with Python 2.6, 2.7, 3.3, 3.4, and 3.5
 on common platforms (Linux, Windows, and OS X). Only x86_64 is currently
 well-tested as an architecture.
 
+Performance
+===========
+
+Very crude and non-scientific benchmarking (most benchmarks fall in this
+category because proper benchmarking is hard) show that the Python bindings
+perform within 10% of the native C implementation.
+
+The following table compares the performance of compressing and decompressing
+a 1.1 GB tar file comprised of the files in a Firefox source checkout. Values
+obtained with the ``zstd`` program are on the left. The remaining columns detail
+performance of various compression APIs in the Python bindings.
+
++-------+-----------------+-----------------+-----------------+---------------+
+| Level |     Native      |     Simple      |    Stream In    |   Stream Out  |
+|       |  Comp / Decomp  |  Comp / Decomp  |  Comp / Decomp  |     Comp      |
++=======+=================+=================+=================+===============+
+|   1   | 490 / 1338 MB/s | 458 / 1266 MB/s | 407 / 1156 MB/s |  405 MB/s     |
++-------+-----------------+-----------------+-----------------+---------------+
+|   2   | 412 / 1288 MB/s | 381 / 1203 MB/s | 345 / 1128 MB/s |  349 MB/s     |
++-------+-----------------+-----------------+-----------------+---------------+
+|   3   | 342 / 1312 MB/s | 319 / 1182 MB/s | 285 / 1165 MB/s |  287 MB/s     |
++-------+-----------------+-----------------+-----------------+---------------+
+|  11   |  64 / 1506 MB/s |  66 / 1436 MB/s |  56 / 1342 MB/s |   57 MB/s     |
++-------+-----------------+-----------------+-----------------+---------------+
+
+Again, these are very unscientific. But it shows that Python is capable of
+compressing at several hundred MB/s and decompressing at over 1 GB/s.
+
 Comparison to Other Python Bindings
 ===================================
 
