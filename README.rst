@@ -160,14 +160,19 @@ write_dict_id
    Defaults to True. The dictionary ID is only written if a dictionary
    is being used.
 
-Instances expose a simple ``compress(data)`` method that will return
-compressed data. e.g.::
+Simple API
+^^^^^^^^^^
+
+``compress(data)`` compresses and returns data as a one-shot operation.::
 
    cctx = zstd.ZsdCompressor()
    compressed = cctx.compress(b'data to compress')
 
-There is also a context manager that allows you to *stream* data into the
-compressor as well as to an output object::
+Streaming Input API
+^^^^^^^^^^^^^^^^^^^
+
+``write_to(fh)`` (which behaves as a context manager) allows you to *stream*
+data into a compressor.::
 
    cctx = zstd.ZstdCompressor(level=10)
    with cctx.write_to(fh) as compressor:
@@ -175,23 +180,27 @@ compressor as well as to an output object::
 	   compressor.write(b'chunk 1')
 	   ...
 
-``write_to(fh)`` accepts an object with a ``write(data)`` method. When
-``write(data)`` method is called on the object returned by the ``write_to``
-call, compressed data is sent to the passed argument by calling its ``write()``
-method. Many common Python types implement ``write()``, including open file
-handles and ``BytesIO``. So this makes it simple to *stream* compressed data
-without having to write extra code to marshall data around.
+The argument to ``write_to()`` must have a ``write(data)`` method. As
+compressed data is available, ``write()`` will be called with the comrpessed
+data as its argument. Many common Python types implement ``write()``, including
+open file handles and ``io.BytesIO``.
+
+``write_to()`` returns an object representing a streaming compressor instance.
+It **must** be used as a context manager. That object's ``write(data)`` method
+is used to feed data into the compressor.
 
 If the size of the data being fed to this streaming compressor is known,
 you can declare it before compression begins::
 
    cctx = zstd.ZstdCompressor()
-   with cctx.write_to(fh, size=len(data)) as compressor:
-       compressor.write(data)
+   with cctx.write_to(fh, size=data_len) as compressor:
+       compressor.write(chunk0)
+	   compressor.write(chunk1)
+	   ...
 
 Declaring the size of the source data allows compression parameters to
 be tuned. And if ``write_content_size`` is used, it also results in the
-content size being written.
+content size being written into the frame header of the output data.
 
 To see how much memory is being used by the streaming compressor::
 
@@ -200,8 +209,11 @@ To see how much memory is being used by the streaming compressor::
 	    ...
 		byte_size = compressor.memory_size()
 
-If you prefer to stream data out of a compressor as an iterator,
-``read_from(reader)`` can be used::
+Streaming Output API
+^^^^^^^^^^^^^^^^^^^^
+
+``read_from(reader)`` provides a mechanism to stream data out of a compressor
+as an iterator of data chunks.::
 
    cctx = zstd.ZstdCompressor()
    for chunk in cctx.read_from(fh):
@@ -211,11 +223,6 @@ If you prefer to stream data out of a compressor as an iterator,
 uncompressed data to feed into the compressor. The returned iterator consists
 of chunks of compressed data.
 
-One of the advantages of ``read_from()`` is the caller is in control of when
-data is compressed: data won't be read from the reader and fed into the
-compressor until the returned iterator is advanced. This means CPU cycles
-won't be spent compressing data until the consumer has asked for them.
-
 Like ``write_to()``, ``read_from()`` also accepts a ``size`` argument
 declaring the size of the input stream::
 
@@ -223,9 +230,11 @@ declaring the size of the input stream::
 	for chunk in cctx.read_from(fh, size=some_int):
 	    pass
 
-It is common to want to perform compression across 2 streams, reading raw data
-from 1 and writing compressed data to another. There is a simple API that
-performs this operation::
+Stream Copying API
+^^^^^^^^^^^^^^^^^^
+
+``copy_stream(ifh, ofh)`` can be used to copy data between 2 streams while
+compressing it.::
 
    cctx = zstd.ZstdCompressor()
    cctx.copy_stream(ifh, ofh)
@@ -260,45 +269,57 @@ dict_data
 
 The interface of this class is very similar to ``ZstdCompressor`` (by design).
 
-To decompress an entire compressed zstd frame::
+Simple API
+^^^^^^^^^^
+
+``decompress(data)`` can be used to decompress an entire compressed zstd
+frame in a single operation.::
 
     dctx = zstd.ZstdDecompressor()
-	uncompressed = dctx.decompress(data)
+	decompressed = dctx.decompress(data)
 
-Please note that by default ``decompress(data)`` will only work on data
-written with the content size encoded in its header. This can be achieved
-by creating a ``ZstdCompressor`` with ``write_content_size=True``. If
-compressed data without an embedded content size is seen, ``zstd.ZstdError``
-will be raised.
+By default, ``decompress(data)`` will only work on data written with the content
+size encoded in its header. This can be achieved by creating a
+``ZstdCompressor`` with ``write_content_size=True``. If compressed data without
+an embedded content size is seen, ``zstd.ZstdError`` will be raised.
 
-To attempt decompression without the content size in the input data,
-pass ``max_output_size`` to the method to specify the maximum byte size
-of decompressed output::
+If the compressed data doesn't have its content size embedded within it,
+decompression can be attempted by specifying the ``max_output_size``
+argument.::
 
     dctx = zstd.ZstdDecompressor()
 	uncompressed = dctx.decompress(data, max_output_size=1048576)
 
-Ideally, ``max_output_size`` will be identical to the uncompressed output
-size. If ``max_output_size`` is too small to hold the decompressed data,
-``zstd.ZstdError`` will be raised.
+Ideally, ``max_output_size`` will be identical to the decompressed output
+size.
 
-Please note that an allocation of the requested ``max_output_size`` will be
-performed. Setting to a very large value could result in a lot of work
-for the memory allocator and may result in ``MemoryError`` being raised
-if the allocation fails.
+If ``max_output_size`` is too small to hold the decompressed data,
+``zstd.ZstdError`` will be raised.
 
 If ``max_output_size`` is larger than the decompressed data, the allocated
 output buffer will be resized to only use the space required.
 
-It is **strongly** recommended to use a streaming decompression API instead
-of guessing the output size.
+Please note that an allocation of the requested ``max_output_size`` will be
+performed every time the method is called. Setting to a very large value could
+result in a lot of work for the memory allocator and may result in
+``MemoryError`` being raised if the allocation fails.
 
-To incrementally send uncompressed output to another object via its ``write()``
-method, use ``write_to()``::
+If the exact size of decompressed data is unknown, it is **strongly**
+recommended to use a streaming API.
+
+Streaming Input API
+^^^^^^^^^^^^^^^^^^^
+
+``write_to(fh)`` can be used to incrementally send compressed data to a
+decompressor.::
 
     dctx = zstd.ZstdDecompressor()
     with dctx.write_to(fh) as decompressor:
         decompressor.write(compressed_data)
+
+This behaves similarly to ``zstd.ZstdCompressor``: compressed data is written to
+the decompressor by calling ``write(data)`` and decompressed output is written
+to the output object by calling its ``write(data)`` method.
 
 You can see how much memory is being used by the decompressor::
 
@@ -306,7 +327,11 @@ You can see how much memory is being used by the decompressor::
 	with dctx.write_to(fh) as decompressor:
 	    byte_size = decompressor.memory_size()
 
-It is also possible to stream data out of a decompressor via ``read_from(fh)``::
+Streaming Output API
+^^^^^^^^^^^^^^^^^^^^
+
+``read_from(fh)`` provides a mechanism to stream decompressed data out of a
+compressed source as an iterator of data chunks.:: 
 
     dctx = zstd.ZstdDecompressor()
 	for chunk in dctx.read_from(fh):
@@ -314,13 +339,17 @@ It is also possible to stream data out of a decompressor via ``read_from(fh)``::
 
 ``read_from()`` accepts an object with a ``read(size)`` method that will
 return compressed bytes. It returns an iterator whose elements are chunks
-of the uncompressed data.
+of the decompressed data.
 
 Similarly to ``ZstdCompressor.read_from()``, the consumer of the iterator
 controls when data is decompressed. If the iterator isn't consumed,
 decompression is put on hold.
 
-You can also copy data between 2 streams::
+Stream Copying API
+^^^^^^^^^^^^^^^^^^
+
+``copy_stream(ifh, ofh)`` can be used to copy data across 2 streams while
+performing decompression.::
 
     dctx = zstd.ZstdDecompressor()
     dctx.copy_stream(ifh, ofh)
@@ -330,6 +359,49 @@ e.g. to decompress a file to another file::
     dctx = zstd.ZstdDecompressor()
     with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
         dctx.copy_stream(ifh, ofh)
+
+Choosing an API
+---------------
+
+Various forms of compression and decompression APIs are provided because each
+are suitable for different use cases.
+
+The simple/one-shot APIs are useful for small data, when the decompressed
+data size is known (either recorded in the zstd frame header via
+``write_content_size`` or known via an out-of-band mechanism, such as a file
+size).
+
+A limitation of the simple APIs is that input or output data must fit in memory.
+And unless using advanced tricks with Python *buffer objects*, both input and
+output must fit in memory simultaneously.
+
+Another limitation is that compression or decompression is performed as a single
+operation. So if you feed large input, it could take a long time for the
+function to return.
+
+The streaming APIs do not have the limitations of the simple API. The cost to
+this is they are more complex to use than a single function call.
+
+The streaming APIs put the caller in control of compression and decompression
+behavior by allowing them to directly control either the input or output side
+of the operation.
+
+With the streaming input APIs, the caller feeds data into the compressor or
+decompressor as they see fit. Output data will only be written after the caller
+has explicitly written data.
+
+With the streaming output APIs, the caller consumes output from the compressor
+or decompressor as they see fit. The compressor or decompressor will only
+consume data from the source when the caller is ready to receive it.
+
+One end of the streaming APIs involves a file-like object that must
+``write()`` output data or ``read()`` input data. Depending on what the
+backing storage for these objects is, those operations may not complete quickly.
+For example, when streaming compressed data to a file, the ``write()`` into
+a streaming compressor could result in a ``write()`` to the filesystem, which
+may take a long time to finish due to slow I/O on the filesystem. So, there
+may be overhead in streaming APIs beyond the compression and decompression
+operations.
 
 Dictionary Creation and Management
 ----------------------------------
