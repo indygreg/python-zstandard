@@ -298,7 +298,7 @@ PyTypeObject DictParametersType = {
 
 static PyObject *ZstdError;
 
-static inline void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams) {
+static void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams) {
 	zparams->windowLog = params->windowLog;
 	zparams->chainLog = params->chainLog;
 	zparams->hashLog = params->hashLog;
