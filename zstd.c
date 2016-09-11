@@ -1411,6 +1411,11 @@ static PyObject* ZstdCompressorIterator_iternext(ZstdCompressorIterator* self) {
 		return NULL;
 	}
 
+	/* TODO this feels wrong. */
+	assert(self->input.pos == self->input.size);
+	Py_DECREF(readResult);
+	readResult = NULL;
+
 	/* If we didn't write anything, we exhausted the input but didn't have
 	   enough data to flush. */
 	if (0 == self->output.pos) {
