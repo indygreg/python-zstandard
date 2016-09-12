@@ -66,8 +66,8 @@ obtained with the ``zstd`` program are on the left. The remaining columns detail
 performance of various compression APIs in the Python bindings.
 
 +-------+-----------------+-----------------+-----------------+---------------+
-| Level |     Native      |     Simple      |    Stream In    |   Stream Out  |
-|       |  Comp / Decomp  |  Comp / Decomp  |  Comp / Decomp  |     Comp      |
+| Level | Native          | Simple          | Stream In       | Stream Out    |
+|       | Comp / Decomp   | Comp / Decomp   | Comp / Decomp   | Comp          |
 +=======+=================+=================+=================+===============+
 |   1   | 490 / 1338 MB/s | 458 / 1266 MB/s | 407 / 1156 MB/s |  405 MB/s     |
 +-------+-----------------+-----------------+-----------------+---------------+
