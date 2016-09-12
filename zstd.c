@@ -2211,12 +2211,81 @@ static PyObject* ZstdDecompressorIterator_iter(PyObject* self) {
 	return self;
 }
 
-static PyObject* ZstdDecompressorIterator_iternext(ZstdDecompressorIterator* self) {
-	size_t zresult;
-	PyObject* readResult;
+typedef struct {
+	int errored;
 	PyObject* chunk;
+} DecompressorIteratorResult;
+
+static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIterator* self) {
+	size_t zresult;
+	PyObject* chunk;
+	DecompressorIteratorResult result;
+	size_t oldInputPos = self->input.pos;
+
+	result.chunk = NULL;
+
+	chunk = PyBytes_FromStringAndSize(NULL, self->decompressor->outsize);
+	if (!chunk) {
+		result.errored = 1;
+		return result;
+	}
+
+	self->output.dst = PyBytes_AsString(chunk);
+	self->output.size = self->decompressor->outsize;
+	self->output.pos = 0;
+
+	Py_BEGIN_ALLOW_THREADS
+	zresult = ZSTD_decompressStream(self->dstream, &self->output, &self->input);
+	Py_END_ALLOW_THREADS
+
+	/* We're done with the pointer. Nullify to prevent anyone from getting a
+	   handle on a Python object. */
+	self->output.dst = NULL;
+
+	if (ZSTD_isError(zresult)) {
+		Py_DECREF(chunk);
+		PyErr_Format(ZstdError, "zstd decompress error: %s",
+			ZSTD_getErrorName(zresult));
+		result.errored = 1;
+		return result;
+	}
+
+	self->readCount += self->input.pos - oldInputPos;
+
+	/* Frame is fully decoded. Input exhausted and output sitting in buffer. */
+	if (0 == zresult) {
+		self->finishedInput = 1;
+		self->finishedOutput = 1;
+	}
+	else if (1 == zresult) {
+		self->finishedInput = 1;
+	}
+
+	/* If it produced output data, return it. */
+	if (self->output.pos) {
+		if (self->output.pos < self->decompressor->outsize) {
+			if (_PyBytes_Resize(&chunk, self->output.pos)) {
+				result.errored = 1;
+				return result;
+			}
+		}
+	}
+	else {
+		Py_DECREF(chunk);
+		chunk = NULL;
+	}
+
+	result.errored = 0;
+	result.chunk = chunk;
+
+	return result;
+}
+
+static PyObject* ZstdDecompressorIterator_iternext(ZstdDecompressorIterator* self) {
+	PyObject* readResult;
 	char* readBuffer;
 	Py_ssize_t readSize;
+	DecompressorIteratorResult result;
 
 	if (self->finishedOutput) {
 		PyErr_SetString(PyExc_StopIteration, "output flushed");
@@ -2225,24 +2294,12 @@ static PyObject* ZstdDecompressorIterator_iternext(ZstdDecompressorIterator* sel
 
 	/* If we have data left in the input, consume it. */
 	if (self->input.pos < self->input.size) {
-		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompressStream(self->dstream, &self->output, &self->input);
-		Py_END_ALLOW_THREADS
-
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "zstd decompress error: %s",
-				ZSTD_getErrorName(zresult));
-			return NULL;
+		result = read_decompressor_iterator(self);
+		if (result.chunk || result.errored) {
+			return result.chunk;
 		}
 
-		/* If it produced output data, emit it. */
-		if (self->output.pos) {
-			chunk = PyBytes_FromStringAndSize(self->output.dst, self->output.pos);
-			self->output.pos = 0;
-			return chunk;
-		}
-
-		/* Else fall through to get more data from input stream. */
+		/* Else fall through to get more data from input. */
 	}
 
 read_from_source:
@@ -2279,69 +2336,18 @@ read_from_source:
 		Py_DECREF(readResult);
 	}
 
-	chunk = PyBytes_FromStringAndSize(NULL, self->decompressor->outsize);
-	if (!chunk) {
-		return NULL;
+	result = read_decompressor_iterator(self);
+	if (result.errored || result.chunk) {
+		return result.chunk;
 	}
 
-	self->output.dst = PyBytes_AsString(chunk);
-	self->output.size = self->decompressor->outsize;
-	self->output.pos = 0;
-
-	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_decompressStream(self->dstream, &self->output, &self->input);
-	Py_END_ALLOW_THREADS
-
-	if (ZSTD_isError(zresult)) {
-		self->output.dst = NULL;
-		Py_DECREF(chunk);
-		PyErr_Format(ZstdError, "zstd decompressor error: %s",
-			ZSTD_getErrorName(zresult));
-		return NULL;
+	/* No new output data. Try again unless we know there is no more data. */
+	if (!self->finishedInput) {
+		goto read_from_source;
 	}
 
-	self->readCount += self->input.pos;
-
-	/* Frame is fully decoded. */
-	if (0 == zresult) {
-		if (self->output.pos < self->decompressor->outsize) {
-			if (_PyBytes_Resize(&chunk, self->output.pos)) {
-				return NULL;
-			}
-		}
-
-		self->finishedInput = 1;
-		self->finishedOutput = 1;
-		return chunk;
-	}
-	/* Input exhausted. Only have data in the internal zstd buffer. */
-	else if (1 == zresult) {
-		self->finishedInput = 1;
-	}
-
-	/* No output recorded. Likely held up inside zstd's internal buffers. Try
-	   giving it more data if available. This is preferable to emitting an
-	   empty chunk from the iterator. */
-	if (!self->output.pos) {
-		Py_DECREF(chunk);
-
-		if (!self->finishedInput) {
-			goto read_from_source;
-		}
-		else {
-			PyErr_SetString(PyExc_StopIteration, "input exhausted");
-			return NULL;
-		}
-	}
-
-	/* Readjust chunk size if needed. */
-	if (self->output.pos < self->decompressor->outsize) {
-		if (_PyBytes_Resize(&chunk, self->output.pos)) {
-			return NULL;
-		}
-	}
-
-	return chunk;
+	PyErr_SetString(PyExc_StopIteration, "input exhausted");
+	return NULL;
 }
 
 static PyTypeObject ZstdDecompressorIteratorType = {

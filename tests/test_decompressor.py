@@ -270,11 +270,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         it = dctx.read_from(source)
 
-        chunk = next(it)
-        self.assertIsNotNone(chunk)
-        self.assertEqual(chunk, b'')
-
-        # Should only emit a single chunk.
+        # No chunks should be emitted since there is no data.
         with self.assertRaises(StopIteration):
             next(it)
 
@@ -337,3 +333,26 @@ class TestDecompressor_read_from(unittest.TestCase):
 
         decompressed = b''.join(chunks)
         self.assertEqual(len(decompressed), input_size)
+
+    def test_interesting(self):
+        # Found this edge case via fuzzing.
+        cctx = zstd.ZstdCompressor(level=1)
+
+        source = io.BytesIO()
+
+        compressed = io.BytesIO()
+        with cctx.write_to(compressed) as compressor:
+            for i in range(256):
+                chunk = b'\0' * 1024
+                compressor.write(chunk)
+                source.write(chunk)
+
+        dctx = zstd.ZstdDecompressor()
+
+        simple = dctx.decompress(compressed.getvalue(),
+                                 max_output_size=len(source.getvalue()))
+        self.assertEqual(simple, source.getvalue())
+
+        compressed.seek(0)
+        streamed = b''.join(dctx.read_from(compressed))
+        self.assertEqual(streamed, source.getvalue())
