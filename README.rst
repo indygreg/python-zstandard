@@ -19,10 +19,10 @@ the author wishes to reserve the right to change the Python API. At the
 time all desired functionality has been implemented and the project author
 is satisfied with the Python API, the project will enter beta status.
 
-There is continuous automation for Python versions 2.6, 2.7, and 3.3+
-on Linux x86_x64. The author also develops with Python 3.5 on Windows 10.
-The author is reasonably confident the extension is stable and works as
-advertised on these platforms.
+There is continuous integration for Python versions 2.6, 2.7, and 3.3+
+on Linux x86_x64 and Windows x86 and x86_64. The author is reasonably
+confident the extension is stable and works as advertised on these
+platforms.
 
 Expected Changes
 ----------------
