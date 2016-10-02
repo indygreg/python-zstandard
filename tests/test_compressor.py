@@ -10,6 +10,8 @@ except ImportError:
 
 import zstd
 
+from .common import OpCountingBytesIO
+
 
 if sys.version_info[0] >= 3:
     next = lambda it: it.__next__()
@@ -178,6 +180,17 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(len(with_size.getvalue()),
                          len(no_size.getvalue()) + 1)
 
+    def test_read_write_size(self):
+        source = OpCountingBytesIO(b'foobarfoobar')
+        dest = OpCountingBytesIO()
+        cctx = zstd.ZstdCompressor()
+        r, w = cctx.copy_stream(source, dest, read_size=1, write_size=1)
+
+        self.assertEqual(r, len(source.getvalue()))
+        self.assertEqual(w, 21)
+        self.assertEqual(source._read_count, len(source.getvalue()) + 1)
+        self.assertEqual(dest._write_count, len(dest.getvalue()))
+
 
 def compress(data, level):
     buffer = io.BytesIO()
@@ -307,6 +320,16 @@ class TestCompressor_write_to(unittest.TestCase):
 
         self.assertGreater(size, 100000)
 
+    def test_write_size(self):
+        cctx = zstd.ZstdCompressor(level=3)
+        dest = OpCountingBytesIO()
+        with cctx.write_to(dest, write_size=1) as compressor:
+            compressor.write(b'foo')
+            compressor.write(b'bar')
+            compressor.write(b'foobar')
+
+        self.assertEqual(len(dest.getvalue()), dest._write_count)
+
 
 class TestCompressor_read_from(unittest.TestCase):
     def test_read_empty(self):
@@ -353,3 +376,11 @@ class TestCompressor_read_from(unittest.TestCase):
 
         # We should get the same output as the one-shot compression mechanism.
         self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
+
+    def test_read_write_size(self):
+        source = OpCountingBytesIO(b'foobarfoobar')
+        cctx = zstd.ZstdCompressor(level=3)
+        for chunk in cctx.read_from(source, read_size=1, write_size=1):
+            self.assertEqual(len(chunk), 1)
+
+        self.assertEqual(source._read_count, len(source.getvalue()) + 1)

@@ -492,7 +492,6 @@ typedef struct {
 	ZstdCompressor* compressor;
 	PyObject* writer;
 	Py_ssize_t sourceSize;
-	size_t inSize;
 	size_t outSize;
 	ZSTD_CStream* cstream;
 	int entered;
@@ -513,6 +512,8 @@ typedef struct {
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
 	int finishedOutput;
+	int finishedInput;
+	PyObject* readResult;
 } ZstdCompressorIterator;
 
 static PyTypeObject ZstdCompressorIteratorType;
@@ -628,7 +629,8 @@ static void ZstdCompressor_dealloc(ZstdCompressor* self) {
 }
 
 PyDoc_STRVAR(ZstdCompressor_copy_stream__doc__,
-"copy_stream(ifh, ofh[, size=0]) -- compress data between streams\n"
+"copy_stream(ifh, ofh[, size=0, read_size=default, write_size=default])\n"
+"compress data between streams\n"
 "\n"
 "Data will be read from ``ifh``, compressed, and written to ``ofh``.\n"
 "``ifh`` must have a ``read(size)`` method. ``ofh`` must have a ``write(data)``\n"
@@ -636,6 +638,10 @@ PyDoc_STRVAR(ZstdCompressor_copy_stream__doc__,
 "\n"
 "An optional ``size`` argument specifies the size of the source stream.\n"
 "If defined, compression parameters will be tuned based on the size.\n"
+"\n"
+"Optional arguments ``read_size`` and ``write_size`` define the chunk sizes\n"
+"of ``read()`` and ``write()`` operations, respectively. By default, they use\n"
+"the default compression stream input and output sizes, respectively.\n"
 );
 
 static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
@@ -643,6 +649,8 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		"ifh",
 		"ofh",
 		"size",
+		"read_size",
+		"write_size",
 		NULL
 	};
 
@@ -656,7 +664,6 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	ZSTD_outBuffer output;
 	Py_ssize_t totalRead = 0;
 	Py_ssize_t totalWrite = 0;
-	PyObject* readSizeArg = NULL;
 	char* readBuffer;
 	Py_ssize_t readSize;
 	PyObject* readResult;
@@ -666,7 +673,8 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	PyObject* totalReadPy;
 	PyObject* totalWritePy;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|n", kwlist, &source, &dest, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|nkk", kwlist, &source, &dest, &sourceSize,
+		&inSize, &outSize)) {
 		return NULL;
 	}
 
@@ -695,11 +703,9 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	output.size = outSize;
 	output.pos = 0;
 
-	readSizeArg = PyLong_FromSize_t(inSize);
-
 	while (1) {
 		/* Try to read from source stream. */
-		readResult = PyObject_CallMethod(source, "read", "I", readSizeArg);
+		readResult = PyObject_CallMethod(source, "read", "n", inSize);
 		if (!readResult) {
 			PyErr_SetString(ZstdError, "could not read() from source");
 			goto finally;
@@ -781,8 +787,6 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	Py_DecRef(totalWritePy);
 
 finally:
-	Py_XDECREF(readSizeArg);
-
 	if (output.dst) {
 		free(output.dst);
 	}
@@ -909,7 +913,8 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 }
 
 PyDoc_STRVAR(ZstdCompressor_read_from__doc__,
-"read_from(reader) -- Read uncompress data from a reader and return an iterator\n"
+"read_from(reader, [size=0, read_size=default, write_size=default])\n"
+"Read uncompress data from a reader and return an iterator\n"
 "\n"
 "Returns an iterator of compressed data produced from reading from ``reader``.\n"
 "\n"
@@ -917,6 +922,10 @@ PyDoc_STRVAR(ZstdCompressor_read_from__doc__,
 "``read(size)`` method of it. The source data will be streamed into a\n"
 "compressor. As compressed data is available, it will be exposed to the\n"
 "iterator.\n"
+"\n"
+"Data is read from the source in chunks of ``read_size``. Compressed chunks\n"
+"are at most ``write_size`` bytes. Both values default to the zstd input and\n"
+"and output defaults, respectively.\n"
 "\n"
 "The caller is partially in control of how fast data is fed into the\n"
 "compressor by how it consumes the returned iterator. The compressor will\n"
@@ -927,6 +936,8 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 	static char* kwlist[] = {
 		"reader",
 		"size",
+		"read_size",
+		"write_size",
 		NULL
 	};
 
@@ -936,7 +947,8 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 	size_t outSize = ZSTD_CStreamOutSize();
 	ZstdCompressorIterator* result;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n", kwlist, &reader, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nkk", kwlist, &reader, &sourceSize,
+		&inSize, &outSize)) {
 		return NULL;
 	}
 
@@ -979,7 +991,9 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 	result->input.size = 0;
 	result->input.pos = 0;
 
+	result->finishedInput = 0;
 	result->finishedOutput = 0;
+	result->readResult = NULL;
 
 	return result;
 }
@@ -996,22 +1010,27 @@ PyDoc_STRVAR(ZstdCompressor_write_to___doc__,
 "of the eventual input. If specified, the size will influence compression\n"
 "parameter tuning and could result in the size being written into the\n"
 "header of the compressed data.\n"
+"\n"
+"An optional ``write_size`` argument is also accepted. It defines the maximum\n"
+"byte size of chunks fed to ``write()``. By default, it uses the zstd default\n"
+"for a compressor output stream.\n"
 );
 
 static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"writer",
 		"size",
+		"write_size",
 		NULL
 	};
 
 	PyObject* writer;
 	ZstdCompressionWriter* result;
 	Py_ssize_t sourceSize = 0;
-	size_t inSize = ZSTD_CStreamInSize();
 	size_t outSize = ZSTD_CStreamOutSize();
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n", kwlist, &writer, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nk", kwlist, &writer, &sourceSize,
+		&outSize)) {
 		return NULL;
 	}
 
@@ -1033,7 +1052,6 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 
 	result->sourceSize = sourceSize;
 
-	result->inSize = inSize;
 	result->outSize = outSize;
 
 	result->entered = 0;
@@ -1317,6 +1335,7 @@ PyDoc_STRVAR(ZstdCompressorIterator__doc__,
 );
 
 static void ZstdCompressorIterator_dealloc(ZstdCompressorIterator* self) {
+	Py_XDECREF(self->readResult);
 	Py_XDECREF(self->compressor);
 	Py_XDECREF(self->reader);
 
@@ -1340,21 +1359,32 @@ static PyObject* ZstdCompressorIterator_iter(PyObject* self) {
 
 static PyObject* ZstdCompressorIterator_iternext(ZstdCompressorIterator* self) {
 	size_t zresult;
-	PyObject* readResult;
+	PyObject* readResult = NULL;
 	PyObject* chunk;
 	char* readBuffer;
-	Py_ssize_t readSize;
+	Py_ssize_t readSize = 0;
 
 	if (self->finishedOutput) {
 		PyErr_SetString(PyExc_StopIteration, "output flushed");
 		return NULL;
 	}
 
+feedcompressor:
+
 	/* If we have data left in the input, consume it. */
 	if (self->input.pos < self->input.size) {
 		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_compressStream(self->cstream, &self->output, &self->input);
 		Py_END_ALLOW_THREADS
+
+		/* Release the Python object holding the input buffer. */
+		if (self->input.pos == self->input.size) {
+			self->input.src = NULL;
+			self->input.pos = 0;
+			self->input.size = 0;
+			Py_DECREF(self->readResult);
+			self->readResult = NULL;
+		}
 
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
@@ -1375,18 +1405,26 @@ static PyObject* ZstdCompressorIterator_iternext(ZstdCompressorIterator* self) {
 	/* The code above should have either emitted a chunk and return or consumed
 	   the entire input buffer. So the state of the input buffer is not
 	   relevant. */
-	readResult = PyObject_CallMethod(self->reader, "read", "I", self->inSize);
-	if (!readResult) {
-		PyErr_SetString(ZstdError, "could not read() from source");
-		return NULL;
-	}
+	if (!self->finishedInput) {
+		readResult = PyObject_CallMethod(self->reader, "read", "I", self->inSize);
+		if (!readResult) {
+			PyErr_SetString(ZstdError, "could not read() from source");
+			return NULL;
+		}
 
-	PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+		PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+
+		if (0 == readSize) {
+			Py_DECREF(readResult);
+			self->finishedInput = 1;
+		}
+		else {
+			self->readResult = readResult;
+		}
+	}
 
 	/* EOF */
 	if (0 == readSize) {
-		Py_DECREF(readResult);
-
 		zresult = ZSTD_endStream(self->cstream, &self->output);
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
@@ -1396,9 +1434,7 @@ static PyObject* ZstdCompressorIterator_iternext(ZstdCompressorIterator* self) {
 
 		assert(self->output.pos);
 
-		/* Ending the stream didn't exhaust the output buffer. That means
-		   everything is flushed. */
-		if (self->output.pos < self->output.size) {
+		if (0 == zresult) {
 			self->finishedOutput = 1;
 		}
 
@@ -1416,37 +1452,29 @@ static PyObject* ZstdCompressorIterator_iternext(ZstdCompressorIterator* self) {
 	zresult = ZSTD_compressStream(self->cstream, &self->output, &self->input);
 	Py_END_ALLOW_THREADS
 
+	/* The input buffer currently points to memory managed by Python
+	   (readBuffer). This object was allocated by this function. If it wasn't
+	   fully consumed, we need to release it in a subsequent function call.
+	   If it is fully consumed, do that now.
+	 */
+	if (self->input.pos == self->input.size) {
+		self->input.src = NULL;
+		self->input.pos = 0;
+		self->input.size = 0;
+		Py_DECREF(self->readResult);
+		self->readResult = NULL;
+	}
+
 	if (ZSTD_isError(zresult)) {
-		Py_DECREF(readResult);
 		PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
 		return NULL;
 	}
 
-	/* TODO this feels wrong. */
-	assert(self->input.pos == self->input.size);
-	Py_DECREF(readResult);
-	readResult = NULL;
+	assert(self->input.pos <= self->input.size);
 
-	/* If we didn't write anything, we exhausted the input but didn't have
-	   enough data to flush. */
+	/* If we didn't write anything, start the process over. */
 	if (0 == self->output.pos) {
-		assert(self->input.size < self->inSize);
-		zresult = ZSTD_endStream(self->cstream, &self->output);
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "error ending compression stream: %s",
-				ZSTD_getErrorName(zresult));
-			return NULL;
-		}
-
-		assert(self->output.pos);
-
-		if (self->output.pos < self->output.size) {
-			self->finishedOutput = 1;
-		}
-
-		chunk = PyBytes_FromStringAndSize(self->output.dst, self->output.pos);
-		self->output.pos = 0;
-		return chunk;
+		goto feedcompressor;
 	}
 
 	chunk = PyBytes_FromStringAndSize(self->output.dst, self->output.pos);
@@ -1507,7 +1535,6 @@ typedef struct {
 
 	ZstdDecompressor* decompressor;
 	PyObject* writer;
-	size_t inSize;
 	size_t outSize;
 	ZSTD_DStream* dstream;
 	int entered;
@@ -1609,14 +1636,26 @@ static void ZstdDecompressor_dealloc(ZstdDecompressor* self) {
 }
 
 PyDoc_STRVAR(ZstdDecompressor_copy_stream__doc__,
-"copy_stream(ifh, ofh) -- decompress data between streams\n"
+"copy_stream(ifh, ofh[, read_size=default, write_size=default]) -- decompress data between streams\n"
 "\n"
 "Compressed data will be read from ``ifh``, decompressed, and written to\n"
 "``ofh``. ``ifh`` must have a ``read(size)`` method. ``ofh`` must have a\n"
 "``write(data)`` method.\n"
+"\n"
+"The optional ``read_size`` and ``write_size`` arguments control the chunk\n"
+"size of data that is ``read()`` and ``write()`` between streams. They default\n"
+"to the default input and output sizes of zstd decompressor streams.\n"
 );
 
-static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* args) {
+static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"ifh",
+		"ofh",
+		"read_size",
+		"write_size",
+		NULL
+	};
+
 	PyObject* source;
 	PyObject* dest;
 	size_t inSize = ZSTD_DStreamInSize();
@@ -1626,7 +1665,6 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 	ZSTD_outBuffer output;
 	Py_ssize_t totalRead = 0;
 	Py_ssize_t totalWrite = 0;
-	PyObject* readSizeArg = NULL;
 	char* readBuffer;
 	Py_ssize_t readSize;
 	PyObject* readResult;
@@ -1636,7 +1674,8 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 	PyObject* totalReadPy;
 	PyObject* totalWritePy;
 
-	if (!PyArg_ParseTuple(args, "OO", &source, &dest)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|kk", kwlist, &source,
+		&dest, &inSize, &outSize)) {
 		return NULL;
 	}
 
@@ -1665,11 +1704,9 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 	output.size = outSize;
 	output.pos = 0;
 
-	readSizeArg = PyLong_FromSize_t(inSize);
-
 	/* Read source stream until EOF */
 	while (1) {
-		readResult = PyObject_CallMethod(source, "read", "I", readSizeArg);
+		readResult = PyObject_CallMethod(source, "read", "n", inSize);
 		if (!readResult) {
 			PyErr_SetString(ZstdError, "could not read() from source");
 			goto finally;
@@ -1689,7 +1726,7 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 		input.size = readSize;
 		input.pos = 0;
 
-		while (input.pos < input.size || zresult == 1) {
+		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
 			zresult = ZSTD_decompressStream(dstream, &output, &input);
 			Py_END_ALLOW_THREADS
@@ -1728,8 +1765,6 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 	Py_DecRef(totalWritePy);
 
 finally:
-	Py_XDECREF(readSizeArg);
-
 	if (output.dst) {
 		free(output.dst);
 	}
@@ -1875,24 +1910,37 @@ finally:
 }
 
 PyDoc_STRVAR(ZstdDecompressor_read_from__doc__,
-"read_from(reader) -- Read compressed data and return an iterator\n"
+"read_from(reader[, read_size=default, write_size=default])\n"
+"Read compressed data and return an iterator\n"
 "\n"
 "Returns an iterator of decompressed data chunks produced from reading from\n"
 "the ``reader``.\n"
 "\n"
 "Compressed data will be obtained from ``reader`` by calling the\n"
-"``read(size)`` metho of it. The source data will be streamed into a\n"
+"``read(size)`` method of it. The source data will be streamed into a\n"
 "decompressor. As decompressed data is available, it will be exposed to the\n"
 "return iterator.\n"
+"\n"
+"Data is ``read()`` in chunks of size ``read_size`` and exposed to the\n"
+"iterator in chunks of size ``write_size``. The default values are the input\n"
+"and output sizes for a zstd streaming decompressor.\n"
 );
 
-static ZstdDecompressorIterator* ZstdDecompressor_read_from(ZstdDecompressor* self, PyObject* args) {
+static ZstdDecompressorIterator* ZstdDecompressor_read_from(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"reader",
+		"read_size",
+		"write_size",
+		NULL
+	};
+
 	PyObject* reader;
 	size_t inSize = ZSTD_DStreamInSize();
 	size_t outSize = ZSTD_DStreamOutSize();
 	ZstdDecompressorIterator* result;
 
-	if (!PyArg_ParseTuple(args, "O", &reader)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kk", kwlist, &reader,
+		&inSize, &outSize)) {
 		return NULL;
 	}
 
@@ -1948,15 +1996,24 @@ PyDoc_STRVAR(ZstdDecompressor_write_to__doc__,
 "\n"
 "The caller feeds intput data to the object by calling ``write(data)``.\n"
 "Decompressed data is written to the argument given as it is decompressed.\n"
+"\n"
+"An optional ``write_size`` argument defines the size of chunks to\n"
+"``write()`` to the writer. It defaults to the default output size for a zstd\n"
+"streaming decompressor.\n"
 );
 
-static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self, PyObject* args) {
+static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"writer",
+		"write_size",
+		NULL
+	};
+
 	PyObject* writer;
-	size_t inSize = ZSTD_DStreamInSize();
 	size_t outSize = ZSTD_DStreamOutSize();
 	ZstdDecompressionWriter* result;
 
-	if (!PyArg_ParseTuple(args, "O", &writer)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k", kwlist, &writer, &outSize)) {
 		return NULL;
 	}
 
@@ -1976,7 +2033,6 @@ static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self
 	result->writer = writer;
 	Py_INCREF(result->writer);
 
-	result->inSize = inSize;
 	result->outSize = outSize;
 
 	result->entered = 0;
@@ -1986,13 +2042,13 @@ static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self
 }
 
 static PyMethodDef ZstdDecompressor_methods[] = {
-	{ "copy_stream", (PyCFunction)ZstdDecompressor_copy_stream, METH_VARARGS,
+	{ "copy_stream", (PyCFunction)ZstdDecompressor_copy_stream, METH_VARARGS | METH_KEYWORDS,
 	  ZstdDecompressor_copy_stream__doc__ },
 	{ "decompress", (PyCFunction)ZstdDecompressor_decompress, METH_VARARGS | METH_KEYWORDS,
 	  ZstdDecompressor_decompress__doc__ },
-	{ "read_from", (PyCFunction)ZstdDecompressor_read_from, METH_VARARGS,
+	{ "read_from", (PyCFunction)ZstdDecompressor_read_from, METH_VARARGS | METH_KEYWORDS,
 	  ZstdDecompressor_read_from__doc__ },
-	{ "write_to", (PyCFunction)ZstdDecompressor_write_to, METH_VARARGS,
+	{ "write_to", (PyCFunction)ZstdDecompressor_write_to, METH_VARARGS | METH_KEYWORDS,
 	  ZstdDecompressor_write_to__doc__ },
 	{ NULL, NULL }
 };
@@ -2124,7 +2180,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	input.size = sourceSize;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < sourceSize || zresult == 1) {
+	while ((ssize_t)input.pos < sourceSize) {
 		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_decompressStream(self->dstream, &output, &input);
 		Py_END_ALLOW_THREADS

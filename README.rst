@@ -229,6 +229,12 @@ Declaring the size of the source data allows compression parameters to
 be tuned. And if ``write_content_size`` is used, it also results in the
 content size being written into the frame header of the output data.
 
+The size of chunks being ``write()`` to the destination can be specified::
+
+    cctx = zstd.ZstdCompressor()
+    with cctx.write_to(fh, write_size=32768) as compressor:
+        ...
+
 To see how much memory is being used by the streaming compressor::
 
     cctx = zstd.ZstdCompressor()
@@ -257,6 +263,13 @@ declaring the size of the input stream::
     for chunk in cctx.read_from(fh, size=some_int):
         pass
 
+You can also control the size that data is ``read()`` from the source and
+the ideal size of output chunks::
+
+    cctx = zstd.ZstdCompressor()
+    for chunk in cctx.read_from(fh, read_size=16384, write_size=8192):
+        pass
+
 Stream Copying API
 ^^^^^^^^^^^^^^^^^^
 
@@ -276,6 +289,12 @@ It is also possible to declare the size of the source stream::
 
    cctx = zstd.ZstdCompressor()
    cctx.copy_stream(ifh, ofh, size=len_of_input)
+
+You can also specify how large the chunks that are ``read()`` and ``write()``
+from and to the streams::
+
+   cctx = zstd.ZstdCompressor()
+   cctx.copy_stream(ifh, ofh, read_size=32768, write_size=16384)
 
 The stream copier returns a 2-tuple of bytes read and written::
 
@@ -348,6 +367,12 @@ This behaves similarly to ``zstd.ZstdCompressor``: compressed data is written to
 the decompressor by calling ``write(data)`` and decompressed output is written
 to the output object by calling its ``write(data)`` method.
 
+The size of chunks being ``write()`` to the destination can be specified::
+
+    dctx = zstd.ZstdDecompressor()
+    with dctx.write_to(fh, write_size=16384) as decompressor:
+        pass
+
 You can see how much memory is being used by the decompressor::
 
     dctx = zstd.ZstdDecompressor()
@@ -368,6 +393,12 @@ compressed source as an iterator of data chunks.::
 return compressed bytes. It returns an iterator whose elements are chunks
 of the decompressed data.
 
+The size of requested ``read()`` from the source can be specified::
+
+    dctx = zstd.ZstdDecompressor()
+    for chunk in dctx.read_from(fh, read_size=16384):
+        pass
+
 Similarly to ``ZstdCompressor.read_from()``, the consumer of the iterator
 controls when data is decompressed. If the iterator isn't consumed,
 decompression is put on hold.
@@ -386,6 +417,12 @@ e.g. to decompress a file to another file::
     dctx = zstd.ZstdDecompressor()
     with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
         dctx.copy_stream(ifh, ofh)
+
+The size of chunks being ``read()`` and ``write()`` from and to the streams
+can be specified::
+
+    dctx = zstd.ZstdDecompressor()
+    dctx.copy_stream(ifh, ofh, read_size=8192, write_size=16384)
 
 Choosing an API
 ---------------

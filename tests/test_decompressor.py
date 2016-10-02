@@ -10,6 +10,8 @@ except ImportError:
 
 import zstd
 
+from .common import OpCountingBytesIO
+
 
 if sys.version_info[0] >= 3:
     next = lambda it: it.__next__()
@@ -164,6 +166,19 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         self.assertEqual(r, len(compressed.getvalue()))
         self.assertEqual(w, len(source.getvalue()))
 
+    def test_read_write_size(self):
+        source = OpCountingBytesIO(zstd.ZstdCompressor().compress(
+            b'foobarfoobar'))
+
+        dest = OpCountingBytesIO()
+        dctx = zstd.ZstdDecompressor()
+        r, w = dctx.copy_stream(source, dest, read_size=1, write_size=1)
+
+        self.assertEqual(r, len(source.getvalue()))
+        self.assertEqual(w, len(b'foobarfoobar'))
+        self.assertEqual(source._read_count, len(source.getvalue()) + 1)
+        self.assertEqual(dest._write_count, len(dest.getvalue()))
+
 
 def decompress_via_writer(data):
     buffer = io.BytesIO()
@@ -240,6 +255,21 @@ class TestDecompressor_write_to(unittest.TestCase):
             size = decompressor.memory_size()
 
         self.assertGreater(size, 100000)
+
+    def test_write_size(self):
+        source = zstd.ZstdCompressor().compress(b'foobarfoobar')
+        dest = OpCountingBytesIO()
+        dctx = zstd.ZstdDecompressor()
+        with dctx.write_to(dest, write_size=1) as decompressor:
+            s = struct.Struct('>B')
+            for c in source:
+                if not isinstance(c, str):
+                    c = s.pack(c)
+                decompressor.write(c)
+
+
+        self.assertEqual(dest.getvalue(), b'foobarfoobar')
+        self.assertEqual(dest._write_count, len(dest.getvalue()))
 
 
 class TestDecompressor_read_from(unittest.TestCase):
@@ -356,3 +386,11 @@ class TestDecompressor_read_from(unittest.TestCase):
         compressed.seek(0)
         streamed = b''.join(dctx.read_from(compressed))
         self.assertEqual(streamed, source.getvalue())
+
+    def test_read_write_size(self):
+        source = OpCountingBytesIO(zstd.ZstdCompressor().compress(b'foobarfoobar'))
+        dctx = zstd.ZstdDecompressor()
+        for chunk in dctx.read_from(source, read_size=1, write_size=1):
+            self.assertEqual(len(chunk), 1)
+
+        self.assertEqual(source._read_count, len(source.getvalue()))
