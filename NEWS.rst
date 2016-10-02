@@ -23,3 +23,6 @@ compression and decompression APIs. Memory size APIs added.
 ZstdCompressor.read_from() and ZstdDecompressor.read_from() have been
 implemented. This rounds out the major compression/decompression APIs planned
 by the author.
+
+2016-10-02 - 0.3.3 is released with a bug fix for read_from not fully
+decoding a zstd frame (issue #2).
