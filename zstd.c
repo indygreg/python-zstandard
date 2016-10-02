@@ -2257,9 +2257,6 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 		self->finishedInput = 1;
 		self->finishedOutput = 1;
 	}
-	else if (1 == zresult) {
-		self->finishedInput = 1;
-	}
 
 	/* If it produced output data, return it. */
 	if (self->output.pos) {
