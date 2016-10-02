@@ -204,8 +204,8 @@ data into a compressor.::
    cctx = zstd.ZstdCompressor(level=10)
    with cctx.write_to(fh) as compressor:
        compressor.write(b'chunk 0')
-	   compressor.write(b'chunk 1')
-	   ...
+       compressor.write(b'chunk 1')
+       ...
 
 The argument to ``write_to()`` must have a ``write(data)`` method. As
 compressed data is available, ``write()`` will be called with the comrpessed
@@ -222,8 +222,8 @@ you can declare it before compression begins::
    cctx = zstd.ZstdCompressor()
    with cctx.write_to(fh, size=data_len) as compressor:
        compressor.write(chunk0)
-	   compressor.write(chunk1)
-	   ...
+       compressor.write(chunk1)
+       ...
 
 Declaring the size of the source data allows compression parameters to
 be tuned. And if ``write_content_size`` is used, it also results in the
@@ -232,9 +232,9 @@ content size being written into the frame header of the output data.
 To see how much memory is being used by the streaming compressor::
 
     cctx = zstd.ZstdCompressor()
-	with cctx.write_to(fh) as compressor:
-	    ...
-		byte_size = compressor.memory_size()
+    with cctx.write_to(fh) as compressor:
+        ...
+        byte_size = compressor.memory_size()
 
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
@@ -254,8 +254,8 @@ Like ``write_to()``, ``read_from()`` also accepts a ``size`` argument
 declaring the size of the input stream::
 
     cctx = zstd.ZstdCompressor()
-	for chunk in cctx.read_from(fh, size=some_int):
-	    pass
+    for chunk in cctx.read_from(fh, size=some_int):
+        pass
 
 Stream Copying API
 ^^^^^^^^^^^^^^^^^^
@@ -270,7 +270,7 @@ For example, say you wish to compress a file::
 
    cctx = zstd.ZstdCompressor()
    with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
-	   cctx.copy_stream(ifh, ofh)
+       cctx.copy_stream(ifh, ofh)
 
 It is also possible to declare the size of the source stream::
 
@@ -303,7 +303,7 @@ Simple API
 frame in a single operation.::
 
     dctx = zstd.ZstdDecompressor()
-	decompressed = dctx.decompress(data)
+    decompressed = dctx.decompress(data)
 
 By default, ``decompress(data)`` will only work on data written with the content
 size encoded in its header. This can be achieved by creating a
@@ -315,7 +315,7 @@ decompression can be attempted by specifying the ``max_output_size``
 argument.::
 
     dctx = zstd.ZstdDecompressor()
-	uncompressed = dctx.decompress(data, max_output_size=1048576)
+    uncompressed = dctx.decompress(data, max_output_size=1048576)
 
 Ideally, ``max_output_size`` will be identical to the decompressed output
 size.
@@ -351,8 +351,8 @@ to the output object by calling its ``write(data)`` method.
 You can see how much memory is being used by the decompressor::
 
     dctx = zstd.ZstdDecompressor()
-	with dctx.write_to(fh) as decompressor:
-	    byte_size = decompressor.memory_size()
+    with dctx.write_to(fh) as decompressor:
+        byte_size = decompressor.memory_size()
 
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
@@ -361,8 +361,8 @@ Streaming Output API
 compressed source as an iterator of data chunks.:: 
 
     dctx = zstd.ZstdDecompressor()
-	for chunk in dctx.read_from(fh):
-	    # Do something with original data.
+    for chunk in dctx.read_from(fh):
+        # Do something with original data.
 
 ``read_from()`` accepts an object with a ``read(size)`` method that will
 return compressed bytes. It returns an iterator whose elements are chunks
@@ -465,14 +465,14 @@ compression and decompression::
    cctx = zstd.ZstdCompressor(dict_data=data)
    for source_data in input_data:
        compressed = cctx.compress(source_data)
-	   # Do something with compressed data.
+       # Do something with compressed data.
 
    dctx = zstd.ZstdDecompressor(dict_data=dict_data)
    for compressed_data in input_data:
        buffer = io.BytesIO()
        with dctx.write_to(buffer) as decompressor:
-	       decompressor.write(compressed_data)
-	   # Do something with raw data in ``buffer``.
+           decompressor.write(compressed_data)
+       # Do something with raw data in ``buffer``.
 
 Dictionaries have unique integer IDs. You can retrieve this ID via::
 
