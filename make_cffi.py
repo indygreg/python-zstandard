@@ -80,6 +80,10 @@ def fix_constants(l):
         return b'#define ZSTD_CHAINLOG_MAX 28'
     elif l.startswith(b'#define ZSTD_HASHLOG_MAX '):
         return b'#define ZSTD_HASHLOG_MAX 27'
+    elif l.startswith(b'#define ZSTD_CHAINLOG_MAX '):
+        return b'#define ZSTD_CHAINLOG_MAX 28'
+    elif l.startswith(b'#define ZSTD_CHAINLOG_MIN '):
+        return b'#define ZSTD_CHAINLOG_MIN 6'
     elif l.startswith(b'#define ZSTD_SEARCHLOG_MAX '):
         return b'#define ZSTD_SEARCHLOG_MAX 26'
     elif l.startswith(b'#define ZSTD_BLOCKSIZE_ABSOLUTEMAX '):
