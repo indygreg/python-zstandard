@@ -54,7 +54,7 @@ if cffi:
 
 setup(
     name='zstandard',
-    version='0.3.3',
+    version='0.4.0',
     description='Zstandard bindings for Python',
     long_description=open('README.rst', 'r').read(),
     url='https://github.com/indygreg/python-zstandard',
@@ -62,7 +62,7 @@ setup(
     author_email='gregory.szorc@gmail.com',
     license='BSD',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: C',

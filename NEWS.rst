@@ -26,3 +26,7 @@ by the author.
 
 2016-10-02 - 0.3.3 is released with a bug fix for read_from not fully
 decoding a zstd frame (issue #2).
+
+2016-10-02 - 0.4.0 is released with zstd 1.1.0, support for custom read and
+write buffer sizes, and a few bug fixes involving failure to read/write
+all data when buffer sizes were too small to hold remaining data.
