@@ -2916,7 +2916,7 @@ static char frame_header[] = {
 };
 
 void zstd_module_init(PyObject* m) {
-	PyObject* version;
+	PyObject* zstdVersion;
 	PyObject* frameHeader;
 
 	Py_TYPE(&CompressionParametersType) = &PyType_Type;
@@ -2973,12 +2973,12 @@ void zstd_module_init(PyObject* m) {
 	PyModule_AddObject(m, "ZstdError", ZstdError);
 
 	/* For now, the version is a simple tuple instead of a dedicated type. */
-	version = PyTuple_New(3);
-	PyTuple_SetItem(version, 0, PyLong_FromLong(ZSTD_VERSION_MAJOR));
-	PyTuple_SetItem(version, 1, PyLong_FromLong(ZSTD_VERSION_MINOR));
-	PyTuple_SetItem(version, 2, PyLong_FromLong(ZSTD_VERSION_RELEASE));
-	Py_IncRef(version);
-	PyModule_AddObject(m, "ZSTD_VERSION", version);
+	zstdVersion = PyTuple_New(3);
+	PyTuple_SetItem(zstdVersion, 0, PyLong_FromLong(ZSTD_VERSION_MAJOR));
+	PyTuple_SetItem(zstdVersion, 1, PyLong_FromLong(ZSTD_VERSION_MINOR));
+	PyTuple_SetItem(zstdVersion, 2, PyLong_FromLong(ZSTD_VERSION_RELEASE));
+	Py_IncRef(zstdVersion);
+	PyModule_AddObject(m, "ZSTD_VERSION", zstdVersion);
 
 	Py_IncRef((PyObject*)&CompressionParametersType);
 	PyModule_AddObject(m, "CompressionParameters", (PyObject*)&CompressionParametersType);
