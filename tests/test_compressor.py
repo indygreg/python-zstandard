@@ -99,6 +99,60 @@ class TestCompressor_compress(unittest.TestCase):
             cctx.compress(b'foo bar foobar foo bar foobar')
 
 
+class TestCompressor_compressobj(unittest.TestCase):
+    def test_compressobj_empty(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        cobj = cctx.compressobj()
+        self.assertEqual(cobj.compress(b''), b'')
+        self.assertEqual(cobj.flush(),
+                         b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
+
+    def test_compressobj_large(self):
+        chunks = []
+        for i in range(255):
+            chunks.append(struct.Struct('>B').pack(i) * 16384)
+
+        cctx = zstd.ZstdCompressor(level=3)
+        cobj = cctx.compressobj()
+
+        result = cobj.compress(b''.join(chunks)) + cobj.flush()
+        self.assertEqual(len(result), 999)
+        self.assertEqual(result[0:4], b'\x28\xb5\x2f\xfd')
+
+    def test_write_checksum(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        cobj = cctx.compressobj()
+        no_checksum = cobj.compress(b'foobar') + cobj.flush()
+        cctx = zstd.ZstdCompressor(level=1, write_checksum=True)
+        cobj = cctx.compressobj()
+        with_checksum = cobj.compress(b'foobar') + cobj.flush()
+
+        self.assertEqual(len(with_checksum), len(no_checksum) + 4)
+
+    def test_write_content_size(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        cobj = cctx.compressobj(size=len(b'foobar' * 256))
+        no_size = cobj.compress(b'foobar' * 256) + cobj.flush()
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        cobj = cctx.compressobj(size=len(b'foobar' * 256))
+        with_size = cobj.compress(b'foobar' * 256) + cobj.flush()
+
+        self.assertEqual(len(with_size), len(no_size) + 1)
+
+    def test_compress_after_flush(self):
+        cctx = zstd.ZstdCompressor()
+        cobj = cctx.compressobj()
+
+        cobj.compress(b'foo')
+        cobj.flush()
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'cannot call compress\(\) after flush'):
+            cobj.compress(b'foo')
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'flush\(\) already called'):
+            cobj.flush()
+
+
 class TestCompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
         source = object()

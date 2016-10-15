@@ -301,6 +301,39 @@ The stream copier returns a 2-tuple of bytes read and written::
    cctx = zstd.ZstdCompressor()
    read_count, write_count = cctx.copy_stream(ifh, ofh)
 
+Compressor API
+^^^^^^^^^^^^^^
+
+``compressobj()`` returns an object that exposes ``compress(data)`` and
+``flush()`` methods. Each returns compressed data or an empty bytes.
+
+The purpose of ``compressobj()`` is to provide an API-compatible interface
+with ``zlib.compressobj`` and ``bz2.BZ2Compressor``. This allows callers to
+swap in different compressor objects while using the same API.
+
+Once ``flush()`` is called, the compressor will no longer accept new data
+to ``compress()``. ``flush()`` **must** be called to end the compression
+context. If not called, the returned data may be incomplete.
+
+Here is how this API should be used::
+
+   cctx = zstd.ZstdCompressor()
+   cobj = cctx.compressobj()
+   data = cobj.compress(b'raw input 0')
+   data = cobj.compress(b'raw input 1')
+   data = cobj.flush()
+
+For best performance results, keep input chunks under 256KB. This avoids
+extra allocations for a large output object.
+
+It is possible to declare the input size of the data that will be fed into
+the compressor::
+
+   cctx = zstd.ZstdCompressor()
+   cobj = cctx.compressobj(size=6)
+   data = cobj.compress(b'foobar')
+   data = cobj.flush()
+
 ZstdDecompressor
 ----------------
 
