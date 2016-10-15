@@ -5,48 +5,18 @@
 # This software may be modified and distributed under the terms
 # of the BSD license. See the LICENSE file for details.
 
-import os
-from setuptools import setup, Extension
+from setuptools import setup
 
 try:
     import cffi
 except ImportError:
     cffi = None
 
+import setup_zstd
 
-HERE = os.path.abspath(os.path.dirname(__file__))
-
-zstd_sources = ['zstd/%s' % p for p in (
-    'common/entropy_common.c',
-    'common/fse_decompress.c',
-    'common/xxhash.c',
-    'common/zstd_common.c',
-    'compress/fse_compress.c',
-    'compress/huf_compress.c',
-    'compress/zbuff_compress.c',
-    'compress/zstd_compress.c',
-    'decompress/huf_decompress.c',
-    'decompress/zbuff_decompress.c',
-    'decompress/zstd_decompress.c',
-    'dictBuilder/divsufsort.c',
-    'dictBuilder/zdict.c',
-)]
-
-sources = zstd_sources + ['zstd.c']
-
-# TODO compile with optimizations.
-
-ext = Extension('zstd', sources,
-    include_dirs=[os.path.join(HERE, d) for d in (
-        'zstd',
-        'zstd/common',
-        'zstd/compress',
-        'zstd/decompress',
-        'zstd/dictBuilder',
-    )],
-)
-
-extensions = [ext]
+# Code for obtaining the Extension instance is in its own module to
+# facilitate reuse in other projects.
+extensions = [setup_zstd.get_c_extension()]
 
 if cffi:
     import make_cffi
