@@ -59,7 +59,7 @@ with open('zstd.c', 'r') as fh:
         if not line.startswith('#define PYTHON_ZSTANDARD_VERSION'):
             continue
 
-        version = line.split()[2]
+        version = line.split()[2][1:-1]
         break
 
 if not version:
