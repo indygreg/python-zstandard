@@ -2916,6 +2916,7 @@ static char frame_header[] = {
 };
 
 void zstd_module_init(PyObject* m) {
+	PyObject* version;
 	PyObject* zstdVersion;
 	PyObject* frameHeader;
 
@@ -2968,6 +2969,14 @@ void zstd_module_init(PyObject* m) {
 	if (PyType_Ready(&ZstdDecompressorIteratorType) < 0) {
 		return;
 	}
+
+#if PY_MAJOR_VERSION >= 3
+	version = PyUnicode_FromString(PYTHON_ZSTANDARD_VERSION);
+#else
+	version = PyString_FromString(PYTHON_ZSTANDARD_VERSION);
+#endif
+	Py_INCREF(version);
+	PyModule_AddObject(m, "__version__", version);
 
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
 	PyModule_AddObject(m, "ZstdError", ZstdError);
