@@ -64,11 +64,25 @@ environment:
       PYTHON_VERSION: "3.5.2"
       PYTHON_ARCH: "64"
 
+    - JOB: "2.7 Conda"
+      TOXENV: "py27"
+      PYTHON: "C:\\Miniconda2.7-x64"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "64"
+      CONDA: "1"
+
+    - JOB: "3.5 Conda"
+      TOXENV: "py35"
+      PYTHON: "C:\\Miniconda3.5-x64"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "64"
+      CONDA: "1"
+
 init:
   - "ECHO %TOXENV%"
 
 install:
-  - ps: if (-not(Test-Path($env:PYTHON))) { & ci\appveyor-bootstrap.ps1 }
+  - powershell ci\appveyor-bootstrap.ps1
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
   - "python --version"
@@ -84,12 +98,10 @@ install:
 
 build: off
 
-#build_script:
-#  - "%CMD_IN_ENV% %PYTHON%\\python setup.py bdist_wheel"
-#  - ps: if ( Test-Path 'dist' -PathType Container ) { Get-ChildItem dist\*.* | % { Push-AppveyorArtifact $_.FullName -FileName ('dist\' + $_.Name) } }
-
 test_script:
-  - "%CMD_IN_ENV% %PYTHON%\\Scripts\\tox"
+  - "%CMD_IN_ENV% ci\\appveyor-test.bat"
 
 artifacts:
   - path: dist\*
+  # Conda package.
+  - path: "*.tar.bz2"

@@ -1,0 +1,32 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: zstandard
+  version: "{{ data.get('version') }}"
+
+source:
+  path: ../../
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+test:
+  requires:
+    - nose
+
+  source_files:
+    - tests/*
+
+  commands:
+    - nosetests -v
+
+about:
+  home: https://github.com/indygreg/python-zstandard
+  license: BSD License
+  summary: 'Zstandard bindings for Python'
+  license_family: BSD

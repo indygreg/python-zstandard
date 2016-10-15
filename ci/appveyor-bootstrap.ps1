@@ -2,7 +2,7 @@
 # Authors: Olivier Grisel, Jonathan Helmus, Kyle Kastner, and Alex Willmer
 # License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
 
-$MINICONDA_URL = "http://repo.continuum.io/miniconda/"
+$MINICONDA_URL = "https://repo.continuum.io/miniconda/"
 $BASE_URL = "https://www.python.org/ftp/python/"
 $GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 $GET_PIP_PATH = "C:\get-pip.py"
@@ -170,10 +170,10 @@ function InstallPip ($python_home) {
 
 
 function DownloadMiniconda ($python_version, $platform_suffix) {
-    if ($python_version -eq "3.4") {
-        $filename = "Miniconda3-3.5.5-Windows-" + $platform_suffix + ".exe"
+    if ($python_version -eq "3.5") {
+        $filename = "Miniconda3-4.1.11-Windows-" + $platform_suffix + ".exe"
     } else {
-        $filename = "Miniconda-3.5.5-Windows-" + $platform_suffix + ".exe"
+        $filename = "Miniconda2-4.1.11-Windows-" + $platform_suffix + ".exe"
     }
     $url = $MINICONDA_URL + $filename
     $filepath = Download $filename $url
@@ -221,9 +221,34 @@ function InstallMinicondaPip ($python_home) {
     }
 }
 
+
+function UpdateConda ($python_home) {
+    $conda_path = $python_home + "\Scripts\conda.exe"
+    Write-Host "Updating conda..."
+    $args = "update --yes conda"
+    Write-Host $conda_path $args
+    Start-Process -FilePath "$conda_path" -ArgumentList $args -Wait -Passthru
+}
+
+
+function InstallCondaPackages ($python_home, $spec) {
+    $conda_path = $python_home + "\Scripts\conda.exe"
+    $args = "install --yes " + $spec
+    Write-Host $conda_path $args
+    Start-Process -FilePath "$conda_path" -ArgumentList $args -Wait -Passthru
+}
+
+
 function main () {
-    InstallPython $env:PYTHON_VERSION $env:PYTHON_ARCH $env:PYTHON
-    InstallPip $env:PYTHON
+    if ($env:CONDA) {
+        InstallMiniconda $env:PYTHON_VERSION $env:PYTHON_ARCH $env:PYTHON
+        InstallMinicondaPip $env:PYTHON
+        UpdateConda $env:PYTHON
+        InstallCondaPackages $env:PYTHON "conda-build"
+    } else {
+        InstallPython $env:PYTHON_VERSION $env:PYTHON_ARCH $env:PYTHON
+        InstallPip $env:PYTHON
+    }
 }
 
 main
