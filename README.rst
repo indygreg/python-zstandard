@@ -499,7 +499,7 @@ compression and decompression::
 
    dict_data = zstd.train_dictionary(16384, samples)
 
-   cctx = zstd.ZstdCompressor(dict_data=data)
+   cctx = zstd.ZstdCompressor(dict_data=dict_data)
    for source_data in input_data:
        compressed = cctx.compress(source_data)
        # Do something with compressed data.
