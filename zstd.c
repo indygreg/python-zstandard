@@ -17,6 +17,8 @@
 #include "zstd.h"
 #include "zstd/dictBuilder/zdict.h"
 
+#define PYTHON_ZSTANDARD_VERSION "0.4.0"
+
 PyDoc_STRVAR(CompressionParameters__doc__,
 "CompressionParameters: low-level control over zstd compression");
 

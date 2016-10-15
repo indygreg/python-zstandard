@@ -52,9 +52,23 @@ if cffi:
     import make_cffi
     extensions.append(make_cffi.ffi.distutils_extension())
 
+version = None
+
+with open('zstd.c', 'r') as fh:
+    for line in fh:
+        if not line.startswith('#define PYTHON_ZSTANDARD_VERSION'):
+            continue
+
+        version = line.split()[2]
+        break
+
+if not version:
+    raise Exception('could not resolve package version; '
+                    'this should never happen')
+
 setup(
     name='zstandard',
-    version='0.4.0',
+    version=version,
     description='Zstandard bindings for Python',
     long_description=open('README.rst', 'r').read(),
     url='https://github.com/indygreg/python-zstandard',
