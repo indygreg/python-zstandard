@@ -425,14 +425,14 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 		return NULL;
 	}
 
-	if (!PyObject_HasAttrString(reader, "read")) {
-		PyErr_SetString(PyExc_ValueError, "must pass an object with a read() method");
-		return NULL;
-	}
-
 	result = PyObject_New(ZstdDecompressorIterator, &ZstdDecompressorIteratorType);
 	if (!result) {
 		return NULL;
+	}
+
+	if (!PyObject_HasAttrString(reader, "read")) {
+		PyErr_SetString(PyExc_ValueError, "must pass an object with a read() method");
+		goto except;
 	}
 
 	result->decompressor = self;
@@ -466,6 +466,14 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 	result->readCount = 0;
 	result->finishedInput = 0;
 	result->finishedOutput = 0;
+
+	goto finally;
+
+except:
+	Py_DecRef(result);
+	result = NULL;
+
+finally:
 
 	return result;
 }
