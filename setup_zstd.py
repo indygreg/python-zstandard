@@ -34,12 +34,17 @@ zstd_includes = [
     'zstd/dictBuilder',
 ]
 
+ext_sources = [
+    'zstd.c',
+    'c-ext/compressionparams.c',
+]
+
 
 def get_c_extension(name='zstd'):
     """Obtain a distutils.extension.Extension for the C extension."""
     root = os.path.abspath(os.path.dirname(__file__))
 
-    sources = [os.path.join(root, p) for p in zstd_sources + ['zstd.c']]
+    sources = [os.path.join(root, p) for p in zstd_sources + ext_sources]
     include_dirs = [os.path.join(root, d) for d in zstd_includes]
 
     # TODO compile with optimizations.

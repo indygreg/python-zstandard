@@ -11,9 +11,9 @@
 
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZDICT_STATIC_LINKING_ONLY
-#include "zstd/common/mem.h"
+#include "mem.h"
 #include "zstd.h"
-#include "zstd/dictBuilder/zdict.h"
+#include "zdict.h"
 
 typedef struct {
 	PyObject_HEAD
@@ -25,6 +25,8 @@ typedef struct {
 	unsigned targetLength;
 	ZSTD_strategy strategy;
 } CompressionParametersObject;
+
+extern PyTypeObject CompressionParametersType;
 
 typedef struct {
 	PyObject_HEAD
