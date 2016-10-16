@@ -90,7 +90,7 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 	else {
 		return PyBytes_FromString("");
 	}
-	}
+}
 
 static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self) {
 	size_t zresult;
