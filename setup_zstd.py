@@ -26,6 +26,7 @@ zstd_sources = ['zstd/%s' % p for p in (
 
 
 zstd_includes = [
+    'c-ext',
     'zstd',
     'zstd/common',
     'zstd/compress',

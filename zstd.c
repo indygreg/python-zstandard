@@ -8,30 +8,12 @@
 
 /* A Python C extension for Zstandard. */
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
-
-#define ZSTD_STATIC_LINKING_ONLY
-#define ZDICT_STATIC_LINKING_ONLY
-#include "zstd/common/mem.h"
-#include "zstd.h"
-#include "zstd/dictBuilder/zdict.h"
+#include "python-zstandard.h"
 
 #define PYTHON_ZSTANDARD_VERSION "0.4.0"
 
 PyDoc_STRVAR(CompressionParameters__doc__,
 "CompressionParameters: low-level control over zstd compression");
-
-typedef struct {
-	PyObject_HEAD
-	unsigned windowLog;
-	unsigned chainLog;
-	unsigned hashLog;
-	unsigned searchLog;
-	unsigned searchLength;
-	unsigned targetLength;
-	ZSTD_strategy strategy;
-} CompressionParametersObject;
 
 static PyObject* CompressionParameters_new(PyTypeObject* subtype, PyObject* args, PyObject* kwargs) {
 	CompressionParametersObject* self;
@@ -186,14 +168,6 @@ PyTypeObject CompressionParametersType = {
 PyDoc_STRVAR(DictParameters__doc__,
 	"DictParameters: low-level control over dictionary generation");
 
-typedef struct {
-	PyObject_HEAD
-	unsigned selectivityLevel;
-	int compressionLevel;
-	unsigned notificationLevel;
-	unsigned dictID;
-} DictParametersObject;
-
 static PyObject* DictParameters_new(PyTypeObject* subtype, PyObject* args, PyObject* kwargs) {
 	DictParametersObject* self;
 	unsigned selectivityLevel;
@@ -318,13 +292,6 @@ PyDoc_STRVAR(ZstdCompressionDict__doc__,
 "obtained from another source into the constructor.\n"
 );
 
-typedef struct {
-	PyObject_HEAD
-
-	void* dictData;
-	size_t dictSize;
-} ZstdCompressionDict;
-
 static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {
 	const char* source;
 	Py_ssize_t sourceSize;
@@ -428,27 +395,6 @@ static PyTypeObject ZstdCompressionDictType = {
 	0,                              /* tp_alloc */
 	PyType_GenericNew,              /* tp_new */
 };
-
-typedef struct {
-	PyObject_HEAD
-
-	int compressionLevel;
-	ZstdCompressionDict* dict;
-	ZSTD_CDict* cdict;
-	CompressionParametersObject* cparams;
-	ZSTD_frameParameters fparams;
-} ZstdCompressor;
-
-struct ZstdCompressionWriter;
-
-typedef struct {
-	PyObject_HEAD
-
-	ZstdCompressor* compressor;
-	ZSTD_CStream* cstream;
-	ZSTD_outBuffer output;
-	int flushed;
-} ZstdCompressionObj;
 
 PyDoc_STRVAR(ZstdCompressionObj__doc__,
 	"compressobj()\n"
@@ -690,35 +636,7 @@ static ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_
 	return cstream;
 }
 
-typedef struct {
-	PyObject_HEAD
-
-	ZstdCompressor* compressor;
-	PyObject* writer;
-	Py_ssize_t sourceSize;
-	size_t outSize;
-	ZSTD_CStream* cstream;
-	int entered;
-} ZstdCompressionWriter;
-
 static PyTypeObject ZstdCompressionWriterType;
-
-typedef struct {
-	PyObject_HEAD
-
-	ZstdCompressor* compressor;
-	PyObject* reader;
-	Py_ssize_t sourceSize;
-	size_t inSize;
-	size_t outSize;
-
-	ZSTD_CStream* cstream;
-	ZSTD_inBuffer input;
-	ZSTD_outBuffer output;
-	int finishedOutput;
-	int finishedInput;
-	PyObject* readResult;
-} ZstdCompressorIterator;
 
 static PyTypeObject ZstdCompressorIteratorType;
 
@@ -1769,39 +1687,7 @@ static PyTypeObject ZstdCompressorIteratorType = {
 	PyType_GenericNew,              /* tp_new */
 };
 
-typedef struct {
-	PyObject_HEAD
-
-	ZstdCompressionDict* dict;
-	ZSTD_DDict* ddict;
-} ZstdDecompressor;
-
-typedef struct {
-	PyObject_HEAD
-
-	ZstdDecompressor* decompressor;
-	PyObject* writer;
-	size_t outSize;
-	ZSTD_DStream* dstream;
-	int entered;
-} ZstdDecompressionWriter;
-
 static PyTypeObject ZstdDecompressionWriterType;
-
-typedef struct {
-	PyObject_HEAD
-
-	ZstdDecompressor* decompressor;
-	PyObject* reader;
-	size_t inSize;
-	size_t outSize;
-	ZSTD_DStream* dstream;
-	ZSTD_inBuffer input;
-	ZSTD_outBuffer output;
-	Py_ssize_t readCount;
-	int finishedInput;
-	int finishedOutput;
-} ZstdDecompressorIterator;
 
 static PyTypeObject ZstdDecompressorIteratorType;
 
@@ -2534,11 +2420,6 @@ static PyObject* ZstdDecompressorIterator_iter(PyObject* self) {
 	Py_INCREF(self);
 	return self;
 }
-
-typedef struct {
-	int errored;
-	PyObject* chunk;
-} DecompressorIteratorResult;
 
 static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIterator* self) {
 	size_t zresult;
