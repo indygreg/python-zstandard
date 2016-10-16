@@ -18,6 +18,35 @@ void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_comp
 	zparams->strategy = params->strategy;
 }
 
+CompressionParametersObject* pyzstd_get_compression_parameters(PyObject* self, PyObject* args) {
+	int compressionLevel;
+	unsigned PY_LONG_LONG sourceSize = 0;
+	Py_ssize_t dictSize = 0;
+	ZSTD_compressionParameters params;
+	CompressionParametersObject* result;
+
+	if (!PyArg_ParseTuple(args, "i|Kn", &compressionLevel, &sourceSize, &dictSize)) {
+		return NULL;
+	}
+
+	params = ZSTD_getCParams(compressionLevel, sourceSize, dictSize);
+
+	result = PyObject_New(CompressionParametersObject, &CompressionParametersType);
+	if (!result) {
+		return NULL;
+	}
+
+	result->windowLog = params.windowLog;
+	result->chainLog = params.chainLog;
+	result->hashLog = params.hashLog;
+	result->searchLog = params.searchLog;
+	result->searchLength = params.searchLength;
+	result->targetLength = params.targetLength;
+	result->strategy = params.strategy;
+
+	return result;
+}
+
 PyDoc_STRVAR(CompressionParameters__doc__,
 "CompressionParameters: low-level control over zstd compression");
 

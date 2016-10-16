@@ -50,35 +50,6 @@ PyDoc_STRVAR(get_compression_parameters__doc__,
 "Obtains a ``CompressionParameters`` instance from a compression level and\n"
 "optional input size and dictionary size");
 
-static CompressionParametersObject* pyzstd_get_compression_parameters(PyObject* self, PyObject* args) {
-	int compressionLevel;
-	unsigned PY_LONG_LONG sourceSize = 0;
-	Py_ssize_t dictSize = 0;
-	ZSTD_compressionParameters params;
-	CompressionParametersObject* result;
-
-	if (!PyArg_ParseTuple(args, "i|Kn", &compressionLevel, &sourceSize, &dictSize)) {
-		return NULL;
-	}
-
-	params = ZSTD_getCParams(compressionLevel, sourceSize, dictSize);
-
-	result = PyObject_New(CompressionParametersObject, &CompressionParametersType);
-	if (!result) {
-		return NULL;
-	}
-
-	result->windowLog = params.windowLog;
-	result->chainLog = params.chainLog;
-	result->hashLog = params.hashLog;
-	result->searchLog = params.searchLog;
-	result->searchLength = params.searchLength;
-	result->targetLength = params.targetLength;
-	result->strategy = params.strategy;
-
-	return result;
-}
-
 PyDoc_STRVAR(train_dictionary__doc__,
 "train_dictionary(dict_size, samples)\n"
 "\n"
