@@ -43,7 +43,7 @@ ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor) {
 	return dstream;
 }
 
-PyDoc_STRVAR(ZstdDecompressor__doc__,
+PyDoc_STRVAR(Decompressor__doc__,
 "ZstdDecompressor(dict_data=None)\n"
 "\n"
 "Create an object used to perform Zstandard decompression.\n"
@@ -51,7 +51,7 @@ PyDoc_STRVAR(ZstdDecompressor__doc__,
 "An instance can perform multiple decompression operations."
 );
 
-static int ZstdDecompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"dict_data",
 		NULL
@@ -75,7 +75,7 @@ static int ZstdDecompressor_init(ZstdDecompressor* self, PyObject* args, PyObjec
 	return 0;
 }
 
-static void ZstdDecompressor_dealloc(ZstdDecompressor* self) {
+static void Decompressor_dealloc(ZstdDecompressor* self) {
 	Py_XDECREF(self->dict);
 
 	if (self->ddict) {
@@ -86,7 +86,7 @@ static void ZstdDecompressor_dealloc(ZstdDecompressor* self) {
 	PyObject_Del(self);
 }
 
-PyDoc_STRVAR(ZstdDecompressor_copy_stream__doc__,
+PyDoc_STRVAR(Decompressor_copy_stream__doc__,
 	"copy_stream(ifh, ofh[, read_size=default, write_size=default]) -- decompress data between streams\n"
 	"\n"
 	"Compressed data will be read from ``ifh``, decompressed, and written to\n"
@@ -98,7 +98,7 @@ PyDoc_STRVAR(ZstdDecompressor_copy_stream__doc__,
 	"to the default input and output sizes of zstd decompressor streams.\n"
 );
 
-static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"ifh",
 		"ofh",
@@ -227,7 +227,7 @@ static PyObject* ZstdDecompressor_copy_stream(ZstdDecompressor* self, PyObject* 
 	return res;
 }
 
-PyDoc_STRVAR(ZstdDecompressor_decompress__doc__,
+PyDoc_STRVAR(Decompressor_decompress__doc__,
 "decompress(data[, max_output_size=None]) -- Decompress data in its entirety\n"
 "\n"
 "This method will decompress the entirety of the argument and return the\n"
@@ -250,7 +250,7 @@ PyDoc_STRVAR(ZstdDecompressor_decompress__doc__,
 "recommended to use a streaming decompression method instead of this one.\n"
 );
 
-PyObject* ZstdDecompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"data",
 		"max_output_size",
@@ -360,7 +360,7 @@ except:
 	return result;
 }
 
-PyDoc_STRVAR(ZstdDecompressor_read_from__doc__,
+PyDoc_STRVAR(Decompressor_read_from__doc__,
 "read_from(reader[, read_size=default, write_size=default])\n"
 "Read compressed data and return an iterator\n"
 "\n"
@@ -377,7 +377,7 @@ PyDoc_STRVAR(ZstdDecompressor_read_from__doc__,
 "and output sizes for a zstd streaming decompressor.\n"
 );
 
-static ZstdDecompressorIterator* ZstdDecompressor_read_from(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"reader",
 		"read_size",
@@ -440,7 +440,7 @@ static ZstdDecompressorIterator* ZstdDecompressor_read_from(ZstdDecompressor* se
 	return result;
 }
 
-PyDoc_STRVAR(ZstdDecompressor_write_to__doc__,
+PyDoc_STRVAR(Decompressor_write_to__doc__,
 "Create a context manager to write decompressed data to an object.\n"
 "\n"
 "The passed object must have a ``write()`` method.\n"
@@ -453,7 +453,7 @@ PyDoc_STRVAR(ZstdDecompressor_write_to__doc__,
 "streaming decompressor.\n"
 );
 
-static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdDecompressionWriter* Decompressor_write_to(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"writer",
 		"write_size",
@@ -492,15 +492,15 @@ static ZstdDecompressionWriter* ZstdDecompressor_write_to(ZstdDecompressor* self
 	return result;
 }
 
-static PyMethodDef ZstdDecompressor_methods[] = {
-	{ "copy_stream", (PyCFunction)ZstdDecompressor_copy_stream, METH_VARARGS | METH_KEYWORDS,
-	ZstdDecompressor_copy_stream__doc__ },
-	{ "decompress", (PyCFunction)ZstdDecompressor_decompress, METH_VARARGS | METH_KEYWORDS,
-	ZstdDecompressor_decompress__doc__ },
-	{ "read_from", (PyCFunction)ZstdDecompressor_read_from, METH_VARARGS | METH_KEYWORDS,
-	ZstdDecompressor_read_from__doc__ },
-	{ "write_to", (PyCFunction)ZstdDecompressor_write_to, METH_VARARGS | METH_KEYWORDS,
-	ZstdDecompressor_write_to__doc__ },
+static PyMethodDef Decompressor_methods[] = {
+	{ "copy_stream", (PyCFunction)Decompressor_copy_stream, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_copy_stream__doc__ },
+	{ "decompress", (PyCFunction)Decompressor_decompress, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_decompress__doc__ },
+	{ "read_from", (PyCFunction)Decompressor_read_from, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_read_from__doc__ },
+	{ "write_to", (PyCFunction)Decompressor_write_to, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_write_to__doc__ },
 	{ NULL, NULL }
 };
 
@@ -509,7 +509,7 @@ PyTypeObject ZstdDecompressorType = {
 	"zstd.ZstdDecompressor",        /* tp_name */
 	sizeof(ZstdDecompressor),       /* tp_basicsize */
 	0,                              /* tp_itemsize */
-	(destructor)ZstdDecompressor_dealloc, /* tp_dealloc */
+	(destructor)Decompressor_dealloc, /* tp_dealloc */
 	0,                              /* tp_print */
 	0,                              /* tp_getattr */
 	0,                              /* tp_setattr */
@@ -525,14 +525,14 @@ PyTypeObject ZstdDecompressorType = {
 	0,                              /* tp_setattro */
 	0,                              /* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	ZstdDecompressor__doc__,        /* tp_doc */
+	Decompressor__doc__,            /* tp_doc */
 	0,                              /* tp_traverse */
 	0,                              /* tp_clear */
 	0,                              /* tp_richcompare */
 	0,                              /* tp_weaklistoffset */
 	0,                              /* tp_iter */
 	0,                              /* tp_iternext */
-	ZstdDecompressor_methods,       /* tp_methods */
+	Decompressor_methods,           /* tp_methods */
 	0,                              /* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
@@ -540,7 +540,7 @@ PyTypeObject ZstdDecompressorType = {
 	0,                              /* tp_descr_get */
 	0,                              /* tp_descr_set */
 	0,                              /* tp_dictoffset */
-	(initproc)ZstdDecompressor_init,  /* tp_init */
+	(initproc)Decompressor_init,    /* tp_init */
 	0,                              /* tp_alloc */
 	PyType_GenericNew,              /* tp_new */
 };
