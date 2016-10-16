@@ -336,7 +336,7 @@ PyObject* ZstdDecompressor_decompress(ZstdDecompressor* self, PyObject* args, Py
 		goto except;
 	}
 	else if (decompressedSize && zresult != decompressedSize) {
-		PyErr_Format(ZstdError, "decompression error: decompressed %d bytes; expected %d",
+		PyErr_Format(ZstdError, "decompression error: decompressed %zu bytes; expected %llu",
 			zresult, decompressedSize);
 		goto except;
 	}
