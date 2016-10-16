@@ -725,6 +725,18 @@ version of this module should be constant for all of time. So if you
 pin the version of this module used in your projects (which is a Python
 best practice), you should be buffered from unwanted future changes.
 
+Donate
+======
+
+A lot of time has been invested into this project by the author.
+
+If you find this project useful and would like to thank the author for
+their work, consider donating some money. Any amount is appreciated.
+
+.. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif
+    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gregory%2eszorc%40gmail%2ecom&lc=US&item_name=python%2dzstandard&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
+    :alt: Donate via PayPal
+
 .. |ci-status| image:: https://travis-ci.org/indygreg/python-zstandard.svg?branch=master
     :target: https://travis-ci.org/indygreg/python-zstandard
 
