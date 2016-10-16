@@ -8,6 +8,8 @@
 
 #include "python-zstandard.h"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
 extern PyObject* ZstdError;
 
 PyDoc_STRVAR(ZstdDecompressorIterator__doc__,
@@ -17,6 +19,11 @@ PyDoc_STRVAR(ZstdDecompressorIterator__doc__,
 static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator* self) {
 	Py_XDECREF(self->decompressor);
 	Py_XDECREF(self->reader);
+
+	if (self->buffer) {
+		PyBuffer_Release(self->buffer);
+		self->buffer = NULL;
+	}
 
 	if (self->dstream) {
 		ZSTD_freeDStream(self->dstream);
@@ -99,9 +106,10 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 }
 
 static PyObject* ZstdDecompressorIterator_iternext(ZstdDecompressorIterator* self) {
-	PyObject* readResult;
+	PyObject* readResult = NULL;
 	char* readBuffer;
 	Py_ssize_t readSize;
+	Py_ssize_t bufferRemaining;
 	DecompressorIteratorResult result;
 
 	if (self->finishedOutput) {
@@ -122,12 +130,27 @@ static PyObject* ZstdDecompressorIterator_iternext(ZstdDecompressorIterator* sel
 read_from_source:
 
 	if (!self->finishedInput) {
-		readResult = PyObject_CallMethod(self->reader, "read", "I", self->inSize);
-		if (!readResult) {
-			return NULL;
-		}
+		if (self->reader) {
+			readResult = PyObject_CallMethod(self->reader, "read", "I", self->inSize);
+			if (!readResult) {
+				return NULL;
+			}
 
-		PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+			PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+		}
+		else {
+			assert(self->buffer && self->buffer->buf);
+
+			/* Only support contiguous C arrays for now */
+			assert(self->buffer->strides == NULL && self->buffer->suboffsets == NULL);
+			assert(self->buffer->itemsize == 1);
+
+			/* TODO avoid memcpy() below */
+			readBuffer = (char *)self->buffer->buf + self->bufferOffset;
+			bufferRemaining = self->buffer->len - self->bufferOffset;
+			readSize = min(bufferRemaining, (Py_ssize_t)self->inSize);
+			self->bufferOffset += readSize;
+		}
 
 		if (readSize) {
 			/* Copy input into previously allocated buffer because it can live longer
@@ -141,7 +164,7 @@ read_from_source:
 		else if (!self->readCount) {
 			self->finishedInput = 1;
 			self->finishedOutput = 1;
-			Py_DECREF(readResult);
+			Py_DecRef(readResult);
 			PyErr_SetString(PyExc_StopIteration, "empty input");
 			return NULL;
 		}
@@ -150,7 +173,7 @@ read_from_source:
 		}
 
 		/* We've copied the data managed by memory. Discard the Python object. */
-		Py_DECREF(readResult);
+		Py_DecRef(readResult);
 	}
 
 	result = read_decompressor_iterator(self);
@@ -205,7 +228,7 @@ PyTypeObject ZstdDecompressorIteratorType = {
 	0,                                 /* tp_dictoffset */
 	0,                                 /* tp_init */
 	0,                                 /* tp_alloc */
-	PyType_GenericNew,                /* tp_new */
+	PyType_GenericNew,                 /* tp_new */
 };
 
 void decompressoriterator_module_init(PyObject* mod) {

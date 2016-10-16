@@ -440,9 +440,13 @@ compressed source as an iterator of data chunks.::
     for chunk in dctx.read_from(fh):
         # Do something with original data.
 
-``read_from()`` accepts an object with a ``read(size)`` method that will
-return compressed bytes. It returns an iterator whose elements are chunks
-of the decompressed data.
+``read_from()`` accepts a) an object with a ``read(size)`` method that will
+return  compressed bytes b) an object conforming to the buffer protocol that
+can expose its data as a contiguous range of bytes. The ``bytes`` and
+``memoryview`` types expose this buffer protocol.
+
+``read_from()`` returns an iterator whose elements are chunks of the
+decompressed data.
 
 The size of requested ``read()`` from the source can be specified::
 
@@ -453,6 +457,12 @@ The size of requested ``read()`` from the source can be specified::
 Similarly to ``ZstdCompressor.read_from()``, the consumer of the iterator
 controls when data is decompressed. If the iterator isn't consumed,
 decompression is put on hold.
+
+When ``read_from()`` is passed an object conforming to the buffer protocol,
+the behavior may seem similar to what occurs when the simple decompression
+API is used. However, this API works when the decompressed size is unknown.
+Furthermore, if feeding large inputs, the decompressor will work in chunks
+instead of performing a single operation.
 
 Stream Copying API
 ^^^^^^^^^^^^^^^^^^

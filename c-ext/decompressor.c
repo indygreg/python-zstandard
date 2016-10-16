@@ -430,31 +430,53 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 		return NULL;
 	}
 
-	if (!PyObject_HasAttrString(reader, "read")) {
-		PyErr_SetString(PyExc_ValueError, "must pass an object with a read() method");
+	result->decompressor = NULL;
+	result->reader = NULL;
+	result->buffer = NULL;
+	result->dstream = NULL;
+	result->input.src = NULL;
+	result->output.dst = NULL;
+
+	if (PyObject_HasAttrString(reader, "read")) {
+		result->reader = reader;
+		Py_INCREF(result->reader);
+	}
+	else if (1 == PyObject_CheckBuffer(reader)) {
+		/* Object claims it is a buffer. Try to get a handle to it. */
+		result->buffer = PyMem_Malloc(sizeof(Py_buffer));
+		if (!result->buffer) {
+			goto except;
+		}
+
+		memset(result->buffer, 0, sizeof(Py_buffer));
+
+		if (0 != PyObject_GetBuffer(reader, result->buffer, PyBUF_CONTIG_RO)) {
+			goto except;
+		}
+
+		result->bufferOffset = 0;
+	}
+	else {
+		PyErr_SetString(PyExc_ValueError,
+			"must pass an object with a read() method or conforms to buffer protocol");
 		goto except;
 	}
 
 	result->decompressor = self;
 	Py_INCREF(result->decompressor);
 
-	result->reader = reader;
-	Py_INCREF(result->reader);
-
 	result->inSize = inSize;
 	result->outSize = outSize;
 
 	result->dstream = DStream_from_ZstdDecompressor(self);
 	if (!result->dstream) {
-		Py_DECREF(result);
-		return NULL;
+		goto except;
 	}
 
 	result->input.src = malloc(inSize);
 	if (!result->input.src) {
-		Py_DECREF(result);
 		PyErr_NoMemory();
-		return NULL;
+		goto except;
 	}
 	result->input.size = 0;
 	result->input.pos = 0;
@@ -470,7 +492,18 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 	goto finally;
 
 except:
-	Py_DecRef(result);
+	if (result->reader) {
+		Py_DECREF(result->reader);
+		result->reader = NULL;
+	}
+
+	if (result->buffer) {
+		PyBuffer_Release(result->buffer);
+		Py_DECREF(result->buffer);
+		result->buffer = NULL;
+	}
+
+	Py_DECREF(result);
 	result = NULL;
 
 finally:

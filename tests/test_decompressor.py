@@ -292,6 +292,18 @@ class TestDecompressor_write_to(unittest.TestCase):
 
 
 class TestDecompressor_read_from(unittest.TestCase):
+    def test_type_validation(self):
+        dctx = zstd.ZstdDecompressor()
+
+        # Object with read() works.
+        dctx.read_from(io.BytesIO())
+
+        # Buffer protocol works.
+        dctx.read_from(b'foobar')
+
+        with self.assertRaisesRegexp(ValueError, 'must pass an object with a read'):
+            dctx.read_from(True)
+
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
 
@@ -301,11 +313,19 @@ class TestDecompressor_read_from(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(it)
 
+        it = dctx.read_from(b'')
+        with self.assertRaises(StopIteration):
+            next(it)
+
     def test_invalid_input(self):
         dctx = zstd.ZstdDecompressor()
 
         source = io.BytesIO(b'foobar')
         it = dctx.read_from(source)
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Unknown frame descriptor'):
+            next(it)
+
+        it = dctx.read_from(b'foobar')
         with self.assertRaisesRegexp(zstd.ZstdError, 'Unknown frame descriptor'):
             next(it)
 
@@ -350,6 +370,18 @@ class TestDecompressor_read_from(unittest.TestCase):
         decompressed = b''.join(chunks)
         self.assertEqual(decompressed, source.getvalue())
 
+        # And again with buffer protocol.
+        it = dctx.read_from(compressed.getvalue())
+        chunks = []
+        chunks.append(next(it))
+        chunks.append(next(it))
+
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        decompressed = b''.join(chunks)
+        self.assertEqual(decompressed, source.getvalue())
+
     def test_large_input(self):
         bytes = list(struct.Struct('>B').pack(i) for i in range(256))
         compressed = io.BytesIO()
@@ -371,6 +403,20 @@ class TestDecompressor_read_from(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         it = dctx.read_from(compressed)
+
+        chunks = []
+        chunks.append(next(it))
+        chunks.append(next(it))
+        chunks.append(next(it))
+
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        decompressed = b''.join(chunks)
+        self.assertEqual(len(decompressed), input_size)
+
+        # And again with buffer protocol.
+        it = dctx.read_from(compressed.getvalue())
 
         chunks = []
         chunks.append(next(it))
