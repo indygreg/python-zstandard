@@ -47,6 +47,20 @@ CompressionParametersObject* pyzstd_get_compression_parameters(PyObject* self, P
 	return result;
 }
 
+PyObject* pyzstd_estimate_compression_context_size(PyObject* self, PyObject* args) {
+	CompressionParametersObject* params;
+	ZSTD_compressionParameters zparams;
+	PyObject* result;
+
+	if (!PyArg_ParseTuple(args, "O!", &CompressionParametersType, &params)) {
+		return NULL;
+	}
+
+	ztopy_compression_parameters(params, &zparams);
+	result = PyLong_FromSize_t(ZSTD_estimateCCtxSize(zparams));
+	return result;
+}
+
 PyDoc_STRVAR(CompressionParameters__doc__,
 "CompressionParameters: low-level control over zstd compression");
 

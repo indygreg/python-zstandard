@@ -147,6 +147,7 @@ typedef struct {
 
 void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams);
 CompressionParametersObject* pyzstd_get_compression_parameters(PyObject* self, PyObject* args);
+PyObject* pyzstd_estimate_compression_context_size(PyObject* self, PyObject* args);
 ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize);
 ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor);
 ZstdCompressionDict* pyzstd_train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);

@@ -20,20 +20,6 @@ PyDoc_STRVAR(estimate_compression_context_size__doc__,
 "Give the amount of memory allocated for a compression context given a\n"
 "CompressionParameters instance");
 
-static PyObject* pyzstd_estimate_compression_context_size(PyObject* self, PyObject* args) {
-	CompressionParametersObject* params;
-	ZSTD_compressionParameters zparams;
-	PyObject* result;
-
-	if (!PyArg_ParseTuple(args, "O!", &CompressionParametersType, &params)) {
-		return NULL;
-	}
-
-	ztopy_compression_parameters(params, &zparams);
-	result = PyLong_FromSize_t(ZSTD_estimateCCtxSize(zparams));
-	return result;
-}
-
 PyDoc_STRVAR(estimate_decompression_context_size__doc__,
 "estimate_decompression_context_size()\n"
 "\n"
