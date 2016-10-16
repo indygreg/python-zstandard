@@ -45,6 +45,8 @@ typedef struct {
 	size_t dictSize;
 } ZstdCompressionDict;
 
+extern PyTypeObject ZstdCompressionDictType;
+
 typedef struct {
 	PyObject_HEAD
 

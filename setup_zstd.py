@@ -36,6 +36,7 @@ zstd_includes = [
 
 ext_sources = [
     'zstd.c',
+    'c-ext/compressiondict.c',
     'c-ext/compressionparams.c',
     'c-ext/dictparams.c',
 ]
