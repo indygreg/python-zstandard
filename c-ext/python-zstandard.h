@@ -36,6 +36,8 @@ typedef struct {
 	unsigned dictID;
 } DictParametersObject;
 
+extern PyTypeObject DictParametersType;
+
 typedef struct {
 	PyObject_HEAD
 
