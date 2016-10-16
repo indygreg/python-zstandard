@@ -14,39 +14,6 @@
 
 PyObject *ZstdError;
 
-ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor) {
-	ZSTD_DStream* dstream;
-	void* dictData = NULL;
-	size_t dictSize = 0;
-	size_t zresult;
-
-	dstream = ZSTD_createDStream();
-	if (!dstream) {
-		PyErr_SetString(ZstdError, "could not create DStream");
-		return NULL;
-	}
-
-	if (decompressor->dict) {
-		dictData = decompressor->dict->dictData;
-		dictSize = decompressor->dict->dictSize;
-	}
-
-	if (dictData) {
-		zresult = ZSTD_initDStream_usingDict(dstream, dictData, dictSize);
-	}
-	else {
-		zresult = ZSTD_initDStream(dstream);
-	}
-
-	if (ZSTD_isError(zresult)) {
-		PyErr_Format(ZstdError, "could not initialize DStream: %s",
-			ZSTD_getErrorName(zresult));
-		return NULL;
-	}
-
-	return dstream;
-}
-
 PyDoc_STRVAR(estimate_compression_context_size__doc__,
 "estimate_compression_context_size(compression_parameters)\n"
 "\n"
