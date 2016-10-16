@@ -10,8 +10,6 @@
 
 #include "python-zstandard.h"
 
-#define PYTHON_ZSTANDARD_VERSION "0.4.0"
-
 PyObject *ZstdError;
 
 PyDoc_STRVAR(estimate_compression_context_size__doc__,

@@ -24,7 +24,7 @@ if cffi:
 
 version = None
 
-with open('zstd.c', 'r') as fh:
+with open('c-ext/python-zstandard.h', 'r') as fh:
     for line in fh:
         if not line.startswith('#define PYTHON_ZSTANDARD_VERSION'):
             continue

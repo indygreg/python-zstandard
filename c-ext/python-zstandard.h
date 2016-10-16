@@ -15,6 +15,8 @@
 #include "zstd.h"
 #include "zdict.h"
 
+#define PYTHON_ZSTANDARD_VERSION "0.4.0"
+
 typedef struct {
 	PyObject_HEAD
 	unsigned windowLog;
