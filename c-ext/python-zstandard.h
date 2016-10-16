@@ -109,6 +109,8 @@ typedef struct {
 	ZSTD_DDict* ddict;
 } ZstdDecompressor;
 
+extern PyTypeObject ZstdDecompressorType;
+
 typedef struct {
 	PyObject_HEAD
 
@@ -118,6 +120,8 @@ typedef struct {
 	ZSTD_DStream* dstream;
 	int entered;
 } ZstdDecompressionWriter;
+
+extern PyTypeObject ZstdDecompressionWriterType;
 
 typedef struct {
 	PyObject_HEAD
@@ -134,6 +138,8 @@ typedef struct {
 	int finishedOutput;
 } ZstdDecompressorIterator;
 
+extern PyTypeObject ZstdDecompressorIteratorType;
+
 typedef struct {
 	int errored;
 	PyObject* chunk;
@@ -141,3 +147,4 @@ typedef struct {
 
 void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams);
 ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize);
+ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor);

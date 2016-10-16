@@ -42,6 +42,7 @@ ext_sources = [
     'c-ext/compressoriterator.c',
     'c-ext/compressionparams.c',
     'c-ext/compressionwriter.c',
+    'c-ext/decompressor.c',
     'c-ext/dictparams.c',
 ]
 
