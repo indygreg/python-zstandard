@@ -18,7 +18,7 @@ void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_comp
 	zparams->strategy = params->strategy;
 }
 
-CompressionParametersObject* pyzstd_get_compression_parameters(PyObject* self, PyObject* args) {
+CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject* args) {
 	int compressionLevel;
 	unsigned PY_LONG_LONG sourceSize = 0;
 	Py_ssize_t dictSize = 0;
@@ -47,7 +47,7 @@ CompressionParametersObject* pyzstd_get_compression_parameters(PyObject* self, P
 	return result;
 }
 
-PyObject* pyzstd_estimate_compression_context_size(PyObject* self, PyObject* args) {
+PyObject* estimate_compression_context_size(PyObject* self, PyObject* args) {
 	CompressionParametersObject* params;
 	ZSTD_compressionParameters zparams;
 	PyObject* result;

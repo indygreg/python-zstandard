@@ -26,7 +26,7 @@ PyDoc_STRVAR(estimate_decompression_context_size__doc__,
 "Estimate the amount of memory allocated to a decompression context.\n"
 );
 
-static PyObject* pyzstd_estimate_decompression_context_size(PyObject* self) {
+static PyObject* estimate_decompression_context_size(PyObject* self) {
 	return PyLong_FromSize_t(ZSTD_estimateDCtxSize());
 }
 
@@ -49,13 +49,13 @@ PyDoc_STRVAR(train_dictionary__doc__,
 static char zstd_doc[] = "Interface to zstandard";
 
 static PyMethodDef zstd_methods[] = {
-	{ "estimate_compression_context_size", (PyCFunction)pyzstd_estimate_compression_context_size,
+	{ "estimate_compression_context_size", (PyCFunction)estimate_compression_context_size,
 	METH_VARARGS, estimate_compression_context_size__doc__ },
-	{ "estimate_decompression_context_size", (PyCFunction)pyzstd_estimate_decompression_context_size,
+	{ "estimate_decompression_context_size", (PyCFunction)estimate_decompression_context_size,
 	METH_NOARGS, estimate_decompression_context_size__doc__ },
-	{ "get_compression_parameters", (PyCFunction)pyzstd_get_compression_parameters,
+	{ "get_compression_parameters", (PyCFunction)get_compression_parameters,
 	METH_VARARGS, get_compression_parameters__doc__ },
-	{ "train_dictionary", (PyCFunction)pyzstd_train_dictionary,
+	{ "train_dictionary", (PyCFunction)train_dictionary,
 	METH_VARARGS | METH_KEYWORDS, train_dictionary__doc__ },
 	{ NULL, NULL }
 };

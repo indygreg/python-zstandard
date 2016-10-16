@@ -10,7 +10,7 @@
 
 extern PyObject* ZstdError;
 
-ZstdCompressionDict* pyzstd_train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs) {
+ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs) {
 	static char *kwlist[] = { "dict_size", "samples", "parameters", NULL };
 	size_t capacity;
 	PyObject* samples;
