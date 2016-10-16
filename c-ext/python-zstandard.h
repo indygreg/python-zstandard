@@ -66,6 +66,8 @@ typedef struct {
 	int flushed;
 } ZstdCompressionObj;
 
+extern PyTypeObject ZstdCompressionObjType;
+
 typedef struct {
 	PyObject_HEAD
 
