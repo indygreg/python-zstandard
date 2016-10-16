@@ -1,3 +1,5 @@
+set -ex
+
 if [ -n "${CONDA}" ]; then
     conda build ci/conda
     mkdir -p dist
