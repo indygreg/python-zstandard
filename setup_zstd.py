@@ -40,6 +40,7 @@ ext_sources = [
     'c-ext/compressobj.c',
     'c-ext/compressor.c',
     'c-ext/compressionparams.c',
+    'c-ext/compressionwriter.c',
     'c-ext/dictparams.c',
 ]
 
