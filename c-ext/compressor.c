@@ -10,6 +10,54 @@
 
 extern PyObject* ZstdError;
 
+/**
+* Initialize a zstd CStream from a ZstdCompressor instance.
+*
+* Returns a ZSTD_CStream on success or NULL on failure. If NULL, a Python
+* exception will be set.
+*/
+ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize) {
+	ZSTD_CStream* cstream;
+	ZSTD_parameters zparams;
+	void* dictData = NULL;
+	size_t dictSize = 0;
+	size_t zresult;
+
+	cstream = ZSTD_createCStream();
+	if (!cstream) {
+		PyErr_SetString(ZstdError, "cannot create CStream");
+		return NULL;
+	}
+
+	if (compressor->dict) {
+		dictData = compressor->dict->dictData;
+		dictSize = compressor->dict->dictSize;
+	}
+
+	memset(&zparams, 0, sizeof(zparams));
+	if (compressor->cparams) {
+		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
+		/* Do NOT call ZSTD_adjustCParams() here because the compression params
+		come from the user. */
+	}
+	else {
+		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, sourceSize, dictSize);
+	}
+
+	zparams.fParams = compressor->fparams;
+
+	zresult = ZSTD_initCStream_advanced(cstream, dictData, dictSize, zparams, sourceSize);
+
+	if (ZSTD_isError(zresult)) {
+		ZSTD_freeCStream(cstream);
+		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
+		return NULL;
+	}
+
+	return cstream;
+}
+
+
 PyDoc_STRVAR(ZstdCompressor__doc__,
 "ZstdCompressor(level=None, dict_data=None, compression_params=None)\n"
 "\n"
