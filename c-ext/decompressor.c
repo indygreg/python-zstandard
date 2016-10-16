@@ -400,7 +400,7 @@ PyDoc_STRVAR(Decompressor_read_from__doc__,
 "Compressed data will be obtained from ``reader`` by calling the\n"
 "``read(size)`` method of it. The source data will be streamed into a\n"
 "decompressor. As decompressed data is available, it will be exposed to the\n"
-"return iterator.\n"
+"returned iterator.\n"
 "\n"
 "Data is ``read()`` in chunks of size ``read_size`` and exposed to the\n"
 "iterator in chunks of size ``write_size``. The default values are the input\n"
