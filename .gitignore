@@ -1,4 +1,5 @@
 *.pyd
+*.o
 *.so
 *.orig
 *.pyc

@@ -1,6 +1,7 @@
 syntax: glob
 
 *.pyd
+*.o
 *.so
 *.orig
 *.pyc
