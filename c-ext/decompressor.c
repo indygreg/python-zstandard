@@ -360,6 +360,36 @@ except:
 	return result;
 }
 
+PyDoc_STRVAR(Decompressor_decompressobj__doc__,
+"decompressobj()\n"
+"\n"
+"Incrementally feed data into a decompressor.\n"
+"\n"
+"The returned object exposes a ``decompress(data)`` method. This makes it\n"
+"compatible with ``zlib.decompressobj`` and ``bz2.BZ2Decompressor`` so that\n"
+"callers can swap in the zstd decompressor while using the same API.\n"
+);
+
+static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) {
+	ZstdDecompressionObj* result = PyObject_New(ZstdDecompressionObj, &ZstdDecompressionObjType);
+	if (!result) {
+		return NULL;
+	}
+
+	result->dstream = DStream_from_ZstdDecompressor(self);
+	if (!result->dstream) {
+		Py_DecRef((PyObject*)result);
+		return NULL;
+	}
+
+	result->decompressor = self;
+	Py_INCREF(result->decompressor);
+
+	result->finished = 0;
+
+	return result;
+}
+
 PyDoc_STRVAR(Decompressor_read_from__doc__,
 "read_from(reader[, read_size=default, write_size=default])\n"
 "Read compressed data and return an iterator\n"
@@ -497,6 +527,8 @@ static PyMethodDef Decompressor_methods[] = {
 	Decompressor_copy_stream__doc__ },
 	{ "decompress", (PyCFunction)Decompressor_decompress, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_decompress__doc__ },
+	{ "decompressobj", (PyCFunction)Decompressor_decompressobj, METH_NOARGS,
+	Decompressor_decompressobj__doc__ },
 	{ "read_from", (PyCFunction)Decompressor_read_from, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_read_from__doc__ },
 	{ "write_to", (PyCFunction)Decompressor_write_to, METH_VARARGS | METH_KEYWORDS,

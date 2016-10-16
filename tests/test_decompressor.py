@@ -180,6 +180,25 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         self.assertEqual(dest._write_count, len(dest.getvalue()))
 
 
+class TestDecompressor_decompressobj(unittest.TestCase):
+    def test_simple(self):
+        data = zstd.ZstdCompressor(level=1).compress(b'foobar')
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj()
+        self.assertEqual(dobj.decompress(data), b'foobar')
+
+    def test_reuse(self):
+        data = zstd.ZstdCompressor(level=1).compress(b'foobar')
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj()
+        dobj.decompress(data)
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'cannot use a decompressobj'):
+            dobj.decompress(data)
+
+
 def decompress_via_writer(data):
     buffer = io.BytesIO()
     dctx = zstd.ZstdDecompressor()

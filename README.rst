@@ -457,6 +457,29 @@ can be specified::
     dctx = zstd.ZstdDecompressor()
     dctx.copy_stream(ifh, ofh, read_size=8192, write_size=16384)
 
+Decompressor API
+^^^^^^^^^^^^^^^^
+
+``decompressobj()`` returns an object that exposes a ``decompress(data)``
+methods. Compressed data chunks are fed into ``decompress(data)`` and
+uncompressed output (or an empty bytes) is returned. Output from subsequent
+calls needs to be concatenated to reassemble the full decompressed byte
+sequence.
+
+The purpose of ``decompressobj()`` is to provide an API-compatible interface
+with ``zlib.decompressobj`` and ``bz2.BZ2Decompressor``. This allows callers
+to swap in different decompressor objects while using the same API.
+
+Each object is single use: once an input frame is decoded, ``decompress()``
+can no longer be called.
+
+Here is how this API should be used::
+
+   dctx = zstd.ZstdDeompressor()
+   dobj = cctx.decompressobj()
+   data = dobj.decompress(compressed_chunk_0)
+   data = dobj.decompress(compressed_chunk_1)
+
 Choosing an API
 ---------------
 

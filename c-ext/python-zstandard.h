@@ -117,6 +117,16 @@ typedef struct {
 	PyObject_HEAD
 
 	ZstdDecompressor* decompressor;
+	ZSTD_DStream* dstream;
+	int finished;
+} ZstdDecompressionObj;
+
+extern PyTypeObject ZstdDecompressionObjType;
+
+typedef struct {
+	PyObject_HEAD
+
+	ZstdDecompressor* decompressor;
 	PyObject* writer;
 	size_t outSize;
 	ZSTD_DStream* dstream;
