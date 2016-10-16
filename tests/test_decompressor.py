@@ -347,6 +347,23 @@ class TestDecompressor_read_from(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(it)
 
+    def test_skip_bytes_too_large(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with self.assertRaisesRegexp(ValueError, 'skip_bytes must be smaller than read_size'):
+            dctx.read_from(b'', skip_bytes=1, read_size=1)
+
+        with self.assertRaisesRegexp(ValueError, 'skip_bytes larger than first input chunk'):
+            b''.join(dctx.read_from(b'foobar', skip_bytes=10))
+
+    def test_skip_bytes(self):
+        cctx = zstd.ZstdCompressor(write_content_size=False)
+        compressed = cctx.compress(b'foobar')
+
+        dctx = zstd.ZstdDecompressor()
+        output = b''.join(dctx.read_from(b'hdr' + compressed, skip_bytes=3))
+        self.assertEqual(output, b'foobar')
+
     def test_large_output(self):
         source = io.BytesIO()
         source.write(b'f' * zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)

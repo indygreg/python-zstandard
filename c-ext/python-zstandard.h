@@ -144,6 +144,7 @@ typedef struct {
 	Py_ssize_t bufferOffset;
 	size_t inSize;
 	size_t outSize;
+	size_t skipBytes;
 	ZSTD_DStream* dstream;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;

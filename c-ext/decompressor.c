@@ -391,7 +391,7 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) 
 }
 
 PyDoc_STRVAR(Decompressor_read_from__doc__,
-"read_from(reader[, read_size=default, write_size=default])\n"
+"read_from(reader[, read_size=default, write_size=default, skip_bytes=0])\n"
 "Read compressed data and return an iterator\n"
 "\n"
 "Returns an iterator of decompressed data chunks produced from reading from\n"
@@ -405,6 +405,9 @@ PyDoc_STRVAR(Decompressor_read_from__doc__,
 "Data is ``read()`` in chunks of size ``read_size`` and exposed to the\n"
 "iterator in chunks of size ``write_size``. The default values are the input\n"
 "and output sizes for a zstd streaming decompressor.\n"
+"\n"
+"There is also support for skipping the first ``skip_bytes`` of data from\n"
+"the source.\n"
 );
 
 static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
@@ -412,6 +415,7 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 		"reader",
 		"read_size",
 		"write_size",
+		"skip_bytes",
 		NULL
 	};
 
@@ -419,9 +423,16 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 	size_t inSize = ZSTD_DStreamInSize();
 	size_t outSize = ZSTD_DStreamOutSize();
 	ZstdDecompressorIterator* result;
+	size_t skipBytes = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kk", kwlist, &reader,
-		&inSize, &outSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kkk", kwlist, &reader,
+		&inSize, &outSize, &skipBytes)) {
+		return NULL;
+	}
+
+	if (skipBytes >= inSize) {
+		PyErr_SetString(PyExc_ValueError,
+			"skip_bytes must be smaller than read_size");
 		return NULL;
 	}
 
@@ -467,6 +478,7 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 
 	result->inSize = inSize;
 	result->outSize = outSize;
+	result->skipBytes = skipBytes;
 
 	result->dstream = DStream_from_ZstdDecompressor(self);
 	if (!result->dstream) {

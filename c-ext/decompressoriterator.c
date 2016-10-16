@@ -153,6 +153,20 @@ read_from_source:
 		}
 
 		if (readSize) {
+			if (!self->readCount && self->skipBytes) {
+				assert(self->skipBytes < self->inSize);
+				if ((Py_ssize_t)self->skipBytes >= readSize) {
+					PyErr_SetString(PyExc_ValueError,
+						"skip_bytes larger than first input chunk; "
+						"this scenario is currently unsupported");
+					Py_DecRef(readResult);
+					return NULL;
+				}
+
+				readBuffer = readBuffer + self->skipBytes;
+				readSize -= self->skipBytes;
+			}
+
 			/* Copy input into previously allocated buffer because it can live longer
 			than a single function call and we don't want to keep a ref to a Python
 			object around. This could be changed... */

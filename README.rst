@@ -454,6 +454,16 @@ The size of requested ``read()`` from the source can be specified::
     for chunk in dctx.read_from(fh, read_size=16384):
         pass
 
+It is also possible to skip leading bytes in the input data::
+
+    dctx = zstd.ZstdDecompressor()
+    for chunk in dctx.read_from(fh, skip_bytes=1):
+        pass
+
+Skipping leading bytes is useful if the source data contains extra
+*header* data but you want to avoid the overhead of making a buffer copy
+or allocating a new ``memoryview`` object in order to decompress the data.
+
 Similarly to ``ZstdCompressor.read_from()``, the consumer of the iterator
 controls when data is decompressed. If the iterator isn't consumed,
 decompression is put on hold.
