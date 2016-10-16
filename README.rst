@@ -53,6 +53,24 @@ This extension is designed to run with Python 2.6, 2.7, 3.3, 3.4, and 3.5
 on common platforms (Linux, Windows, and OS X). Only x86_64 is currently
 well-tested as an architecture.
 
+Installing
+==========
+
+This package is uploaded to PyPI at https://pypi.python.org/pypi/zstandard.
+So, to install this package::
+
+   $ pip install zstandard
+
+Binary wheels are made available for some platforms. If you need to
+install from a source distribution, all you should need is a working C
+compiler and the Python development headers/libraries. On many Linux
+distributions, you can install a ``python-dev`` or ``python-devel``
+package to provide these dependencies.
+
+Packages are also uploaded to Anaconda Cloud at
+https://anaconda.org/indygreg/zstandard. See that URL for how to install
+this package with ``conda``.
+
 Performance
 ===========
 
