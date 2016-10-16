@@ -8,6 +8,16 @@
 
 #include "python-zstandard.h"
 
+void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams) {
+	zparams->windowLog = params->windowLog;
+	zparams->chainLog = params->chainLog;
+	zparams->hashLog = params->hashLog;
+	zparams->searchLog = params->searchLog;
+	zparams->searchLength = params->searchLength;
+	zparams->targetLength = params->targetLength;
+	zparams->strategy = params->strategy;
+}
+
 PyDoc_STRVAR(CompressionParameters__doc__,
 "CompressionParameters: low-level control over zstd compression");
 

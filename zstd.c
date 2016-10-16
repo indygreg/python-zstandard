@@ -14,16 +14,6 @@
 
 PyObject *ZstdError;
 
-void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams) {
-	zparams->windowLog = params->windowLog;
-	zparams->chainLog = params->chainLog;
-	zparams->hashLog = params->hashLog;
-	zparams->searchLog = params->searchLog;
-	zparams->searchLength = params->searchLength;
-	zparams->targetLength = params->targetLength;
-	zparams->strategy = params->strategy;
-}
-
 /**
 * Initialize a zstd CStream from a ZstdCompressor instance.
 *
