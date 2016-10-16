@@ -104,175 +104,6 @@ ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor) {
 	return dstream;
 }
 
-PyDoc_STRVAR(ZstdDecompressionWriter__doc,
-"""A context manager used for writing decompressed output.\n"
-);
-
-static void ZstdDecompressionWriter_dealloc(ZstdDecompressionWriter* self) {
-	Py_XDECREF(self->decompressor);
-	Py_XDECREF(self->writer);
-
-	if (self->dstream) {
-		ZSTD_freeDStream(self->dstream);
-		self->dstream = NULL;
-	}
-
-	PyObject_Del(self);
-}
-
-static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
-	if (self->entered) {
-		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
-		return NULL;
-	}
-
-	self->dstream = DStream_from_ZstdDecompressor(self->decompressor);
-	if (!self->dstream) {
-		return NULL;
-	}
-
-	self->entered = 1;
-
-	Py_INCREF(self);
-	return (PyObject*)self;
-}
-
-static PyObject* ZstdDecompressionWriter_exit(ZstdDecompressionWriter* self, PyObject* args) {
-	self->entered = 0;
-
-	if (self->dstream) {
-		ZSTD_freeDStream(self->dstream);
-		self->dstream = NULL;
-	}
-
-	Py_RETURN_FALSE;
-}
-
-static PyObject* ZstdDecompressionWriter_memory_size(ZstdDecompressionWriter* self) {
-	if (!self->dstream) {
-		PyErr_SetString(ZstdError, "cannot determine size of inactive decompressor; "
-			"call when context manager is active");
-		return NULL;
-	}
-
-	return PyLong_FromSize_t(ZSTD_sizeof_DStream(self->dstream));
-}
-
-static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
-	size_t zresult = 0;
-	ZSTD_inBuffer input;
-	ZSTD_outBuffer output;
-	PyObject* res;
-
-#if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
-#else
-	if (!PyArg_ParseTuple(args, "s#", &source, &sourceSize)) {
-#endif
-		return NULL;
-	}
-
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "write must be called from an active context manager");
-		return NULL;
-	}
-
-	output.dst = malloc(self->outSize);
-	if (!output.dst) {
-		return PyErr_NoMemory();
-	}
-	output.size = self->outSize;
-	output.pos = 0;
-
-	input.src = source;
-	input.size = sourceSize;
-	input.pos = 0;
-
-	while ((ssize_t)input.pos < sourceSize) {
-		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompressStream(self->dstream, &output, &input);
-		Py_END_ALLOW_THREADS
-
-		if (ZSTD_isError(zresult)) {
-			free(output.dst);
-			PyErr_Format(ZstdError, "zstd decompress error: %s",
-				ZSTD_getErrorName(zresult));
-			return NULL;
-		}
-
-		if (output.pos) {
-#if PY_MAJOR_VERSION >= 3
-			res = PyObject_CallMethod(self->writer, "write", "y#",
-#else
-			res = PyObject_CallMethod(self->writer, "write", "s#",
-#endif
-				output.dst, output.pos);
-			Py_XDECREF(res);
-			output.pos = 0;
-		}
-	}
-
-	free(output.dst);
-
-	/* TODO return bytes written */
-	Py_RETURN_NONE;
-}
-
-static PyMethodDef ZstdDecompressionWriter_methods[] = {
-	{ "__enter__", (PyCFunction)ZstdDecompressionWriter_enter, METH_NOARGS,
-	PyDoc_STR("Enter a decompression context.") },
-	{ "__exit__", (PyCFunction)ZstdDecompressionWriter_exit, METH_VARARGS,
-	PyDoc_STR("Exit a decompression context.") },
-	{ "memory_size", (PyCFunction)ZstdDecompressionWriter_memory_size, METH_NOARGS,
-	PyDoc_STR("Obtain the memory size in bytes of the underlying decompressor.") },
-	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS,
-	PyDoc_STR("Compress data") },
-	{ NULL, NULL }
-};
-
-PyTypeObject ZstdDecompressionWriterType = {
-	PyVarObject_HEAD_INIT(NULL, 0)
-	"zstd.ZstdDecompressionWriter", /* tp_name */
-	sizeof(ZstdDecompressionWriter),/* tp_basicsize */
-	0,                              /* tp_itemsize */
-	(destructor)ZstdDecompressionWriter_dealloc, /* tp_dealloc */
-	0,                              /* tp_print */
-	0,                              /* tp_getattr */
-	0,                              /* tp_setattr */
-	0,                              /* tp_compare */
-	0,                              /* tp_repr */
-	0,                              /* tp_as_number */
-	0,                              /* tp_as_sequence */
-	0,                              /* tp_as_mapping */
-	0,                              /* tp_hash */
-	0,                              /* tp_call */
-	0,                              /* tp_str */
-	0,                              /* tp_getattro */
-	0,                              /* tp_setattro */
-	0,                              /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	ZstdDecompressionWriter__doc,   /* tp_doc */
-	0,                              /* tp_traverse */
-	0,                              /* tp_clear */
-	0,                              /* tp_richcompare */
-	0,                              /* tp_weaklistoffset */
-	0,                              /* tp_iter */
-	0,                              /* tp_iternext */
-	ZstdDecompressionWriter_methods,/* tp_methods */
-	0,                              /* tp_members */
-	0,                              /* tp_getset */
-	0,                              /* tp_base */
-	0,                              /* tp_dict */
-	0,                              /* tp_descr_get */
-	0,                              /* tp_descr_set */
-	0,                              /* tp_dictoffset */
-	0,                              /* tp_init */
-	0,                              /* tp_alloc */
-	PyType_GenericNew,              /* tp_new */
-};
-
 PyDoc_STRVAR(ZstdDecompressorIterator__doc__,
 "Represents an iterator of decompressed data.\n"
 );
@@ -682,16 +513,12 @@ void compressiondict_module_init(PyObject* mod);
 void compressionwriter_module_init(PyObject* mod);
 void compressoriterator_module_init(PyObject* mod);
 void decompressor_module_init(PyObject* mod);
+void decompressionwriter_module_init(PyObject* mod);
 
 void zstd_module_init(PyObject* m) {
 	PyObject* version;
 	PyObject* zstdVersion;
 	PyObject* frameHeader;
-
-	Py_TYPE(&ZstdDecompressionWriterType) = &PyType_Type;
-	if (PyType_Ready(&ZstdDecompressionWriterType) < 0) {
-		return;
-	}
 
 	Py_TYPE(&ZstdDecompressorIteratorType) = &PyType_Type;
 	if (PyType_Ready(&ZstdDecompressorIteratorType) < 0) {
@@ -766,6 +593,7 @@ void zstd_module_init(PyObject* m) {
 	compressionwriter_module_init(m);
 	compressoriterator_module_init(m);
 	decompressor_module_init(m);
+	decompressionwriter_module_init(m);
 }
 
 #if PY_MAJOR_VERSION >= 3
