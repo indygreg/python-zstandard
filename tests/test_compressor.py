@@ -386,6 +386,18 @@ class TestCompressor_write_to(unittest.TestCase):
 
 
 class TestCompressor_read_from(unittest.TestCase):
+    def test_type_validation(self):
+        cctx = zstd.ZstdCompressor()
+
+        # Object with read() works.
+        cctx.read_from(io.BytesIO())
+
+        # Buffer protocol works.
+        cctx.read_from(b'foobar')
+
+        with self.assertRaisesRegexp(ValueError, 'must pass an object with a read'):
+            cctx.read_from(True)
+
     def test_read_empty(self):
         cctx = zstd.ZstdCompressor(level=1)
 
@@ -395,6 +407,13 @@ class TestCompressor_read_from(unittest.TestCase):
         self.assertEqual(len(chunks), 1)
         compressed = b''.join(chunks)
         self.assertEqual(compressed, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
+
+        # And again with the buffer protocol.
+        it = cctx.read_from(b'')
+        chunks = list(it)
+        self.assertEqual(len(chunks), 1)
+        compressed2 = b''.join(chunks)
+        self.assertEqual(compressed2, compressed)
 
     def test_read_large(self):
         cctx = zstd.ZstdCompressor(level=1)
@@ -429,6 +448,12 @@ class TestCompressor_read_from(unittest.TestCase):
             next(it)
 
         # We should get the same output as the one-shot compression mechanism.
+        self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
+
+        # Now check the buffer protocol.
+        it = cctx.read_from(source.getvalue())
+        chunks = list(it)
+        self.assertEqual(len(chunks), 2)
         self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
 
     def test_read_write_size(self):

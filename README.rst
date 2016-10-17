@@ -270,9 +270,14 @@ as an iterator of data chunks.::
    for chunk in cctx.read_from(fh):
         # Do something with emitted data.
 
-``read_from()`` will call ``.read(size)`` on the passed object to obtain
-uncompressed data to feed into the compressor. The returned iterator consists
-of chunks of compressed data.
+``read_from()`` accepts an object that has a ``read(size)`` method or conforms
+to the buffer protocol. (``bytes`` and ``memoryview`` are 2 common types that
+provide the buffer protocol.)
+
+Uncompressed data is fetched from the source either by calling ``read(size)``
+or by fetching a slice of data from the object directly (in the case where
+the buffer protocol is being used). The returned iterator consists of chunks
+of compressed data.
 
 Like ``write_to()``, ``read_from()`` also accepts a ``size`` argument
 declaring the size of the input stream::

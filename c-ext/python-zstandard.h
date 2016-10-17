@@ -90,6 +90,8 @@ typedef struct {
 
 	ZstdCompressor* compressor;
 	PyObject* reader;
+	Py_buffer* buffer;
+	Py_ssize_t bufferOffset;
 	Py_ssize_t sourceSize;
 	size_t inSize;
 	size_t outSize;

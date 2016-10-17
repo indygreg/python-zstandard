@@ -542,26 +542,46 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 		return NULL;
 	}
 
-	if (!PyObject_HasAttrString(reader, "read")) {
-		PyErr_SetString(PyExc_ValueError, "must pass an object with a read() method");
-		return NULL;
-	}
-
 	result = PyObject_New(ZstdCompressorIterator, &ZstdCompressorIteratorType);
 	if (!result) {
 		return NULL;
 	}
 
+	result->compressor = NULL;
+	result->reader = NULL;
+	result->buffer = NULL;
 	result->cstream = NULL;
 	result->input.src = NULL;
 	result->output.dst = NULL;
 	result->readResult = NULL;
 
+	if (PyObject_HasAttrString(reader, "read")) {
+		result->reader = reader;
+		Py_INCREF(result->reader);
+	}
+	else if (1 == PyObject_CheckBuffer(reader)) {
+		result->buffer = PyMem_Malloc(sizeof(Py_buffer));
+		if (!result->buffer) {
+			goto except;
+		}
+
+		memset(result->buffer, 0, sizeof(Py_buffer));
+
+		if (0 != PyObject_GetBuffer(reader, result->buffer, PyBUF_CONTIG_RO)) {
+			goto except;
+		}
+
+		result->bufferOffset = 0;
+		sourceSize = result->buffer->len;
+	}
+	else {
+		PyErr_SetString(PyExc_ValueError,
+			"must pass an object with a read() method or conforms to buffer protocol");
+		goto except;
+	}
+
 	result->compressor = self;
 	Py_INCREF(result->compressor);
-
-	result->reader = reader;
-	Py_INCREF(result->reader);
 
 	result->sourceSize = sourceSize;
 	result->cstream = CStream_from_ZstdCompressor(self, sourceSize);

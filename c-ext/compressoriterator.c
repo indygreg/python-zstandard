@@ -8,6 +8,8 @@
 
 #include "python-zstandard.h"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
 extern PyObject* ZstdError;
 
 PyDoc_STRVAR(ZstdCompressorIterator__doc__,
@@ -18,6 +20,12 @@ static void ZstdCompressorIterator_dealloc(ZstdCompressorIterator* self) {
 	Py_XDECREF(self->readResult);
 	Py_XDECREF(self->compressor);
 	Py_XDECREF(self->reader);
+
+	if (self->buffer) {
+		PyBuffer_Release(self->buffer);
+		PyMem_FREE(self->buffer);
+		self->buffer = NULL;
+	}
 
 	if (self->cstream) {
 		ZSTD_freeCStream(self->cstream);
@@ -43,6 +51,7 @@ static PyObject* ZstdCompressorIterator_iternext(ZstdCompressorIterator* self) {
 	PyObject* chunk;
 	char* readBuffer;
 	Py_ssize_t readSize = 0;
+	Py_ssize_t bufferRemaining;
 
 	if (self->finishedOutput) {
 		PyErr_SetString(PyExc_StopIteration, "output flushed");
@@ -82,20 +91,34 @@ feedcompressor:
 	/* We should never have output data sitting around after a previous call. */
 	assert(self->output.pos == 0);
 
-	/* The code above should have either emitted a chunk and return or consumed
+	/* The code above should have either emitted a chunk and returned or consumed
 	the entire input buffer. So the state of the input buffer is not
 	relevant. */
 	if (!self->finishedInput) {
-		readResult = PyObject_CallMethod(self->reader, "read", "I", self->inSize);
-		if (!readResult) {
-			PyErr_SetString(ZstdError, "could not read() from source");
-			return NULL;
+		if (self->reader) {
+			readResult = PyObject_CallMethod(self->reader, "read", "I", self->inSize);
+			if (!readResult) {
+				PyErr_SetString(ZstdError, "could not read() from source");
+				return NULL;
+			}
+
+			PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+		}
+		else {
+			assert(self->buffer && self->buffer->buf);
+
+			/* Only support contiguous C arrays. */
+			assert(self->buffer->strides == NULL && self->buffer->suboffsets == NULL);
+			assert(self->buffer->itemsize == 1);
+
+			readBuffer = (char*)self->buffer->buf + self->bufferOffset;
+			bufferRemaining = self->buffer->len - self->bufferOffset;
+			readSize = min(bufferRemaining, (Py_ssize_t)self->inSize);
+			self->bufferOffset += readSize;
 		}
 
-		PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
-
 		if (0 == readSize) {
-			Py_DECREF(readResult);
+			Py_XDECREF(readResult);
 			self->finishedInput = 1;
 		}
 		else {
@@ -141,7 +164,7 @@ feedcompressor:
 		self->input.src = NULL;
 		self->input.pos = 0;
 		self->input.size = 0;
-		Py_DECREF(self->readResult);
+		Py_XDECREF(self->readResult);
 		self->readResult = NULL;
 	}
 
