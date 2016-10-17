@@ -31,7 +31,7 @@ static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator* self) {
 	}
 
 	if (self->input.src) {
-		free((void*)self->input.src);
+		PyMem_Free((void*)self->input.src);
 		self->input.src = NULL;
 	}
 
