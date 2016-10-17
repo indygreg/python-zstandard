@@ -22,6 +22,7 @@ static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator* self) {
 
 	if (self->buffer) {
 		PyBuffer_Release(self->buffer);
+		PyMem_FREE(self->buffer);
 		self->buffer = NULL;
 	}
 
