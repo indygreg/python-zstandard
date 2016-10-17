@@ -25,7 +25,7 @@ static void ZstdCompressorIterator_dealloc(ZstdCompressorIterator* self) {
 	}
 
 	if (self->output.dst) {
-		free(self->output.dst);
+		PyMem_Free(self->output.dst);
 		self->output.dst = NULL;
 	}
 

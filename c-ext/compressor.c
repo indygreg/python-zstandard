@@ -234,7 +234,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		goto finally;
 	}
 
-	output.dst = malloc(outSize);
+	output.dst = PyMem_Malloc(outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();
 		res = NULL;
@@ -326,9 +326,9 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	Py_DecRef(totalReadPy);
 	Py_DecRef(totalWritePy);
 
-	finally:
+finally:
 	if (output.dst) {
-		free(output.dst);
+		PyMem_Free(output.dst);
 	}
 
 	if (cstream) {
@@ -572,7 +572,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 	result->inSize = inSize;
 	result->outSize = outSize;
 
-	result->output.dst = malloc(outSize);
+	result->output.dst = PyMem_Malloc(outSize);
 	if (!result->output.dst) {
 		PyErr_NoMemory();
 		goto except;
