@@ -552,6 +552,11 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 		return NULL;
 	}
 
+	result->cstream = NULL;
+	result->input.src = NULL;
+	result->output.dst = NULL;
+	result->readResult = NULL;
+
 	result->compressor = self;
 	Py_INCREF(result->compressor);
 
@@ -561,8 +566,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 	result->sourceSize = sourceSize;
 	result->cstream = CStream_from_ZstdCompressor(self, sourceSize);
 	if (!result->cstream) {
-		Py_DECREF(result);
-		return NULL;
+		goto except;
 	}
 
 	result->inSize = inSize;
@@ -570,9 +574,8 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 
 	result->output.dst = malloc(outSize);
 	if (!result->output.dst) {
-		Py_DECREF(result);
 		PyErr_NoMemory();
-		return NULL;
+		goto except;
 	}
 	result->output.size = outSize;
 	result->output.pos = 0;
@@ -583,8 +586,22 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 
 	result->finishedInput = 0;
 	result->finishedOutput = 0;
-	result->readResult = NULL;
 
+	goto finally;
+
+except:
+	if (result->cstream) {
+		ZSTD_freeCStream(result->cstream);
+		result->cstream = NULL;
+	}
+
+	Py_DecRef((PyObject*)result->compressor);
+	Py_DecRef(result->reader);
+
+	Py_DECREF(result);
+	result = NULL;
+
+finally:
 	return result;
 }
 
