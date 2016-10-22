@@ -428,6 +428,9 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	}
 
 	Py_BEGIN_ALLOW_THREADS
+	/* By avoiding ZSTD_compress(), we don't necessarily write out content
+	   size. This means the argument to ZstdCompressor to control frame
+	   parameters is honored. */
 	if (self->cdict) {
 		zresult = ZSTD_compress_usingCDict(cctx, dest, destSize,
 			source, sourceSize, self->cdict);
