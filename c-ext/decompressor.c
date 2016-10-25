@@ -327,7 +327,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 			source, sourceSize, self->ddict);
 	}
 	else {
-		zresult = ZSTD_decompress(PyBytes_AsString(result), destCapacity, source, sourceSize);
+		zresult = ZSTD_decompressDCtx(dctx, PyBytes_AsString(result), destCapacity, source, sourceSize);
 	}
 	Py_END_ALLOW_THREADS
 
@@ -352,7 +352,7 @@ except:
 	Py_DecRef(result);
 	result = NULL;
 
-	finally:
+finally:
 	if (dctx) {
 		ZSTD_freeDCtx(dctx);
 	}
