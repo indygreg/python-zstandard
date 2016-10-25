@@ -109,6 +109,8 @@ extern PyTypeObject ZstdCompressorIteratorType;
 typedef struct {
 	PyObject_HEAD
 
+	ZSTD_DCtx* refdctx;
+
 	ZstdCompressionDict* dict;
 	ZSTD_DDict* ddict;
 } ZstdDecompressor;

@@ -59,6 +59,7 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 
 	ZstdCompressionDict* dict = NULL;
 
+	self->refdctx = NULL;
 	self->dict = NULL;
 	self->ddict = NULL;
 
@@ -67,15 +68,39 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
+	/* Instead of creating a ZSTD_DCtx for every decompression operation,
+	   we create an instance at object creation time and recycle it via
+	   ZSTD_copyDCTx() on each use. This means each use is a malloc+memcpy
+	   instead of a malloc+init. */
+	/* TODO lazily initialize the reference ZSTD_DCtx on first use since
+	   not instances of ZstdDecompressor will use a ZSTD_DCtx. */
+	self->refdctx = ZSTD_createDCtx();
+	if (!self->refdctx) {
+		PyErr_NoMemory();
+		goto except;
+	}
+
 	if (dict) {
 		self->dict = dict;
 		Py_INCREF(dict);
 	}
 
 	return 0;
+
+except:
+	if (self->refdctx) {
+		ZSTD_freeDCtx(self->refdctx);
+		self->refdctx = NULL;
+	}
+
+	return -1;
 }
 
 static void Decompressor_dealloc(ZstdDecompressor* self) {
+	if (self->refdctx) {
+		ZSTD_freeDCtx(self->refdctx);
+	}
+
 	Py_XDECREF(self->dict);
 
 	if (self->ddict) {
@@ -277,11 +302,13 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		return NULL;
 	}
 
-	dctx = ZSTD_createDCtx();
+	dctx = PyMem_Malloc(ZSTD_sizeof_DCtx(self->refdctx));
 	if (!dctx) {
-		PyErr_SetString(ZstdError, "could not create DCtx");
+		PyErr_NoMemory();
 		return NULL;
 	}
+
+	ZSTD_copyDCtx(dctx, self->refdctx);
 
 	if (self->dict) {
 		dictData = self->dict->dictData;
@@ -354,7 +381,7 @@ except:
 
 finally:
 	if (dctx) {
-		ZSTD_freeDCtx(dctx);
+		PyMem_FREE(dctx);
 	}
 
 	return result;
