@@ -14,6 +14,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 SOURCES = ['zstd/%s' % p for p in (
     'common/entropy_common.c',
+    'common/error_private.c',
     'common/fse_decompress.c',
     'common/xxhash.c',
     'common/zstd_common.c',

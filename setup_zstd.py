@@ -10,6 +10,7 @@ from distutils.extension import Extension
 
 zstd_sources = ['zstd/%s' % p for p in (
     'common/entropy_common.c',
+    'common/error_private.c',
     'common/fse_decompress.c',
     'common/xxhash.c',
     'common/zstd_common.c',
