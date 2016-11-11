@@ -20,7 +20,7 @@ test:
     - nose
 
   source_files:
-    - tests/*
+    - tests/
 
   commands:
     - nosetests -v
