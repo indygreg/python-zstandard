@@ -1,3 +1,32 @@
+Version History
+===============
+
+0.5.0 (released 2016-11-10)
+---------------------------
+
+* Vendored version of zstd updated to 1.1.1.
+* Continuous integration for Python 3.6 and 3.7
+* Continuous integration for Conda
+* Added compression and decompression APIs providing similar interfaces
+  to the standard library ``zlib`` and ``bz2`` modules. This allows
+  coding to a common interface.
+* ``zstd.__version__` is now defined.
+* ``read_from()`` on various APIs now accepts objects implementing the buffer
+  protocol.
+* ``read_from()`` has gained a ``skip_bytes`` argument. This allows callers
+  to pass in an existing buffer with a header without having to create a
+  slice or a new object.
+* Implemented ``ZstdCompressionDict.as_bytes()``.
+* Python's memory allocator is now used instead of ``malloc()``.
+* Low-level zstd data structures are reused in more instances, cutting down
+  on overhead for certain operations.
+* ``distutils`` boilerplate for obtaining an ``Extension`` instance
+  has now been refactored into a standalone ``setup_zstd.py`` file. This
+  allows other projects with ``setup.py`` files to reuse the
+  ``distutils`` code for this project without copying code.
+* The monolithic ``zstd.c`` file has been split into a header file defining
+  types and separate ``.c`` source files for the implementation.
+
 History of the Project
 ======================
 
@@ -30,3 +59,5 @@ decoding a zstd frame (issue #2).
 2016-10-02 - 0.4.0 is released with zstd 1.1.0, support for custom read and
 write buffer sizes, and a few bug fixes involving failure to read/write
 all data when buffer sizes were too small to hold remaining data.
+
+2016-11-10 - 0.5.0 is released with zstd 1.1.1 and other enhancements.
