@@ -41,3 +41,6 @@ class TestTrainDictionary(unittest.TestCase):
 
         dict_id = d.dict_id()
         self.assertIsInstance(dict_id, int_type)
+
+        data = d.as_bytes()
+        self.assertEqual(data[0:4], b'\x37\xa4\x30\xec')

@@ -167,9 +167,15 @@ static PyObject* ZstdCompressionDict_dict_id(ZstdCompressionDict* self) {
 	return PyLong_FromLong(dictID);
 }
 
+static PyObject* ZstdCompressionDict_as_bytes(ZstdCompressionDict* self) {
+	return PyBytes_FromStringAndSize(self->dictData, self->dictSize);
+}
+
 static PyMethodDef ZstdCompressionDict_methods[] = {
 	{ "dict_id", (PyCFunction)ZstdCompressionDict_dict_id, METH_NOARGS,
 	PyDoc_STR("dict_id() -- obtain the numeric dictionary ID") },
+	{ "as_bytes", (PyCFunction)ZstdCompressionDict_as_bytes, METH_NOARGS,
+	PyDoc_STR("as_bytes() -- obtain the raw bytes constituting the dictionary data") },
 	{ NULL, NULL }
 };
 

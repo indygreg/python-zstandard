@@ -614,6 +614,12 @@ Dictionaries have unique integer IDs. You can retrieve this ID via::
 
    dict_id = zstd.dictionary_id(dict_data)
 
+You can obtain the raw data in the dict (useful for persisting and constructing
+a ``ZstdCompressionDict`` later) via ``as_bytes()``::
+
+   dict_data = zstd.train_dictionary(size, samples)
+   raw_data = dict_data.as_bytes()
+
 Explicit Compression Parameters
 -------------------------------
 
