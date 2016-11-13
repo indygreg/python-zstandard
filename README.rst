@@ -2,12 +2,16 @@
 python-zstandard
 ================
 
-This project provides a Python C extension for interfacing with the
-`Zstandard <http://www.zstd.net>`_ compression library.
+This project provides Python bindings for interfacing with the
+`Zstandard <http://www.zstd.net>`_ compression library. A C extension
+and CFFI interface is provided.
 
 The primary goal of the extension is to provide a Pythonic interface to
 the underlying C API. This means exposing most of the features and flexibility
 of the C API while not sacrificing usability or safety that Python provides.
+
+The canonical home for this project is
+https://github.com/indygreg/python-zstandard.
 
 |  |ci-status| |win-ci-status|
 
