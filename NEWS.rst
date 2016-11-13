@@ -1,6 +1,10 @@
 Version History
 ===============
 
+0.5.2 (released 2016-11-12)
+
+* more packaging fixes for source distribution
+
 0.5.1 (released 2016-11-12)
 ---------------------------
 

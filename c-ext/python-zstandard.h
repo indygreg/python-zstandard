@@ -15,7 +15,7 @@
 #include "zstd.h"
 #include "zdict.h"
 
-#define PYTHON_ZSTANDARD_VERSION "0.5.1"
+#define PYTHON_ZSTANDARD_VERSION "0.5.2"
 
 typedef struct {
 	PyObject_HEAD
