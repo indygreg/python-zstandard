@@ -1,6 +1,11 @@
 Version History
 ===============
 
+0.5.1 (released 2016-11-12)
+---------------------------
+
+* setup_zstd.py is included in the source distribution
+
 0.5.0 (released 2016-11-10)
 ---------------------------
 
