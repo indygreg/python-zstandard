@@ -51,6 +51,9 @@ ext_sources = [
     'c-ext/dictparams.c',
 ]
 
+zstd_depends = [
+    'c-ext/python-zstandard.h',
+]
 
 def get_c_extension(name='zstd'):
     """Obtain a distutils.extension.Extension for the C extension."""
@@ -58,7 +61,9 @@ def get_c_extension(name='zstd'):
 
     sources = [os.path.join(root, p) for p in zstd_sources + ext_sources]
     include_dirs = [os.path.join(root, d) for d in zstd_includes]
+    depends = [os.path.join(root, p) for p in zstd_depends]
 
     # TODO compile with optimizations.
     return Extension(name, sources,
-                     include_dirs=include_dirs)
+                     include_dirs=include_dirs,
+                     depends=depends)
