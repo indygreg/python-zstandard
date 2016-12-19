@@ -214,7 +214,7 @@ Simple API
 
 ``compress(data)`` compresses and returns data as a one-shot operation.::
 
-   cctx = zstd.ZsdCompressor()
+   cctx = zstd.ZstdCompressor()
    compressed = cctx.compress(b'data to compress')
 
 Streaming Input API
