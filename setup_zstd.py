@@ -25,6 +25,15 @@ zstd_sources = ['zstd/%s' % p for p in (
     'dictBuilder/zdict.c',
 )]
 
+zstd_sources_legacy = ['zstd/%s' % p for p in (
+    'legacy/zstd_v01.c',
+    'legacy/zstd_v02.c',
+    'legacy/zstd_v03.c',
+    'legacy/zstd_v04.c',
+    'legacy/zstd_v05.c',
+    'legacy/zstd_v06.c',
+    'legacy/zstd_v07.c'
+)]
 
 zstd_includes = [
     'c-ext',
@@ -34,6 +43,8 @@ zstd_includes = [
     'zstd/decompress',
     'zstd/dictBuilder',
 ]
+
+zstd_includes_legacy = ['zstd/legacy']
 
 ext_sources = [
     'zstd.c',
@@ -55,15 +66,23 @@ zstd_depends = [
     'c-ext/python-zstandard.h',
 ]
 
-def get_c_extension(name='zstd'):
+
+def get_c_extension(support_legacy=False, name='zstd'):
     """Obtain a distutils.extension.Extension for the C extension."""
     root = os.path.abspath(os.path.dirname(__file__))
 
     sources = [os.path.join(root, p) for p in zstd_sources + ext_sources]
+    if support_legacy:
+        sources.extend([os.path.join(root, p) for p in zstd_sources_legacy])
+
     include_dirs = [os.path.join(root, d) for d in zstd_includes]
+    if support_legacy:
+        include_dirs.extend([os.path.join(root, d) for d in zstd_includes_legacy])
+
     depends = [os.path.join(root, p) for p in zstd_depends]
 
     # TODO compile with optimizations.
     return Extension(name, sources,
                      include_dirs=include_dirs,
-                     depends=depends)
+                     depends=depends,
+                     extra_compile_args=["-DZSTD_LEGACY_SUPPORT=1"] if support_legacy else [])
