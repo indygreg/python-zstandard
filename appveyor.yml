@@ -64,6 +64,18 @@ environment:
       PYTHON_VERSION: "3.5.2"
       PYTHON_ARCH: "64"
 
+    - JOB: "3.6 32-bit"
+      TOXENV: "py36"
+      PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "32"
+
+    - JOB: "3.6 64-bit"
+      TOXENV: "py36"
+      PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+
     - JOB: "2.7 Conda"
       TOXENV: "py27"
       PYTHON: "C:\\Miniconda2.7-x64"
