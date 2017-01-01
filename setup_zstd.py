@@ -16,16 +16,16 @@ zstd_sources = ['zstd/%s' % p for p in (
     'common/zstd_common.c',
     'compress/fse_compress.c',
     'compress/huf_compress.c',
-    'compress/zbuff_compress.c',
     'compress/zstd_compress.c',
     'decompress/huf_decompress.c',
-    'decompress/zbuff_decompress.c',
     'decompress/zstd_decompress.c',
     'dictBuilder/divsufsort.c',
     'dictBuilder/zdict.c',
 )]
 
 zstd_sources_legacy = ['zstd/%s' % p for p in (
+    'deprecated/zbuff_compress.c',
+    'deprecated/zbuff_decompress.c',
     'legacy/zstd_v01.c',
     'legacy/zstd_v02.c',
     'legacy/zstd_v03.c',
@@ -44,7 +44,10 @@ zstd_includes = [
     'zstd/dictBuilder',
 ]
 
-zstd_includes_legacy = ['zstd/legacy']
+zstd_includes_legacy = [
+    'zstd/deprecated',
+    'zstd/legacy',
+]
 
 ext_sources = [
     'zstd.c',

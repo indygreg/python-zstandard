@@ -23,10 +23,8 @@ SOURCES = ['zstd/%s' % p for p in (
     'common/zstd_common.c',
     'compress/fse_compress.c',
     'compress/huf_compress.c',
-    'compress/zbuff_compress.c',
     'compress/zstd_compress.c',
     'decompress/huf_decompress.c',
-    'decompress/zbuff_decompress.c',
     'decompress/zstd_decompress.c',
     'dictBuilder/divsufsort.c',
     'dictBuilder/zdict.c',
@@ -90,6 +88,10 @@ finally:
 def normalize_output():
     lines = []
     for line in output.splitlines():
+        # CFFI's parser doesn't like __attribute__ on UNIX compilers.
+        if line.startswith(b'__attribute__ ((visibility ("default"))) '):
+            line = line[len(b'__attribute__ ((visibility ("default"))) '):]
+
         lines.append(line)
 
     return b'\n'.join(lines)
