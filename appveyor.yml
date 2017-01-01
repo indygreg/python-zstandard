@@ -102,7 +102,7 @@ install:
 
   - "pip install --disable-pip-version-check --user --upgrade pip"
   - "pip install --disable-pip-version-check --user --upgrade virtualenv"
-  - "%CMD_IN_ENV% pip install tox==2.3.1"
+  - "%CMD_IN_ENV% pip install tox==2.5.0"
 
   # This installs "pythonX.Y.bat" scripts to aid tox in using the correct
   # Python binary. Without this, Python under tox is severely confused.
