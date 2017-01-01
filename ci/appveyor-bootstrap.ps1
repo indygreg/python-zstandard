@@ -132,7 +132,11 @@ function InstallPython ($python_version, $architecture, $python_home) {
 
 
 function InstallPythonEXE ($exepath, $python_home, $install_log) {
-    $install_args = "/quiet InstallAllUsers=1 TargetDir=$python_home"
+    # The installer will error if trying to install while another install
+    # is present. Work around this by uninstalling an existing install.
+    RunCommand $exepath "/quiet /uninstall InstallAllUsers=1"
+
+    $install_args = "/quiet /log $install_log InstallAllUsers=1 Include_test=0 Include_launcher=0 Include_tcltk=0 InstallLauncherAllUsers=0 TargetDir=$python_home"
     RunCommand $exepath $install_args
 }
 
