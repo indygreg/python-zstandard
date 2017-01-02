@@ -95,6 +95,8 @@ init:
 
 install:
   - powershell ci\appveyor-bootstrap.ps1
+  # AppVeyor doesn't have a vcvars* script for VS2010. So install one.
+  - echo "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64 /release > "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\amd64\vcvars64.bat"
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
   - "python --version"
