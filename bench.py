@@ -118,7 +118,7 @@ def compress_compressor(chunks, opts):
         cobj.flush()
 
 
-def get_chunks(paths):
+def get_chunks(paths, limit_count):
     chunks = []
 
     for path in paths:
@@ -128,11 +128,15 @@ def get_chunks(paths):
                     try:
                         with open(os.path.join(root, f), 'rb') as fh:
                             chunks.append(fh.read())
+                            if limit_count and len(chunks) >= limit_count:
+                                return chunks
                     except IOError:
                         pass
         else:
             with open(path, 'rb') as fh:
                 chunks.append(fh.read())
+                if limit_count and len(chunks) >= limit_count:
+                    return chunks
 
     return chunks
 
@@ -158,7 +162,6 @@ def bench_compression(chunks, opts):
     ]
 
     total_size = sum(map(len, chunks))
-    print('%d chunks; %d bytes' % (len(chunks), total_size))
 
     for fn, title in benches:
         results = timer(lambda: fn(chunks, opts))
@@ -169,12 +172,19 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--limit-count', type=int,
+                        help='limit number of input files added')
     parser.add_argument('-l', '--level', type=int,
                         help='Compression level')
     parser.add_argument('--write-size', action='store_true',
                         help='Write content size')
     parser.add_argument('--write-checksum', action='store_true',
                         help='Write checksum data')
+    parser.add_argument('--dict-size', type=int,
+                        help='train a dictionary of this size and test')
+    parser.add_argument('--dict-sample-limit', type=int,
+                        help='limit how many samples are fed into dictionary '
+                             'training')
     parser.add_argument('path', metavar='INPUT', nargs='+')
 
     args = parser.parse_args()
@@ -187,5 +197,18 @@ if __name__ == '__main__':
     if args.write_checksum:
         opts['write_checksum'] = True
 
-    chunks = get_chunks(args.path)
+    chunks = get_chunks(args.path, args.limit_count)
+    print('%d chunks; %d bytes' % (len(chunks), sum(map(len, chunks))))
+
+    if args.dict_size:
+        if args.dict_sample_limit:
+            training_chunks = chunks[0:args.dict_sample_limit]
+        else:
+            training_chunks = chunks
+
+        dict_data = zstd.train_dictionary(args.dict_size, training_chunks)
+        opts['dict_data'] = dict_data
+        print('trained dictionary of size %d (wanted %d)' % (
+            len(dict_data), args.dict_size))
+
     bench_compression(chunks, opts)
