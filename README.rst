@@ -217,6 +217,11 @@ Simple API
    cctx = zstd.ZstdCompressor()
    compressed = cctx.compress(b'data to compress')
 
+Unless ``compression_params`` are passed to the ``ZstdCompressor``, each
+invocation of ``compress()`` will calculate the optimal compression parameters
+for the configured compression ``level`` and input data size (some parameters
+are fine-tuned for small input sizes).
+
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
