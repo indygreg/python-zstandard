@@ -54,6 +54,7 @@ typedef struct {
 
 	int compressionLevel;
 	ZstdCompressionDict* dict;
+	ZSTD_CCtx* cctx;
 	ZSTD_CDict* cdict;
 	CompressionParametersObject* cparams;
 	ZSTD_frameParameters fparams;

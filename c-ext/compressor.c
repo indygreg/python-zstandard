@@ -107,6 +107,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	PyObject* writeContentSize = NULL;
 	PyObject* writeDictID = NULL;
 
+	self->cctx = NULL;
 	self->dict = NULL;
 	self->cparams = NULL;
 	self->cdict = NULL;
@@ -163,6 +164,11 @@ static void ZstdCompressor_dealloc(ZstdCompressor* self) {
 	if (self->cdict) {
 		ZSTD_freeCDict(self->cdict);
 		self->cdict = NULL;
+	}
+
+	if (self->cctx) {
+		ZSTD_freeCCtx(self->cctx);
+		self->cctx = NULL;
 	}
 
 	PyObject_Del(self);
