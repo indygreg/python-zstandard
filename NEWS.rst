@@ -11,6 +11,7 @@ Version History
   source code manually.
 * Vendored version of zstd updated to 1.1.2.
 * Documentation improvements.
+* Introduce a bench.py script for performing (crude) benchmarks.
 
 0.5.2 (released 2016-11-12)
 ---------------------------
