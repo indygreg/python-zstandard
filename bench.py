@@ -260,7 +260,8 @@ if __name__ == '__main__':
         opts['write_checksum'] = True
 
     chunks = get_chunks(args.path, args.limit_count)
-    print('%d chunks; %d bytes' % (len(chunks), sum(map(len, chunks))))
+    orig_size = sum(map(len, chunks))
+    print('%d chunks; %d bytes' % (len(chunks), orig_size))
 
     if args.dict_size:
         if args.dict_sample_limit:
@@ -273,12 +274,25 @@ if __name__ == '__main__':
         print('trained dictionary of size %d (wanted %d)' % (
             len(dict_data), args.dict_size))
 
+    # Obtain compressed chunks to report ratio and other stats.
+    zctx = zstd.ZstdCompressor(**opts)
+    compressed = []
+    ratios = []
+    for chunk in chunks:
+        c = zctx.compress(chunk)
+        compressed.append(c)
+        ratios.append(float(len(c)) / float(len(chunk)))
+
+    compressed_size = sum(map(len, compressed))
+    ratio = float(compressed_size) / float(orig_size) * 100.0
+    bad_count = sum(1 for r in ratios if r >= 1.00)
+    good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
+    print('compressed size: %d (%.2f%%); smaller: %.2f%%' % (
+        compressed_size, ratio, good_ratio))
+    print('')
+
     if not args.no_compression:
         bench_compression(chunks, opts)
 
     if not args.no_decompression:
-        # Obtain compressed chunks to test decompression.
-        zctx = zstd.ZstdCompressor(**opts)
-        compressed = [zctx.compress(chunk) for chunk in chunks]
-
-        bench_decompression(compressed, sum(map(len, chunks)), opts)
+        bench_decompression(compressed, orig_size, opts)
