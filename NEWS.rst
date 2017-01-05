@@ -1,7 +1,19 @@
 Version History
 ===============
 
+0.6.0 (not yet released)
+------------------------
+
+* Support for legacy zstd protocols (build time opt in feature).
+* Automation improvements to test against Python 3.6, latest versions
+  of Tox, more deterministic AppVeyor behavior.
+* CFFI "parser" improved to use a compiler preprocessor instead of rewriting
+  source code manually.
+* Vendored version of zstd updated to 1.1.2.
+* Documentation improvements.
+
 0.5.2 (released 2016-11-12)
+---------------------------
 
 * more packaging fixes for source distribution
 
