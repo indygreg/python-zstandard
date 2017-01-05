@@ -154,22 +154,26 @@ def decompress_decompressor(chunks, opts):
 def get_chunks(paths, limit_count):
     chunks = []
 
+    def process_file(p):
+        with open(p, 'rb') as fh:
+            data = fh.read()
+            if data:
+                chunks.append(data)
+
     for path in paths:
         if os.path.isdir(path):
             for root, dirs, files in os.walk(path):
                 for f in files:
                     try:
-                        with open(os.path.join(root, f), 'rb') as fh:
-                            chunks.append(fh.read())
-                            if limit_count and len(chunks) >= limit_count:
-                                return chunks
+                        process_file(os.path.join(root, f))
+                        if limit_count and len(chunks) >= limit_count:
+                            return chunks
                     except IOError:
                         pass
         else:
-            with open(path, 'rb') as fh:
-                chunks.append(fh.read())
-                if limit_count and len(chunks) >= limit_count:
-                    return chunks
+            process_file(path)
+            if limit_count and len(chunks) >= limit_count:
+                return chunks
 
     return chunks
 
