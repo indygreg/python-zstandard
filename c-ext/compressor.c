@@ -130,6 +130,14 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
+	/* We create a ZSTD_CCtx for reuse among multiple operations to reduce the
+	   overhead of each compression operation. */
+	self->cctx = ZSTD_createCCtx();
+	if (!self->cctx) {
+		PyErr_NoMemory();
+		return -1;
+	}
+
 	self->compressionLevel = level;
 
 	if (dict) {
@@ -360,7 +368,6 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	const char* source;
 	Py_ssize_t sourceSize;
 	size_t destSize;
-	ZSTD_CCtx* cctx;
 	PyObject* output;
 	char* dest;
 	void* dictData = NULL;
@@ -384,13 +391,6 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	}
 
 	dest = PyBytes_AsString(output);
-
-	cctx = ZSTD_createCCtx();
-	if (!cctx) {
-		Py_DECREF(output);
-		PyErr_SetString(ZstdError, "could not create CCtx");
-		return NULL;
-	}
 
 	if (self->dict) {
 		dictData = self->dict->dictData;
@@ -427,7 +427,6 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 
 		if (!self->cdict) {
 			Py_DECREF(output);
-			ZSTD_freeCCtx(cctx);
 			PyErr_SetString(ZstdError, "could not create compression dictionary");
 			return NULL;
 		}
@@ -438,16 +437,14 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	   size. This means the argument to ZstdCompressor to control frame
 	   parameters is honored. */
 	if (self->cdict) {
-		zresult = ZSTD_compress_usingCDict(cctx, dest, destSize,
+		zresult = ZSTD_compress_usingCDict(self->cctx, dest, destSize,
 			source, sourceSize, self->cdict);
 	}
 	else {
-		zresult = ZSTD_compress_advanced(cctx, dest, destSize,
+		zresult = ZSTD_compress_advanced(self->cctx, dest, destSize,
 			source, sourceSize, dictData, dictSize, zparams);
 	}
 	Py_END_ALLOW_THREADS
-
-	ZSTD_freeCCtx(cctx);
 
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "cannot compress: %s", ZSTD_getErrorName(zresult));
