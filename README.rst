@@ -209,6 +209,10 @@ write_dict_id
    Defaults to True. The dictionary ID is only written if a dictionary
    is being used.
 
+Unless specified otherwise, assume that no two methods of ``ZstdCompressor``
+instances can be called from multiple Python threads simultaneously. In other
+words, assume instances are not thread safe unless stated otherwise.
+
 Simple API
 ^^^^^^^^^^
 
@@ -379,6 +383,10 @@ dict_data
    Compression dictionary to use.
 
 The interface of this class is very similar to ``ZstdCompressor`` (by design).
+
+Unless specified otherwise, assume that no two methods of ``ZstdDecompressor``
+instances can be called from multiple Python threads simultaneously. In other
+words, assume instances are not thread safe unless stated otherwise.
 
 Simple API
 ^^^^^^^^^^
