@@ -163,7 +163,8 @@ def get_chunks(paths, limit_count):
     for path in paths:
         if os.path.isdir(path):
             for root, dirs, files in os.walk(path):
-                for f in files:
+                dirs.sort()
+                for f in sorted(files):
                     try:
                         process_file(os.path.join(root, f))
                         if limit_count and len(chunks) >= limit_count:
