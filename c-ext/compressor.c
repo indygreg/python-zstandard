@@ -10,6 +10,23 @@
 
 extern PyObject* ZstdError;
 
+int populate_cdict(ZstdCompressor* compressor, void* dictData, size_t dictSize, ZSTD_parameters* zparams) {
+	ZSTD_customMem zmem;
+	assert(!compressor->cdict);
+	Py_BEGIN_ALLOW_THREADS
+	memset(&zmem, 0, sizeof(zmem));
+	compressor->cdict = ZSTD_createCDict_advanced(compressor->dict->dictData,
+		compressor->dict->dictSize, *zparams, zmem);
+	Py_END_ALLOW_THREADS
+
+	if (!compressor->cdict) {
+		PyErr_SetString(ZstdError, "could not create compression dictionary");
+		return 1;
+	}
+
+	return 0;
+}
+
 /**
 * Initialize a zstd CStream from a ZstdCompressor instance.
 *
@@ -56,7 +73,6 @@ ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t
 
 	return cstream;
 }
-
 
 PyDoc_STRVAR(ZstdCompressor__doc__,
 "ZstdCompressor(level=None, dict_data=None, compression_params=None)\n"
@@ -374,7 +390,6 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	size_t dictSize = 0;
 	size_t zresult;
 	ZSTD_parameters zparams;
-	ZSTD_customMem zmem;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
@@ -420,14 +435,8 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	potentially add an argument somewhere to control this behavior.
 	*/
 	if (dictData && !self->cdict) {
-		Py_BEGIN_ALLOW_THREADS
-		memset(&zmem, 0, sizeof(zmem));
-		self->cdict = ZSTD_createCDict_advanced(dictData, dictSize, zparams, zmem);
-		Py_END_ALLOW_THREADS
-
-		if (!self->cdict) {
+		if (populate_cdict(self, dictData, dictSize, &zparams)) {
 			Py_DECREF(output);
-			PyErr_SetString(ZstdError, "could not create compression dictionary");
 			return NULL;
 		}
 	}
