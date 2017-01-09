@@ -412,13 +412,13 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	/* The raw dict data has to be processed before it can be used. Since this
 	adds overhead - especially if multiple dictionary compression operations
 	are performed on the same ZstdCompressor instance - we create a
-	ZSTD_CDict once and reuse it for all operations. */
+	ZSTD_CDict once and reuse it for all operations.
 
-	/* TODO the zparams (which can be derived from the source data size) used
-	on first invocation are effectively reused for subsequent operations. This
-	may not be appropriate if input sizes vary significantly and could affect
-	chosen compression parameters.
-	https://github.com/facebook/zstd/issues/358 tracks this issue. */
+	Note: the compression parameters used for the first invocation (possibly
+	derived from the source size) will be reused on all subsequent invocations.
+	https://github.com/facebook/zstd/issues/358 contains more info. We could
+	potentially add an argument somewhere to control this behavior.
+	*/
 	if (dictData && !self->cdict) {
 		Py_BEGIN_ALLOW_THREADS
 		memset(&zmem, 0, sizeof(zmem));
