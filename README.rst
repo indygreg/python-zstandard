@@ -251,6 +251,10 @@ open file handles and ``io.BytesIO``.
 It **must** be used as a context manager. That object's ``write(data)`` method
 is used to feed data into the compressor.
 
+A ``flush()`` method can be called to evict whatever data remains within the
+compressor's internal state into the output object. This may result in 0 or
+more ``write()`` calls to the output object.
+
 If the size of the data being fed to this streaming compressor is known,
 you can declare it before compression begins::
 

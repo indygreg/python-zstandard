@@ -13,6 +13,7 @@ Version History
 * Documentation improvements.
 * Introduce a bench.py script for performing (crude) benchmarks.
 * ZSTD_CCtx instances are now reused across multiple compress() operations.
+* ZstdCompressor.write_to() now has a flush() method.
 
 0.5.2 (released 2016-11-12)
 ---------------------------

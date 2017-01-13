@@ -384,6 +384,43 @@ class TestCompressor_write_to(unittest.TestCase):
 
         self.assertEqual(len(dest.getvalue()), dest._write_count)
 
+    def test_flush_repeated(self):
+        cctx = zstd.ZstdCompressor(level=3)
+        dest = OpCountingBytesIO()
+        with cctx.write_to(dest) as compressor:
+            compressor.write(b'foo')
+            self.assertEqual(dest._write_count, 0)
+            compressor.flush()
+            self.assertEqual(dest._write_count, 1)
+            compressor.write(b'bar')
+            self.assertEqual(dest._write_count, 1)
+            compressor.flush()
+            self.assertEqual(dest._write_count, 2)
+            compressor.write(b'baz')
+
+        self.assertEqual(dest._write_count, 3)
+
+    def test_flush_empty_block(self):
+        cctx = zstd.ZstdCompressor(level=3, write_checksum=True)
+        dest = OpCountingBytesIO()
+        with cctx.write_to(dest) as compressor:
+            compressor.write(b'foobar' * 8192)
+            count = dest._write_count
+            offset = dest.tell()
+            compressor.flush()
+            self.assertGreater(dest._write_count, count)
+            self.assertGreater(dest.tell(), offset)
+            offset = dest.tell()
+            # Ending the write here should cause an empty block to be written
+            # to denote end of frame.
+
+        trailing = dest.getvalue()[offset:]
+        # 3 bytes block header + 4 bytes frame checksum
+        self.assertEqual(len(trailing), 7)
+
+        header = trailing[0:3]
+        self.assertEqual(header, b'\x01\x00\x00')
+
 
 class TestCompressor_read_from(unittest.TestCase):
     def test_type_validation(self):
