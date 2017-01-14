@@ -17,6 +17,11 @@
 
 #define PYTHON_ZSTANDARD_VERSION "0.5.2"
 
+typedef enum {
+	compressorobj_flush_finish,
+	compressorobj_flush_block,
+} CompressorObj_Flush;
+
 typedef struct {
 	PyObject_HEAD
 	unsigned windowLog;

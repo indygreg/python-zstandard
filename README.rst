@@ -363,9 +363,15 @@ The purpose of ``compressobj()`` is to provide an API-compatible interface
 with ``zlib.compressobj`` and ``bz2.BZ2Compressor``. This allows callers to
 swap in different compressor objects while using the same API.
 
-Once ``flush()`` is called, the compressor will no longer accept new data
-to ``compress()``. ``flush()`` **must** be called to end the compression
-context. If not called, the returned data may be incomplete.
+``flush()`` accepts an optional argument indicating how to end the stream.
+``zstd.COMPRESSOBJ_FLUSH_FINISH`` (the default) ends the compression stream.
+Once this type of flush is performed, ``compress()`` and ``flush()`` can
+no longer be called. This type of flush **must** be called to end the
+compression context. If not called, returned data may be incomplete.
+
+A ``zstd.COMPRESSOBJ_FLUSH_BLOCK`` argument to ``flush()`` will flush a
+zstd block. Flushes of this type can be performed multiple times. The next
+call to ``compress()`` will begin a new zstd block.
 
 Here is how this API should be used::
 
@@ -373,6 +379,15 @@ Here is how this API should be used::
    cobj = cctx.compressobj()
    data = cobj.compress(b'raw input 0')
    data = cobj.compress(b'raw input 1')
+   data = cobj.flush()
+
+Or to flush blocks::
+
+   cctx.zstd.ZstdCompressor()
+   cobj = cctx.compressobj()
+   data = cobj.compress(b'chunk in first block')
+   data = cobj.flush(zstd.COMPRESSOBJ_FLUSH_BLOCK)
+   data = cobj.compress(b'chunk in second block')
    data = cobj.flush()
 
 For best performance results, keep input chunks under 256KB. This avoids
