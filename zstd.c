@@ -99,6 +99,10 @@ PyMODINIT_FUNC PyInit_zstd(void) {
 	PyObject *m = PyModule_Create(&zstd_module);
 	if (m) {
 		zstd_module_init(m);
+		if (PyErr_Occurred()) {
+			Py_DECREF(m);
+			m = NULL;
+		}
 	}
 	return m;
 }
