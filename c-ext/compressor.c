@@ -503,7 +503,7 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 	result->compressor = self;
 	Py_INCREF(result->compressor);
 
-	result->flushed = 0;
+	result->finished = 0;
 
 	return result;
 }

@@ -36,7 +36,7 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
 
-	if (self->flushed) {
+	if (self->finished) {
 		PyErr_SetString(ZstdError, "cannot call compress() after flush() has been called");
 		return NULL;
 	}
@@ -97,12 +97,12 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self) {
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
 
-	if (self->flushed) {
+	if (self->finished) {
 		PyErr_SetString(ZstdError, "flush() already called");
 		return NULL;
 	}
 
-	self->flushed = 1;
+	self->finished = 1;
 
 	while (1) {
 		zresult = ZSTD_endStream(self->cstream, &self->output);

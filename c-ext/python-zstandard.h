@@ -68,7 +68,7 @@ typedef struct {
 	ZstdCompressor* compressor;
 	ZSTD_CStream* cstream;
 	ZSTD_outBuffer output;
-	int flushed;
+	int finished;
 } ZstdCompressionObj;
 
 extern PyTypeObject ZstdCompressionObjType;
