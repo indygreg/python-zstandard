@@ -296,6 +296,10 @@ or by fetching a slice of data from the object directly (in the case where
 the buffer protocol is being used). The returned iterator consists of chunks
 of compressed data.
 
+If reading from the source via ``read()``, ``read()`` will be called until
+it raises or returns an empty bytes (``b''``). It is perfectly valid for
+the source to deliver fewer bytes than were what requested by ``read(size)``.
+
 Like ``write_to()``, ``read_from()`` also accepts a ``size`` argument
 declaring the size of the input stream::
 
@@ -309,6 +313,10 @@ the ideal size of output chunks::
     cctx = zstd.ZstdCompressor()
     for chunk in cctx.read_from(fh, read_size=16384, write_size=8192):
         pass
+
+Unlike ``write_to()``, ``read_from()`` does not give direct control over the
+sizes of chunks fed into the compressor. Instead, chunk sizes will be whatever
+the object being read from delivers. These will often be of a uniform size.
 
 Stream Copying API
 ^^^^^^^^^^^^^^^^^^
