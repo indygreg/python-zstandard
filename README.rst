@@ -243,7 +243,7 @@ data into a compressor.::
        ...
 
 The argument to ``write_to()`` must have a ``write(data)`` method. As
-compressed data is available, ``write()`` will be called with the comrpessed
+compressed data is available, ``write()`` will be called with the compressed
 data as its argument. Many common Python types implement ``write()``, including
 open file handles and ``io.BytesIO``.
 
