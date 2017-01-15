@@ -1,8 +1,8 @@
 Version History
 ===============
 
-0.6.0 (not yet released)
-------------------------
+0.6.0 (released 2017-01-14)
+---------------------------
 
 * Support for legacy zstd protocols (build time opt in feature).
 * Automation improvements to test against Python 3.6, latest versions
