@@ -230,6 +230,11 @@ If a compression dictionary is being used, the compression parameters
 determined from the first input's size will be reused for subsequent
 operations.
 
+There is currently a deficiency in zstd's C APIs that makes it difficult
+to round trip empty inputs when ``write_content_size=True``. Attempting
+this will raise a ``ValueError`` unless ``allow_empty=True`` is passed
+to ``compress()``.
+
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 

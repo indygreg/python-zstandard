@@ -41,6 +41,14 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(cctx.compress(b''),
                          b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
 
+        # TODO should be temporary until https://github.com/facebook/zstd/issues/506
+        # is fixed.
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+        with self.assertRaises(ValueError):
+            cctx.compress(b'')
+
+        cctx.compress(b'', allow_empty=True)
+
     def test_compress_large(self):
         chunks = []
         for i in range(255):

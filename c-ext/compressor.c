@@ -369,7 +369,7 @@ finally:
 }
 
 PyDoc_STRVAR(ZstdCompressor_compress__doc__,
-"compress(data)\n"
+"compress(data, allow_empty=False)\n"
 "\n"
 "Compress data in a single operation.\n"
 "\n"
@@ -380,9 +380,16 @@ PyDoc_STRVAR(ZstdCompressor_compress__doc__,
 "streaming based APIs is preferred for larger values.\n"
 );
 
-static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
+static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		"allow_empty",
+		NULL
+	};
+
 	const char* source;
 	Py_ssize_t sourceSize;
+	PyObject* allowEmpty = NULL;
 	size_t destSize;
 	PyObject* output;
 	char* dest;
@@ -392,10 +399,22 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args) {
 	ZSTD_parameters zparams;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y#|O",
 #else
-	if (!PyArg_ParseTuple(args, "s#", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|O",
 #endif
+		kwlist, &source, &sourceSize, &allowEmpty)) {
+		return NULL;
+	}
+
+	/* Limitation in zstd C API doesn't let decompression side distinguish
+	   between content size of 0 and unknown content size. This can make round
+	   tripping via Python difficult. Until this is fixed, require a flag
+	   to fire the footgun.
+	   https://github.com/indygreg/python-zstandard/issues/11 */
+	if (0 == sourceSize && self->fparams.contentSizeFlag
+		&& (!allowEmpty || PyObject_Not(allowEmpty))) {
+		PyErr_SetString(PyExc_ValueError, "cannot write empty inputs when writing content sizes");
 		return NULL;
 	}
 
@@ -703,8 +722,8 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 }
 
 static PyMethodDef ZstdCompressor_methods[] = {
-	{ "compress", (PyCFunction)ZstdCompressor_compress, METH_VARARGS,
-	ZstdCompressor_compress__doc__ },
+	{ "compress", (PyCFunction)ZstdCompressor_compress,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_compress__doc__ },
 	{ "compressobj", (PyCFunction)ZstdCompressor_compressobj,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressionObj__doc__ },
 	{ "copy_stream", (PyCFunction)ZstdCompressor_copy_stream,

@@ -16,6 +16,7 @@ Version History
 * ZstdCompressor.write_to() now has a flush() method.
 * ZstdCompressor.compressobj()'s flush() method now accepts an argument to
   flush a block (as opposed to ending the stream).
+* Disallow compress(b'') when writing content sizes by default (issue #11).
 
 0.5.2 (released 2016-11-12)
 ---------------------------
