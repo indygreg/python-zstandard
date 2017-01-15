@@ -1,6 +1,11 @@
 Version History
 ===============
 
+0.7.0 (not yet released)
+------------------------
+
+* Added zstd.get_frame_parameters() to obtain info about a zstd frame.
+
 0.6.0 (released 2017-01-14)
 ---------------------------
 

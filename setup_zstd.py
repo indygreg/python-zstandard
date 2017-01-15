@@ -63,6 +63,7 @@ ext_sources = [
     'c-ext/decompressoriterator.c',
     'c-ext/decompressionwriter.c',
     'c-ext/dictparams.c',
+    'c-ext/frameparams.c',
 ]
 
 zstd_depends = [

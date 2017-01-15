@@ -31,15 +31,13 @@ class TestCompressor(unittest.TestCase):
 class TestCompressor_compress(unittest.TestCase):
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1)
-        cctx.compress(b'')
-
-        cctx = zstd.ZstdCompressor(level=22)
-        cctx.compress(b'')
-
-    def test_compress_empty(self):
-        cctx = zstd.ZstdCompressor(level=1)
-        self.assertEqual(cctx.compress(b''),
-                         b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
+        result = cctx.compress(b'')
+        self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
+        params = zstd.get_frame_parameters(result)
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 524288)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum, 0)
 
         # TODO should be temporary until https://github.com/facebook/zstd/issues/506
         # is fixed.
@@ -67,6 +65,12 @@ class TestCompressor_compress(unittest.TestCase):
 
         self.assertEqual(len(with_checksum), len(no_checksum) + 4)
 
+        no_params = zstd.get_frame_parameters(no_checksum)
+        with_params = zstd.get_frame_parameters(with_checksum)
+
+        self.assertFalse(no_params.has_checksum)
+        self.assertTrue(with_params.has_checksum)
+
     def test_write_content_size(self):
         cctx = zstd.ZstdCompressor(level=1)
         no_size = cctx.compress(b'foobar' * 256)
@@ -74,6 +78,11 @@ class TestCompressor_compress(unittest.TestCase):
         with_size = cctx.compress(b'foobar' * 256)
 
         self.assertEqual(len(with_size), len(no_size) + 1)
+
+        no_params = zstd.get_frame_parameters(no_size)
+        with_params = zstd.get_frame_parameters(with_size)
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 1536)
 
     def test_no_dict_id(self):
         samples = []
@@ -91,6 +100,11 @@ class TestCompressor_compress(unittest.TestCase):
         no_dict_id = cctx.compress(b'foobarfoobar')
 
         self.assertEqual(len(with_dict_id), len(no_dict_id) + 4)
+
+        no_params = zstd.get_frame_parameters(no_dict_id)
+        with_params = zstd.get_frame_parameters(with_dict_id)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, 1584102229)
 
     def test_compress_dict_multiple(self):
         samples = []
@@ -127,6 +141,12 @@ class TestCompressor_compressobj(unittest.TestCase):
         self.assertEqual(len(result), 999)
         self.assertEqual(result[0:4], b'\x28\xb5\x2f\xfd')
 
+        params = zstd.get_frame_parameters(result)
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 1048576)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
+
     def test_write_checksum(self):
         cctx = zstd.ZstdCompressor(level=1)
         cobj = cctx.compressobj()
@@ -134,6 +154,15 @@ class TestCompressor_compressobj(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=1, write_checksum=True)
         cobj = cctx.compressobj()
         with_checksum = cobj.compress(b'foobar') + cobj.flush()
+
+        no_params = zstd.get_frame_parameters(no_checksum)
+        with_params = zstd.get_frame_parameters(with_checksum)
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, 0)
+        self.assertFalse(no_params.has_checksum)
+        self.assertTrue(with_params.has_checksum)
 
         self.assertEqual(len(with_checksum), len(no_checksum) + 4)
 
@@ -144,6 +173,15 @@ class TestCompressor_compressobj(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
         cobj = cctx.compressobj(size=len(b'foobar' * 256))
         with_size = cobj.compress(b'foobar' * 256) + cobj.flush()
+
+        no_params = zstd.get_frame_parameters(no_size)
+        with_params = zstd.get_frame_parameters(with_size)
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 1536)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, 0)
+        self.assertFalse(no_params.has_checksum)
+        self.assertFalse(with_params.has_checksum)
 
         self.assertEqual(len(with_size), len(no_size) + 1)
 
@@ -229,6 +267,12 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(r, 255 * 16384)
         self.assertEqual(w, 999)
 
+        params = zstd.get_frame_parameters(dest.getvalue())
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 1048576)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
+
     def test_write_checksum(self):
         source = io.BytesIO(b'foobar')
         no_checksum = io.BytesIO()
@@ -243,6 +287,15 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
         self.assertEqual(len(with_checksum.getvalue()),
                          len(no_checksum.getvalue()) + 4)
+
+        no_params = zstd.get_frame_parameters(no_checksum.getvalue())
+        with_params = zstd.get_frame_parameters(with_checksum.getvalue())
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, 0)
+        self.assertFalse(no_params.has_checksum)
+        self.assertTrue(with_params.has_checksum)
 
     def test_write_content_size(self):
         source = io.BytesIO(b'foobar' * 256)
@@ -268,6 +321,15 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(len(with_size.getvalue()),
                          len(no_size.getvalue()) + 1)
 
+        no_params = zstd.get_frame_parameters(no_size.getvalue())
+        with_params = zstd.get_frame_parameters(with_size.getvalue())
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 1536)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, 0)
+        self.assertFalse(no_params.has_checksum)
+        self.assertFalse(with_params.has_checksum)
+
     def test_read_write_size(self):
         source = OpCountingBytesIO(b'foobarfoobar')
         dest = OpCountingBytesIO()
@@ -290,8 +352,14 @@ def compress(data, level):
 
 class TestCompressor_write_to(unittest.TestCase):
     def test_empty(self):
-        self.assertEqual(compress(b'', 1),
-                         b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
+        result = compress(b'', 1)
+        self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
+
+        params = zstd.get_frame_parameters(result)
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 524288)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
 
     def test_multiple_compress(self):
         buffer = io.BytesIO()
@@ -323,6 +391,13 @@ class TestCompressor_write_to(unittest.TestCase):
             compressor.write(b'foo' * 16384)
 
         compressed = buffer.getvalue()
+
+        params = zstd.get_frame_parameters(compressed)
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 1024)
+        self.assertEqual(params.dict_id, d.dict_id())
+        self.assertFalse(params.has_checksum)
+
         h = hashlib.sha1(compressed).hexdigest()
         self.assertEqual(h, '1c5bcd25181bcd8c1a73ea8773323e0056129f92')
 
@@ -337,6 +412,13 @@ class TestCompressor_write_to(unittest.TestCase):
             compressor.write(b'foobar' * 16384)
 
         compressed = buffer.getvalue()
+
+        params = zstd.get_frame_parameters(compressed)
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 1048576)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
+
         h = hashlib.sha1(compressed).hexdigest()
         self.assertEqual(h, '1ae31f270ed7de14235221a604b31ecd517ebd99')
 
@@ -350,6 +432,15 @@ class TestCompressor_write_to(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=1, write_checksum=True)
         with cctx.write_to(with_checksum) as compressor:
             compressor.write(b'foobar')
+
+        no_params = zstd.get_frame_parameters(no_checksum.getvalue())
+        with_params = zstd.get_frame_parameters(with_checksum.getvalue())
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, 0)
+        self.assertFalse(no_params.has_checksum)
+        self.assertTrue(with_params.has_checksum)
 
         self.assertEqual(len(with_checksum.getvalue()),
                          len(no_checksum.getvalue()) + 4)
@@ -375,6 +466,15 @@ class TestCompressor_write_to(unittest.TestCase):
         with cctx.write_to(with_size, size=len(b'foobar' * 256)) as compressor:
             compressor.write(b'foobar' * 256)
 
+        no_params = zstd.get_frame_parameters(no_size.getvalue())
+        with_params = zstd.get_frame_parameters(with_size.getvalue())
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 1536)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, 0)
+        self.assertFalse(no_params.has_checksum)
+        self.assertFalse(with_params.has_checksum)
+
         self.assertEqual(len(with_size.getvalue()),
                          len(no_size.getvalue()) + 1)
 
@@ -396,6 +496,15 @@ class TestCompressor_write_to(unittest.TestCase):
         no_dict_id = io.BytesIO()
         with cctx.write_to(no_dict_id) as compressor:
             compressor.write(b'foobarfoobar')
+
+        no_params = zstd.get_frame_parameters(no_dict_id.getvalue())
+        with_params = zstd.get_frame_parameters(with_dict_id.getvalue())
+        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.dict_id, 0)
+        self.assertEqual(with_params.dict_id, d.dict_id())
+        self.assertFalse(no_params.has_checksum)
+        self.assertFalse(with_params.has_checksum)
 
         self.assertEqual(len(with_dict_id.getvalue()),
                          len(no_dict_id.getvalue()) + 4)
@@ -520,6 +629,12 @@ class TestCompressor_read_from(unittest.TestCase):
 
         # We should get the same output as the one-shot compression mechanism.
         self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
+
+        params = zstd.get_frame_parameters(b''.join(chunks))
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 262144)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
 
         # Now check the buffer protocol.
         it = cctx.read_from(source.getvalue())

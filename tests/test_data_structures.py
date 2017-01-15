@@ -13,6 +13,7 @@ except ImportError:
 
 import zstd
 
+
 class TestCompressionParameters(unittest.TestCase):
     def test_init_bad_arg_type(self):
         with self.assertRaises(TypeError):
@@ -43,6 +44,69 @@ class TestCompressionParameters(unittest.TestCase):
         self.assertIsInstance(p, zstd.CompressionParameters)
 
         self.assertEqual(p[0], 19)
+
+
+class TestFrameParameters(unittest.TestCase):
+    def test_invalid_type(self):
+        with self.assertRaises(TypeError):
+            zstd.get_frame_parameters(None)
+
+        with self.assertRaises(TypeError):
+            zstd.get_frame_parameters(u'foobarbaz')
+
+    def test_invalid_input_sizes(self):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'not enough data for frame'):
+            zstd.get_frame_parameters(b'')
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'not enough data for frame'):
+            zstd.get_frame_parameters(zstd.FRAME_HEADER)
+
+    def test_invalid_frame(self):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Unknown frame descriptor'):
+            zstd.get_frame_parameters(b'foobarbaz')
+
+    def test_attributes(self):
+        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x00\x00')
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 1024)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
+
+        # Lowest 2 bits indicate a dictionary and length. Here, the dict id is 1 byte.
+        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x01\x00\xff')
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 1024)
+        self.assertEqual(params.dict_id, 255)
+        self.assertFalse(params.has_checksum)
+
+        # Lowest 3rd bit indicates if checksum is present.
+        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x04\x00')
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 1024)
+        self.assertEqual(params.dict_id, 0)
+        self.assertTrue(params.has_checksum)
+
+        # Upper 2 bits indicate content size.
+        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x40\x00\xff\x00')
+        self.assertEqual(params.content_size, 511)
+        self.assertEqual(params.window_size, 1024)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
+
+        # Window descriptor is 2nd byte after frame header.
+        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x00\x40')
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 262144)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
+
+        # Set multiple things.
+        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x45\x40\x0f\x10\x00')
+        self.assertEqual(params.content_size, 272)
+        self.assertEqual(params.window_size, 262144)
+        self.assertEqual(params.dict_id, 15)
+        self.assertTrue(params.has_checksum)
+
 
 if hypothesis:
     s_windowlog = strategies.integers(min_value=zstd.WINDOWLOG_MIN,

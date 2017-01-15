@@ -713,6 +713,41 @@ The members of the ``CompressionParameters`` tuple are as follows::
 You'll need to read the Zstandard documentation for what these parameters
 do.
 
+Frame Inspection
+----------------
+
+Data emitted from zstd compression is encapsulated in a *frame*. This frame
+begins with a 4 byte *magic number* header followed by 2 to 14 bytes describing
+the frame in more detail. For more info, see
+https://github.com/facebook/zstd/blob/master/doc/zstd_compression_format.md.
+
+``zstd.get_frame_parameters(data)`` parses a zstd *frame* header from a bytes
+instance and return a ``FrameParameters`` object describing the frame.
+
+Depending on which fields are present in the frame and their values, the
+length of the frame parameters varies. If insufficient bytes are passed
+in to fully parse the frame parameters, ``ZstdError`` is raised. To ensure
+frame parameters can be parsed, pass in at least 18 bytes.
+
+``FrameParameters`` instances have the following attributes:
+
+content_size
+   Integer size of original, uncompressed content. This will be ``0`` if the
+   original content size isn't written to the frame (controlled with the
+   ``write_content_size`` argument to ``ZstdCompressor``) or if the input
+   content size was ``0``.
+
+window_size
+   Integer size of maximum back-reference distance in compressed data.
+
+dict_id
+   Integer of dictionary ID used for compression. ``0`` if no dictionary
+   ID was used or if the dictionary ID was ``0``.
+
+has_checksum
+   Bool indicating whether a 4 byte content checksum is stored at the end
+   of the frame.
+
 Misc Functionality
 ------------------
 
