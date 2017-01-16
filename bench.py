@@ -349,9 +349,14 @@ def bench_discrete_compression(chunks, opts):
 
     total_size = sum(map(len, chunks))
 
+    if 'dict_data' in opts:
+        prefix = 'compress discrete dict'
+    else:
+        prefix = 'compress discrete'
+
     for fn, title in benches:
         results = timer(lambda: fn(chunks, opts))
-        format_results(results, title, 'compress discrete', total_size)
+        format_results(results, title, prefix, total_size)
 
 
 def bench_discrete_decompression(chunks, total_size, opts):
@@ -373,10 +378,13 @@ def bench_discrete_decompression(chunks, total_size, opts):
     dopts = {}
     if opts.get('dict_data'):
         dopts['dict_data'] = opts['dict_data']
+        prefix = 'decompress discrete dict'
+    else:
+        prefix = 'decompress discrete'
 
     for fn, title in benches:
         results = timer(lambda: fn(chunks, dopts))
-        format_results(results, title, 'decompress discrete', total_size)
+        format_results(results, title, prefix, total_size)
 
 
 def bench_stream_compression(chunks, opts):
@@ -452,6 +460,9 @@ if __name__ == '__main__':
     group.add_argument('--content-dict', action='store_true',
                        help='Compress each input using the previous as a '
                             'content dictionary')
+    group.add_argument('--discrete-dict', action='store_true',
+                       help='Compress each input independently with a '
+                            'dictionary')
 
     parser.add_argument('--no-compression', action='store_true',
                         help='Do not test compression performance')
@@ -465,8 +476,8 @@ if __name__ == '__main__':
                         help='Write content size')
     parser.add_argument('--write-checksum', action='store_true',
                         help='Write checksum data')
-    parser.add_argument('--dict-size', type=int,
-                        help='train a dictionary of this size and test')
+    parser.add_argument('--dict-size', type=int, default=128 * 1024,
+                        help='Maximum size of trained dictionary')
     parser.add_argument('--dict-sample-limit', type=int,
                         help='limit how many samples are fed into dictionary '
                              'training')
@@ -475,7 +486,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # If no compression mode defined, assume discrete.
-    if not args.discrete and not args.stream and not args.content_dict:
+    if not args.stream and not args.content_dict and not args.discrete_dict:
         args.discrete = True
 
     opts = {}
@@ -490,14 +501,13 @@ if __name__ == '__main__':
     orig_size = sum(map(len, chunks))
     print('%d chunks; %d bytes' % (len(chunks), orig_size))
 
-    if args.dict_size:
+    if args.discrete_dict:
         if args.dict_sample_limit:
             training_chunks = chunks[0:args.dict_sample_limit]
         else:
             training_chunks = chunks
 
         dict_data = zstd.train_dictionary(args.dict_size, training_chunks)
-        opts['dict_data'] = dict_data
         print('trained dictionary of size %d (wanted %d)' % (
             len(dict_data), args.dict_size))
 
@@ -517,6 +527,25 @@ if __name__ == '__main__':
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
         print('discrete compressed size: %d (%.2f%%); smaller: %.2f%%' % (
+            compressed_size, ratio, good_ratio))
+
+    # Discrete dict mode is like discrete but trains a dictionary.
+    if args.discrete_dict:
+        dict_opts = dict(opts)
+        dict_opts['dict_data'] = dict_data
+        zctx = zstd.ZstdCompressor(**dict_opts)
+        compressed_discrete_dict = []
+        ratios = []
+        for chunk in chunks:
+            c = zctx.compress(chunk)
+            compressed_discrete_dict.append(c)
+            ratios.append(float(len(c)) / float(len(chunk)))
+
+        compressed_size = sum(map(len, compressed_discrete_dict))
+        ratio = float(compressed_size) / float(orig_size) * 100.0
+        bad_count = sum(1 for r in ratios if r >= 1.00)
+        good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
+        print('discrete dict compressed size: %d (%.2f%%); smaller: %.2f%%' % (
             compressed_size, ratio, good_ratio))
 
     # In stream mode the inputs are fed into a streaming compressor and
@@ -564,6 +593,8 @@ if __name__ == '__main__':
     if not args.no_compression:
         if args.discrete:
             bench_discrete_compression(chunks, opts)
+        if args.discrete_dict:
+            bench_discrete_compression(chunks, dict_opts)
         if args.stream:
             bench_stream_compression(chunks, opts)
         if args.content_dict:
@@ -573,6 +604,9 @@ if __name__ == '__main__':
         if args.discrete:
             bench_discrete_decompression(compressed_discrete, orig_size,
                                          opts)
+        if args.discrete_dict:
+            bench_discrete_decompression(compressed_discrete_dict,
+                                         orig_size, dict_opts)
         if args.stream:
             bench_stream_decompression(compressed_stream, orig_size, opts)
         if args.content_dict:
