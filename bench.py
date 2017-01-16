@@ -110,10 +110,18 @@ def compress_read_from_size(chunks, opts):
             pass
 
 
-def compress_compressor(chunks, opts):
+def compress_compressobj(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
         cobj = zctx.compressobj()
+        cobj.compress(chunk)
+        cobj.flush()
+
+
+def compress_compressobj_size(chunks, opts):
+    zctx = zstd.ZstdCompressor(**opts)
+    for chunk in chunks:
+        cobj = zctx.compressobj(size=len(chunk))
         cobj.compress(chunk)
         cobj.flush()
 
@@ -144,7 +152,7 @@ def decompress_read_from(chunks, opts):
             pass
 
 
-def decompress_decompressor(chunks, opts):
+def decompress_decompressobj(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
         decompressor = zctx.decompressobj()
@@ -179,34 +187,35 @@ def get_chunks(paths, limit_count):
     return chunks
 
 
-def format_results(results, title, total_size):
+def format_results(results, title, prefix, total_size):
     best = min(results)
     rate = float(total_size) / best[3]
 
-    print(title)
+    print('%s %s' % (prefix, title))
     print('%.6f wall; %.6f CPU; %.6f user; %.6f sys %.2f MB/s (best of %d)' % (
         best[3], best[0], best[1], best[2], rate / 1000000.0, len(results)))
 
 
-def bench_compression(chunks, opts):
+def bench_discrete_compression(chunks, opts):
     benches = [
-        (compress_one_use, 'compress compress() single use zctx'),
-        (compress_reuse, 'compress compress() reuse zctx'),
-        (compress_write_to, 'compress write_to()'),
-        (compress_write_to_size, 'compress write_to() w/ input size'),
-        (compress_read_from, 'compress read_from()'),
-        (compress_read_from_size, 'compress read_from() w/ input size'),
-        (compress_compressor, 'compress compressobj()'),
+        (compress_one_use, 'compress() single use zctx'),
+        (compress_reuse, 'compress() reuse zctx'),
+        (compress_write_to, 'write_to()'),
+        (compress_write_to_size, 'write_to() w/ input size'),
+        (compress_read_from, 'read_from()'),
+        (compress_read_from_size, 'read_from() w/ input size'),
+        (compress_compressobj, 'compressobj()'),
+        (compress_compressobj_size, 'compressobj() w/ input size'),
     ]
 
     total_size = sum(map(len, chunks))
 
     for fn, title in benches:
         results = timer(lambda: fn(chunks, opts))
-        format_results(results, title, total_size)
+        format_results(results, title, 'compress discrete', total_size)
 
 
-def bench_decompression(chunks, total_size, opts):
+def bench_discrete_decompression(chunks, total_size, opts):
     benches = []
 
     # We can only test simple decompress() if content size was written.
@@ -217,9 +226,9 @@ def bench_decompression(chunks, total_size, opts):
         ])
 
     benches.extend([
-        (decompress_write_to, 'decompress write_to()'),
-        (decompress_read_from, 'decompress read_from()'),
-        (decompress_decompressor, 'decompress decompressobj()'),
+        (decompress_write_to, 'write_to()'),
+        (decompress_read_from, 'read_from()'),
+        (decompress_decompressobj, 'decompressobj()'),
     ])
 
     dopts = {}
@@ -228,7 +237,7 @@ def bench_decompression(chunks, total_size, opts):
 
     for fn, title in benches:
         results = timer(lambda: fn(chunks, dopts))
-        format_results(results, title, total_size)
+        format_results(results, title, 'decompress discrete', total_size)
 
 
 if __name__ == '__main__':
@@ -297,7 +306,7 @@ if __name__ == '__main__':
     print('')
 
     if not args.no_compression:
-        bench_compression(chunks, opts)
+        bench_discrete_compression(chunks, opts)
 
     if not args.no_decompression:
-        bench_decompression(compressed, orig_size, opts)
+        bench_discrete_decompression(compressed, orig_size, opts)
