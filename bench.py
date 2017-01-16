@@ -104,14 +104,14 @@ def compress_read_from(chunks, opts):
 
 
 def compress_read_from_size(chunks, opts):
-    zctx = zstd.ZstdCompressor()
+    zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
         for d in zctx.read_from(bio(chunk), size=len(chunk)):
             pass
 
 
 def compress_compressor(chunks, opts):
-    zctx = zstd.ZstdCompressor()
+    zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
         cobj = zctx.compressobj()
         cobj.compress(chunk)
