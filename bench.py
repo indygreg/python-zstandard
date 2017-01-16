@@ -126,6 +126,24 @@ def compress_compressobj_size(chunks, opts):
         cobj.flush()
 
 
+def compress_stream_write_to(chunks, opts):
+    zctx = zstd.ZstdCompressor(**opts)
+    b = bio()
+    with zctx.write_to(b) as compressor:
+        for chunk in chunks:
+            compressor.write(chunk)
+            compressor.flush()
+
+
+def compress_stream_compressobj(chunks, opts):
+    zctx = zstd.ZstdCompressor(**opts)
+    compressor = zctx.compressobj()
+    flush = zstd.COMPRESSOBJ_FLUSH_BLOCK
+    for chunk in chunks:
+        compressor.compress(chunk)
+        compressor.flush(flush)
+
+
 def decompress_one_use(chunks, opts):
     for chunk in chunks:
         zctx = zstd.ZstdDecompressor(**opts)
@@ -156,6 +174,20 @@ def decompress_decompressobj(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
         decompressor = zctx.decompressobj()
+        decompressor.decompress(chunk)
+
+
+def decompress_stream_write_to(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    with zctx.write_to(bio()) as decompressor:
+        for chunk in chunks:
+            decompressor.write(chunk)
+
+
+def decompress_stream_decompressobj(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    decompressor = zctx.decompressobj()
+    for chunk in chunks:
         decompressor.decompress(chunk)
 
 
@@ -240,10 +272,42 @@ def bench_discrete_decompression(chunks, total_size, opts):
         format_results(results, title, 'decompress discrete', total_size)
 
 
+def bench_stream_compression(chunks, opts):
+    benches = [
+        (compress_stream_write_to, 'write_to()'),
+        (compress_stream_compressobj, 'compressobj()'),
+    ]
+
+    total_size = sum(map(len, chunks))
+
+    for fn, title in benches:
+        results = timer(lambda: fn(chunks, opts))
+        format_results(results, title, 'compress stream', total_size)
+
+
+def bench_stream_decompression(chunks, total_size, opts):
+    benches = [
+        (decompress_stream_write_to, 'write_to()'),
+        (decompress_stream_decompressobj, 'decompressobj()'),
+    ]
+
+    for fn, title in benches:
+        results = timer(lambda: fn(chunks, {}))
+        format_results(results, title, 'decompress stream', total_size)
+
+
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
+
+    group = parser.add_argument_group('Compression Modes')
+    group.add_argument('--discrete', action='store_true',
+                       help='Compress each input independently')
+    group.add_argument('--stream', action='store_true',
+                       help='Feed each input into a stream and emit '
+                            'flushed blocks')
+
     parser.add_argument('--no-compression', action='store_true',
                         help='Do not test compression performance')
     parser.add_argument('--no-decompression', action='store_true',
@@ -264,6 +328,10 @@ if __name__ == '__main__':
     parser.add_argument('path', metavar='INPUT', nargs='+')
 
     args = parser.parse_args()
+
+    # If no compression mode defined, assume discrete.
+    if not args.discrete and not args.stream:
+        args.discrete = True
 
     opts = {}
     if args.level:
@@ -288,25 +356,52 @@ if __name__ == '__main__':
         print('trained dictionary of size %d (wanted %d)' % (
             len(dict_data), args.dict_size))
 
-    # Obtain compressed chunks to report ratio and other stats.
-    zctx = zstd.ZstdCompressor(**opts)
-    compressed = []
-    ratios = []
-    for chunk in chunks:
-        c = zctx.compress(chunk)
-        compressed.append(c)
-        ratios.append(float(len(c)) / float(len(chunk)))
+    # In discrete mode, each input is compressed independently, possibly
+    # with a dictionary.
+    if args.discrete:
+        zctx = zstd.ZstdCompressor(**opts)
+        compressed_discrete = []
+        ratios = []
+        for chunk in chunks:
+            c = zctx.compress(chunk)
+            compressed_discrete.append(c)
+            ratios.append(float(len(c)) / float(len(chunk)))
 
-    compressed_size = sum(map(len, compressed))
-    ratio = float(compressed_size) / float(orig_size) * 100.0
-    bad_count = sum(1 for r in ratios if r >= 1.00)
-    good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
-    print('compressed size: %d (%.2f%%); smaller: %.2f%%' % (
-        compressed_size, ratio, good_ratio))
+        compressed_size = sum(map(len, compressed_discrete))
+        ratio = float(compressed_size) / float(orig_size) * 100.0
+        bad_count = sum(1 for r in ratios if r >= 1.00)
+        good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
+        print('discrete compressed size: %d (%.2f%%); smaller: %.2f%%' % (
+            compressed_size, ratio, good_ratio))
+
+    # In stream mode the inputs are fed into a streaming compressor and
+    # blocks are flushed for each input.
+    if args.stream:
+        zctx = zstd.ZstdCompressor(**opts)
+        compressed_stream = []
+        ratios = []
+        compressor = zctx.compressobj()
+        for chunk in chunks:
+            output = compressor.compress(chunk)
+            output += compressor.flush(zstd.COMPRESSOBJ_FLUSH_BLOCK)
+            compressed_stream.append(output)
+
+        compressed_size = sum(map(len, compressed_stream))
+        ratio = float(compressed_size) / float(orig_size) * 100.0
+        print('stream compressed size: %d (%.2f%%)' % (compressed_size,
+                                                       ratio))
+
     print('')
 
     if not args.no_compression:
-        bench_discrete_compression(chunks, opts)
+        if args.discrete:
+            bench_discrete_compression(chunks, opts)
+        if args.stream:
+            bench_stream_compression(chunks, opts)
 
     if not args.no_decompression:
-        bench_discrete_decompression(compressed, orig_size, opts)
+        if args.discrete:
+            bench_discrete_decompression(compressed_discrete, orig_size,
+                                         opts)
+        if args.stream:
+            bench_stream_decompression(compressed_stream, orig_size, opts)
