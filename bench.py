@@ -144,6 +144,67 @@ def compress_stream_compressobj(chunks, opts):
         compressor.flush(flush)
 
 
+def compress_content_dict_compress(chunks, opts):
+    zstd.ZstdCompressor(**opts).compress(chunks[0])
+    for i, chunk in enumerate(chunks[1:]):
+        d = zstd.ZstdCompressionDict(chunks[i])
+        zstd.ZstdCompressor(dict_data=d, **opts).compress(chunk)
+
+
+def compress_content_dict_write_to(chunks, opts, use_size=False):
+    zctx = zstd.ZstdCompressor(**opts)
+    b = bio()
+    with zctx.write_to(b, size=len(chunks[0]) if use_size else 0) as compressor:
+        compressor.write(chunks[0])
+
+    for i, chunk in enumerate(chunks[1:]):
+        d = zstd.ZstdCompressionDict(chunks[i])
+        b = bio()
+        zctx = zstd.ZstdCompressor(dict_data=d, **opts)
+        with zctx.write_to(b, size=len(chunk) if use_size else 0) as compressor:
+            compressor.write(chunk)
+
+
+def compress_content_dict_write_to_size(chunks, opts):
+    compress_content_dict_write_to(chunks, opts, use_size=True)
+
+
+def compress_content_dict_read_from(chunks, opts, use_size=False):
+    zctx = zstd.ZstdCompressor(**opts)
+    size = len(chunks[0]) if use_size else 0
+    for o in zctx.read_from(bio(chunks[0]), size=size):
+        pass
+
+    for i, chunk in enumerate(chunks[1:]):
+        d = zstd.ZstdCompressionDict(chunks[i])
+        zctx = zstd.ZstdCompressor(dict_data=d, **opts)
+        size = len(chunk) if use_size else 0
+        for o in zctx.read_from(bio(chunk), size=size):
+            pass
+
+
+def compress_content_dict_read_from_size(chunks, opts):
+    compress_content_dict_read_from(chunks, opts, use_size=True)
+
+
+def compress_content_dict_compressobj(chunks, opts, use_size=False):
+    zctx = zstd.ZstdCompressor(**opts)
+    cobj = zctx.compressobj(size=len(chunks[0]) if use_size else 0)
+    cobj.compress(chunks[0])
+    cobj.flush()
+
+    for i, chunk in enumerate(chunks[1:]):
+        d = zstd.ZstdCompressionDict(chunks[i])
+        zctx = zstd.ZstdCompressor(dict_data=d, **opts)
+        cobj = zctx.compressobj(len(chunk) if use_size else 0)
+        cobj.compress(chunk)
+        cobj.flush()
+
+
+def compress_content_dict_compressobj_size(chunks, opts):
+    compress_content_dict_compressobj(chunks, opts, use_size=True)
+
+
 def decompress_one_use(chunks, opts):
     for chunk in chunks:
         zctx = zstd.ZstdDecompressor(**opts)
@@ -189,6 +250,52 @@ def decompress_stream_decompressobj(chunks, opts):
     decompressor = zctx.decompressobj()
     for chunk in chunks:
         decompressor.decompress(chunk)
+
+
+def decompress_content_dict_decompress(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    last = zctx.decompress(chunks[0])
+
+    for chunk in chunks[1:]:
+        d = zstd.ZstdCompressionDict(last)
+        zctx = zstd.ZstdDecompressor(dict_data=d, **opts)
+        last = zctx.decompress(chunk)
+
+
+def decompress_content_dict_write_to(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    b = bio()
+    with zctx.write_to(b) as decompressor:
+        decompressor.write(chunks[0])
+
+    last = b.getvalue()
+    for chunk in chunks[1:]:
+        d = zstd.ZstdCompressionDict(last)
+        zctx = zstd.ZstdDecompressor(dict_data=d, **opts)
+        b = bio()
+        with zctx.write_to(b) as decompressor:
+            decompressor.write(chunk)
+            last = b.getvalue()
+
+
+def decompress_content_dict_read_from(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    last = b''.join(zctx.read_from(bio(chunks[0])))
+
+    for chunk in chunks[1:]:
+        d = zstd.ZstdCompressionDict(last)
+        zctx = zstd.ZstdDecompressor(dict_data=d, **opts)
+        last = b''.join(zctx.read_from(bio(chunk)))
+
+
+def decompress_content_dict_decompressobj(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    last = zctx.decompressobj().decompress(chunks[0])
+
+    for chunk in chunks[1:]:
+        d = zstd.ZstdCompressionDict(last)
+        zctx = zstd.ZstdDecompressor(dict_data=d, **opts)
+        last = zctx.decompressobj().decompress(chunk)
 
 
 def get_chunks(paths, limit_count):
@@ -296,6 +403,41 @@ def bench_stream_decompression(chunks, total_size, opts):
         format_results(results, title, 'decompress stream', total_size)
 
 
+def bench_content_dict_compression(chunks, opts):
+    benches = [
+        (compress_content_dict_compress, 'compress()'),
+        (compress_content_dict_write_to, 'write_to()'),
+        (compress_content_dict_write_to_size, 'write_to() w/ input size'),
+        (compress_content_dict_read_from, 'read_from()'),
+        (compress_content_dict_read_from_size, 'read_from() w/ input size'),
+        (compress_content_dict_compressobj, 'compressobj()'),
+        (compress_content_dict_compressobj_size, 'compressobj() w/ input size'),
+    ]
+
+    total_size = sum(map(len, chunks))
+
+    for fn, title in benches:
+        results = timer(lambda: fn(chunks, opts))
+        format_results(results, title, 'compress content dict', total_size)
+
+
+def bench_content_dict_decompression(chunks, total_size, opts):
+    benches = []
+
+    if opts.get('write_content_size'):
+        benches.append((decompress_content_dict_decompress, 'decompress()'))
+
+    benches.extend([
+        (decompress_content_dict_write_to, 'write_to()'),
+        (decompress_content_dict_read_from, 'read_from()'),
+        (decompress_content_dict_decompressobj, 'decompressobj()'),
+    ])
+
+    for fn, title in benches:
+        results = timer(lambda: fn(chunks, {}))
+        format_results(results, title, 'decompress content dict', total_size)
+
+
 if __name__ == '__main__':
     import argparse
 
@@ -307,6 +449,9 @@ if __name__ == '__main__':
     group.add_argument('--stream', action='store_true',
                        help='Feed each input into a stream and emit '
                             'flushed blocks')
+    group.add_argument('--content-dict', action='store_true',
+                       help='Compress each input using the previous as a '
+                            'content dictionary')
 
     parser.add_argument('--no-compression', action='store_true',
                         help='Do not test compression performance')
@@ -330,7 +475,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # If no compression mode defined, assume discrete.
-    if not args.discrete and not args.stream:
+    if not args.discrete and not args.stream and not args.content_dict:
         args.discrete = True
 
     opts = {}
@@ -391,6 +536,29 @@ if __name__ == '__main__':
         print('stream compressed size: %d (%.2f%%)' % (compressed_size,
                                                        ratio))
 
+    if args.content_dict:
+        compressed_content_dict = []
+        ratios = []
+        # First chunk is compressed like normal.
+        c = zstd.ZstdCompressor(**opts).compress(chunks[0])
+        compressed_content_dict.append(c)
+        ratios.append(float(len(c)) / float(len(chunks[0])))
+
+        # Subsequent chunks use previous chunk as a dict.
+        for i, chunk in enumerate(chunks[1:]):
+            d = zstd.ZstdCompressionDict(chunks[i])
+            zctx = zstd.ZstdCompressor(dict_data=d, **opts)
+            c = zctx.compress(chunk)
+            compressed_content_dict.append(c)
+            ratios.append(float(len(c)) / float(len(chunk)))
+
+        compressed_size = sum(map(len, compressed_content_dict))
+        ratio = float(compressed_size) / float(orig_size) * 100.0
+        bad_count = sum(1 for r in ratios if r >= 1.00)
+        good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
+        print('content dict compressed size: %d (%.2f%%); smaller: %.2f%%' % (
+            compressed_size, ratio, good_ratio))
+
     print('')
 
     if not args.no_compression:
@@ -398,6 +566,8 @@ if __name__ == '__main__':
             bench_discrete_compression(chunks, opts)
         if args.stream:
             bench_stream_compression(chunks, opts)
+        if args.content_dict:
+            bench_content_dict_compression(chunks, opts)
 
     if not args.no_decompression:
         if args.discrete:
@@ -405,3 +575,6 @@ if __name__ == '__main__':
                                          opts)
         if args.stream:
             bench_stream_decompression(compressed_stream, orig_size, opts)
+        if args.content_dict:
+            bench_content_dict_decompression(compressed_content_dict,
+                                             orig_size, opts)
