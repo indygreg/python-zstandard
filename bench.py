@@ -298,6 +298,11 @@ def decompress_content_dict_decompressobj(chunks, opts):
         last = zctx.decompressobj().decompress(chunk)
 
 
+def decompress_content_dict_chain_api(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    zctx.decompress_content_dict_chain(chunks)
+
+
 def get_chunks(paths, limit_count):
     chunks = []
 
@@ -439,6 +444,7 @@ def bench_content_dict_decompression(chunks, total_size, opts):
         (decompress_content_dict_write_to, 'write_to()'),
         (decompress_content_dict_read_from, 'read_from()'),
         (decompress_content_dict_decompressobj, 'decompressobj()'),
+        (decompress_content_dict_chain_api, 'decompress_content_dict_chain()'),
     ])
 
     for fn, title in benches:

@@ -576,6 +576,53 @@ Here is how this API should be used::
    data = dobj.decompress(compressed_chunk_0)
    data = dobj.decompress(compressed_chunk_1)
 
+Content-Only Dictionary Chain Decompression
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``decompress_content_dict_chain(frames)`` performs decompression of a list of
+zstd frames produced using chained *content-only* dictionary compression. Such
+a list of frames is produced by compressing discrete inputs where each
+non-initial input is compressed with a *content-only* dictionary consisting
+of the content of the previous input.
+
+For example, say you have the following inputs::
+
+   inputs = [b'input 1', b'input 2', b'input 3']
+
+The zstd frame chain consists of:
+
+1. ``b'input 1'`` compressed in standalone/discrete mode
+2. ``b'input 2'`` compressed using ``b'input 1'`` as a *content-only* dictionary
+3. ``b'input 3'`` compressed using ``b'input 2'`` as a *content-only* dictionary
+
+Each zstd frame **must** have the content size written.
+
+The following Python code can be used to produce a *content-only dictionary
+chain*::
+
+	def make_chain(inputs):
+	    frames = []
+
+		# First frame is compressed in standalone/discrete mode.
+		zctx = zstd.ZstdCompressor(write_content_size=True)
+		frames.append(zctx.compress(inputs[0]))
+
+		# Subsequent frames use the previous fulltext as a content-only dictionary
+		for i, raw in enumerate(inputs[1:]):
+		    dict_data = zstd.ZstdCompressionDict(inputs[i])
+			zctx = zstd.ZstdCompressor(write_content_size=True, dict_data=dict_data)
+			frames.append(zctx.compress(raw))
+
+		return frames
+
+``decompress_content_dict_chain()`` returns the uncompressed data of the last
+element in the input chain.
+
+It is possible to implement *content-only dictionary chain* decompression
+on top of other Python APIs. However, this function will likely be significantly
+faster, especially for long input chains, as it avoids the overhead of
+instantiating and passing around intermediate objects between C and Python.
+
 Choosing an API
 ---------------
 
@@ -633,6 +680,13 @@ In Python, compression dictionaries are represented as the
 Instances can be constructed from bytes::
 
    dict_data = zstd.ZstdCompressionDict(data)
+
+It is possible to construct a dictionary from *any* data. Unless the
+data begins with a magic header, the dictionary will be treated as
+*content-only*. *Content-only* dictionaries allow compression operations
+that follow to reference raw data within the content. For one use of
+*content-only* dictionaries, see
+``ZstdDecompressor.decompress_content_dict_chain()``.
 
 More interestingly, instances can be created by *training* on sample data::
 

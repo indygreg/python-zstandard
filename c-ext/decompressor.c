@@ -605,6 +605,199 @@ static ZstdDecompressionWriter* Decompressor_write_to(ZstdDecompressor* self, Py
 	return result;
 }
 
+PyDoc_STRVAR(Decompressor_decompress_content_dict_chain__doc__,
+"Decompress a series of chunks using the content dictionary chaining technique\n"
+);
+
+static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"frames",
+		NULL
+	};
+
+	PyObject* chunks;
+	Py_ssize_t chunksLen;
+	Py_ssize_t chunkIndex;
+	char parity = 0;
+	PyObject* chunk;
+	char* chunkData;
+	Py_ssize_t chunkSize;
+	ZSTD_DCtx* dctx = NULL;
+	size_t zresult;
+	ZSTD_frameParams frameParams;
+	void* buffer1 = NULL;
+	size_t buffer1Size = 0;
+	size_t buffer1ContentSize = 0;
+	void* buffer2 = NULL;
+	size_t buffer2Size = 0;
+	size_t buffer2ContentSize = 0;
+	void* destBuffer = NULL;
+	PyObject* result = NULL;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyList_Type, &chunks)) {
+		return NULL;
+	}
+
+	chunksLen = PyList_Size(chunks);
+	if (!chunksLen) {
+		PyErr_SetString(PyExc_ValueError, "empty input chain");
+		return NULL;
+	}
+
+	/* The first chunk should not be using a dictionary. We handle it specially. */
+	chunk = PyList_GetItem(chunks, 0);
+	if (!PyBytes_Check(chunk)) {
+		PyErr_SetString(PyExc_ValueError, "chunk 0 must be bytes");
+		return NULL;
+	}
+
+	/* We require that all chunks be zstd frames and that they have content size set. */
+	PyBytes_AsStringAndSize(chunk, &chunkData, &chunkSize);
+	zresult = ZSTD_getFrameParams(&frameParams, (void*)chunkData, chunkSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_SetString(PyExc_ValueError, "chunk 0 is not a valid zstd frame");
+		return NULL;
+	}
+	else if (zresult) {
+		PyErr_SetString(PyExc_ValueError, "chunk 0 is too small to contain a zstd frame");
+		return NULL;
+	}
+
+	if (0 == frameParams.frameContentSize) {
+		PyErr_SetString(PyExc_ValueError, "chunk 0 missing content size in frame");
+		return NULL;
+	}
+
+	dctx = ZSTD_createDCtx();
+	if (!dctx) {
+		PyErr_NoMemory();
+		goto finally;
+	}
+
+	buffer1Size = frameParams.frameContentSize;
+	buffer1 = PyMem_Malloc(buffer1Size);
+	if (!buffer1) {
+		goto finally;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	zresult = ZSTD_decompressDCtx(dctx, buffer1, buffer1Size, chunkData, chunkSize);
+	Py_END_ALLOW_THREADS
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "could not decompress chunk 0: %s", ZSTD_getErrorName(zresult));
+		goto finally;
+	}
+
+	buffer1ContentSize = zresult;
+
+	/* Special case of a simple chain. */
+	if (1 == chunksLen) {
+		result = PyBytes_FromStringAndSize(buffer1, buffer1Size);
+		goto finally;
+	}
+
+	/* This should ideally look at next chunk. But this is slightly simpler. */
+	buffer2Size = frameParams.frameContentSize;
+	buffer2 = PyMem_Malloc(buffer2Size);
+	if (!buffer2) {
+		goto finally;
+	}
+
+	/* For each subsequent chunk, use the previous fulltext as a content dictionary.
+	   Our strategy is to have 2 buffers. One holds the previous fulltext (to be
+	   used as a content dictionary) and the other holds the new fulltext. The
+	   buffers grow when needed but never decrease in size. This limits the
+	   memory allocator overhead.
+	*/
+	for (chunkIndex = 1; chunkIndex < chunksLen; chunkIndex++) {
+		chunk = PyList_GetItem(chunks, chunkIndex);
+		if (!PyBytes_Check(chunk)) {
+			PyErr_Format(PyExc_ValueError, "chunk %zd must be bytes", chunkIndex);
+			goto finally;
+		}
+
+		PyBytes_AsStringAndSize(chunk, &chunkData, &chunkSize);
+		zresult = ZSTD_getFrameParams(&frameParams, (void*)chunkData, chunkSize);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(PyExc_ValueError, "chunk %zd is not a valid zstd frame", chunkIndex);
+			goto finally;
+		}
+		else if (zresult) {
+			PyErr_Format(PyExc_ValueError, "chunk %zd is too small to contain a zstd frame", chunkIndex);
+			goto finally;
+		}
+
+		if (0 == frameParams.frameContentSize) {
+			PyErr_Format(PyExc_ValueError, "chunk %zd missing content size in frame", chunkIndex);
+			goto finally;
+		}
+
+		parity = chunkIndex % 2;
+
+		/* This could definitely be abstracted to reduce code duplication. */
+		if (parity) {
+			/* Resize destination buffer to hold larger content. */
+			if (buffer2Size < frameParams.frameContentSize) {
+				buffer2Size = frameParams.frameContentSize;
+				destBuffer = PyMem_Realloc(buffer2, buffer2Size);
+				if (!destBuffer) {
+					goto finally;
+				}
+				buffer2 = destBuffer;
+			}
+
+			Py_BEGIN_ALLOW_THREADS
+			zresult = ZSTD_decompress_usingDict(dctx, buffer2, buffer2Size,
+				chunkData, chunkSize, buffer1, buffer1ContentSize);
+			Py_END_ALLOW_THREADS
+			if (ZSTD_isError(zresult)) {
+				PyErr_Format(ZstdError, "could not decompress chunk %zd: %s",
+					chunkIndex, ZSTD_getErrorName(zresult));
+				goto finally;
+			}
+			buffer2ContentSize = zresult;
+		}
+		else {
+			if (buffer1Size < frameParams.frameContentSize) {
+				buffer1Size = frameParams.frameContentSize;
+				destBuffer = PyMem_Realloc(buffer1, buffer1Size);
+				if (!destBuffer) {
+					goto finally;
+				}
+				buffer1 = destBuffer;
+			}
+
+			Py_BEGIN_ALLOW_THREADS
+			zresult = ZSTD_decompress_usingDict(dctx, buffer1, buffer1Size,
+				chunkData, chunkSize, buffer2, buffer2ContentSize);
+			Py_END_ALLOW_THREADS
+			if (ZSTD_isError(zresult)) {
+				PyErr_Format(ZstdError, "could not decompress chunk %zd: %s",
+					chunkIndex, ZSTD_getErrorName(zresult));
+				goto finally;
+			}
+			buffer1ContentSize = zresult;
+		}
+	}
+
+	result = PyBytes_FromStringAndSize(parity ? buffer2 : buffer1,
+		parity ? buffer2ContentSize : buffer1ContentSize);
+
+finally:
+	if (buffer2) {
+		PyMem_Free(buffer2);
+	}
+	if (buffer1) {
+		PyMem_Free(buffer1);
+	}
+
+	if (dctx) {
+		ZSTD_freeDCtx(dctx);
+	}
+
+	return result;
+}
+
 static PyMethodDef Decompressor_methods[] = {
 	{ "copy_stream", (PyCFunction)Decompressor_copy_stream, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_copy_stream__doc__ },
@@ -616,6 +809,8 @@ static PyMethodDef Decompressor_methods[] = {
 	Decompressor_read_from__doc__ },
 	{ "write_to", (PyCFunction)Decompressor_write_to, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_write_to__doc__ },
+	{ "decompress_content_dict_chain", (PyCFunction)Decompressor_decompress_content_dict_chain,
+	  METH_VARARGS | METH_KEYWORDS, Decompressor_decompress_content_dict_chain__doc__ },
 	{ NULL, NULL }
 };
 
