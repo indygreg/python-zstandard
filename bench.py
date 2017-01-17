@@ -71,7 +71,8 @@ def timer(fn, miniter=3, minwall=3.0):
 BENCHES = []
 
 
-def bench(mode, title, require_content_size=False):
+def bench(mode, title, require_content_size=False,
+          simple=False):
     def wrapper(fn):
         if not fn.func_name.startswith(('compress_', 'decompress_')):
             raise ValueError('benchmark function must begin with '
@@ -80,6 +81,7 @@ def bench(mode, title, require_content_size=False):
         fn.mode = mode
         fn.title = title
         fn.require_content_size = require_content_size
+        fn.simple = simple
         BENCHES.append(fn)
         return fn
 
@@ -93,7 +95,7 @@ def compress_one_use(chunks, opts):
         zctx.compress(chunk)
 
 
-@bench('discrete', 'compress() reuse zctx')
+@bench('discrete', 'compress() reuse zctx', simple=True)
 def compress_reuse(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
@@ -162,7 +164,7 @@ def compress_stream_write_to(chunks, opts):
             compressor.flush()
 
 
-@bench('stream', 'compressobj()')
+@bench('stream', 'compressobj()', simple=True)
 def compress_stream_compressobj(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     compressor = zctx.compressobj()
@@ -172,7 +174,7 @@ def compress_stream_compressobj(chunks, opts):
         compressor.flush(flush)
 
 
-@bench('content-dict', 'compress()')
+@bench('content-dict', 'compress()', simple=True)
 def compress_content_dict_compress(chunks, opts):
     zstd.ZstdCompressor(**opts).compress(chunks[0])
     for i, chunk in enumerate(chunks[1:]):
@@ -247,7 +249,8 @@ def decompress_one_use(chunks, opts):
         zctx.decompress(chunk)
 
 
-@bench('discrete', 'decompress() reuse zctx', require_content_size=True)
+@bench('discrete', 'decompress() reuse zctx', require_content_size=True,
+       simple=True)
 def decompress_reuse(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
@@ -286,7 +289,7 @@ def decompress_stream_write_to(chunks, opts):
             decompressor.write(chunk)
 
 
-@bench('stream', 'decompressobj()')
+@bench('stream', 'decompressobj()', simple=True)
 def decompress_stream_decompressobj(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     decompressor = zctx.decompressobj()
@@ -344,7 +347,8 @@ def decompress_content_dict_decompressobj(chunks, opts):
         last = zctx.decompressobj().decompress(chunk)
 
 
-@bench('content-dict', 'decompress_content_dict_chain()')
+@bench('content-dict', 'decompress_content_dict_chain()',
+       simple=True)
 def decompress_content_dict_chain_api(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.decompress_content_dict_chain(chunks)
@@ -478,6 +482,8 @@ if __name__ == '__main__':
                        help='Do not test compression performance')
     group.add_argument('--no-decompression', action='store_true',
                        help='Do not test decompression performance')
+    group.add_argument('--only-simple', action='store_true',
+                       help='Only run the simple APIs')
 
     parser.add_argument('--limit-count', type=int,
                         help='limit number of input files added')
@@ -499,6 +505,11 @@ if __name__ == '__main__':
     # If no compression mode defined, assume discrete.
     if not args.stream and not args.content_dict and not args.discrete_dict:
         args.discrete = True
+
+    # It is easier to filter here than to pass arguments to multiple
+    # functions.
+    if args.only_simple:
+        BENCHES[:] = [fn for fn in BENCHES if fn.simple]
 
     opts = {}
     if args.level:
