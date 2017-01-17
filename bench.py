@@ -470,10 +470,12 @@ if __name__ == '__main__':
                        help='Compress each input independently with a '
                             'dictionary')
 
-    parser.add_argument('--no-compression', action='store_true',
-                        help='Do not test compression performance')
-    parser.add_argument('--no-decompression', action='store_true',
-                        help='Do not test decompression performance')
+    group = parser.add_argument_group('Benchmark Selection')
+    group.add_argument('--no-compression', action='store_true',
+                       help='Do not test compression performance')
+    group.add_argument('--no-decompression', action='store_true',
+                       help='Do not test decompression performance')
+
     parser.add_argument('--limit-count', type=int,
                         help='limit number of input files added')
     parser.add_argument('-l', '--level', type=int,
