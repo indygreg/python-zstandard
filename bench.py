@@ -485,20 +485,24 @@ if __name__ == '__main__':
     group.add_argument('--only-simple', action='store_true',
                        help='Only run the simple APIs')
 
-    parser.add_argument('--limit-count', type=int,
-                        help='limit number of input files added')
-    parser.add_argument('-l', '--level', type=int,
+    group = parser.add_argument_group('Compression Parameters')
+    group.add_argument('-l', '--level', type=int,
                         help='Compression level')
-    parser.add_argument('--write-size', action='store_true',
-                        help='Write content size to zstd frames')
-    parser.add_argument('--write-checksum', action='store_true',
-                        help='Write checksum data to zstd frames')
-    parser.add_argument('--dict-size', type=int, default=128 * 1024,
-                        help='Maximum size of trained dictionary')
-    parser.add_argument('--dict-sample-limit', type=int,
-                        help='limit how many samples are fed into dictionary '
-                             'training')
-    parser.add_argument('path', metavar='INPUT', nargs='+')
+    group.add_argument('--write-size', action='store_true',
+                       help='Write content size to zstd frames')
+    group.add_argument('--write-checksum', action='store_true',
+                       help='Write checksum data to zstd frames')
+    group.add_argument('--dict-size', type=int, default=128 * 1024,
+                       help='Maximum size of trained dictionary')
+
+    group = parser.add_argument_group('Input Processing')
+    group.add_argument('--limit-count', type=int,
+                       help='limit number of input files added')
+    group.add_argument('--dict-sample-limit', type=int,
+                       help='limit how many samples are fed into dictionary '
+                            'training')
+
+    parser.add_argument('path', metavar='PATH', nargs='+')
 
     args = parser.parse_args()
 
