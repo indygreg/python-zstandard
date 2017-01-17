@@ -68,10 +68,19 @@ def timer(fn, miniter=3, minwall=3.0):
     return results
 
 
+BENCHES = []
+
+
 def bench(mode, title, require_content_size=False):
     def wrapper(fn):
+        if not fn.func_name.startswith(('compress_', 'decompress_')):
+            raise ValueError('benchmark function must begin with '
+                             'compress_ or decompress_')
+
+        fn.mode = mode
         fn.title = title
         fn.require_content_size = require_content_size
+        BENCHES.append(fn)
         return fn
 
     return wrapper
@@ -369,6 +378,14 @@ def get_chunks(paths, limit_count):
     return chunks
 
 
+def get_benches(mode, direction):
+    assert direction in ('compress', 'decompress')
+    prefix = '%s_' % direction
+
+    return [fn for fn in BENCHES
+            if fn.func_name.startswith(prefix) and fn.mode == mode]
+
+
 def format_results(results, title, prefix, total_size):
     best = min(results)
     rate = float(total_size) / best[3]
@@ -379,17 +396,6 @@ def format_results(results, title, prefix, total_size):
 
 
 def bench_discrete_compression(chunks, opts):
-    benches = [
-        compress_one_use,
-        compress_reuse,
-        compress_write_to,
-        compress_write_to_size,
-        compress_read_from,
-        compress_read_from_size,
-        compress_compressobj,
-        compress_compressobj_size,
-    ]
-
     total_size = sum(map(len, chunks))
 
     if 'dict_data' in opts:
@@ -397,20 +403,12 @@ def bench_discrete_compression(chunks, opts):
     else:
         prefix = 'compress discrete'
 
-    for fn in benches:
+    for fn in get_benches('discrete', 'compress'):
         results = timer(lambda: fn(chunks, opts))
         format_results(results, fn.title, prefix, total_size)
 
 
 def bench_discrete_decompression(chunks, total_size, opts):
-    benches = [
-        decompress_one_use,
-        decompress_reuse,
-        decompress_write_to,
-        decompress_read_from,
-        decompress_decompressobj,
-    ]
-
     dopts = {}
     if opts.get('dict_data'):
         dopts['dict_data'] = opts['dict_data']
@@ -418,7 +416,7 @@ def bench_discrete_decompression(chunks, total_size, opts):
     else:
         prefix = 'decompress discrete'
 
-    for fn in benches:
+    for fn in get_benches('discrete', 'decompress'):
         if not opts.get('write_content_size') and fn.require_content_size:
             continue
 
@@ -427,57 +425,29 @@ def bench_discrete_decompression(chunks, total_size, opts):
 
 
 def bench_stream_compression(chunks, opts):
-    benches = [
-        compress_stream_write_to,
-        compress_stream_compressobj,
-    ]
-
     total_size = sum(map(len, chunks))
 
-    for fn in benches:
+    for fn in get_benches('stream', 'compress'):
         results = timer(lambda: fn(chunks, opts))
         format_results(results, fn.title, 'compress stream', total_size)
 
 
 def bench_stream_decompression(chunks, total_size, opts):
-    benches = [
-        decompress_stream_write_to,
-        decompress_stream_decompressobj,
-    ]
-
-    for fn in benches:
+    for fn in get_benches('stream', 'decompress'):
         results = timer(lambda: fn(chunks, {}))
         format_results(results, fn.title, 'decompress stream', total_size)
 
 
 def bench_content_dict_compression(chunks, opts):
-    benches = [
-        compress_content_dict_compress,
-        compress_content_dict_write_to,
-        compress_content_dict_write_to_size,
-        compress_content_dict_read_from,
-        compress_content_dict_read_from_size,
-        compress_content_dict_compressobj,
-        compress_content_dict_compressobj_size,
-    ]
-
     total_size = sum(map(len, chunks))
 
-    for fn in benches:
+    for fn in get_benches('content-dict', 'compress'):
         results = timer(lambda: fn(chunks, opts))
         format_results(results, fn.title, 'compress content dict', total_size)
 
 
 def bench_content_dict_decompression(chunks, total_size, opts):
-    benches = [
-        decompress_content_dict_decompress,
-        decompress_content_dict_write_to,
-        decompress_content_dict_read_from,
-        decompress_content_dict_decompressobj,
-        decompress_content_dict_chain_api,
-    ]
-
-    for fn in benches:
+    for fn in get_benches('content-dict', 'decompress'):
         if not opts.get('write_content_size') and fn.require_content_size:
             continue
 
