@@ -606,6 +606,9 @@ if __name__ == '__main__':
         if args.content_dict:
             bench_content_dict_compression(chunks, opts)
 
+        if not args.no_decompression:
+            print('')
+
     if not args.no_decompression:
         if args.discrete:
             bench_discrete_decompression(compressed_discrete, orig_size,
