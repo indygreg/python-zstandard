@@ -68,18 +68,29 @@ def timer(fn, miniter=3, minwall=3.0):
     return results
 
 
+def bench(mode, title):
+    def wrapper(fn):
+        fn.title = title
+        return fn
+
+    return wrapper
+
+
+@bench('discrete', 'compress() single use zctx')
 def compress_one_use(chunks, opts):
     for chunk in chunks:
         zctx = zstd.ZstdCompressor(**opts)
         zctx.compress(chunk)
 
 
+@bench('discrete', 'compress() reuse zctx')
 def compress_reuse(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
         zctx.compress(chunk)
 
 
+@bench('discrete', 'write_to()')
 def compress_write_to(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
@@ -88,6 +99,7 @@ def compress_write_to(chunks, opts):
             compressor.write(chunk)
 
 
+@bench('discrete', 'write_to() w/ input size')
 def compress_write_to_size(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
@@ -96,6 +108,7 @@ def compress_write_to_size(chunks, opts):
             compressor.write(chunk)
 
 
+@bench('discrete', 'read_from()')
 def compress_read_from(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
@@ -103,6 +116,7 @@ def compress_read_from(chunks, opts):
             pass
 
 
+@bench('discrete', 'read_from() w/ input size')
 def compress_read_from_size(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
@@ -110,6 +124,7 @@ def compress_read_from_size(chunks, opts):
             pass
 
 
+@bench('discrete', 'compressobj()')
 def compress_compressobj(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
@@ -118,6 +133,7 @@ def compress_compressobj(chunks, opts):
         cobj.flush()
 
 
+@bench('discrete', 'compressobj() w/ input size')
 def compress_compressobj_size(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
@@ -126,6 +142,7 @@ def compress_compressobj_size(chunks, opts):
         cobj.flush()
 
 
+@bench('stream', 'write_to()')
 def compress_stream_write_to(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     b = bio()
@@ -135,6 +152,7 @@ def compress_stream_write_to(chunks, opts):
             compressor.flush()
 
 
+@bench('stream', 'compressobj()')
 def compress_stream_compressobj(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     compressor = zctx.compressobj()
@@ -144,6 +162,7 @@ def compress_stream_compressobj(chunks, opts):
         compressor.flush(flush)
 
 
+@bench('content-dict', 'compress()')
 def compress_content_dict_compress(chunks, opts):
     zstd.ZstdCompressor(**opts).compress(chunks[0])
     for i, chunk in enumerate(chunks[1:]):
@@ -151,6 +170,7 @@ def compress_content_dict_compress(chunks, opts):
         zstd.ZstdCompressor(dict_data=d, **opts).compress(chunk)
 
 
+@bench('content-dict', 'write_to()')
 def compress_content_dict_write_to(chunks, opts, use_size=False):
     zctx = zstd.ZstdCompressor(**opts)
     b = bio()
@@ -165,10 +185,12 @@ def compress_content_dict_write_to(chunks, opts, use_size=False):
             compressor.write(chunk)
 
 
+@bench('content-dict', 'write_to() w/ input size')
 def compress_content_dict_write_to_size(chunks, opts):
     compress_content_dict_write_to(chunks, opts, use_size=True)
 
 
+@bench('content-dict', 'read_from()')
 def compress_content_dict_read_from(chunks, opts, use_size=False):
     zctx = zstd.ZstdCompressor(**opts)
     size = len(chunks[0]) if use_size else 0
@@ -183,10 +205,12 @@ def compress_content_dict_read_from(chunks, opts, use_size=False):
             pass
 
 
+@bench('content-dict', 'read_from() w/ input size')
 def compress_content_dict_read_from_size(chunks, opts):
     compress_content_dict_read_from(chunks, opts, use_size=True)
 
 
+@bench('content-dict', 'compressobj()')
 def compress_content_dict_compressobj(chunks, opts, use_size=False):
     zctx = zstd.ZstdCompressor(**opts)
     cobj = zctx.compressobj(size=len(chunks[0]) if use_size else 0)
@@ -201,22 +225,26 @@ def compress_content_dict_compressobj(chunks, opts, use_size=False):
         cobj.flush()
 
 
+@bench('content-dict', 'compressobj() w/ input size')
 def compress_content_dict_compressobj_size(chunks, opts):
     compress_content_dict_compressobj(chunks, opts, use_size=True)
 
 
+@bench('discrete', 'decompress() single use zctx')
 def decompress_one_use(chunks, opts):
     for chunk in chunks:
         zctx = zstd.ZstdDecompressor(**opts)
         zctx.decompress(chunk)
 
 
+@bench('discrete', 'decompress() reuse zctx')
 def decompress_reuse(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
         zctx.decompress(chunk)
 
 
+@bench('discrete', 'write_to()')
 def decompress_write_to(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
@@ -224,6 +252,7 @@ def decompress_write_to(chunks, opts):
             decompressor.write(chunk)
 
 
+@bench('discrete', 'read_from()')
 def decompress_read_from(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
@@ -231,6 +260,7 @@ def decompress_read_from(chunks, opts):
             pass
 
 
+@bench('discrete', 'decompressobj()')
 def decompress_decompressobj(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
@@ -238,6 +268,7 @@ def decompress_decompressobj(chunks, opts):
         decompressor.decompress(chunk)
 
 
+@bench('stream', 'write_to()')
 def decompress_stream_write_to(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     with zctx.write_to(bio()) as decompressor:
@@ -245,6 +276,7 @@ def decompress_stream_write_to(chunks, opts):
             decompressor.write(chunk)
 
 
+@bench('stream', 'decompressobj()')
 def decompress_stream_decompressobj(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     decompressor = zctx.decompressobj()
@@ -252,6 +284,7 @@ def decompress_stream_decompressobj(chunks, opts):
         decompressor.decompress(chunk)
 
 
+@bench('content-dict', 'decompress()')
 def decompress_content_dict_decompress(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     last = zctx.decompress(chunks[0])
@@ -262,6 +295,7 @@ def decompress_content_dict_decompress(chunks, opts):
         last = zctx.decompress(chunk)
 
 
+@bench('content-dict', 'write_to()')
 def decompress_content_dict_write_to(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     b = bio()
@@ -278,6 +312,7 @@ def decompress_content_dict_write_to(chunks, opts):
             last = b.getvalue()
 
 
+@bench('content-dict', 'read_from()')
 def decompress_content_dict_read_from(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     last = b''.join(zctx.read_from(bio(chunks[0])))
@@ -288,6 +323,7 @@ def decompress_content_dict_read_from(chunks, opts):
         last = b''.join(zctx.read_from(bio(chunk)))
 
 
+@bench('content-dict', 'decompressobj()')
 def decompress_content_dict_decompressobj(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     last = zctx.decompressobj().decompress(chunks[0])
@@ -298,6 +334,7 @@ def decompress_content_dict_decompressobj(chunks, opts):
         last = zctx.decompressobj().decompress(chunk)
 
 
+@bench('content-dict', 'decompress_content_dict_chain()')
 def decompress_content_dict_chain_api(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.decompress_content_dict_chain(chunks)
@@ -342,14 +379,14 @@ def format_results(results, title, prefix, total_size):
 
 def bench_discrete_compression(chunks, opts):
     benches = [
-        (compress_one_use, 'compress() single use zctx'),
-        (compress_reuse, 'compress() reuse zctx'),
-        (compress_write_to, 'write_to()'),
-        (compress_write_to_size, 'write_to() w/ input size'),
-        (compress_read_from, 'read_from()'),
-        (compress_read_from_size, 'read_from() w/ input size'),
-        (compress_compressobj, 'compressobj()'),
-        (compress_compressobj_size, 'compressobj() w/ input size'),
+        compress_one_use,
+        compress_reuse,
+        compress_write_to,
+        compress_write_to_size,
+        compress_read_from,
+        compress_read_from_size,
+        compress_compressobj,
+        compress_compressobj_size,
     ]
 
     total_size = sum(map(len, chunks))
@@ -359,9 +396,9 @@ def bench_discrete_compression(chunks, opts):
     else:
         prefix = 'compress discrete'
 
-    for fn, title in benches:
+    for fn in benches:
         results = timer(lambda: fn(chunks, opts))
-        format_results(results, title, prefix, total_size)
+        format_results(results, fn.title, prefix, total_size)
 
 
 def bench_discrete_decompression(chunks, total_size, opts):
@@ -370,14 +407,14 @@ def bench_discrete_decompression(chunks, total_size, opts):
     # We can only test simple decompress() if content size was written.
     if opts.get('write_content_size'):
         benches.extend([
-            (decompress_one_use, 'decompress() single use zctx'),
-            (decompress_reuse, 'decompress() reuse zctx'),
+            decompress_one_use,
+            decompress_reuse,
         ])
 
     benches.extend([
-        (decompress_write_to, 'write_to()'),
-        (decompress_read_from, 'read_from()'),
-        (decompress_decompressobj, 'decompressobj()'),
+        decompress_write_to,
+        decompress_read_from,
+        decompress_decompressobj,
     ])
 
     dopts = {}
@@ -387,69 +424,69 @@ def bench_discrete_decompression(chunks, total_size, opts):
     else:
         prefix = 'decompress discrete'
 
-    for fn, title in benches:
+    for fn in benches:
         results = timer(lambda: fn(chunks, dopts))
-        format_results(results, title, prefix, total_size)
+        format_results(results, fn.title, prefix, total_size)
 
 
 def bench_stream_compression(chunks, opts):
     benches = [
-        (compress_stream_write_to, 'write_to()'),
-        (compress_stream_compressobj, 'compressobj()'),
+        compress_stream_write_to,
+        compress_stream_compressobj,
     ]
 
     total_size = sum(map(len, chunks))
 
-    for fn, title in benches:
+    for fn in benches:
         results = timer(lambda: fn(chunks, opts))
-        format_results(results, title, 'compress stream', total_size)
+        format_results(results, fn.title, 'compress stream', total_size)
 
 
 def bench_stream_decompression(chunks, total_size, opts):
     benches = [
-        (decompress_stream_write_to, 'write_to()'),
-        (decompress_stream_decompressobj, 'decompressobj()'),
+        decompress_stream_write_to,
+        decompress_stream_decompressobj,
     ]
 
-    for fn, title in benches:
+    for fn in benches:
         results = timer(lambda: fn(chunks, {}))
-        format_results(results, title, 'decompress stream', total_size)
+        format_results(results, fn.title, 'decompress stream', total_size)
 
 
 def bench_content_dict_compression(chunks, opts):
     benches = [
-        (compress_content_dict_compress, 'compress()'),
-        (compress_content_dict_write_to, 'write_to()'),
-        (compress_content_dict_write_to_size, 'write_to() w/ input size'),
-        (compress_content_dict_read_from, 'read_from()'),
-        (compress_content_dict_read_from_size, 'read_from() w/ input size'),
-        (compress_content_dict_compressobj, 'compressobj()'),
-        (compress_content_dict_compressobj_size, 'compressobj() w/ input size'),
+        compress_content_dict_compress,
+        compress_content_dict_write_to,
+        compress_content_dict_write_to_size,
+        compress_content_dict_read_from,
+        compress_content_dict_read_from_size,
+        compress_content_dict_compressobj,
+        compress_content_dict_compressobj_size,
     ]
 
     total_size = sum(map(len, chunks))
 
-    for fn, title in benches:
+    for fn in benches:
         results = timer(lambda: fn(chunks, opts))
-        format_results(results, title, 'compress content dict', total_size)
+        format_results(results, fn.title, 'compress content dict', total_size)
 
 
 def bench_content_dict_decompression(chunks, total_size, opts):
     benches = []
 
     if opts.get('write_content_size'):
-        benches.append((decompress_content_dict_decompress, 'decompress()'))
+        benches.append(decompress_content_dict_decompress)
 
     benches.extend([
-        (decompress_content_dict_write_to, 'write_to()'),
-        (decompress_content_dict_read_from, 'read_from()'),
-        (decompress_content_dict_decompressobj, 'decompressobj()'),
-        (decompress_content_dict_chain_api, 'decompress_content_dict_chain()'),
+        decompress_content_dict_write_to,
+        decompress_content_dict_read_from,
+        decompress_content_dict_decompressobj,
+        decompress_content_dict_chain_api,
     ])
 
-    for fn, title in benches:
+    for fn in benches:
         results = timer(lambda: fn(chunks, {}))
-        format_results(results, title, 'decompress content dict', total_size)
+        format_results(results, fn.title, 'decompress content dict', total_size)
 
 
 if __name__ == '__main__':
