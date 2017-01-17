@@ -479,9 +479,9 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--level', type=int,
                         help='Compression level')
     parser.add_argument('--write-size', action='store_true',
-                        help='Write content size')
+                        help='Write content size to zstd frames')
     parser.add_argument('--write-checksum', action='store_true',
-                        help='Write checksum data')
+                        help='Write checksum data to zstd frames')
     parser.add_argument('--dict-size', type=int, default=128 * 1024,
                         help='Maximum size of trained dictionary')
     parser.add_argument('--dict-sample-limit', type=int,
