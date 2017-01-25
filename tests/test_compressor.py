@@ -32,6 +32,7 @@ class TestCompressor(unittest.TestCase):
             zstd.ZstdCompressor(level=23)
 
 
+@make_cffi
 class TestCompressor_compress(unittest.TestCase):
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1)

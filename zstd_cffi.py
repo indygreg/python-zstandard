@@ -8,16 +8,27 @@
 
 from __future__ import absolute_import, unicode_literals
 
-import io
+import sys
 
 from _zstd_cffi import (
     ffi,
     lib,
 )
 
+if sys.version_info[0] == 2:
+    bytes_type = str
+else:
+    bytes_type = bytes
+
 
 _CSTREAM_IN_SIZE = lib.ZSTD_CStreamInSize()
 _CSTREAM_OUT_SIZE = lib.ZSTD_CStreamOutSize()
+
+new_nonzero = ffi.new_allocator(should_clear_after_alloc=False)
+
+
+class ZstdError(Exception):
+    pass
 
 
 class _ZstdCompressionWriter(object):
@@ -71,9 +82,9 @@ class _ZstdCompressionWriter(object):
 
 
 class ZstdCompressor(object):
-    def __init__(self, level=3, dict_data=None, compression_params=None):
-        if dict_data:
-            raise Exception('dict_data not yet supported')
+    def __init__(self, level=3, dict_data=None, compression_params=None,
+                 write_checksum=False, write_content_size=False,
+                 write_dict_id=True):
         if compression_params:
             raise Exception('compression_params not yet supported')
 
@@ -83,13 +94,45 @@ class ZstdCompressor(object):
             raise ValueError('level must be less than %d' % lib.ZSTD_maxCLevel())
 
         self._compression_level = level
+        self._dict_data = dict_data
 
-    def compress(self, data):
-        # Just use the stream API for now.
-        output = io.BytesIO()
-        with self.write_to(output) as compressor:
-            compressor.write(data)
-        return output.getvalue()
+        self._fparams = ffi.new('ZSTD_frameParameters *')[0]
+        self._fparams.checksumFlag = write_checksum
+        self._fparams.contentSizeFlag = write_content_size
+        self._fparams.noDictIDFlag = not write_dict_id
+
+        self._cctx = ffi.gc(lib.ZSTD_createCCtx(), lib.ZSTD_freeCCtx)
+
+    def compress(self, data, allow_empty=False):
+        if len(data) == 0 and self._fparams.contentSizeFlag and not allow_empty:
+            raise ValueError('cannot write empty inputs when writing content sizes')
+
+        # TODO use a CDict for performance.
+        dict_data = ffi.NULL
+        dict_size = 0
+
+        if self._dict_data:
+            dict_data = self._dict_data.as_bytes()
+            dict_size = len(self._dict_data)
+
+        params = ffi.new('ZSTD_parameters *')[0]
+        params.cParams = lib.ZSTD_getCParams(self._compression_level, len(data),
+                                             dict_size)
+        params.fParams = self._fparams
+
+        dest_size = lib.ZSTD_compressBound(len(data))
+        out = new_nonzero('char[]', dest_size)
+
+        result = lib.ZSTD_compress_advanced(self._cctx,
+                                            ffi.addressof(out), dest_size,
+                                            data, len(data),
+                                            dict_data, dict_size,
+                                            params)
+
+        if lib.ZSTD_isError(result):
+            raise ZstdError('cannot compress: %s' % lib.ZSTD_getErrorName(result))
+
+        return bytes(ffi.buffer(out, result))
 
     def copy_stream(self, ifh, ofh):
         cstream = self._get_cstream()
@@ -155,3 +198,69 @@ class ZstdCompressor(object):
                             lib.ZSTD_getErrorName(res))
 
         return cstream
+
+
+class FrameParameters(object):
+    def __init__(self, fparams):
+        self.content_size = fparams.frameContentSize
+        self.window_size = fparams.windowSize
+        self.dict_id = fparams.dictID
+        self.has_checksum = bool(fparams.checksumFlag)
+
+
+def get_frame_parameters(data):
+    if not isinstance(data, bytes_type):
+        raise TypeError('argument must be bytes')
+
+    params = ffi.new('ZSTD_frameParams *')
+
+    result = lib.ZSTD_getFrameParams(params, data, len(data))
+    if lib.ZSTD_isError(result):
+        raise ZstdError('cannot get frame parameters: %s' %
+                        lib.ZSTD_getErrorName(result))
+
+    if result:
+        raise ZstdError('not enough data for frame parameters; need %d bytes' %
+                        result)
+
+    return FrameParameters(params[0])
+
+
+class ZstdCompressionDict(object):
+    def __init__(self, data):
+        assert isinstance(data, bytes_type)
+        self._data = data
+
+    def __len__(self):
+        return len(self._data)
+
+    def dict_id(self):
+        return lib.ZDICT_getDictID(self._data, len(self._data))
+
+    def as_bytes(self):
+        return self._data
+
+
+def train_dictionary(dict_size, samples, parameters=None):
+    total_size = sum(map(len, samples))
+
+    samples_buffer = new_nonzero('char[]', total_size)
+    sample_sizes = new_nonzero('size_t[]', len(samples))
+
+    offset = 0
+    for i, sample in enumerate(samples):
+        l = len(sample)
+        ffi.memmove(samples_buffer + offset, sample, l)
+        offset += l
+        sample_sizes[i] = l
+
+    dict_data = new_nonzero('char[]', dict_size)
+
+    result = lib.ZDICT_trainFromBuffer(ffi.addressof(dict_data), dict_size,
+                                       ffi.addressof(samples_buffer),
+                                       ffi.addressof(sample_sizes, 0),
+                                       len(samples))
+    if lib.ZDICT_isError(result):
+        raise ZstdError('Cannot train dict: %s' % lib.ZDICT_getErrorName(result))
+
+    return ZstdCompressionDict(bytes_type(ffi.buffer(dict_data, result)))
