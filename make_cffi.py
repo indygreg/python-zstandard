@@ -63,29 +63,30 @@ elif compiler.compiler_type == 'msvc':
 else:
     raise Exception('unsupported compiler type: %s' % compiler.compiler_type)
 
-# zstd.h includes <stddef.h>, which is also included by cffi's boilerplate.
-# This can lead to duplicate declarations. So we strip this include from the
-# preprocessor invocation.
+def preprocess(path):
+    # zstd.h includes <stddef.h>, which is also included by cffi's boilerplate.
+    # This can lead to duplicate declarations. So we strip this include from the
+    # preprocessor invocation.
+    with open(path, 'rb') as fh:
+        lines = [l for l in fh if not l.startswith(b'#include <stddef.h>')]
 
-with open(os.path.join(HERE, 'zstd', 'zstd.h'), 'rb') as fh:
-    lines = [l for l in fh if not l.startswith(b'#include <stddef.h>')]
+    fd, input_file = tempfile.mkstemp(suffix='.h')
+    os.write(fd, b''.join(lines))
+    os.close(fd)
 
-fd, input_file = tempfile.mkstemp(suffix='.h')
-os.write(fd, b''.join(lines))
-os.close(fd)
+    try:
+        process = subprocess.Popen(args + [input_file], stdout=subprocess.PIPE)
+        output = process.communicate()[0]
+        ret = process.poll()
+        if ret:
+            raise Exception('preprocessor exited with error')
 
-args.append(input_file)
+        return output
+    finally:
+        os.unlink(input_file)
 
-try:
-    process = subprocess.Popen(args, stdout=subprocess.PIPE)
-    output = process.communicate()[0]
-    ret = process.poll()
-    if ret:
-        raise Exception('preprocessor exited with error')
-finally:
-    os.unlink(input_file)
 
-def normalize_output():
+def normalize_output(output):
     lines = []
     for line in output.splitlines():
         # CFFI's parser doesn't like __attribute__ on UNIX compilers.
@@ -96,13 +97,16 @@ def normalize_output():
 
     return b'\n'.join(lines)
 
+
 ffi = cffi.FFI()
 ffi.set_source('_zstd_cffi', '''
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
 
-ffi.cdef(normalize_output().decode('latin1'))
+zstd_h_preprocess = preprocess(os.path.join(HERE, 'zstd', 'zstd.h'))
+
+ffi.cdef(normalize_output(zstd_h_preprocess).decode('latin1'))
 
 if __name__ == '__main__':
     ffi.compile()
