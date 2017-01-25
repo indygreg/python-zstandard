@@ -53,12 +53,14 @@ if compiler.compiler_type == 'unix':
     args.extend([
         '-E',
         '-DZSTD_STATIC_LINKING_ONLY',
+        '-DZDICT_STATIC_LINKING_ONLY',
     ])
 elif compiler.compiler_type == 'msvc':
     args = [compiler.cc]
     args.extend([
         '/EP',
         '/DZSTD_STATIC_LINKING_ONLY',
+        '/DZDICT_STATIC_LINKING_ONLY',
     ])
 else:
     raise Exception('unsupported compiler type: %s' % compiler.compiler_type)
@@ -102,11 +104,18 @@ ffi = cffi.FFI()
 ffi.set_source('_zstd_cffi', '''
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
+#define ZDICT_STATIC_LINKING_ONLY
+#include "zdict.h"
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
 
 zstd_h_preprocess = preprocess(os.path.join(HERE, 'zstd', 'zstd.h'))
+zdict_h_preprocess = preprocess(os.path.join(HERE, 'zstd', 'dictBuilder', 'zdict.h'))
 
-ffi.cdef(normalize_output(zstd_h_preprocess).decode('latin1'))
+source = u'\n'.join(s.decode('latin1') for s in
+                             map(normalize_output,
+                                 (zstd_h_preprocess, zdict_h_preprocess)))
+
+ffi.cdef(source)
 
 if __name__ == '__main__':
     ffi.compile()
