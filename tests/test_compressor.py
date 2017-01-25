@@ -230,6 +230,7 @@ class TestCompressor_compressobj(unittest.TestCase):
         self.assertEqual(header, b'\x01\x00\x00')
 
 
+@make_cffi
 class TestCompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
         source = object()

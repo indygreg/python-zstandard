@@ -134,20 +134,27 @@ class ZstdCompressor(object):
 
         return bytes(ffi.buffer(out, result))
 
-    def copy_stream(self, ifh, ofh):
-        cstream = self._get_cstream()
+    def copy_stream(self, ifh, ofh, size=0, read_size=_CSTREAM_IN_SIZE,
+                    write_size=_CSTREAM_OUT_SIZE):
+
+        if not hasattr(ifh, 'read'):
+            raise ValueError('first argument must have a read() method')
+        if not hasattr(ofh, 'write'):
+            raise ValueError('second argument must have a write() method')
+
+        cstream = self._get_cstream(size)
 
         in_buffer = ffi.new('ZSTD_inBuffer *')
         out_buffer = ffi.new('ZSTD_outBuffer *')
 
-        out_buffer.dst = ffi.new('char[]', _CSTREAM_OUT_SIZE)
-        out_buffer.size = _CSTREAM_OUT_SIZE
+        out_buffer.dst = ffi.new('char[]', write_size)
+        out_buffer.size = write_size
         out_buffer.pos = 0
 
         total_read, total_write = 0, 0
 
         while True:
-            data = ifh.read(_CSTREAM_IN_SIZE)
+            data = ifh.read(read_size)
             if not data:
                 break
 
@@ -160,19 +167,19 @@ class ZstdCompressor(object):
             while in_buffer.pos < in_buffer.size:
                 res = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
                 if lib.ZSTD_isError(res):
-                    raise Exception('zstd compress error: %s' %
+                    raise ZstdError('zstd compress error: %s' %
                                     lib.ZSTD_getErrorName(res))
 
                 if out_buffer.pos:
                     ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
-                    total_write = out_buffer.pos
+                    total_write += out_buffer.pos
                     out_buffer.pos = 0
 
         # We've finished reading. Flush the compressor.
         while True:
             res = lib.ZSTD_endStream(cstream, out_buffer)
             if lib.ZSTD_isError(res):
-                raise Exception('error ending compression stream: %s' %
+                raise ZstdError('error ending compression stream: %s' %
                                 lib.ZSTD_getErrorName(res))
 
             if out_buffer.pos:
@@ -186,13 +193,24 @@ class ZstdCompressor(object):
         return total_read, total_write
 
     def write_to(self, writer):
-        return _ZstdCompressionWriter(self._get_cstream(), writer)
+        return _ZstdCompressionWriter(self._get_cstream(0), writer)
 
-    def _get_cstream(self):
+    def _get_cstream(self, size):
         cstream = lib.ZSTD_createCStream()
         cstream = ffi.gc(cstream, lib.ZSTD_freeCStream)
 
-        res = lib.ZSTD_initCStream(cstream, self._compression_level)
+        dict_data = ffi.NULL
+        dict_size = 0
+        if self._dict_data:
+            dict_data = self._dict_data.as_bytes()
+            dict_size = len(self._dict_data)
+
+        zparams = ffi.new('ZSTD_parameters *')[0]
+        zparams.cParams = lib.ZSTD_getCParams(self._compression_level,
+                                              size, dict_size)
+        zparams.fParams = self._fparams
+
+        res = lib.ZSTD_initCStream_advanced(cstream, dict_data, dict_size, zparams, size)
         if lib.ZSTD_isError(res):
             raise Exception('cannot init CStream: %s' %
                             lib.ZSTD_getErrorName(res))
