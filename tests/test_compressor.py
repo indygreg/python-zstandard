@@ -10,7 +10,10 @@ except ImportError:
 
 import zstd
 
-from .common import OpCountingBytesIO
+from .common import (
+    make_cffi,
+    OpCountingBytesIO,
+)
 
 
 if sys.version_info[0] >= 3:
@@ -19,6 +22,7 @@ else:
     next = lambda it: it.next()
 
 
+@make_cffi
 class TestCompressor(unittest.TestCase):
     def test_level_bounds(self):
         with self.assertRaises(ValueError):
