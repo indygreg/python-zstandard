@@ -31,6 +31,39 @@ class ZstdError(Exception):
     pass
 
 
+class CompressionParameters(object):
+    def __init__(self, window_log, chain_log, hash_log, search_log,
+                 search_length, target_length, strategy):
+        # TODO implement bounds checking
+
+        self.window_log = window_log
+        self.chain_log = chain_log
+        self.hash_log = hash_log
+        self.search_log = search_log
+        self.search_length = search_length
+        self.target_length = target_length
+        self.strategy = strategy
+
+    def __len__(self):
+        return 7
+
+    def __getitem__(self, idx):
+        if idx == 0:
+            return self.window_log
+        elif idx == 1:
+            return self.chain_log
+        elif idx == 2:
+            return self.hash_log
+        elif idx == 3:
+            return self.search_log
+        elif idx == 4:
+            return self.search_length
+        elif idx == 5:
+            return self.target_length
+        elif idx == 6:
+            return self.strategy
+
+
 class _ZstdCompressionWriter(object):
     def __init__(self, cstream, writer):
         self._cstream = cstream
