@@ -77,6 +77,11 @@ class ZstdCompressor(object):
         if compression_params:
             raise Exception('compression_params not yet supported')
 
+        if level < 1:
+            raise ValueError('level must be greater than 0')
+        elif level > lib.ZSTD_maxCLevel():
+            raise ValueError('level must be less than %d' % lib.ZSTD_maxCLevel())
+
         self._compression_level = level
 
     def compress(self, data):
