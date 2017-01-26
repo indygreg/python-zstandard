@@ -147,7 +147,8 @@ class _ZstdCompressionWriter(object):
             while True:
                 res = lib.ZSTD_endStream(self._cstream, out_buffer)
                 if lib.ZSTD_isError(res):
-                    raise Exception('error ending compression stream: %s' % lib.ZSTD_getErrorName)
+                    raise Exception('error ending compression stream: %s' %
+                                    ffi.string(lib.ZSTD_getErrorName))
 
                 if out_buffer.pos:
                     self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -174,7 +175,8 @@ class _ZstdCompressionWriter(object):
         while in_buffer.pos < in_buffer.size:
             res = lib.ZSTD_compressStream(self._cstream, out_buffer, in_buffer)
             if lib.ZSTD_isError(res):
-                raise Exception('zstd compress error: %s' % lib.ZSTD_getErrorName(res))
+                raise Exception('zstd compress error: %s' %
+                                ffi.string(lib.ZSTD_getErrorName(res)))
 
             if out_buffer.pos:
                 self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -230,7 +232,8 @@ class ZstdCompressor(object):
                                             params)
 
         if lib.ZSTD_isError(result):
-            raise ZstdError('cannot compress: %s' % lib.ZSTD_getErrorName(result))
+            raise ZstdError('cannot compress: %s' %
+                            ffi.string(lib.ZSTD_getErrorName(result)))
 
         return bytes(ffi.buffer(out, result))
 
@@ -270,7 +273,7 @@ class ZstdCompressor(object):
                 res = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
                 if lib.ZSTD_isError(res):
                     raise ZstdError('zstd compress error: %s' %
-                                    lib.ZSTD_getErrorName(res))
+                                    ffi.string(lib.ZSTD_getErrorName(res)))
 
                 if out_buffer.pos:
                     ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -282,7 +285,7 @@ class ZstdCompressor(object):
             res = lib.ZSTD_endStream(cstream, out_buffer)
             if lib.ZSTD_isError(res):
                 raise ZstdError('error ending compression stream: %s' %
-                                lib.ZSTD_getErrorName(res))
+                                ffi.string(lib.ZSTD_getErrorName(res)))
 
             if out_buffer.pos:
                 ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -315,7 +318,7 @@ class ZstdCompressor(object):
         res = lib.ZSTD_initCStream_advanced(cstream, dict_data, dict_size, zparams, size)
         if lib.ZSTD_isError(res):
             raise Exception('cannot init CStream: %s' %
-                            lib.ZSTD_getErrorName(res))
+                            ffi.string(lib.ZSTD_getErrorName(res)))
 
         return cstream
 
@@ -337,7 +340,7 @@ def get_frame_parameters(data):
     result = lib.ZSTD_getFrameParams(params, data, len(data))
     if lib.ZSTD_isError(result):
         raise ZstdError('cannot get frame parameters: %s' %
-                        lib.ZSTD_getErrorName(result))
+                        ffi.string(lib.ZSTD_getErrorName(result)))
 
     if result:
         raise ZstdError('not enough data for frame parameters; need %d bytes' %
@@ -381,6 +384,7 @@ def train_dictionary(dict_size, samples, parameters=None):
                                        ffi.addressof(sample_sizes, 0),
                                        len(samples))
     if lib.ZDICT_isError(result):
-        raise ZstdError('Cannot train dict: %s' % lib.ZDICT_getErrorName(result))
+        raise ZstdError('Cannot train dict: %s' %
+                        ffi.string(lib.ZDICT_getErrorName(result)))
 
     return ZstdCompressionDict(bytes_type(ffi.buffer(dict_data, result)))

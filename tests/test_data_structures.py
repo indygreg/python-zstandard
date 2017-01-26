@@ -51,6 +51,7 @@ class TestCompressionParameters(unittest.TestCase):
         self.assertEqual(p[0], 19)
 
 
+@make_cffi
 class TestFrameParameters(unittest.TestCase):
     def test_invalid_type(self):
         with self.assertRaises(TypeError):
