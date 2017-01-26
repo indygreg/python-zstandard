@@ -30,6 +30,11 @@ SOURCES = ['zstd/%s' % p for p in (
     'dictBuilder/zdict.c',
 )]
 
+HEADERS = [os.path.join(HERE, 'zstd', *p) for p in (
+    ('zstd.h',),
+    ('dictBuilder', 'zdict.h'),
+)]
+
 INCLUDE_DIRS = [os.path.join(HERE, d) for d in (
     'zstd',
     'zstd/common',
@@ -108,14 +113,13 @@ ffi.set_source('_zstd_cffi', '''
 #include "zdict.h"
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
 
-zstd_h_preprocess = preprocess(os.path.join(HERE, 'zstd', 'zstd.h'))
-zdict_h_preprocess = preprocess(os.path.join(HERE, 'zstd', 'dictBuilder', 'zdict.h'))
+sources = []
 
-source = u'\n'.join(s.decode('latin1') for s in
-                             map(normalize_output,
-                                 (zstd_h_preprocess, zdict_h_preprocess)))
+for header in HEADERS:
+    preprocessed = preprocess(header)
+    sources.append(normalize_output(preprocessed))
 
-ffi.cdef(source)
+ffi.cdef(u'\n'.join(s.decode('latin1') for s in sources))
 
 if __name__ == '__main__':
     ffi.compile()
