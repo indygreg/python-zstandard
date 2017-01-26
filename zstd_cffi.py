@@ -141,6 +141,26 @@ def get_compression_parameters(level, source_size=0, dict_size=0):
                                  strategy=params.strategy)
 
 
+def estimate_compression_context_size(params):
+    if not isinstance(params, CompressionParameters):
+        raise ValueError('argument must be a CompressionParameters')
+
+    cparams = ffi.new('ZSTD_compressionParameters *')[0]
+    cparams.windowLog = params.window_log
+    cparams.chainLog = params.chain_log
+    cparams.hashLog = params.hash_log
+    cparams.searchLog = params.search_log
+    cparams.searchLength = params.search_length
+    cparams.targetLength = params.target_length
+    cparams.strategy = params.strategy
+
+    return lib.ZSTD_estimateCCtxSize(cparams)
+
+
+def estimate_decompression_context_size():
+    return lib.ZSTD_estimateDCtxSize()
+
+
 class ZstdCompressionWriter(object):
     def __init__(self, compressor, writer, source_size, write_size):
         self._compressor = compressor
