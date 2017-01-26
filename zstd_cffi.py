@@ -665,3 +665,63 @@ def train_dictionary(dict_size, samples, parameters=None):
                         ffi.string(lib.ZDICT_getErrorName(result)))
 
     return ZstdCompressionDict(ffi.buffer(dict_data, result)[:])
+
+
+class ZstdDecompressor(object):
+    def __init__(self, dict_data=None):
+        self._dict_data = dict_data
+        self._refdctx = ffi.gc(lib.ZSTD_createDCtx(), lib.ZSTD_freeDCtx)
+
+    def decompress(self, data, max_output_size=0):
+        data_buffer = ffi.from_buffer(data)
+
+        dctx = new_nonzero('char[]', lib.ZSTD_sizeof_DCtx(self._refdctx))
+        lib.ZSTD_copyDCtx(ffi.cast('ZSTD_DCtx *', dctx), self._refdctx)
+
+        # TODO use a DDict for performance.
+        dict_data = ffi.NULL
+        dict_size = 0
+
+        if self._dict_data:
+            dict_data = self._dict_data.as_bytes()
+            dict_size = len(self._dict_data)
+
+        output_size = lib.ZSTD_getDecompressedSize(data_buffer, len(data_buffer))
+        if output_size:
+            result_buffer = ffi.new('char[]', output_size)
+            result_size = output_size
+        else:
+            if not max_output_size:
+                raise ZstdError('input data invalid or missing content size '
+                                'in frame header')
+
+            result_buffer = ffi.new('char[]', max_output_size)
+            result_size = max_output_size
+
+        zresult = lib.ZSTD_decompress_usingDict(ffi.cast('ZSTD_DCtx *', dctx),
+                                                result_buffer, result_size,
+                                                data_buffer, len(data_buffer),
+                                                dict_data, dict_size)
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('decompression error: %s' %
+                            ffi.string(lib.ZSTD_getErrorName(zresult)))
+        elif output_size and zresult != output_size:
+            raise ZstdError('decompression error: decompressed %d bytes; expected %d' %
+                            (zresult, output_size))
+
+        return ffi.buffer(result_buffer, zresult)[:]
+
+    def decompressobj(self):
+        pass
+
+    def read_from(self):
+        pass
+
+    def write_to(self):
+        pass
+
+    def copy_stream(self):
+        pass
+
+    def decompress_content_dict_chain(self):
+        pass

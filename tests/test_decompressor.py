@@ -10,7 +10,10 @@ except ImportError:
 
 import zstd
 
-from .common import OpCountingBytesIO
+from .common import (
+    make_cffi,
+    OpCountingBytesIO,
+)
 
 
 if sys.version_info[0] >= 3:
@@ -19,6 +22,7 @@ else:
     next = lambda it: it.next()
 
 
+@make_cffi
 class TestDecompressor_decompress(unittest.TestCase):
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
