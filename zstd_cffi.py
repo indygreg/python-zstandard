@@ -17,8 +17,10 @@ from _zstd_cffi import (
 
 if sys.version_info[0] == 2:
     bytes_type = str
+    int_type = long
 else:
     bytes_type = bytes
+    int_type = int
 
 
 _CSTREAM_IN_SIZE = lib.ZSTD_CStreamInSize()
@@ -358,13 +360,16 @@ class ZstdCompressionDict(object):
         return len(self._data)
 
     def dict_id(self):
-        return lib.ZDICT_getDictID(self._data, len(self._data))
+        return int_type(lib.ZDICT_getDictID(self._data, len(self._data)))
 
     def as_bytes(self):
         return self._data
 
 
 def train_dictionary(dict_size, samples, parameters=None):
+    if not isinstance(samples, list):
+        raise TypeError('samples must be a list')
+
     total_size = sum(map(len, samples))
 
     samples_buffer = new_nonzero('char[]', total_size)
@@ -372,6 +377,9 @@ def train_dictionary(dict_size, samples, parameters=None):
 
     offset = 0
     for i, sample in enumerate(samples):
+        if not isinstance(sample, bytes_type):
+            raise ValueError('samples must be bytes')
+
         l = len(sample)
         ffi.memmove(samples_buffer + offset, sample, l)
         offset += l
