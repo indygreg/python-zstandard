@@ -23,6 +23,12 @@ else:
     int_type = int
 
 
+COMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_CStreamInSize()
+COMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_CStreamOutSize()
+DECOMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_DStreamInSize()
+DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_DStreamOutSize()
+
+# TODO remove since redundant with above.
 _CSTREAM_IN_SIZE = lib.ZSTD_CStreamInSize()
 _CSTREAM_OUT_SIZE = lib.ZSTD_CStreamOutSize()
 
@@ -31,6 +37,7 @@ new_nonzero = ffi.new_allocator(should_clear_after_alloc=False)
 
 MAX_COMPRESSION_LEVEL = lib.ZSTD_maxCLevel()
 FRAME_HEADER = b'\x28\xb5\x2f\xfd'
+ZSTD_VERSION = (lib.ZSTD_VERSION_MAJOR, lib.ZSTD_VERSION_MINOR, lib.ZSTD_VERSION_RELEASE)
 
 # Simple constant conversion.
 for key in (

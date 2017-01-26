@@ -7,6 +7,12 @@ except ImportError:
 
 import zstd
 
+from . common import (
+    make_cffi,
+)
+
+
+@make_cffi
 class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
         self.assertEqual(zstd.ZSTD_VERSION, (1, 1, 2))
@@ -45,4 +51,4 @@ class TestModuleAttributes(unittest.TestCase):
         )
 
         for a in attrs:
-            self.assertTrue(hasattr(zstd, a))
+            self.assertTrue(hasattr(zstd, a), a)
