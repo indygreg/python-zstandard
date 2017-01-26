@@ -429,9 +429,8 @@ class ZstdCompressor(object):
             if not data:
                 break
 
-            total_read += len(data)
-
             data_buffer = ffi.from_buffer(data)
+            total_read += len(data_buffer)
             in_buffer.src = data_buffer
             in_buffer.size = len(data_buffer)
             in_buffer.pos = 0
