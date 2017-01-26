@@ -27,6 +27,40 @@ _CSTREAM_OUT_SIZE = lib.ZSTD_CStreamOutSize()
 new_nonzero = ffi.new_allocator(should_clear_after_alloc=False)
 
 
+MAX_COMPRESSION_LEVEL = lib.ZSTD_maxCLevel()
+FRAME_HEADER = b'\x28\xb5\x2f\xfd'
+
+# Simple constant conversion.
+for key in (
+    'WINDOWLOG_MIN',
+    'WINDOWLOG_MAX',
+    'CHAINLOG_MIN',
+    'CHAINLOG_MAX',
+    'HASHLOG_MIN',
+    'HASHLOG_MAX',
+    'HASHLOG3_MAX',
+    'SEARCHLOG_MIN',
+    'SEARCHLOG_MAX',
+    'SEARCHLENGTH_MIN',
+    'SEARCHLENGTH_MAX',
+    'TARGETLENGTH_MIN',
+    'TARGETLENGTH_MAX',
+):
+    globals()[key] = getattr(lib, 'ZSTD_%s' % key)
+
+for key, value in {
+    'MAGIC_NUMBER': 'ZSTD_MAGICNUMBER',
+    'STRATEGY_FAST': 'ZSTD_fast',
+    'STRATEGY_DFAST': 'ZSTD_dfast',
+    'STRATEGY_GREEDY': 'ZSTD_greedy',
+    'STRATEGY_LAZY': 'ZSTD_lazy',
+    'STRATEGY_LAZY2': 'ZSTD_lazy2',
+    'STRATEGY_BTLAZY2': 'ZSTD_btlazy2',
+    'STRATEGY_BTOPT': 'ZSTD_btopt',
+}.items():
+    globals()[key] = getattr(lib, value)
+
+
 class ZstdError(Exception):
     pass
 
@@ -34,7 +68,26 @@ class ZstdError(Exception):
 class CompressionParameters(object):
     def __init__(self, window_log, chain_log, hash_log, search_log,
                  search_length, target_length, strategy):
-        # TODO implement bounds checking
+        if window_log < WINDOWLOG_MIN or window_log > WINDOWLOG_MAX:
+            raise ValueError('invalid window log value')
+
+        if chain_log < CHAINLOG_MIN or chain_log > CHAINLOG_MAX:
+            raise ValueError('invalid chain log value')
+
+        if hash_log < HASHLOG_MIN or hash_log > HASHLOG_MAX:
+            raise ValueError('invalid hash log value')
+
+        if search_log < SEARCHLOG_MIN or search_log > SEARCHLOG_MAX:
+            raise ValueError('invalid search log value')
+
+        if search_length < SEARCHLENGTH_MIN or search_length > SEARCHLENGTH_MAX:
+            raise ValueError('invalid search length value')
+
+        if target_length < TARGETLENGTH_MIN or target_length > TARGETLENGTH_MAX:
+            raise ValueError('invalid target length value')
+
+        if strategy < STRATEGY_FAST or strategy > STRATEGY_BTOPT:
+            raise ValueError('invalid strategy value')
 
         self.window_log = window_log
         self.chain_log = chain_log
@@ -62,6 +115,17 @@ class CompressionParameters(object):
             return self.target_length
         elif idx == 6:
             return self.strategy
+
+
+def get_compression_parameters(level, source_size=0, dict_size=0):
+    params = lib.ZSTD_getCParams(level, source_size, dict_size)
+    return CompressionParameters(window_log=params.windowLog,
+                                 chain_log=params.chainLog,
+                                 hash_log=params.hashLog,
+                                 search_log=params.searchLog,
+                                 search_length=params.searchLength,
+                                 target_length=params.targetLength,
+                                 strategy=params.strategy)
 
 
 class _ZstdCompressionWriter(object):

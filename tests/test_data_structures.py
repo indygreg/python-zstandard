@@ -13,7 +13,12 @@ except ImportError:
 
 import zstd
 
+from . common import (
+    make_cffi,
+)
 
+
+@make_cffi
 class TestCompressionParameters(unittest.TestCase):
     def test_init_bad_arg_type(self):
         with self.assertRaises(TypeError):
@@ -129,6 +134,8 @@ if hypothesis:
                                           zstd.STRATEGY_BTLAZY2,
                                           zstd.STRATEGY_BTOPT))
 
+
+    @make_cffi
     class TestCompressionParametersHypothesis(unittest.TestCase):
         @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
                           s_searchlength, s_targetlength, s_strategy)
