@@ -75,7 +75,8 @@ class _ZstdCompressionWriter(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         if not exc_type and not exc_value and not exc_tb:
             out_buffer = ffi.new('ZSTD_outBuffer *')
-            out_buffer.dst = ffi.new('char[]', _CSTREAM_OUT_SIZE)
+            dst_buffer = ffi.new('char[]', _CSTREAM_OUT_SIZE)
+            out_buffer.dst = dst_buffer
             out_buffer.size = _CSTREAM_OUT_SIZE
             out_buffer.pos = 0
 
@@ -95,14 +96,16 @@ class _ZstdCompressionWriter(object):
 
     def write(self, data):
         out_buffer = ffi.new('ZSTD_outBuffer *')
-        out_buffer.dst = ffi.new('char[]', _CSTREAM_OUT_SIZE)
+        dst_buffer = ffi.new('char[]', _CSTREAM_OUT_SIZE)
+        out_buffer.dst = dst_buffer
         out_buffer.size = _CSTREAM_OUT_SIZE
         out_buffer.pos = 0
 
         # TODO can we reuse existing memory?
         in_buffer = ffi.new('ZSTD_inBuffer *')
-        in_buffer.src = ffi.new('char[]', data)
-        in_buffer.size = len(data)
+        src_buffer = ffi.from_buffer(data)
+        in_buffer.src = src_buffer
+        in_buffer.size = len(src_buffer)
         in_buffer.pos = 0
         while in_buffer.pos < in_buffer.size:
             res = lib.ZSTD_compressStream(self._cstream, out_buffer, in_buffer)
@@ -180,7 +183,8 @@ class ZstdCompressor(object):
         in_buffer = ffi.new('ZSTD_inBuffer *')
         out_buffer = ffi.new('ZSTD_outBuffer *')
 
-        out_buffer.dst = ffi.new('char[]', write_size)
+        dst_buffer = ffi.new('char[]', write_size)
+        out_buffer.dst = dst_buffer
         out_buffer.size = write_size
         out_buffer.pos = 0
 
@@ -193,7 +197,8 @@ class ZstdCompressor(object):
 
             total_read += len(data)
 
-            in_buffer.src = ffi.new('char[]', data)
+            src_buffer = ffi.new('char[]', data)
+            in_buffer.src = src_buffer
             in_buffer.size = len(data)
             in_buffer.pos = 0
 
