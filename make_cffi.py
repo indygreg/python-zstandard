@@ -9,6 +9,7 @@ from __future__ import absolute_import
 import cffi
 import distutils.ccompiler
 import os
+import re
 import subprocess
 import tempfile
 
@@ -107,17 +108,35 @@ def normalize_output(output):
 
 ffi = cffi.FFI()
 ffi.set_source('_zstd_cffi', '''
+#include "mem.h"
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 #define ZDICT_STATIC_LINKING_ONLY
 #include "zdict.h"
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
 
+DEFINE = re.compile(b'^\\#define ([a-zA-Z0-9_]+) ')
+
 sources = []
 
 for header in HEADERS:
     preprocessed = preprocess(header)
     sources.append(normalize_output(preprocessed))
+
+    # Do another pass over source and find constants that were preprocessed
+    # away.
+    with open(header, 'rb') as fh:
+        for line in fh:
+            line = line.strip()
+            m = DEFINE.match(line)
+            if not m:
+                continue
+
+            # The parser doesn't like some constants with complex values.
+            if m.group(1) in (b'ZSTD_LIB_VERSION', b'ZSTD_VERSION_STRING'):
+                continue
+
+            sources.append(m.group(0) + b' ...')
 
 ffi.cdef(u'\n'.join(s.decode('latin1') for s in sources))
 
