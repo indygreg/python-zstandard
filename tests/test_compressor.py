@@ -62,6 +62,13 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(len(result), 999)
         self.assertEqual(result[0:4], b'\x28\xb5\x2f\xfd')
 
+        # This matches the test for read_from() below.
+        cctx = zstd.ZstdCompressor(level=1)
+        result = cctx.compress(b'f' * zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE + b'o')
+        self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x40\x54\x00\x00'
+                                 b'\x10\x66\x66\x01\x00\xfb\xff\x39\xc0'
+                                 b'\x02\x09\x00\x00\x6f')
+
     def test_write_checksum(self):
         cctx = zstd.ZstdCompressor(level=1)
         no_checksum = cctx.compress(b'foobar')
@@ -126,6 +133,7 @@ class TestCompressor_compress(unittest.TestCase):
             cctx.compress(b'foo bar foobar foo bar foobar')
 
 
+@make_cffi
 class TestCompressor_compressobj(unittest.TestCase):
     def test_compressobj_empty(self):
         cctx = zstd.ZstdCompressor(level=1)
@@ -356,6 +364,7 @@ def compress(data, level):
     return buffer.getvalue()
 
 
+@make_cffi
 class TestCompressor_write_to(unittest.TestCase):
     def test_empty(self):
         result = compress(b'', 1)
@@ -403,6 +412,11 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, d.dict_id())
         self.assertFalse(params.has_checksum)
+
+        self.assertEqual(compressed[0:32],
+                         b'\x28\xb5\x2f\xfd\x03\x00\x55\x7b\x6b\x5e\x54\x00'
+                         b'\x00\x00\x02\xfc\xf4\xa5\xba\x23\x3f\x85\xb3\x54'
+                         b'\x00\x00\x18\x6f\x6f\x66\x01\x00')
 
         h = hashlib.sha1(compressed).hexdigest()
         self.assertEqual(h, '1c5bcd25181bcd8c1a73ea8773323e0056129f92')
@@ -571,18 +585,22 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertEqual(header, b'\x01\x00\x00')
 
 
+@make_cffi
 class TestCompressor_read_from(unittest.TestCase):
     def test_type_validation(self):
         cctx = zstd.ZstdCompressor()
 
         # Object with read() works.
-        cctx.read_from(io.BytesIO())
+        for chunk in cctx.read_from(io.BytesIO()):
+            pass
 
         # Buffer protocol works.
-        cctx.read_from(b'foobar')
+        for chunk in cctx.read_from(b'foobar'):
+            pass
 
         with self.assertRaisesRegexp(ValueError, 'must pass an object with a read'):
-            cctx.read_from(True)
+            for chunk in cctx.read_from(True):
+                pass
 
     def test_read_empty(self):
         cctx = zstd.ZstdCompressor(level=1)
