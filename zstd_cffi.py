@@ -732,8 +732,69 @@ class ZstdDecompressor(object):
     def write_to(self):
         pass
 
-    def copy_stream(self):
-        pass
+    def copy_stream(self, ifh, ofh,
+                    read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+                    write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+        if not hasattr(ifh, 'read'):
+            raise ValueError('first argument must have a read() method')
+        if not hasattr(ofh, 'write'):
+            raise ValueError('second argument must have a write() method')
+
+        dstream = self._get_dstream()
+
+        in_buffer = ffi.new('ZSTD_inBuffer *')
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+
+        dst_buffer = ffi.new('char[]', write_size)
+        out_buffer.dst = dst_buffer
+        out_buffer.size = write_size
+        out_buffer.pos = 0
+
+        total_read, total_write = 0, 0
+
+        # Read all available input.
+        while True:
+            data = ifh.read(read_size)
+            if not data:
+                break
+
+            data_buffer = ffi.from_buffer(data)
+            total_read += len(data_buffer)
+            in_buffer.src = data_buffer
+            in_buffer.size = len(data_buffer)
+            in_buffer.pos = 0
+
+            # Flush all read data to output.
+            while in_buffer.pos < in_buffer.size:
+                zresult = lib.ZSTD_decompressStream(dstream, out_buffer, in_buffer)
+                if lib.ZSTD_isError(zresult):
+                    raise ZstdError('zstd decompressor error: %s' %
+                                    ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+                if out_buffer.pos:
+                    ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
+                    total_write += out_buffer.pos
+                    out_buffer.pos = 0
+
+            # Continue loop to keep reading.
+
+        return total_read, total_write
 
     def decompress_content_dict_chain(self):
         pass
+
+    def _get_dstream(self):
+        dstream = ffi.gc(lib.ZSTD_createDStream(), lib.ZSTD_freeDStream)
+
+        if self._dict_data:
+            zresult = lib.ZSTD_initDStream_usingDict(dstream,
+                                                     self._dict_data.as_bytes(),
+                                                     len(self._dict_data))
+        else:
+            zresult = lib.ZSTD_initDStream(dstream)
+
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('could not initialize DStream: %s' %
+                            ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+        return dstream

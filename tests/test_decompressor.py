@@ -123,6 +123,7 @@ class TestDecompressor_decompress(unittest.TestCase):
             self.assertEqual(decompressed, sources[i])
 
 
+@make_cffi
 class TestDecompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
         source = object()
