@@ -336,6 +336,7 @@ class ZstdCompressionObj(object):
 
         return b''.join(chunks)
 
+
 class ZstdCompressor(object):
     def __init__(self, level=3, dict_data=None, compression_params=None,
                  write_checksum=False, write_content_size=False,
@@ -666,6 +667,49 @@ def train_dictionary(dict_size, samples, parameters=None):
     return ZstdCompressionDict(ffi.buffer(dict_data, result)[:])
 
 
+class ZstdDecompressionObj(object):
+    def __init__(self, decompressor):
+        self._decompressor = decompressor
+        self._dstream = self._decompressor._get_dstream()
+        self._finished = False
+
+    def decompress(self, data):
+        if self._finished:
+            raise ZstdError('cannot use a decompressobj multiple times')
+
+        in_buffer = ffi.new('ZSTD_inBuffer *')
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+
+        data_buffer = ffi.from_buffer(data)
+        in_buffer.src = data_buffer
+        in_buffer.size = len(data_buffer)
+        in_buffer.pos = 0
+
+        dst_buffer = ffi.new('char[]', DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
+        out_buffer.dst = dst_buffer
+        out_buffer.size = len(dst_buffer)
+        out_buffer.pos = 0
+
+        chunks = []
+
+        while in_buffer.pos < in_buffer.size:
+            zresult = lib.ZSTD_decompressStream(self._dstream, out_buffer, in_buffer)
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('zstd decompressor error: %s' %
+                                ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+            if zresult == 0:
+                self._finished = True
+                self._dstream = None
+                self._decompressor = None
+
+            if out_buffer.pos:
+                chunks.append(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
+                out_buffer.pos = 0
+
+        return b''.join(chunks)
+
+
 class ZstdDecompressor(object):
     def __init__(self, dict_data=None):
         self._dict_data = dict_data
@@ -724,7 +768,7 @@ class ZstdDecompressor(object):
         return ffi.buffer(result_buffer, zresult)[:]
 
     def decompressobj(self):
-        pass
+        return ZstdDecompressionObj(self)
 
     def read_from(self):
         pass

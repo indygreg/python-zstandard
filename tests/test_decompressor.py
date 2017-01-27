@@ -185,6 +185,7 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         self.assertEqual(dest._write_count, len(dest.getvalue()))
 
 
+@make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):
     def test_simple(self):
         data = zstd.ZstdCompressor(level=1).compress(b'foobar')
