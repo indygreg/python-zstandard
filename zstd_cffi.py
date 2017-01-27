@@ -672,19 +672,27 @@ class ZstdDecompressor(object):
         self._dict_data = dict_data
         self._refdctx = ffi.gc(lib.ZSTD_createDCtx(), lib.ZSTD_freeDCtx)
 
-    def decompress(self, data, max_output_size=0):
-        data_buffer = ffi.from_buffer(data)
-
-        dctx = new_nonzero('char[]', lib.ZSTD_sizeof_DCtx(self._refdctx))
-        lib.ZSTD_copyDCtx(ffi.cast('ZSTD_DCtx *', dctx), self._refdctx)
-
-        # TODO use a DDict for performance.
-        dict_data = ffi.NULL
-        dict_size = 0
-
+    @property
+    def _ddict(self):
         if self._dict_data:
             dict_data = self._dict_data.as_bytes()
             dict_size = len(self._dict_data)
+
+            result = lib.ZSTD_createDDict(dict_data, dict_size)
+        else:
+            result = None
+
+        self.__dict__['_ddict'] = result
+        return result
+
+    def decompress(self, data, max_output_size=0):
+        data_buffer = ffi.from_buffer(data)
+
+        orig_dctx = new_nonzero('char[]', lib.ZSTD_sizeof_DCtx(self._refdctx))
+        dctx = ffi.cast('ZSTD_DCtx *', orig_dctx)
+        lib.ZSTD_copyDCtx(dctx, self._refdctx)
+
+        ddict = self._ddict
 
         output_size = lib.ZSTD_getDecompressedSize(data_buffer, len(data_buffer))
         if output_size:
@@ -698,10 +706,15 @@ class ZstdDecompressor(object):
             result_buffer = ffi.new('char[]', max_output_size)
             result_size = max_output_size
 
-        zresult = lib.ZSTD_decompress_usingDict(ffi.cast('ZSTD_DCtx *', dctx),
-                                                result_buffer, result_size,
-                                                data_buffer, len(data_buffer),
-                                                dict_data, dict_size)
+        if ddict:
+            zresult = lib.ZSTD_decompress_usingDDict(dctx,
+                                                     result_buffer, result_size,
+                                                     data_buffer, len(data_buffer),
+                                                     ddict)
+        else:
+            zresult = lib.ZSTD_decompressDCtx(dctx,
+                                              result_buffer, result_size,
+                                              data_buffer, len(data_buffer))
         if lib.ZSTD_isError(zresult):
             raise ZstdError('decompression error: %s' %
                             ffi.string(lib.ZSTD_getErrorName(zresult)))
