@@ -213,6 +213,7 @@ def decompress_via_writer(data):
     return buffer.getvalue()
 
 
+@make_cffi
 class TestDecompressor_write_to(unittest.TestCase):
     def test_empty_roundtrip(self):
         cctx = zstd.ZstdCompressor()

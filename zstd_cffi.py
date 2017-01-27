@@ -710,6 +710,62 @@ class ZstdDecompressionObj(object):
         return b''.join(chunks)
 
 
+class ZstdDecompressionWriter(object):
+    def __init__(self, decompressor, writer, write_size):
+        self._decompressor = decompressor
+        self._writer = writer
+        self._write_size = write_size
+        self._dstream = None
+        self._entered = False
+
+    def __enter__(self):
+        if self._entered:
+            raise ZstdError('cannot __enter__ multiple times')
+
+        self._dstream = self._decompressor._get_dstream()
+        self._entered = True
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._entered = False
+        self._dstream = None
+
+    def memory_size(self):
+        if not self._dstream:
+            raise ZstdError('cannot determine size of inactive decompressor '
+                            'call when context manager is active')
+
+        return lib.ZSTD_sizeof_DStream(self._dstream)
+
+    def write(self, data):
+        if not self._entered:
+            raise ZstdError('write must be called from an active context manager')
+
+        in_buffer = ffi.new('ZSTD_inBuffer *')
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+
+        data_buffer = ffi.from_buffer(data)
+        in_buffer.src = data_buffer
+        in_buffer.size = len(data_buffer)
+        in_buffer.pos = 0
+
+        dst_buffer = ffi.new('char[]', self._write_size)
+        out_buffer.dst = dst_buffer
+        out_buffer.size = len(dst_buffer)
+        out_buffer.pos = 0
+
+        while in_buffer.pos < in_buffer.size:
+            zresult = lib.ZSTD_decompressStream(self._dstream, out_buffer, in_buffer)
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('zstd decompress error: %s' %
+                                ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+            if out_buffer.pos:
+                self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
+                out_buffer.pos = 0
+
+
 class ZstdDecompressor(object):
     def __init__(self, dict_data=None):
         self._dict_data = dict_data
@@ -773,8 +829,11 @@ class ZstdDecompressor(object):
     def read_from(self):
         pass
 
-    def write_to(self):
-        pass
+    def write_to(self, writer, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+        if not hasattr(writer, 'write'):
+            raise ValueError('must pass an object with a write() method')
+
+        return ZstdDecompressionWriter(self, writer, write_size)
 
     def copy_stream(self, ifh, ofh,
                     read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
