@@ -298,6 +298,7 @@ class TestDecompressor_write_to(unittest.TestCase):
         self.assertEqual(dest._write_count, len(dest.getvalue()))
 
 
+@make_cffi
 class TestDecompressor_read_from(unittest.TestCase):
     def test_type_validation(self):
         dctx = zstd.ZstdDecompressor()
@@ -309,7 +310,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         dctx.read_from(b'foobar')
 
         with self.assertRaisesRegexp(ValueError, 'must pass an object with a read'):
-            dctx.read_from(True)
+            b''.join(dctx.read_from(True))
 
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
@@ -358,7 +359,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with self.assertRaisesRegexp(ValueError, 'skip_bytes must be smaller than read_size'):
-            dctx.read_from(b'', skip_bytes=1, read_size=1)
+            b''.join(dctx.read_from(b'', skip_bytes=1, read_size=1))
 
         with self.assertRaisesRegexp(ValueError, 'skip_bytes larger than first input chunk'):
             b''.join(dctx.read_from(b'foobar', skip_bytes=10))

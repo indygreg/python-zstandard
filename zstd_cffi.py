@@ -826,8 +826,83 @@ class ZstdDecompressor(object):
     def decompressobj(self):
         return ZstdDecompressionObj(self)
 
-    def read_from(self):
-        pass
+    def read_from(self, reader, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+                  write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+                  skip_bytes=0):
+        if skip_bytes >= read_size:
+            raise ValueError('skip_bytes must be smaller than read_size')
+
+        if hasattr(reader, 'read'):
+            have_read = True
+        elif hasattr(reader, '__getitem__'):
+            have_read = False
+            buffer_offset = 0
+            size = len(reader)
+        else:
+            raise ValueError('must pass an object with a read() method or '
+                             'conforms to buffer protocol')
+
+        if skip_bytes:
+            if have_read:
+                reader.read(skip_bytes)
+            else:
+                if skip_bytes > size:
+                    raise ValueError('skip_bytes larger than first input chunk')
+
+                buffer_offset = skip_bytes
+
+        dstream = self._get_dstream()
+
+        in_buffer = ffi.new('ZSTD_inBuffer *')
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+
+        dst_buffer = ffi.new('char[]', write_size)
+        out_buffer.dst = dst_buffer
+        out_buffer.size = len(dst_buffer)
+        out_buffer.pos = 0
+
+        while True:
+            assert out_buffer.pos == 0
+
+            if have_read:
+                read_result = reader.read(read_size)
+            else:
+                remaining = size - buffer_offset
+                slice_size = min(remaining, read_size)
+                read_result = reader[buffer_offset:buffer_offset + slice_size]
+                buffer_offset += slice_size
+
+            # No new input. Break out of read loop.
+            if not read_result:
+                break
+
+            # Feed all read data into decompressor and emit output until
+            # exhausted.
+            read_buffer = ffi.from_buffer(read_result)
+            in_buffer.src = read_buffer
+            in_buffer.size = len(read_buffer)
+            in_buffer.pos = 0
+
+            while in_buffer.pos < in_buffer.size:
+                assert out_buffer.pos == 0
+
+                zresult = lib.ZSTD_decompressStream(dstream, out_buffer, in_buffer)
+                if lib.ZSTD_isError(zresult):
+                    raise ZstdError('zstd decompress error: %s' %
+                                    ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+                if out_buffer.pos:
+                    data = ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+                    out_buffer.pos = 0
+                    yield data
+
+                if zresult == 0:
+                    return
+
+            # Repeat loop to collect more input data.
+            continue
+
+        # If we get here, input is exhausted.
 
     def write_to(self, writer, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
         if not hasattr(writer, 'write'):
