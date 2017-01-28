@@ -345,7 +345,11 @@ class ZstdCompressor(object):
         self._fparams.contentSizeFlag = write_content_size
         self._fparams.noDictIDFlag = not write_dict_id
 
-        self._cctx = ffi.gc(lib.ZSTD_createCCtx(), lib.ZSTD_freeCCtx)
+        cctx = lib.ZSTD_createCCtx()
+        if cctx == ffi.NULL:
+            raise MemoryError()
+
+        self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx)
 
     def compress(self, data, allow_empty=False):
         if len(data) == 0 and self._fparams.contentSizeFlag and not allow_empty:
@@ -550,7 +554,11 @@ class ZstdCompressor(object):
                 break
 
     def _get_cstream(self, size):
-        cstream = ffi.gc(lib.ZSTD_createCStream(), lib.ZSTD_freeCStream)
+        cstream = lib.ZSTD_createCStream()
+        if cstream == ffi.NULL:
+            raise MemoryError()
+
+        cstream = ffi.gc(cstream, lib.ZSTD_freeCStream)
 
         dict_data = ffi.NULL
         dict_size = 0
@@ -750,7 +758,12 @@ class ZstdDecompressionWriter(object):
 class ZstdDecompressor(object):
     def __init__(self, dict_data=None):
         self._dict_data = dict_data
-        self._refdctx = ffi.gc(lib.ZSTD_createDCtx(), lib.ZSTD_freeDCtx)
+
+        dctx = lib.ZSTD_createDCtx()
+        if dctx == ffi.NULL:
+            raise MemoryError()
+
+        self._refdctx = ffi.gc(dctx, lib.ZSTD_freeDCtx)
 
     @property
     def _ddict(self):
@@ -758,12 +771,14 @@ class ZstdDecompressor(object):
             dict_data = self._dict_data.as_bytes()
             dict_size = len(self._dict_data)
 
-            result = lib.ZSTD_createDDict(dict_data, dict_size)
+            ddict = lib.ZSTD_createDDict(dict_data, dict_size)
+            if ddict == ffi.NULL:
+                raise ZstdError('could not create decompression dict')
         else:
-            result = None
+            ddict = None
 
-        self.__dict__['_ddict'] = result
-        return result
+        self.__dict__['_ddict'] = ddict
+        return ddict
 
     def decompress(self, data, max_output_size=0):
         data_buffer = ffi.from_buffer(data)
@@ -963,7 +978,11 @@ class ZstdDecompressor(object):
         if not params.frameContentSize:
             raise ValueError('chunk 0 missing content size in frame')
 
-        dctx = ffi.gc(lib.ZSTD_createDCtx(), lib.ZSTD_freeDCtx)
+        dctx = lib.ZSTD_createDCtx()
+        if dctx == ffi.NULL:
+            raise MemoryError()
+
+        dctx = ffi.gc(dctx, lib.ZSTD_freeDCtx)
 
         last_buffer = ffi.new('char[]', params.frameContentSize)
 
@@ -1007,7 +1026,11 @@ class ZstdDecompressor(object):
         return ffi.buffer(last_buffer, len(last_buffer))[:]
 
     def _get_dstream(self):
-        dstream = ffi.gc(lib.ZSTD_createDStream(), lib.ZSTD_freeDStream)
+        dstream = lib.ZSTD_createDStream()
+        if dstream == ffi.NULL:
+            raise MemoryError()
+
+        dstream = ffi.gc(dstream, lib.ZSTD_freeDStream)
 
         if self._dict_data:
             zresult = lib.ZSTD_initDStream_usingDict(dstream,
