@@ -28,10 +28,6 @@ COMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_CStreamOutSize()
 DECOMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_DStreamInSize()
 DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_DStreamOutSize()
 
-# TODO remove since redundant with above.
-_CSTREAM_IN_SIZE = lib.ZSTD_CStreamInSize()
-_CSTREAM_OUT_SIZE = lib.ZSTD_CStreamOutSize()
-
 new_nonzero = ffi.new_allocator(should_clear_after_alloc=False)
 
 
@@ -405,8 +401,9 @@ class ZstdCompressor(object):
 
         return cobj
 
-    def copy_stream(self, ifh, ofh, size=0, read_size=_CSTREAM_IN_SIZE,
-                    write_size=_CSTREAM_OUT_SIZE):
+    def copy_stream(self, ifh, ofh, size=0,
+                    read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
+                    write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
 
         if not hasattr(ifh, 'read'):
             raise ValueError('first argument must have a read() method')
