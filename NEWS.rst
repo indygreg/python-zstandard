@@ -7,6 +7,8 @@ Version History
 * Added zstd.get_frame_parameters() to obtain info about a zstd frame.
 * Added ZstdDecompressor.decompress_content_dict_chain() for efficient
   decompression of *content-only dictionary chains*.
+* CFFI module fully implemented; all tests run against both C extension and
+  CFFI implementation.
 
 0.6.0 (released 2017-01-14)
 ---------------------------
