@@ -370,17 +370,17 @@ class ZstdCompressor(object):
         dest_size = lib.ZSTD_compressBound(len(data))
         out = new_nonzero('char[]', dest_size)
 
-        result = lib.ZSTD_compress_advanced(self._cctx,
-                                            ffi.addressof(out), dest_size,
-                                            data, len(data),
-                                            dict_data, dict_size,
-                                            params)
+        zresult = lib.ZSTD_compress_advanced(self._cctx,
+                                             ffi.addressof(out), dest_size,
+                                             data, len(data),
+                                             dict_data, dict_size,
+                                             params)
 
-        if lib.ZSTD_isError(result):
+        if lib.ZSTD_isError(zresult):
             raise ZstdError('cannot compress: %s' %
-                            ffi.string(lib.ZSTD_getErrorName(result)))
+                            ffi.string(lib.ZSTD_getErrorName(zresult)))
 
-        return ffi.buffer(out, result)[:]
+        return ffi.buffer(out, zresult)[:]
 
     def compressobj(self, size=0):
         cstream = self._get_cstream(size)
@@ -429,10 +429,10 @@ class ZstdCompressor(object):
             in_buffer.pos = 0
 
             while in_buffer.pos < in_buffer.size:
-                res = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
-                if lib.ZSTD_isError(res):
+                zresult = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
+                if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd compress error: %s' %
-                                    ffi.string(lib.ZSTD_getErrorName(res)))
+                                    ffi.string(lib.ZSTD_getErrorName(zresult)))
 
                 if out_buffer.pos:
                     ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -441,17 +441,17 @@ class ZstdCompressor(object):
 
         # We've finished reading. Flush the compressor.
         while True:
-            res = lib.ZSTD_endStream(cstream, out_buffer)
-            if lib.ZSTD_isError(res):
+            zresult = lib.ZSTD_endStream(cstream, out_buffer)
+            if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
-                                ffi.string(lib.ZSTD_getErrorName(res)))
+                                ffi.string(lib.ZSTD_getErrorName(zresult)))
 
             if out_buffer.pos:
                 ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
                 total_write += out_buffer.pos
                 out_buffer.pos = 0
 
-            if res == 0:
+            if zresult == 0:
                 break
 
         return total_read, total_write
@@ -589,14 +589,14 @@ def get_frame_parameters(data):
 
     params = ffi.new('ZSTD_frameParams *')
 
-    result = lib.ZSTD_getFrameParams(params, data, len(data))
-    if lib.ZSTD_isError(result):
+    zresult = lib.ZSTD_getFrameParams(params, data, len(data))
+    if lib.ZSTD_isError(zresult):
         raise ZstdError('cannot get frame parameters: %s' %
-                        ffi.string(lib.ZSTD_getErrorName(result)))
+                        ffi.string(lib.ZSTD_getErrorName(zresult)))
 
-    if result:
+    if zresult:
         raise ZstdError('not enough data for frame parameters; need %d bytes' %
-                        result)
+                        zresult)
 
     return FrameParameters(params[0])
 
@@ -637,15 +637,15 @@ def train_dictionary(dict_size, samples, parameters=None):
 
     dict_data = new_nonzero('char[]', dict_size)
 
-    result = lib.ZDICT_trainFromBuffer(ffi.addressof(dict_data), dict_size,
-                                       ffi.addressof(samples_buffer),
-                                       ffi.addressof(sample_sizes, 0),
-                                       len(samples))
-    if lib.ZDICT_isError(result):
+    zresult = lib.ZDICT_trainFromBuffer(ffi.addressof(dict_data), dict_size,
+                                        ffi.addressof(samples_buffer),
+                                        ffi.addressof(sample_sizes, 0),
+                                        len(samples))
+    if lib.ZDICT_isError(zresult):
         raise ZstdError('Cannot train dict: %s' %
-                        ffi.string(lib.ZDICT_getErrorName(result)))
+                        ffi.string(lib.ZDICT_getErrorName(zresult)))
 
-    return ZstdCompressionDict(ffi.buffer(dict_data, result)[:])
+    return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:])
 
 
 class ZstdDecompressionObj(object):
