@@ -486,6 +486,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         self.assertEqual(source._read_count, len(source.getvalue()))
 
 
+@make_cffi
 class TestDecompressor_content_dict_chain(unittest.TestCase):
     def test_bad_inputs_simple(self):
         dctx = zstd.ZstdDecompressor()

@@ -958,8 +958,72 @@ class ZstdDecompressor(object):
 
         return total_read, total_write
 
-    def decompress_content_dict_chain(self):
-        pass
+    def decompress_content_dict_chain(self, frames):
+        if not isinstance(frames, list):
+            raise TypeError('argument must be a list')
+
+        if not frames:
+            raise ValueError('empty input chain')
+
+        # First chunk should not be using a dictionary. We handle it specially.
+        chunk = frames[0]
+        if not isinstance(chunk, bytes_type):
+            raise ValueError('chunk 0 must be bytes')
+
+        # All chunks should be zstd frames and should have content size set.
+        chunk_buffer = ffi.from_buffer(chunk)
+        params = ffi.new('ZSTD_frameParams *')
+        zresult = lib.ZSTD_getFrameParams(params, chunk_buffer, len(chunk_buffer))
+        if lib.ZSTD_isError(zresult):
+            raise ValueError('chunk 0 is not a valid zstd frame')
+        elif zresult:
+            raise ValueError('chunk 0 is too small to contain a zstd frame')
+
+        if not params.frameContentSize:
+            raise ValueError('chunk 0 missing content size in frame')
+
+        dctx = ffi.gc(lib.ZSTD_createDCtx(), lib.ZSTD_freeDCtx)
+
+        last_buffer = ffi.new('char[]', params.frameContentSize)
+
+        zresult = lib.ZSTD_decompressDCtx(dctx, last_buffer, len(last_buffer),
+                                          chunk_buffer, len(chunk_buffer))
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('could not decompress chunk 0: %s' %
+                            ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+        # Special case of chain length of 1
+        if len(frames) == 1:
+            return ffi.buffer(last_buffer, len(last_buffer))[:]
+
+        i = 1
+        while i < len(frames):
+            chunk = frames[i]
+            if not isinstance(chunk, bytes_type):
+                raise ValueError('chunk %d must be bytes' % i)
+
+            chunk_buffer = ffi.from_buffer(chunk)
+            zresult = lib.ZSTD_getFrameParams(params, chunk_buffer, len(chunk_buffer))
+            if lib.ZSTD_isError(zresult):
+                raise ValueError('chunk %d is not a valid zstd frame' % i)
+            elif zresult:
+                raise ValueError('chunk %d is too small to contain a zstd frame' % i)
+
+            if not params.frameContentSize:
+                raise ValueError('chunk %d missing content size in frame' % i)
+
+            dest_buffer = ffi.new('char[]', params.frameContentSize)
+
+            zresult = lib.ZSTD_decompress_usingDict(dctx, dest_buffer, len(dest_buffer),
+                                                    chunk_buffer, len(chunk_buffer),
+                                                    last_buffer, len(last_buffer))
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('could not decompress chunk %d' % i)
+
+            last_buffer = dest_buffer
+            i += 1
+
+        return ffi.buffer(last_buffer, len(last_buffer))[:]
 
     def _get_dstream(self):
         dstream = ffi.gc(lib.ZSTD_createDStream(), lib.ZSTD_freeDStream)
