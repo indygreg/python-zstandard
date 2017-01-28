@@ -117,6 +117,17 @@ class CompressionParameters(object):
         elif idx == 6:
             return self.strategy
 
+    def as_compression_parameters(self):
+        p = ffi.new('ZSTD_compressionParameters *')[0]
+        p.windowLog = self.window_log
+        p.chainLog = self.chain_log
+        p.hashLog = self.hash_log
+        p.searchLog = self.search_log
+        p.searchLength = self.search_length
+        p.targetLength = self.target_length
+        p.strategy = self.strategy
+
+        return p
 
 def get_compression_parameters(level, source_size=0, dict_size=0):
     params = lib.ZSTD_getCParams(level, source_size, dict_size)
@@ -133,15 +144,7 @@ def estimate_compression_context_size(params):
     if not isinstance(params, CompressionParameters):
         raise ValueError('argument must be a CompressionParameters')
 
-    cparams = ffi.new('ZSTD_compressionParameters *')[0]
-    cparams.windowLog = params.window_log
-    cparams.chainLog = params.chain_log
-    cparams.hashLog = params.hash_log
-    cparams.searchLog = params.search_log
-    cparams.searchLength = params.search_length
-    cparams.targetLength = params.target_length
-    cparams.strategy = params.strategy
-
+    cparams = params.as_compression_parameters()
     return lib.ZSTD_estimateCCtxSize(cparams)
 
 
@@ -358,7 +361,7 @@ class ZstdCompressor(object):
 
         params = ffi.new('ZSTD_parameters *')[0]
         if self._cparams:
-            params.cParams = self._get_cparams()
+            params.cParams = self._cparams.as_compression_parameters()
         else:
             params.cParams = lib.ZSTD_getCParams(self._compression_level, len(data),
                                                  dict_size)
@@ -546,17 +549,6 @@ class ZstdCompressor(object):
             if zresult == 0:
                 break
 
-    def _get_cparams(self):
-        params = ffi.new('ZSTD_compressionParameters *')[0]
-        params.windowLog = self._cparams.window_log
-        params.chainLog = self._cparams.chain_log
-        params.hashLog = self._cparams.hash_log
-        params.searchLog = self._cparams.search_log
-        params.searchLength = self._cparams.search_length
-        params.targetLength = self._cparams.target_length
-        params.strategy = self._cparams.strategy
-        return params
-
     def _get_cstream(self, size):
         cstream = ffi.gc(lib.ZSTD_createCStream(), lib.ZSTD_freeCStream)
 
@@ -568,7 +560,7 @@ class ZstdCompressor(object):
 
         zparams = ffi.new('ZSTD_parameters *')[0]
         if self._cparams:
-            zparams.cParams = self._get_cparams()
+            zparams.cParams = self._cparams.as_compression_parameters()
         else:
             zparams.cParams = lib.ZSTD_getCParams(self._compression_level,
                                                   size, dict_size)
