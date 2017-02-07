@@ -320,7 +320,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 
 	if (dictData && !self->ddict) {
 		Py_BEGIN_ALLOW_THREADS
-		self->ddict = ZSTD_createDDict(dictData, dictSize);
+		self->ddict = ZSTD_createDDict_byReference(dictData, dictSize);
 		Py_END_ALLOW_THREADS
 
 		if (!self->ddict) {

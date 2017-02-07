@@ -10,6 +10,8 @@ Version History
 * CFFI module fully implemented; all tests run against both C extension and
   CFFI implementation.
 * Vendored version of zstd updated to 1.1.3.
+* Use ZstdDecompressor.decompress() now uses ZSTD_createDDict_byReference()
+  to avoid extra memory allocation of dict data.
 
 0.6.0 (released 2017-01-14)
 ---------------------------
