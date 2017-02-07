@@ -243,7 +243,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	Py_DecRef(totalReadPy);
 	Py_DecRef(totalWritePy);
 
-	finally:
+finally:
 	if (output.dst) {
 		PyMem_Free(output.dst);
 	}
@@ -380,8 +380,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	goto finally;
 
 except:
-	Py_DecRef(result);
-	result = NULL;
+	Py_CLEAR(result);
 
 finally:
 	if (dctx) {
@@ -535,19 +534,14 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 	goto finally;
 
 except:
-	if (result->reader) {
-		Py_DECREF(result->reader);
-		result->reader = NULL;
-	}
+	Py_CLEAR(result->reader);
 
 	if (result->buffer) {
 		PyBuffer_Release(result->buffer);
-		Py_DECREF(result->buffer);
-		result->buffer = NULL;
+		Py_CLEAR(result->buffer);
 	}
 
-	Py_DECREF(result);
-	result = NULL;
+	Py_CLEAR(result);
 
 finally:
 
