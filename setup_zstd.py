@@ -12,6 +12,8 @@ zstd_sources = ['zstd/%s' % p for p in (
     'common/entropy_common.c',
     'common/error_private.c',
     'common/fse_decompress.c',
+    'common/pool.c',
+    'common/threading.c',
     'common/xxhash.c',
     'common/zstd_common.c',
     'compress/fse_compress.c',
@@ -19,11 +21,13 @@ zstd_sources = ['zstd/%s' % p for p in (
     'compress/zstd_compress.c',
     'decompress/huf_decompress.c',
     'decompress/zstd_decompress.c',
+    'dictBuilder/cover.c',
     'dictBuilder/divsufsort.c',
     'dictBuilder/zdict.c',
 )]
 
 zstd_sources_legacy = ['zstd/%s' % p for p in (
+    'deprecated/zbuff_common.c',
     'deprecated/zbuff_compress.c',
     'deprecated/zbuff_decompress.c',
     'legacy/zstd_v01.c',

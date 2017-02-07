@@ -16,7 +16,7 @@ int populate_cdict(ZstdCompressor* compressor, void* dictData, size_t dictSize, 
 	Py_BEGIN_ALLOW_THREADS
 	memset(&zmem, 0, sizeof(zmem));
 	compressor->cdict = ZSTD_createCDict_advanced(compressor->dict->dictData,
-		compressor->dict->dictSize, *zparams, zmem);
+		compressor->dict->dictSize, 1, *zparams, zmem);
 	Py_END_ALLOW_THREADS
 
 	if (!compressor->cdict) {

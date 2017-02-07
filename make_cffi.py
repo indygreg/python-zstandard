@@ -20,6 +20,8 @@ SOURCES = ['zstd/%s' % p for p in (
     'common/entropy_common.c',
     'common/error_private.c',
     'common/fse_decompress.c',
+    'common/pool.c',
+    'common/threading.c',
     'common/xxhash.c',
     'common/zstd_common.c',
     'compress/fse_compress.c',
@@ -27,12 +29,14 @@ SOURCES = ['zstd/%s' % p for p in (
     'compress/zstd_compress.c',
     'decompress/huf_decompress.c',
     'decompress/zstd_decompress.c',
+    'dictBuilder/cover.c',
     'dictBuilder/divsufsort.c',
     'dictBuilder/zdict.c',
 )]
 
 HEADERS = [os.path.join(HERE, 'zstd', *p) for p in (
     ('zstd.h',),
+    ('common', 'pool.h'),
     ('dictBuilder', 'zdict.h'),
 )]
 
@@ -101,6 +105,11 @@ def normalize_output(output):
         if line.startswith(b'__attribute__ ((visibility ("default"))) '):
             line = line[len(b'__attribute__ ((visibility ("default"))) '):]
 
+        if line.startswith(b'__attribute__((deprecated('):
+            continue
+        elif b'__declspec(deprecated(' in line:
+            continue
+
         lines.append(line)
 
     return b'\n'.join(lines)
@@ -112,6 +121,7 @@ ffi.set_source('_zstd_cffi', '''
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 #define ZDICT_STATIC_LINKING_ONLY
+#include "pool.h"
 #include "zdict.h"
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
 

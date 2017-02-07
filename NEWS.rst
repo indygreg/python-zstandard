@@ -9,6 +9,7 @@ Version History
   decompression of *content-only dictionary chains*.
 * CFFI module fully implemented; all tests run against both C extension and
   CFFI implementation.
+* Vendored version of zstd updated to 1.1.3.
 
 0.6.0 (released 2017-01-14)
 ---------------------------
