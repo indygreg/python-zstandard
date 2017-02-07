@@ -57,7 +57,6 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 		sampleItem = PyList_GetItem(samples, sampleIndex);
 		if (!PyBytes_Check(sampleItem)) {
 			PyErr_SetString(PyExc_ValueError, "samples must be bytes");
-			/* TODO probably need to perform DECREF here */
 			return NULL;
 		}
 		samplesSize += PyBytes_GET_SIZE(sampleItem);
