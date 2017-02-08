@@ -305,6 +305,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		return NULL;
 	}
 
+	/* TODO reconsider malloc() + copyDCtx here, as it hurts perf. */
 	dctx = PyMem_Malloc(ZSTD_sizeof_DCtx(self->refdctx));
 	if (!dctx) {
 		PyErr_NoMemory();
