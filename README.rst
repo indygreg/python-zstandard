@@ -106,15 +106,11 @@ compressing at several hundred MB/s and decompressing at over 1 GB/s.
 Comparison to Other Python Bindings
 ===================================
 
-https://pypi.python.org/pypi/zstd is an alternative Python binding to
+https://pypi.python.org/pypi/zstd is an alternate Python binding to
 Zstandard. At the time this was written, the latest release of that
-package (1.0.0.2) had the following significant differences from this package:
-
-* It only exposes the simple API for compression and decompression operations.
-  This extension exposes the streaming API, dictionary training, and more.
-* It adds a custom framing header to compressed data and there is no way to
-  disable it. This means that data produced with that module cannot be used by
-  other Zstandard implementations.
+package (1.1.2) only exposed the simple APIs for compression and decompression.
+This package exposes much more of the zstd API, including streaming and
+dictionary compression. This package also has CFFI support.
 
 Bundling of Zstandard Source Code
 =================================
