@@ -476,6 +476,10 @@ This behaves similarly to ``zstd.ZstdCompressor``: compressed data is written to
 the decompressor by calling ``write(data)`` and decompressed output is written
 to the output object by calling its ``write(data)`` method.
 
+Calls to ``write()`` will return the number of bytes written to the output
+object. Not all inputs will result in bytes being written, so return values
+of ``0`` are possible.
+
 The size of chunks being ``write()`` to the destination can be specified::
 
     dctx = zstd.ZstdDecompressor()

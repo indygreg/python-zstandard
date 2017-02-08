@@ -270,7 +270,7 @@ class TestDecompressor_write_to(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor(dict_data=d)
         with dctx.write_to(buffer) as decompressor:
-            decompressor.write(compressed)
+            self.assertEqual(decompressor.write(compressed), len(orig))
 
         self.assertEqual(buffer.getvalue(), orig)
 

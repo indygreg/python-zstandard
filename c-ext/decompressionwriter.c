@@ -71,6 +71,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
 	PyObject* res;
+	Py_ssize_t totalWrite = 0;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTuple(args, "y#:write", &source, &sourceSize)) {
@@ -116,15 +117,15 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 #endif
 				output.dst, output.pos);
 			Py_XDECREF(res);
+			totalWrite += output.pos;
 			output.pos = 0;
 		}
 	}
 
 	PyMem_Free(output.dst);
 
-	/* TODO return bytes written */
-	Py_RETURN_NONE;
-	}
+	return PyLong_FromSsize_t(totalWrite);
+}
 
 static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	{ "__enter__", (PyCFunction)ZstdDecompressionWriter_enter, METH_NOARGS,

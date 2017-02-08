@@ -21,6 +21,8 @@ Version History
   things faster in the process.
 * ZstdCompressor.write_to()'s compress() and flush() methods now return number
   of bytes written.
+* ZstdDecompressor.write_to()'s write() method now returns the number of bytes
+  written to the underlying output object.
 
 0.6.0 (released 2017-01-14)
 ---------------------------

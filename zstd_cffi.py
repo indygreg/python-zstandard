@@ -741,6 +741,8 @@ class ZstdDecompressionWriter(object):
         if not self._entered:
             raise ZstdError('write must be called from an active context manager')
 
+        total_write = 0
+
         in_buffer = ffi.new('ZSTD_inBuffer *')
         out_buffer = ffi.new('ZSTD_outBuffer *')
 
@@ -762,7 +764,10 @@ class ZstdDecompressionWriter(object):
 
             if out_buffer.pos:
                 self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
+                total_write += out_buffer.pos
                 out_buffer.pos = 0
+
+        return total_write
 
 
 class ZstdDecompressor(object):
