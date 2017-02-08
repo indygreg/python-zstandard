@@ -1,8 +1,8 @@
 Version History
 ===============
 
-0.7.0 (not yet released)
-------------------------
+0.7.0 (released 2017-02-07)
+---------------------------
 
 * Added zstd.get_frame_parameters() to obtain info about a zstd frame.
 * Added ZstdDecompressor.decompress_content_dict_chain() for efficient
