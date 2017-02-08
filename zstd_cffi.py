@@ -98,25 +98,6 @@ class CompressionParameters(object):
         self.target_length = target_length
         self.strategy = strategy
 
-    def __len__(self):
-        return 7
-
-    def __getitem__(self, idx):
-        if idx == 0:
-            return self.window_log
-        elif idx == 1:
-            return self.chain_log
-        elif idx == 2:
-            return self.hash_log
-        elif idx == 3:
-            return self.search_log
-        elif idx == 4:
-            return self.search_length
-        elif idx == 5:
-            return self.target_length
-        elif idx == 6:
-            return self.strategy
-
     def as_compression_parameters(self):
         p = ffi.new('ZSTD_compressionParameters *')[0]
         p.windowLog = self.window_log

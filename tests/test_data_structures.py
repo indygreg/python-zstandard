@@ -48,7 +48,7 @@ class TestCompressionParameters(unittest.TestCase):
         p = zstd.get_compression_parameters(1)
         self.assertIsInstance(p, zstd.CompressionParameters)
 
-        self.assertEqual(p[0], 19)
+        self.assertEqual(p.window_log, 19)
 
     def test_members(self):
         p = zstd.CompressionParameters(10, 6, 7, 4, 5, 8, 1)
@@ -155,9 +155,6 @@ if hypothesis:
             p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
                                            searchlog, searchlength,
                                            targetlength, strategy)
-            self.assertEqual(tuple(p),
-                             (windowlog, chainlog, hashlog, searchlog,
-                              searchlength, targetlength, strategy))
 
             # Verify we can instantiate a compressor with the supplied values.
             # ZSTD_checkCParams moves the goal posts on us from what's advertised

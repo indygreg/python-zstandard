@@ -24,6 +24,8 @@ Version History
 * ZstdDecompressor.write_to()'s write() method now returns the number of bytes
   written to the underlying output object.
 * CompressionParameters instances now expose their values as attributes.
+* CompressionParameters instances no longer are subscriptable nor behave
+  as tuples (backwards incompatible). Use attributes to obtain values.
 
 0.6.0 (released 2017-01-14)
 ---------------------------
