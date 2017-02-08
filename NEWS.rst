@@ -26,6 +26,7 @@ Version History
 * CompressionParameters instances now expose their values as attributes.
 * CompressionParameters instances no longer are subscriptable nor behave
   as tuples (backwards incompatible). Use attributes to obtain values.
+* DictParameters instances now expose their values as attributes.
 
 0.6.0 (released 2017-01-14)
 ---------------------------
