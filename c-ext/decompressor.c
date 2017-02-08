@@ -59,7 +59,7 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 
 	ZstdCompressionDict* dict = NULL;
 
-	self->refdctx = NULL;
+	self->dctx = NULL;
 	self->dict = NULL;
 	self->ddict = NULL;
 
@@ -68,14 +68,10 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
-	/* Instead of creating a ZSTD_DCtx for every decompression operation,
-	   we create an instance at object creation time and recycle it via
-	   ZSTD_copyDCTx() on each use. This means each use is a malloc+memcpy
-	   instead of a malloc+init. */
 	/* TODO lazily initialize the reference ZSTD_DCtx on first use since
 	   not instances of ZstdDecompressor will use a ZSTD_DCtx. */
-	self->refdctx = ZSTD_createDCtx();
-	if (!self->refdctx) {
+	self->dctx = ZSTD_createDCtx();
+	if (!self->dctx) {
 		PyErr_NoMemory();
 		goto except;
 	}
@@ -88,17 +84,17 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 	return 0;
 
 except:
-	if (self->refdctx) {
-		ZSTD_freeDCtx(self->refdctx);
-		self->refdctx = NULL;
+	if (self->dctx) {
+		ZSTD_freeDCtx(self->dctx);
+		self->dctx = NULL;
 	}
 
 	return -1;
 }
 
 static void Decompressor_dealloc(ZstdDecompressor* self) {
-	if (self->refdctx) {
-		ZSTD_freeDCtx(self->refdctx);
+	if (self->dctx) {
+		ZSTD_freeDCtx(self->dctx);
 	}
 
 	Py_XDECREF(self->dict);
@@ -291,7 +287,6 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	unsigned long long decompressedSize;
 	size_t destCapacity;
 	PyObject* result = NULL;
-	ZSTD_DCtx* dctx = NULL;
 	void* dictData = NULL;
 	size_t dictSize = 0;
 	size_t zresult;
@@ -304,15 +299,6 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		kwlist, &source, &sourceSize, &maxOutputSize)) {
 		return NULL;
 	}
-
-	/* TODO reconsider malloc() + copyDCtx here, as it hurts perf. */
-	dctx = PyMem_Malloc(ZSTD_sizeof_DCtx(self->refdctx));
-	if (!dctx) {
-		PyErr_NoMemory();
-		return NULL;
-	}
-
-	ZSTD_copyDCtx(dctx, self->refdctx);
 
 	if (self->dict) {
 		dictData = self->dict->dictData;
@@ -354,11 +340,13 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 
 	Py_BEGIN_ALLOW_THREADS
 	if (self->ddict) {
-		zresult = ZSTD_decompress_usingDDict(dctx, PyBytes_AsString(result), destCapacity,
+		zresult = ZSTD_decompress_usingDDict(self->dctx,
+			PyBytes_AsString(result), destCapacity,
 			source, sourceSize, self->ddict);
 	}
 	else {
-		zresult = ZSTD_decompressDCtx(dctx, PyBytes_AsString(result), destCapacity, source, sourceSize);
+		zresult = ZSTD_decompressDCtx(self->dctx,
+			PyBytes_AsString(result), destCapacity, source, sourceSize);
 	}
 	Py_END_ALLOW_THREADS
 
@@ -383,10 +371,6 @@ except:
 	Py_CLEAR(result);
 
 finally:
-	if (dctx) {
-		PyMem_FREE(dctx);
-	}
-
 	return result;
 }
 

@@ -14,6 +14,11 @@ Version History
   to avoid extra memory allocation of dict data.
 * Add function names to error messages (by using ":name" in PyArg_Parse*
   functions).
+* Reuse decompression context across operations. Previously, we created a
+  new ZSTD_DCtx for each decompress(). This was measured to slow down
+  decompression by 40-200MB/s. The API guarantees say ZstdDecompressor
+  is not thread safe. So we reuse the ZSTD_DCtx across operations and make
+  things faster in the process.
 
 0.6.0 (released 2017-01-14)
 ---------------------------
