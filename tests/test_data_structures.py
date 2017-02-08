@@ -50,6 +50,16 @@ class TestCompressionParameters(unittest.TestCase):
 
         self.assertEqual(p[0], 19)
 
+    def test_members(self):
+        p = zstd.CompressionParameters(10, 6, 7, 4, 5, 8, 1)
+        self.assertEqual(p.window_log, 10)
+        self.assertEqual(p.chain_log, 6)
+        self.assertEqual(p.hash_log, 7)
+        self.assertEqual(p.search_log, 4)
+        self.assertEqual(p.search_length, 5)
+        self.assertEqual(p.target_length, 8)
+        self.assertEqual(p.strategy, 1)
+
 
 @make_cffi
 class TestFrameParameters(unittest.TestCase):

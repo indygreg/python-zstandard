@@ -23,6 +23,7 @@ Version History
   of bytes written.
 * ZstdDecompressor.write_to()'s write() method now returns the number of bytes
   written to the underlying output object.
+* CompressionParameters instances now expose their values as attributes.
 
 0.6.0 (released 2017-01-14)
 ---------------------------

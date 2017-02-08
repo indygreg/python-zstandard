@@ -758,15 +758,18 @@ You can then configure a compressor to use the custom parameters::
 
     cctx = zstd.ZstdCompressor(compression_params=params)
 
-The members of the ``CompressionParameters`` tuple are as follows::
+The members/attributes of ``CompressionParameters`` instances are as follows::
 
-* 0 - Window log
-* 1 - Chain log
-* 2 - Hash log
-* 3 - Search log
-* 4 - Search length
-* 5 - Target length
-* 6 - Strategy (one of the ``zstd.STRATEGY_`` constants)
+* window_log
+* chain_log
+* hash_log
+* search_log
+* search_length
+* target_length
+* strategy
+
+This is the order the arguments are passed to the constructor if not using
+named arguments.
 
 You'll need to read the Zstandard documentation for what these parameters
 do.

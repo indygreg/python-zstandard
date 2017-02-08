@@ -137,6 +137,31 @@ static void CompressionParameters_dealloc(PyObject* self) {
 	PyObject_Del(self);
 }
 
+static PyMemberDef CompressionParameters_members[] = {
+	{ "window_log", T_UINT,
+	  offsetof(CompressionParametersObject, windowLog), READONLY,
+	  "window log" },
+	{ "chain_log", T_UINT,
+	  offsetof(CompressionParametersObject, chainLog), READONLY,
+	  "chain log" },
+	{ "hash_log", T_UINT,
+	  offsetof(CompressionParametersObject, hashLog), READONLY,
+	  "hash log" },
+	{ "search_log", T_UINT,
+	  offsetof(CompressionParametersObject, searchLog), READONLY,
+	  "search log" },
+	{ "search_length", T_UINT,
+	  offsetof(CompressionParametersObject, searchLength), READONLY,
+	  "search length" },
+	{ "target_length", T_UINT,
+	  offsetof(CompressionParametersObject, targetLength), READONLY,
+	  "target length" },
+	{ "strategy", T_INT,
+	  offsetof(CompressionParametersObject, strategy), READONLY,
+	  "strategy" },
+	{ NULL }
+};
+
 static Py_ssize_t CompressionParameters_length(PyObject* self) {
 	return 7;
 }
@@ -205,7 +230,7 @@ PyTypeObject CompressionParametersType = {
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
 	0,                         /* tp_methods */
-	0,                         /* tp_members */
+	CompressionParameters_members, /* tp_members */
 	0,                         /* tp_getset */
 	0,                         /* tp_base */
 	0,                         /* tp_dict */
