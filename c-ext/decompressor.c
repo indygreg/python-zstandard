@@ -312,7 +312,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 
 		if (!self->ddict) {
 			PyErr_SetString(ZstdError, "could not create decompression dict");
-			goto except;
+			return NULL;
 		}
 	}
 
@@ -322,7 +322,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		if (0 == maxOutputSize) {
 			PyErr_SetString(ZstdError, "input data invalid or missing content size "
 				"in frame header");
-			goto except;
+			return NULL;
 		}
 		else {
 			result = PyBytes_FromStringAndSize(NULL, maxOutputSize);
@@ -335,7 +335,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	}
 
 	if (!result) {
-		goto except;
+		return NULL;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
@@ -352,25 +352,22 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "decompression error: %s", ZSTD_getErrorName(zresult));
-		goto except;
+		Py_DecRef(result);
+		return NULL;
 	}
 	else if (decompressedSize && zresult != decompressedSize) {
 		PyErr_Format(ZstdError, "decompression error: decompressed %zu bytes; expected %llu",
 			zresult, decompressedSize);
-		goto except;
+		Py_DecRef(result);
+		return NULL;
 	}
 	else if (zresult < destCapacity) {
 		if (_PyBytes_Resize(&result, zresult)) {
-			goto except;
+			Py_DecRef(result);
+			return NULL;
 		}
 	}
 
-	goto finally;
-
-except:
-	Py_CLEAR(result);
-
-finally:
 	return result;
 }
 
