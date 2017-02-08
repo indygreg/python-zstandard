@@ -19,6 +19,8 @@ Version History
   decompression by 40-200MB/s. The API guarantees say ZstdDecompressor
   is not thread safe. So we reuse the ZSTD_DCtx across operations and make
   things faster in the process.
+* ZstdCompressor.write_to()'s compress() and flush() methods now return number
+  of bytes written.
 
 0.6.0 (released 2017-01-14)
 ---------------------------

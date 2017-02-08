@@ -256,6 +256,10 @@ A ``flush()`` method can be called to evict whatever data remains within the
 compressor's internal state into the output object. This may result in 0 or
 more ``write()`` calls to the output object.
 
+Both ``write()`` and ``flush()`` return the number of bytes written to the
+object's ``write()``. In many cases, small inputs do not accumulate enough
+data to cause a write and ``write()`` will return ``0``.
+
 If the size of the data being fed to this streaming compressor is known,
 you can declare it before compression begins::
 

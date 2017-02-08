@@ -208,6 +208,8 @@ class ZstdCompressionWriter(object):
             raise ZstdError('write() must be called from an active context '
                             'manager')
 
+        total_write = 0
+
         data_buffer = ffi.from_buffer(data)
 
         in_buffer = ffi.new('ZSTD_inBuffer *')
@@ -229,11 +231,16 @@ class ZstdCompressionWriter(object):
 
             if out_buffer.pos:
                 self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
+                total_write += out_buffer.pos
                 out_buffer.pos = 0
+
+        return total_write
 
     def flush(self):
         if not self._entered:
             raise ZstdError('flush must be called from an active context manager')
+
+        total_write = 0
 
         out_buffer = ffi.new('ZSTD_outBuffer *')
         dst_buffer = ffi.new('char[]', self._write_size)
@@ -251,7 +258,10 @@ class ZstdCompressionWriter(object):
                 break
 
             self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
+            total_write += out_buffer.pos
             out_buffer.pos = 0
+
+        return total_write
 
 
 class ZstdCompressionObj(object):
