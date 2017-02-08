@@ -891,6 +891,19 @@ STRATEGY_BTLAZY2
 STRATEGY_BTOPT
     Compression strategy
 
+Performance Considerations
+--------------------------
+
+The ``ZstdCompressor`` and ``ZstdDecompressor`` types maintain state to a
+persistent compression or decompression *context*. Reusing a ``ZstdCompressor``
+or ``ZstdDecompressor`` instance for multiple operations is faster than
+instantiating a new ``ZstdCompressor`` or ``ZstdDecompressor`` for each
+operation. The differences are magnified as the size of data decreases. For
+example, the difference between *context* reuse and non-reuse for 100,000
+100 byte inputs will be significant (possiby over 10x faster to reuse contexts)
+whereas 10 1,000,000 byte inputs will be more similar in speed (because the
+time spent doing compression dwarfs time spent creating new *contexts*).
+
 Note on Zstandard's *Experimental* API
 ======================================
 
