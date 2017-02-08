@@ -4,10 +4,11 @@ python-zstandard
 
 This project provides Python bindings for interfacing with the
 `Zstandard <http://www.zstd.net>`_ compression library. A C extension
-and CFFI interface is provided.
+and CFFI interface are provided.
 
-The primary goal of the extension is to provide a Pythonic interface to
-the underlying C API. This means exposing most of the features and flexibility
+The primary goal of the project is to provide a rich interface to the
+underlying C API through a Pythonic interface while not sacrificing
+performance. This means exposing most of the features and flexibility
 of the C API while not sacrificing usability or safety that Python provides.
 
 The canonical home for this project is
@@ -22,6 +23,9 @@ The project is officially in beta state. The author is reasonably satisfied
 with the current API and that functionality works as advertised. There
 may be some backwards incompatible changes before 1.0. Though the author
 does not intend to make any major changes to the Python API.
+
+This project is vendored and distributed with Mercurial 4.1, where it is
+used in a production capacity.
 
 There is continuous integration for Python versions 2.6, 2.7, and 3.3+
 on Linux x86_x64 and Windows x86 and x86_64. The author is reasonably
@@ -48,14 +52,15 @@ low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
 believe it a high priority at this time.
 
-The CFFI bindings are half-baked and need to be finished.
+The CFFI bindings are feature complete and all tests run against both
+the C extension and CFFI bindings to ensure behavior parity.
 
 Requirements
 ============
 
-This extension is designed to run with Python 2.6, 2.7, 3.3, 3.4, and 3.5
-on common platforms (Linux, Windows, and OS X). Only x86_64 is currently
-well-tested as an architecture.
+This extension is designed to run with Python 2.6, 2.7, 3.3, 3.4, 3.5, and
+3.6 on common platforms (Linux, Windows, and OS X). Only x86_64 is
+currently well-tested as an architecture.
 
 Installing
 ==========
@@ -872,19 +877,19 @@ TARGETLENGTH_MIN
 TARGETLENGTH_MAX
     Maximum value for compression parameter
 STRATEGY_FAST
-    Compression strategory
+    Compression strategy
 STRATEGY_DFAST
-    Compression strategory
+    Compression strategy
 STRATEGY_GREEDY
-    Compression strategory
+    Compression strategy
 STRATEGY_LAZY
-    Compression strategory
+    Compression strategy
 STRATEGY_LAZY2
-    Compression strategory
+    Compression strategy
 STRATEGY_BTLAZY2
-    Compression strategory
+    Compression strategy
 STRATEGY_BTOPT
-    Compression strategory
+    Compression strategy
 
 Note on Zstandard's *Experimental* API
 ======================================
