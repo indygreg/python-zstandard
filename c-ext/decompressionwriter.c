@@ -73,9 +73,9 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	PyObject* res;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "y#:write", &source, &sourceSize)) {
 #else
-	if (!PyArg_ParseTuple(args, "s#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "s#:write", &source, &sourceSize)) {
 #endif
 		return NULL;
 	}

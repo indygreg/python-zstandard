@@ -25,7 +25,8 @@ CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject
 	ZSTD_compressionParameters params;
 	CompressionParametersObject* result;
 
-	if (!PyArg_ParseTuple(args, "i|Kn", &compressionLevel, &sourceSize, &dictSize)) {
+	if (!PyArg_ParseTuple(args, "i|Kn:get_compression_parameters",
+		&compressionLevel, &sourceSize, &dictSize)) {
 		return NULL;
 	}
 
@@ -52,7 +53,8 @@ PyObject* estimate_compression_context_size(PyObject* self, PyObject* args) {
 	ZSTD_compressionParameters zparams;
 	PyObject* result;
 
-	if (!PyArg_ParseTuple(args, "O!", &CompressionParametersType, &params)) {
+	if (!PyArg_ParseTuple(args, "O!:estimate_compression_context_size",
+		&CompressionParametersType, &params)) {
 		return NULL;
 	}
 
@@ -74,7 +76,8 @@ static PyObject* CompressionParameters_new(PyTypeObject* subtype, PyObject* args
 	unsigned targetLength;
 	unsigned strategy;
 
-	if (!PyArg_ParseTuple(args, "IIIIIII", &windowLog, &chainLog, &hashLog, &searchLog,
+	if (!PyArg_ParseTuple(args, "IIIIIII:CompressionParameters",
+		&windowLog, &chainLog, &hashLog, &searchLog,
 		&searchLength, &targetLength, &strategy)) {
 		return NULL;
 	}

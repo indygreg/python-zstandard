@@ -28,7 +28,8 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	void* dict;
 	ZstdCompressionDict* result;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|O!", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|O!:train_dictionary",
+		kwlist,
 		&capacity,
 		&PyList_Type, &samples,
 		(PyObject*)&DictParametersType, &parameters)) {
@@ -132,10 +133,11 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {
 	self->dictSize = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "y#:ZstdCompressionDict",
 #else
-	if (!PyArg_ParseTuple(args, "s#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "s#:ZstdCompressionDict",
 #endif
+		&source, &sourceSize)) {
 		return -1;
 	}
 

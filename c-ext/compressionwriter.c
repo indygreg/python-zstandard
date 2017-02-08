@@ -52,7 +52,7 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 	ZSTD_outBuffer output;
 	PyObject* res;
 
-	if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_value, &exc_tb)) {
+	if (!PyArg_ParseTuple(args, "OOO:__exit__", &exc_type, &exc_value, &exc_tb)) {
 		return NULL;
 	}
 
@@ -121,9 +121,9 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 	PyObject* res;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "y#:write", &source, &sourceSize)) {
 #else
-	if (!PyArg_ParseTuple(args, "s#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "s#:write", &source, &sourceSize)) {
 #endif
 		return NULL;
 	}

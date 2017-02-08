@@ -63,7 +63,7 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 	self->dict = NULL;
 	self->ddict = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!:ZstdDecompressor", kwlist,
 		&ZstdCompressionDictType, &dict)) {
 		return -1;
 	}
@@ -150,8 +150,8 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	PyObject* totalReadPy;
 	PyObject* totalWritePy;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|kk", kwlist, &source,
-		&dest, &inSize, &outSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|kk:copy_stream", kwlist,
+		&source, &dest, &inSize, &outSize)) {
 		return NULL;
 	}
 
@@ -297,11 +297,11 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	size_t zresult;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y#|n", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y#|n:decompress",
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|n", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|n:decompress",
 #endif
-		&source, &sourceSize, &maxOutputSize)) {
+		kwlist, &source, &sourceSize, &maxOutputSize)) {
 		return NULL;
 	}
 
@@ -455,8 +455,8 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 	ZstdDecompressorIterator* result;
 	size_t skipBytes = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kkk", kwlist, &reader,
-		&inSize, &outSize, &skipBytes)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kkk:read_from", kwlist,
+		&reader, &inSize, &outSize, &skipBytes)) {
 		return NULL;
 	}
 
@@ -572,7 +572,8 @@ static ZstdDecompressionWriter* Decompressor_write_to(ZstdDecompressor* self, Py
 	size_t outSize = ZSTD_DStreamOutSize();
 	ZstdDecompressionWriter* result;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k", kwlist, &writer, &outSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k:write_to", kwlist,
+		&writer, &outSize)) {
 		return NULL;
 	}
 
@@ -629,7 +630,8 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 	void* destBuffer = NULL;
 	PyObject* result = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyList_Type, &chunks)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!:decompress_content_dict_chain",
+		kwlist, &PyList_Type, &chunks)) {
 		return NULL;
 	}
 

@@ -18,8 +18,8 @@ static PyObject* DictParameters_new(PyTypeObject* subtype, PyObject* args, PyObj
 	unsigned notificationLevel;
 	unsigned dictID;
 
-	if (!PyArg_ParseTuple(args, "IiII", &selectivityLevel, &compressionLevel,
-		&notificationLevel, &dictID)) {
+	if (!PyArg_ParseTuple(args, "IiII:DictParameters",
+		&selectivityLevel, &compressionLevel, &notificationLevel, &dictID)) {
 		return NULL;
 	}
 

@@ -21,10 +21,11 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
 	size_t zresult;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "y#:get_frame_parameters",
 #else
-	if (!PyArg_ParseTuple(args, "s#", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "s#:get_frame_parameters",
 #endif
+		&source, &sourceSize)) {
 		return NULL;
 	}
 

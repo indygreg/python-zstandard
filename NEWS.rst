@@ -12,6 +12,8 @@ Version History
 * Vendored version of zstd updated to 1.1.3.
 * Use ZstdDecompressor.decompress() now uses ZSTD_createDDict_byReference()
   to avoid extra memory allocation of dict data.
+* Add function names to error messages (by using ":name" in PyArg_Parse*
+  functions).
 
 0.6.0 (released 2017-01-14)
 ---------------------------
