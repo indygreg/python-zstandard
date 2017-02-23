@@ -36,14 +36,9 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 		return NULL;
 	}
 
-	/* Validate parameters first since it is easiest. */
-	zparams.selectivityLevel = 0;
-	zparams.compressionLevel = 0;
-	zparams.notificationLevel = 0;
-	zparams.dictID = 0;
-	zparams.reserved[0] = 0;
-	zparams.reserved[1] = 0;
+	memset(&zparams, 0, sizeof(zparams));
 
+	/* Validate parameters first since it is easiest. */
 	if (parameters) {
 		/* TODO validate data ranges */
 		zparams.selectivityLevel = PyLong_AsUnsignedLong(PyTuple_GetItem(parameters, 0));
