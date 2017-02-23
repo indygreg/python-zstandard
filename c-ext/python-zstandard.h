@@ -48,16 +48,6 @@ extern PyTypeObject FrameParametersType;
 
 typedef struct {
 	PyObject_HEAD
-	unsigned selectivityLevel;
-	int compressionLevel;
-	unsigned notificationLevel;
-	unsigned dictID;
-} DictParametersObject;
-
-extern PyTypeObject DictParametersType;
-
-typedef struct {
-	PyObject_HEAD
 
 	void* dictData;
 	size_t dictSize;

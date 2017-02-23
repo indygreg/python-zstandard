@@ -66,7 +66,6 @@ ext_sources = [
     'c-ext/decompressor.c',
     'c-ext/decompressoriterator.c',
     'c-ext/decompressionwriter.c',
-    'c-ext/dictparams.c',
     'c-ext/frameparams.c',
 ]
 
