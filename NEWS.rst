@@ -4,6 +4,7 @@ Version History
 0.8.0 (not yet released)
 ------------------------
 
+* Disable deprecation warnings when compiling CFFI module.
 * Fixed memory leak in train_dictionary().
 * Removed DictParameters type.
 * train_dictionary() now accepts keyword arguments instead of a

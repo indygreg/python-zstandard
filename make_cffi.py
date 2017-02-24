@@ -116,12 +116,16 @@ def normalize_output(output):
 
 
 ffi = cffi.FFI()
+# *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
+# when cffi uses the function. Since we statically link against zstd, even
+# if we use the deprecated functions it shouldn't be a huge problem.
 ffi.set_source('_zstd_cffi', '''
 #include "mem.h"
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 #define ZDICT_STATIC_LINKING_ONLY
 #include "pool.h"
+#define ZDICT_DISABLE_DEPRECATE_WARNINGS
 #include "zdict.h"
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
 
