@@ -36,7 +36,6 @@ SOURCES = ['zstd/%s' % p for p in (
 
 HEADERS = [os.path.join(HERE, 'zstd', *p) for p in (
     ('zstd.h',),
-    ('common', 'pool.h'),
     ('dictBuilder', 'zdict.h'),
 )]
 
@@ -124,7 +123,6 @@ ffi.set_source('_zstd_cffi', '''
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 #define ZDICT_STATIC_LINKING_ONLY
-#include "pool.h"
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
 #include "zdict.h"
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
