@@ -89,7 +89,8 @@ def get_c_extension(support_legacy=False, name='zstd'):
 
     depends = [os.path.join(root, p) for p in zstd_depends]
 
-    extra_args = []
+    extra_args = ['-DZSTD_MULTITHREAD']
+
     if support_legacy:
         extra_args.append('-DZSTD_LEGACY_SUPPORT=1')
 
