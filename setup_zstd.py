@@ -89,8 +89,12 @@ def get_c_extension(support_legacy=False, name='zstd'):
 
     depends = [os.path.join(root, p) for p in zstd_depends]
 
+    extra_args = []
+    if support_legacy:
+        extra_args.append('-DZSTD_LEGACY_SUPPORT=1')
+
     # TODO compile with optimizations.
     return Extension(name, sources,
                      include_dirs=include_dirs,
                      depends=depends,
-                     extra_compile_args=["-DZSTD_LEGACY_SUPPORT=1"] if support_legacy else [])
+                     extra_compile_args=extra_args)
