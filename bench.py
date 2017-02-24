@@ -494,6 +494,9 @@ if __name__ == '__main__':
                        help='Write checksum data to zstd frames')
     group.add_argument('--dict-size', type=int, default=128 * 1024,
                        help='Maximum size of trained dictionary')
+    group.add_argument('--threads', type=int,
+                       help='Use multi-threaded compression with this many '
+                            'threads')
 
     group = parser.add_argument_group('Input Processing')
     group.add_argument('--limit-count', type=int,
@@ -522,6 +525,8 @@ if __name__ == '__main__':
         opts['write_content_size'] = True
     if args.write_checksum:
         opts['write_checksum'] = True
+    if args.threads:
+        opts['threads'] = args.threads
 
     chunks = get_chunks(args.path, args.limit_count)
     orig_size = sum(map(len, chunks))

@@ -15,6 +15,7 @@
 #include "mem.h"
 #include "zstd.h"
 #include "zdict.h"
+#include "zstdmt_compress.h"
 
 #define PYTHON_ZSTANDARD_VERSION "0.7.0"
 
@@ -61,6 +62,7 @@ typedef struct {
 	int compressionLevel;
 	ZstdCompressionDict* dict;
 	ZSTD_CCtx* cctx;
+	ZSTDMT_CCtx* mtcctx;
 	ZSTD_CDict* cdict;
 	CompressionParametersObject* cparams;
 	ZSTD_frameParameters fparams;
@@ -176,5 +178,6 @@ CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);
 PyObject* estimate_compression_context_size(PyObject* self, PyObject* args);
 ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize);
+int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize);
 ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);

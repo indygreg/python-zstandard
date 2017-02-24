@@ -209,6 +209,10 @@ write_dict_id
    Whether to write the dictionary ID into the compressed data.
    Defaults to True. The dictionary ID is only written if a dictionary
    is being used.
+threads
+   Number of threads to use for compression operations. Defaults to 0,
+   which means to use single-threaded compression. Read below for more info
+   on multi-threaded compression.
 
 Unless specified otherwise, assume that no two methods of ``ZstdCompressor``
 instances can be called from multiple Python threads simultaneously. In other
@@ -631,6 +635,38 @@ It is possible to implement *content-only dictionary chain* decompression
 on top of other Python APIs. However, this function will likely be significantly
 faster, especially for long input chains, as it avoids the overhead of
 instantiating and passing around intermediate objects between C and Python.
+
+Multi-Threaded Compression
+--------------------------
+
+``ZstdCompressor`` accepts a ``threads`` argument that controls the number
+of threads to use for compression. The way this works is that input is split
+into segments and each segment is fed into a worker pool for compression. Once
+a segment is compressed, it is flushed/appended to the output.
+
+The segment size for multi-threaded compression is chosen from the window size
+of the compressor. This is derived from the ``window_log`` attribute of a
+``CompressionParameters`` instance. By default, segment sizes are in the 1+MB
+range.
+
+If multi-threaded compression is requested and the input is smaller than the
+configured segment size, only a single compression thread will be used. If the
+input is smaller than the segment size multiplied by the thread pool size or
+if data cannot be delivered to the compressor fast enough, not all requested
+compressor threads may be active simultaneously.
+
+Compared to non-multi-threaded compression, multi-threaded compression has
+higher per-operation overhead. This includes extra memory operations,
+thread creation, lock acquisition, etc.
+
+Due to the nature of multi-threaded compression using *N* compression
+*states*, the output from multi-threaded compression will likely be larger
+than non-multi-threaded compression. The difference is usually small. But
+there is a CPU/wall time versus size trade off that may warrant investigation.
+
+Output from multi-threaded compression does not require any special handling
+on the decompression side. In other words, any zstd decompressor should be able
+to consume data produced with multi-threaded compression.
 
 Choosing an API
 ---------------

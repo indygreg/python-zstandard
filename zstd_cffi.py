@@ -322,11 +322,20 @@ class ZstdCompressionObj(object):
 class ZstdCompressor(object):
     def __init__(self, level=3, dict_data=None, compression_params=None,
                  write_checksum=False, write_content_size=False,
-                 write_dict_id=True):
+                 write_dict_id=True, threads=0):
         if level < 1:
             raise ValueError('level must be greater than 0')
         elif level > lib.ZSTD_maxCLevel():
             raise ValueError('level must be less than %d' % lib.ZSTD_maxCLevel())
+
+        if threads < 0:
+            raise ValueError('threads must be non-negative')
+
+        if threads and dict_data:
+            raise ValueError('dictionaries are not supported for multi-threaded compression')
+
+        if threads and compression_params:
+            raise ValueError('compression parameters are not supported for multi-threaded compression')
 
         self._compression_level = level
         self._dict_data = dict_data
@@ -336,11 +345,20 @@ class ZstdCompressor(object):
         self._fparams.contentSizeFlag = write_content_size
         self._fparams.noDictIDFlag = not write_dict_id
 
-        cctx = lib.ZSTD_createCCtx()
-        if cctx == ffi.NULL:
-            raise MemoryError()
+        if threads:
+            cctx = lib.ZSTDMT_createCCtx(threads)
+            if cctx == ffi.NULL:
+                raise MemoryError()
 
-        self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx)
+            self._cctx = ffi.gc(cctx, lib.ZSTDMT_freeCCtx)
+            self._multithreaded = True
+        else:
+            cctx = lib.ZSTD_createCCtx()
+            if cctx == ffi.NULL:
+                raise MemoryError()
+
+            self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx)
+            self._multithreaded = False
 
     def compress(self, data, allow_empty=False):
         if len(data) == 0 and self._fparams.contentSizeFlag and not allow_empty:
@@ -365,11 +383,17 @@ class ZstdCompressor(object):
         dest_size = lib.ZSTD_compressBound(len(data))
         out = new_nonzero('char[]', dest_size)
 
-        zresult = lib.ZSTD_compress_advanced(self._cctx,
-                                             ffi.addressof(out), dest_size,
-                                             data, len(data),
-                                             dict_data, dict_size,
-                                             params)
+        if self._multithreaded:
+            zresult = lib.ZSTDMT_compressCCtx(self._cctx,
+                                              ffi.addressof(out), dest_size,
+                                              data, len(data),
+                                              self._compression_level)
+        else:
+            zresult = lib.ZSTD_compress_advanced(self._cctx,
+                                                 ffi.addressof(out), dest_size,
+                                                 data, len(data),
+                                                 dict_data, dict_size,
+                                                 params)
 
         if lib.ZSTD_isError(zresult):
             raise ZstdError('cannot compress: %s' %
@@ -378,6 +402,9 @@ class ZstdCompressor(object):
         return ffi.buffer(out, zresult)[:]
 
     def compressobj(self, size=0):
+        if self._multithreaded:
+            raise NotImplementedError('multi-threaded compression not yet implemented')
+
         cstream = self._get_cstream(size)
         cobj = ZstdCompressionObj()
         cobj._cstream = cstream
@@ -400,7 +427,11 @@ class ZstdCompressor(object):
         if not hasattr(ofh, 'write'):
             raise ValueError('second argument must have a write() method')
 
-        cstream = self._get_cstream(size)
+        mt = self._multithreaded
+        if mt:
+            self._init_mtcstream(size)
+        else:
+            cstream = self._get_cstream(size)
 
         in_buffer = ffi.new('ZSTD_inBuffer *')
         out_buffer = ffi.new('ZSTD_outBuffer *')
@@ -424,7 +455,10 @@ class ZstdCompressor(object):
             in_buffer.pos = 0
 
             while in_buffer.pos < in_buffer.size:
-                zresult = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
+                if mt:
+                    zresult = lib.ZSTDMT_compressStream(self._cctx, out_buffer, in_buffer)
+                else:
+                    zresult = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd compress error: %s' %
                                     ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -436,7 +470,10 @@ class ZstdCompressor(object):
 
         # We've finished reading. Flush the compressor.
         while True:
-            zresult = lib.ZSTD_endStream(cstream, out_buffer)
+            if mt:
+                zresult = lib.ZSTDMT_endStream(self._cctx, out_buffer)
+            else:
+                zresult = lib.ZSTD_endStream(cstream, out_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -457,6 +494,9 @@ class ZstdCompressor(object):
         if not hasattr(writer, 'write'):
             raise ValueError('must pass an object with a write() method')
 
+        if self._multithreaded:
+            raise NotImplementedError('multi-threaded compression not yet implemented')
+
         return ZstdCompressionWriter(self, writer, size, write_size)
 
     def read_from(self, reader, size=0,
@@ -471,6 +511,9 @@ class ZstdCompressor(object):
         else:
             raise ValueError('must pass an object with a read() method or '
                              'conforms to buffer protocol')
+
+        if self._multithreaded:
+            raise NotImplementedError('multi-threaded compression not yet implemented')
 
         cstream = self._get_cstream(size)
 
@@ -572,6 +615,31 @@ class ZstdCompressor(object):
                             ffi.string(lib.ZSTD_getErrorName(zresult)))
 
         return cstream
+
+    def _init_mtcstream(self, size):
+        assert self._multithreaded
+
+        dict_data = ffi.NULL
+        dict_size = 0
+        if self._dict_data:
+            dict_data = self._dict_data.as_bytes()
+            dict_size = len(self._dict_data)
+
+        zparams = ffi.new('ZSTD_parameters *')[0]
+        if self._cparams:
+            zparams.cParams = self._cparams.as_compression_parameters()
+        else:
+            zparams.cParams = lib.ZSTD_getCParams(self._compression_level,
+                                                  size, dict_size)
+
+        zparams.fParams = self._fparams
+
+        zresult = lib.ZSTDMT_initCStream_advanced(self._cctx, dict_data, dict_size,
+                                                  zparams, size)
+
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('cannot init CStream: %s' %
+                            ffi.string(lib.ZSTD_getErrorName(zresult)))
 
 
 class FrameParameters(object):

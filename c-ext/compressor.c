@@ -74,6 +74,40 @@ ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t
 	return cstream;
 }
 
+int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize) {
+	size_t zresult;
+	void* dictData = NULL;
+	size_t dictSize = 0;
+	ZSTD_parameters zparams;
+
+	assert(compressor->mtcctx);
+
+	if (compressor->dict) {
+		dictData = compressor->dict->dictData;
+		dictSize = compressor->dict->dictSize;
+	}
+
+	memset(&zparams, 0, sizeof(zparams));
+	if (compressor->cparams) {
+		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
+	}
+	else {
+		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, sourceSize, dictSize);
+	}
+
+	zparams.fParams = compressor->fparams;
+
+	zresult = ZSTDMT_initCStream_advanced(compressor->mtcctx, dictData, dictSize,
+		zparams, sourceSize);
+
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
+		return -1;
+	}
+
+	return 0;
+}
+
 PyDoc_STRVAR(ZstdCompressor__doc__,
 "ZstdCompressor(level=None, dict_data=None, compression_params=None)\n"
 "\n"
@@ -103,6 +137,10 @@ PyDoc_STRVAR(ZstdCompressor__doc__,
 "   Determines whether the dictionary ID will be written into the compressed\n"
 "   data. Defaults to True. Only adds content to the compressed data if\n"
 "   a dictionary is being used.\n"
+"threads\n"
+"   Number of threads to use to compress data concurrently. When set,\n"
+"   compression operations are performed on multiple threads. The default\n"
+"   value (0) disables multi-threaded compression.\n"
 );
 
 static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
@@ -113,6 +151,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		"write_checksum",
 		"write_content_size",
 		"write_dict_id",
+		"threads",
 		NULL
 	};
 
@@ -122,16 +161,18 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	PyObject* writeChecksum = NULL;
 	PyObject* writeContentSize = NULL;
 	PyObject* writeDictID = NULL;
+	int threads = 0;
 
 	self->cctx = NULL;
+	self->mtcctx = NULL;
 	self->dict = NULL;
 	self->cparams = NULL;
 	self->cdict = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!O!OOO:ZstdCompressor",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!O!OOOi:ZstdCompressor",
 		kwlist,	&level, &ZstdCompressionDictType, &dict,
 		&CompressionParametersType, &params,
-		&writeChecksum, &writeContentSize, &writeDictID)) {
+		&writeChecksum, &writeContentSize, &writeDictID, &threads)) {
 		return -1;
 	}
 
@@ -146,12 +187,41 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
+	/* TODO resolve number of CPU cores with threads==-1 */
+	if (threads < 0) {
+		PyErr_SetString(PyExc_ValueError, "threads must be non-negative");
+		return -1;
+	}
+
+	/* TODO streaming compression does support these. So move these checks to
+	   compress() */
+	if (threads && dict) {
+		PyErr_SetString(PyExc_ValueError,
+			"dictionaries are not supported for multi-threaded compression");
+		return -1;
+	}
+
+	if (threads && params) {
+		PyErr_SetString(PyExc_ValueError,
+			"compression parameters are not supported for multi-threaded compression");
+		return -1;
+	}
+
 	/* We create a ZSTD_CCtx for reuse among multiple operations to reduce the
 	   overhead of each compression operation. */
-	self->cctx = ZSTD_createCCtx();
-	if (!self->cctx) {
-		PyErr_NoMemory();
-		return -1;
+	if (threads) {
+		self->mtcctx = ZSTDMT_createCCtx(threads);
+		if (!self->mtcctx) {
+			PyErr_NoMemory();
+			return -1;
+		}
+	}
+	else {
+		self->cctx = ZSTD_createCCtx();
+		if (!self->cctx) {
+			PyErr_NoMemory();
+			return -1;
+		}
 	}
 
 	self->compressionLevel = level;
@@ -195,6 +265,11 @@ static void ZstdCompressor_dealloc(ZstdCompressor* self) {
 		self->cctx = NULL;
 	}
 
+	if (self->mtcctx) {
+		ZSTDMT_freeCCtx(self->mtcctx);
+		self->mtcctx = NULL;
+	}
+
 	PyObject_Del(self);
 }
 
@@ -229,7 +304,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	Py_ssize_t sourceSize = 0;
 	size_t inSize = ZSTD_CStreamInSize();
 	size_t outSize = ZSTD_CStreamOutSize();
-	ZSTD_CStream* cstream;
+	ZSTD_CStream* cstream = NULL;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
 	Py_ssize_t totalRead = 0;
@@ -261,10 +336,18 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	/* Prevent free on uninitialized memory in finally. */
 	output.dst = NULL;
 
-	cstream = CStream_from_ZstdCompressor(self, sourceSize);
-	if (!cstream) {
-		res = NULL;
-		goto finally;
+	if (self->mtcctx) {
+		if (init_mtcstream(self, sourceSize)) {
+			res = NULL;
+			goto finally;
+		}
+	}
+	else {
+		cstream = CStream_from_ZstdCompressor(self, sourceSize);
+		if (!cstream) {
+			res = NULL;
+			goto finally;
+		}
 	}
 
 	output.dst = PyMem_Malloc(outSize);
@@ -300,7 +383,12 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_compressStream(cstream, &output, &input);
+			if (self->mtcctx) {
+				zresult = ZSTDMT_compressStream(self->mtcctx, &output, &input);
+			}
+			else {
+				zresult = ZSTD_compressStream(cstream, &output, &input);
+			}
 			Py_END_ALLOW_THREADS
 
 			if (ZSTD_isError(zresult)) {
@@ -325,7 +413,12 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 	/* We've finished reading. Now flush the compressor stream. */
 	while (1) {
-		zresult = ZSTD_endStream(cstream, &output);
+		if (self->mtcctx) {
+			zresult = ZSTDMT_endStream(self->mtcctx, &output);
+		}
+		else {
+			zresult = ZSTD_endStream(cstream, &output);
+		}
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
 				ZSTD_getErrorName(zresult));
@@ -350,8 +443,10 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		}
 	}
 
-	ZSTD_freeCStream(cstream);
-	cstream = NULL;
+	if (cstream) {
+		ZSTD_freeCStream(cstream);
+		cstream = NULL;
+	}
 
 	totalReadPy = PyLong_FromSsize_t(totalRead);
 	totalWritePy = PyLong_FromSsize_t(totalWrite);
@@ -464,16 +559,22 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	}
 
 	Py_BEGIN_ALLOW_THREADS
-	/* By avoiding ZSTD_compress(), we don't necessarily write out content
-	   size. This means the argument to ZstdCompressor to control frame
-	   parameters is honored. */
-	if (self->cdict) {
-		zresult = ZSTD_compress_usingCDict(self->cctx, dest, destSize,
-			source, sourceSize, self->cdict);
+	if (self->mtcctx) {
+		zresult = ZSTDMT_compressCCtx(self->mtcctx, dest, destSize,
+			source, sourceSize, self->compressionLevel);
 	}
 	else {
-		zresult = ZSTD_compress_advanced(self->cctx, dest, destSize,
-			source, sourceSize, dictData, dictSize, zparams);
+		/* By avoiding ZSTD_compress(), we don't necessarily write out content
+		   size. This means the argument to ZstdCompressor to control frame
+		   parameters is honored. */
+		if (self->cdict) {
+			zresult = ZSTD_compress_usingCDict(self->cctx, dest, destSize,
+				source, sourceSize, self->cdict);
+		}
+		else {
+			zresult = ZSTD_compress_advanced(self->cctx, dest, destSize,
+				source, sourceSize, dictData, dictSize, zparams);
+		}
 	}
 	Py_END_ALLOW_THREADS
 
@@ -513,6 +614,11 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 	}
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|n:compressobj", kwlist, &inSize)) {
+		return NULL;
+	}
+
+	if (self->mtcctx) {
+		PyErr_SetString(PyExc_NotImplementedError, "multi-threaded compression not yet supported");
 		return NULL;
 	}
 
@@ -576,6 +682,11 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nkk:read_from", kwlist,
 		&reader, &sourceSize, &inSize, &outSize)) {
+		return NULL;
+	}
+
+	if (self->mtcctx) {
+		PyErr_SetString(PyExc_NotImplementedError, "multi-threaded compression not yet supported");
 		return NULL;
 	}
 
@@ -700,6 +811,11 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 
 	if (!PyObject_HasAttrString(writer, "write")) {
 		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
+		return NULL;
+	}
+
+	if (self->mtcctx) {
+		PyErr_SetString(PyExc_NotImplementedError, "multi-threaded compression not yet supported");
 		return NULL;
 	}
 
