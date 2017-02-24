@@ -736,6 +736,22 @@ a ``ZstdCompressionDict`` later) via ``as_bytes()``::
    dict_data = zstd.train_dictionary(size, samples)
    raw_data = dict_data.as_bytes()
 
+The following named arguments to ``train_dictionary`` can also be used
+to further control dictionary generation.
+
+selectivity
+   Integer selectivity level. Default is 9. Larger values yield more data in
+   dictionary.
+level
+   Integer compression level. Default is 6.
+dict_id
+   Integer dictionary ID for the produced dictionary. Default is 0, which
+   means to use a random value.
+notifications
+   Controls writing of informational messages to ``stderr``. ``0`` (the
+   default) means to write nothing. ``1`` writes errors. ``2`` writes
+   progression info. ``3`` writes more details. And ``4`` writes all info.
+
 Explicit Compression Parameters
 -------------------------------
 

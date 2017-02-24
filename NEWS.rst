@@ -1,6 +1,12 @@
 Version History
 ===============
 
+0.8.0 (not yet released)
+------------------------
+
+* train_dictionary() now accepts keyword arguments instead of a
+  DictParameters instance to control dictionary generation.
+
 0.7.0 (released 2017-02-07)
 ---------------------------
 

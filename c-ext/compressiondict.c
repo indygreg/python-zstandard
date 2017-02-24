@@ -14,13 +14,19 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	static char* kwlist[] = {
 		"dict_size",
 		"samples",
-		"parameters",
+		"selectivity",
+		"level",
+		"notifications",
+		"dict_id",
 		NULL
 	};
 	size_t capacity;
 	PyObject* samples;
 	Py_ssize_t samplesLen;
-	PyObject* parameters = NULL;
+	unsigned  selectivity = 0;
+	int level = 0;
+	unsigned notifications = 0;
+	unsigned dictID = 0;
 	ZDICT_params_t zparams;
 	Py_ssize_t sampleIndex;
 	Py_ssize_t sampleSize;
@@ -33,24 +39,20 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	void* dict;
 	ZstdCompressionDict* result;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|O!:train_dictionary",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IiII:train_dictionary",
 		kwlist,
 		&capacity,
 		&PyList_Type, &samples,
-		(PyObject*)&DictParametersType, &parameters)) {
+		&selectivity, &level, &notifications, &dictID)) {
 		return NULL;
 	}
 
 	memset(&zparams, 0, sizeof(zparams));
 
-	/* Validate parameters first since it is easiest. */
-	if (parameters) {
-		/* TODO validate data ranges */
-		zparams.selectivityLevel = PyLong_AsUnsignedLong(PyTuple_GetItem(parameters, 0));
-		zparams.compressionLevel = PyLong_AsLong(PyTuple_GetItem(parameters, 1));
-		zparams.notificationLevel = PyLong_AsUnsignedLong(PyTuple_GetItem(parameters, 2));
-		zparams.dictID = PyLong_AsUnsignedLong(PyTuple_GetItem(parameters, 3));
-	}
+	zparams.selectivityLevel = selectivity;
+	zparams.compressionLevel = level;
+	zparams.notificationLevel = notifications;
+	zparams.dictID = dictID;
 
 	/* Figure out the size of the raw samples */
 	samplesLen = PyList_Size(samples);
@@ -95,6 +97,7 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 		return NULL;
 	}
 
+	/* TODO consider using dup2() to redirect zstd's stderr writing to a buffer */
 	zresult = ZDICT_trainFromBuffer_advanced(dict, capacity,
 		sampleBuffer, sampleSizes, (unsigned int)samplesLen,
 		zparams);

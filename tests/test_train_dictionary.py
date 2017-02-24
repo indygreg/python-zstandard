@@ -48,3 +48,12 @@ class TestTrainDictionary(unittest.TestCase):
 
         data = d.as_bytes()
         self.assertEqual(data[0:4], b'\x37\xa4\x30\xec')
+
+    def test_set_dict_id(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(8192, samples, dict_id=42)
+        self.assertEqual(d.dict_id(), 42)
