@@ -678,10 +678,14 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertEqual(header, b'\x01\x00\x00')
 
     def test_multithreaded(self):
+        dest = io.BytesIO()
         cctx = zstd.ZstdCompressor(threads=2)
-        with self.assertRaisesRegexp(NotImplementedError, 'multi-threaded compression'):
-            with cctx.write_to(io.BytesIO()):
-                pass
+        with cctx.write_to(dest) as compressor:
+            compressor.write(b'a' * 1048576)
+            compressor.write(b'b' * 1048576)
+            compressor.write(b'c' * 1048576)
+
+        self.assertEqual(len(dest.getvalue()), 295)
 
 
 @make_cffi

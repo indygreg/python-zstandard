@@ -140,12 +140,16 @@ class ZstdCompressionWriter(object):
         self._source_size = source_size
         self._write_size = write_size
         self._entered = False
+        self._mtcctx = compressor._cctx if compressor._multithreaded else None
 
     def __enter__(self):
         if self._entered:
             raise ZstdError('cannot __enter__ multiple times')
 
-        self._cstream = self._compressor._get_cstream(self._source_size)
+        if self._mtcctx:
+            self._compressor._init_mtcstream(self._source_size)
+        else:
+            self._cstream = self._compressor._get_cstream(self._source_size)
         self._entered = True
         return self
 
@@ -160,7 +164,10 @@ class ZstdCompressionWriter(object):
             out_buffer.pos = 0
 
             while True:
-                zresult = lib.ZSTD_endStream(self._cstream, out_buffer)
+                if self._mtcctx:
+                    zresult = lib.ZSTDMT_endStream(self._mtcctx, out_buffer)
+                else:
+                    zresult = lib.ZSTD_endStream(self._cstream, out_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('error ending compression stream: %s' %
                                     ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -205,7 +212,11 @@ class ZstdCompressionWriter(object):
         out_buffer.pos = 0
 
         while in_buffer.pos < in_buffer.size:
-            zresult = lib.ZSTD_compressStream(self._cstream, out_buffer, in_buffer)
+            if self._mtcctx:
+                zresult = lib.ZSTDMT_compressStream(self._mtcctx, out_buffer,
+                                                    in_buffer)
+            else:
+                zresult = lib.ZSTD_compressStream(self._cstream, out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -230,7 +241,10 @@ class ZstdCompressionWriter(object):
         out_buffer.pos = 0
 
         while True:
-            zresult = lib.ZSTD_flushStream(self._cstream, out_buffer)
+            if self._mtcctx:
+                zresult = lib.ZSTDMT_flushStream(self._mtcctx, out_buffer)
+            else:
+                zresult = lib.ZSTD_flushStream(self._cstream, out_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -511,9 +525,6 @@ class ZstdCompressor(object):
 
         if not hasattr(writer, 'write'):
             raise ValueError('must pass an object with a write() method')
-
-        if self._multithreaded:
-            raise NotImplementedError('multi-threaded compression not yet implemented')
 
         return ZstdCompressionWriter(self, writer, size, write_size)
 

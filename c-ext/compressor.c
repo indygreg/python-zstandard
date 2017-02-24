@@ -820,11 +820,6 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	if (self->mtcctx) {
-		PyErr_SetString(PyExc_NotImplementedError, "multi-threaded compression not yet supported");
-		return NULL;
-	}
-
 	result = PyObject_New(ZstdCompressionWriter, &ZstdCompressionWriterType);
 	if (!result) {
 		return NULL;
