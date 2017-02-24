@@ -691,11 +691,6 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 		return NULL;
 	}
 
-	if (self->mtcctx) {
-		PyErr_SetString(PyExc_NotImplementedError, "multi-threaded compression not yet supported");
-		return NULL;
-	}
-
 	result = PyObject_New(ZstdCompressorIterator, &ZstdCompressorIteratorType);
 	if (!result) {
 		return NULL;
@@ -738,9 +733,17 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 	Py_INCREF(result->compressor);
 
 	result->sourceSize = sourceSize;
-	result->cstream = CStream_from_ZstdCompressor(self, sourceSize);
-	if (!result->cstream) {
-		goto except;
+
+	if (self->mtcctx) {
+		if (init_mtcstream(self, sourceSize)) {
+			goto except;
+		}
+	}
+	else {
+		result->cstream = CStream_from_ZstdCompressor(self, sourceSize);
+		if (!result->cstream) {
+			goto except;
+		}
 	}
 
 	result->inSize = inSize;

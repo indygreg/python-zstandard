@@ -778,8 +778,13 @@ class TestCompressor_read_from(unittest.TestCase):
         self.assertEqual(source._read_count, len(source.getvalue()) + 1)
 
     def test_multithreaded(self):
+        source = io.BytesIO()
+        source.write(b'a' * 1048576)
+        source.write(b'b' * 1048576)
+        source.write(b'c' * 1048576)
+        source.seek(0)
+
         cctx = zstd.ZstdCompressor(threads=2)
 
-        with self.assertRaisesRegexp(NotImplementedError, 'multi-threaded compression'):
-            for chunk in cctx.read_from(io.BytesIO()):
-                pass
+        compressed = b''.join(cctx.read_from(source))
+        self.assertEqual(len(compressed), 295)

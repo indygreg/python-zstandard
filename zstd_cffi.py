@@ -542,9 +542,9 @@ class ZstdCompressor(object):
                              'conforms to buffer protocol')
 
         if self._multithreaded:
-            raise NotImplementedError('multi-threaded compression not yet implemented')
-
-        cstream = self._get_cstream(size)
+            self._init_mtcstream(size)
+        else:
+            cstream = self._get_cstream(size)
 
         in_buffer = ffi.new('ZSTD_inBuffer *')
         out_buffer = ffi.new('ZSTD_outBuffer *')
@@ -584,7 +584,10 @@ class ZstdCompressor(object):
             in_buffer.pos = 0
 
             while in_buffer.pos < in_buffer.size:
-                zresult = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
+                if self._multithreaded:
+                    zresult = lib.ZSTDMT_compressStream(self._cctx, out_buffer, in_buffer)
+                else:
+                    zresult = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd compress error: %s' %
                                     ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -603,7 +606,10 @@ class ZstdCompressor(object):
         # remains.
         while True:
             assert out_buffer.pos == 0
-            zresult = lib.ZSTD_endStream(cstream, out_buffer)
+            if self._multithreaded:
+                zresult = lib.ZSTDMT_endStream(self._cctx, out_buffer)
+            else:
+                zresult = lib.ZSTD_endStream(cstream, out_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
