@@ -32,12 +32,12 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	Py_ssize_t sampleSize;
 	PyObject* sampleItem;
 	size_t zresult;
-	void* sampleBuffer;
+	void* sampleBuffer = NULL;
 	void* sampleOffset;
 	size_t samplesSize = 0;
-	size_t* sampleSizes;
-	void* dict;
-	ZstdCompressionDict* result;
+	size_t* sampleSizes = NULL;
+	void* dict = NULL;
+	ZstdCompressionDict* result = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IiII:train_dictionary",
 		kwlist,
@@ -70,13 +70,12 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	sampleBuffer = PyMem_Malloc(samplesSize);
 	if (!sampleBuffer) {
 		PyErr_NoMemory();
-		return NULL;
+		goto finally;
 	}
 	sampleSizes = PyMem_Malloc(samplesLen * sizeof(size_t));
 	if (!sampleSizes) {
-		PyMem_Free(sampleBuffer);
 		PyErr_NoMemory();
-		return NULL;
+		goto finally;
 	}
 
 	sampleOffset = sampleBuffer;
@@ -91,10 +90,8 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 
 	dict = PyMem_Malloc(capacity);
 	if (!dict) {
-		PyMem_Free(sampleSizes);
-		PyMem_Free(sampleBuffer);
 		PyErr_NoMemory();
-		return NULL;
+		goto finally;
 	}
 
 	/* TODO consider using dup2() to redirect zstd's stderr writing to a buffer */
@@ -104,18 +101,21 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	if (ZDICT_isError(zresult)) {
 		PyErr_Format(ZstdError, "Cannot train dict: %s", ZDICT_getErrorName(zresult));
 		PyMem_Free(dict);
-		PyMem_Free(sampleSizes);
-		PyMem_Free(sampleBuffer);
-		return NULL;
+		goto finally;
 	}
 
 	result = PyObject_New(ZstdCompressionDict, &ZstdCompressionDictType);
 	if (!result) {
-		return NULL;
+		goto finally;
 	}
 
 	result->dictData = dict;
 	result->dictSize = zresult;
+
+finally:
+	PyMem_Free(sampleBuffer);
+	PyMem_Free(sampleSizes);
+
 	return result;
 }
 
