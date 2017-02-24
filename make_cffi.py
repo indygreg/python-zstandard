@@ -150,7 +150,8 @@ for header in HEADERS:
 
             sources.append(m.group(0) + b' ...')
 
-ffi.cdef(u'\n'.join(s.decode('latin1') for s in sources))
+cdefsource = u'\n'.join(s.decode('latin1') for s in sources)
+ffi.cdef(cdefsource)
 
 if __name__ == '__main__':
     ffi.compile()
