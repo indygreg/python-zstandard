@@ -55,7 +55,13 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 
 	while ((ssize_t)input.pos < sourceSize) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compressStream(self->cstream, &self->output, &input);
+		if (self->compressor->mtcctx) {
+			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
+				&self->output, &input);
+		}
+		else {
+			zresult = ZSTD_compressStream(self->cstream, &self->output, &input);
+		}
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -118,7 +124,12 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 		/* The output buffer is of size ZSTD_CStreamOutSize(), which is 
 		   guaranteed to hold a full block. */
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_flushStream(self->cstream, &self->output);
+		if (self->compressor->mtcctx) {
+			zresult = ZSTDMT_flushStream(self->compressor->mtcctx, &self->output);
+		}
+		else {
+			zresult = ZSTD_flushStream(self->cstream, &self->output);
+		}
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -150,7 +161,12 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 	self->finished = 1;
 
 	while (1) {
-		zresult = ZSTD_endStream(self->cstream, &self->output);
+		if (self->compressor->mtcctx) {
+			zresult = ZSTDMT_endStream(self->compressor->mtcctx, &self->output);
+		}
+		else {
+			zresult = ZSTD_endStream(self->cstream, &self->output);
+		}
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
 				ZSTD_getErrorName(zresult));
@@ -182,8 +198,10 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 		}
 	}
 
-	ZSTD_freeCStream(self->cstream);
-	self->cstream = NULL;
+	if (self->cstream) {
+		ZSTD_freeCStream(self->cstream);
+		self->cstream = NULL;
+	}
 
 	if (result) {
 		return result;

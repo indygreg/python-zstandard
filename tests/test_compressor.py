@@ -278,10 +278,28 @@ class TestCompressor_compressobj(unittest.TestCase):
         self.assertEqual(header, b'\x01\x00\x00')
 
     def test_multithreaded(self):
-        cctx = zstd.ZstdCompressor(threads=2)
-        with self.assertRaisesRegexp(NotImplementedError, 'multi-threaded compression'):
-            cctx.compressobj()
+        source = io.BytesIO()
+        source.write(b'a' * 1048576)
+        source.write(b'b' * 1048576)
+        source.write(b'c' * 1048576)
+        source.seek(0)
 
+        cctx = zstd.ZstdCompressor(level=1, threads=2)
+        cobj = cctx.compressobj()
+
+        chunks = []
+        while True:
+            d = source.read(8192)
+            if not d:
+                break
+
+            chunks.append(cobj.compress(d))
+
+        chunks.append(cobj.flush())
+
+        compressed = b''.join(chunks)
+
+        self.assertEqual(len(compressed), 295)
 
 @make_cffi
 class TestCompressor_copy_stream(unittest.TestCase):

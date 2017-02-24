@@ -608,24 +608,30 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 
 	Py_ssize_t inSize = 0;
 	size_t outSize = ZSTD_CStreamOutSize();
-	ZstdCompressionObj* result = PyObject_New(ZstdCompressionObj, &ZstdCompressionObjType);
-	if (!result) {
-		return NULL;
-	}
+	ZstdCompressionObj* result = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|n:compressobj", kwlist, &inSize)) {
 		return NULL;
 	}
 
-	if (self->mtcctx) {
-		PyErr_SetString(PyExc_NotImplementedError, "multi-threaded compression not yet supported");
+	result = PyObject_New(ZstdCompressionObj, &ZstdCompressionObjType);
+	if (!result) {
 		return NULL;
 	}
+	result->cstream = NULL;
 
-	result->cstream = CStream_from_ZstdCompressor(self, inSize);
-	if (!result->cstream) {
-		Py_DECREF(result);
-		return NULL;
+	if (self->mtcctx) {
+		if (init_mtcstream(self, inSize)) {
+			Py_DECREF(result);
+			return NULL;
+		}
+	}
+	else {
+		result->cstream = CStream_from_ZstdCompressor(self, inSize);
+		if (!result->cstream) {
+			Py_DECREF(result);
+			return NULL;
+		}
 	}
 
 	result->output.dst = PyMem_Malloc(outSize);

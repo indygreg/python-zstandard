@@ -259,7 +259,12 @@ class ZstdCompressionObj(object):
         chunks = []
 
         while source.pos < len(data):
-            zresult = lib.ZSTD_compressStream(self._cstream, self._out, source)
+            if self._mtcctx:
+                zresult = lib.ZSTDMT_compressStream(self._mtcctx,
+                                                    self._out, source)
+            else:
+                zresult = lib.ZSTD_compressStream(self._cstream, self._out,
+                                                  source)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -280,7 +285,10 @@ class ZstdCompressionObj(object):
         assert self._out.pos == 0
 
         if flush_mode == COMPRESSOBJ_FLUSH_BLOCK:
-            zresult = lib.ZSTD_flushStream(self._cstream, self._out)
+            if self._mtcctx:
+                zresult = lib.ZSTDMT_flushStream(self._mtcctx, self._out)
+            else:
+                zresult = lib.ZSTD_flushStream(self._cstream, self._out)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -301,7 +309,10 @@ class ZstdCompressionObj(object):
         chunks = []
 
         while True:
-            zresult = lib.ZSTD_endStream(self._cstream, self._out)
+            if self._mtcctx:
+                zresult = lib.ZSTDMT_endStream(self._mtcctx, self._out)
+            else:
+                zresult = lib.ZSTD_endStream(self._cstream, self._out)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 ffi.string(lib.ZSTD_getErroName(zresult)))
@@ -403,9 +414,11 @@ class ZstdCompressor(object):
 
     def compressobj(self, size=0):
         if self._multithreaded:
-            raise NotImplementedError('multi-threaded compression not yet implemented')
+            self._init_mtcstream(size)
+            cstream = None
+        else:
+            cstream = self._get_cstream(size)
 
-        cstream = self._get_cstream(size)
         cobj = ZstdCompressionObj()
         cobj._cstream = cstream
         cobj._out = ffi.new('ZSTD_outBuffer *')
@@ -415,6 +428,11 @@ class ZstdCompressor(object):
         cobj._out.pos = 0
         cobj._compressor = self
         cobj._finished = False
+
+        if self._multithreaded:
+            cobj._mtcctx = self._cctx
+        else:
+            cobj._mtcctx = None
 
         return cobj
 
