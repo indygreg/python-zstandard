@@ -19,6 +19,7 @@ zstd_sources = ['zstd/%s' % p for p in (
     'compress/fse_compress.c',
     'compress/huf_compress.c',
     'compress/zstd_compress.c',
+    'compress/zstdmt_compress.c',
     'decompress/huf_decompress.c',
     'decompress/zstd_decompress.c',
     'dictBuilder/cover.c',
