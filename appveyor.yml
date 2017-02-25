@@ -54,14 +54,14 @@ environment:
 
     - JOB: "3.5 32-bit"
       TOXENV: "py35"
-      PYTHON: "C:\\Python35.2"
-      PYTHON_VERSION: "3.5.2"
+      PYTHON: "C:\\Python35.3"
+      PYTHON_VERSION: "3.5.3"
       PYTHON_ARCH: "32"
 
     - JOB: "3.5 64-bit"
       TOXENV: "py35"
-      PYTHON: "C:\\Python35.2-x64"
-      PYTHON_VERSION: "3.5.2"
+      PYTHON: "C:\\Python35.3-x64"
+      PYTHON_VERSION: "3.5.3"
       PYTHON_ARCH: "64"
 
     - JOB: "3.6 32-bit"
