@@ -789,7 +789,7 @@ typedef struct {
 	unsigned long long decompressedSize;
 } FrameSources;
 
-ZstdBufferWithSegments* decompress_from_framepointers(ZstdDecompressor* decompressor, FrameSources* frames) {
+ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames) {
 	void* data = NULL;
 	void* dictData = NULL;
 	size_t dictSize = 0;
@@ -1019,7 +1019,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	frameSources.framesSize = frameCount;
 	frameSources.decompressedSize = totalOutputSize;
 
-	result = decompress_from_framepointers(self, &frameSources);
+	result = decompress_from_framesources(self, &frameSources);
 
 finally:
 	PyMem_Free(framePointers);
