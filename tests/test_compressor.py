@@ -845,10 +845,14 @@ class TestCompressor_write_to(unittest.TestCase):
         with cctx.write_to(with_dict_id) as compressor:
             self.assertEqual(compressor.write(b'foobarfoobar'), 0)
 
+        self.assertEqual(with_dict_id.getvalue()[4:5], b'\x03')
+
         cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_dict_id=False)
         no_dict_id = io.BytesIO()
         with cctx.write_to(no_dict_id) as compressor:
             self.assertEqual(compressor.write(b'foobarfoobar'), 0)
+
+        self.assertEqual(no_dict_id.getvalue()[4:5], b'\x00')
 
         no_params = zstd.get_frame_parameters(no_dict_id.getvalue())
         with_params = zstd.get_frame_parameters(with_dict_id.getvalue())
