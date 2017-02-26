@@ -52,10 +52,6 @@ class TestCompressor(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, 'compression parameters are not supported for multi-threaded'):
             zstd.ZstdCompressor(compression_params=params, threads=2)
 
-    def test_multithreaded_negative_threads(self):
-        with self.assertRaisesRegexp(ValueError, 'threads must be non-negative'):
-            zstd.ZstdCompressor(threads=-10)
-
 
 @make_cffi
 class TestCompressor_compress(unittest.TestCase):

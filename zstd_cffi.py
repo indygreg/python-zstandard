@@ -375,7 +375,7 @@ class ZstdCompressor(object):
             raise ValueError('level must be less than %d' % lib.ZSTD_maxCLevel())
 
         if threads < 0:
-            raise ValueError('threads must be non-negative')
+            threads = _cpu_count()
 
         if threads and dict_data:
             raise ValueError('dictionaries are not supported for multi-threaded compression')

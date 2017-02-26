@@ -140,7 +140,8 @@ PyDoc_STRVAR(ZstdCompressor__doc__,
 "threads\n"
 "   Number of threads to use to compress data concurrently. When set,\n"
 "   compression operations are performed on multiple threads. The default\n"
-"   value (0) disables multi-threaded compression.\n"
+"   value (0) disables multi-threaded compression. A value of ``-1`` means to\n"
+"   set the number of threads to the number of detected logical CPUs.\n"
 );
 
 static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
@@ -187,10 +188,8 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
-	/* TODO resolve number of CPU cores with threads==-1 */
 	if (threads < 0) {
-		PyErr_SetString(PyExc_ValueError, "threads must be non-negative");
-		return -1;
+		threads = cpu_count();
 	}
 
 	/* TODO streaming compression does support these. So move these checks to
