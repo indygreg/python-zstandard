@@ -786,11 +786,11 @@ typedef struct {
 typedef struct {
 	FramePointer* frames;
 	Py_ssize_t framesSize;
+	unsigned long long decompressedSize;
 } FrameSources;
 
 ZstdBufferWithSegments* decompress_from_framepointers(ZstdDecompressor* decompressor, FrameSources* frames) {
 	void* data = NULL;
-	unsigned long long totalSize;
 	void* dictData = NULL;
 	size_t dictSize = 0;
 	Py_ssize_t i = 0;
@@ -817,9 +817,7 @@ ZstdBufferWithSegments* decompress_from_framepointers(ZstdDecompressor* decompre
 		}
 	}
 
-	totalSize = framePointers[frames->framesSize - 1].destOffset +
-		framePointers[frames->framesSize - 1].destSize;
-	data = PyMem_Malloc(totalSize);
+	data = PyMem_Malloc(frames->decompressedSize);
 	if (NULL == data) {
 		PyErr_NoMemory();
 		return NULL;
@@ -879,7 +877,8 @@ ZstdBufferWithSegments* decompress_from_framepointers(ZstdDecompressor* decompre
 		return NULL;
 	}
 
-	result = BufferWithSegments_FromMemory(data, totalSize, segments, frames->framesSize);
+	result = BufferWithSegments_FromMemory(data, frames->decompressedSize, segments,
+		frames->framesSize);
 
 	/* Memory ownership is transferred to BufferWithSegments. So if construction
 	   fails, destroy here otherwise it will leak. */
@@ -1018,6 +1017,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	   our generic decompression function. */
 	frameSources.frames = framePointers;
 	frameSources.framesSize = frameCount;
+	frameSources.decompressedSize = totalOutputSize;
 
 	result = decompress_from_framepointers(self, &frameSources);
 
