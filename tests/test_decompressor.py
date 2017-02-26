@@ -1,3 +1,4 @@
+import array
 import io
 import random
 import struct
@@ -575,3 +576,59 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
             dctx = zstd.ZstdDecompressor()
             decompressed = dctx.decompress_content_dict_chain(chain)
             self.assertEqual(decompressed, expected)
+
+
+# TODO enable for CFFI
+class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
+    def test_invalid_inputs(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with self.assertRaises(TypeError):
+            dctx.multi_decompress_into_buffer(True)
+
+        with self.assertRaises(TypeError):
+            dctx.multi_decompress_into_buffer((1, 2))
+
+        with self.assertRaisesRegexp(ValueError, 'item 0 not bytes'):
+            dctx.multi_decompress_into_buffer([u'foo'])
+
+        with self.assertRaisesRegexp(ValueError, 'could not determine decompressed size of item 0'):
+            dctx.multi_decompress_into_buffer([b'foobarbaz'])
+
+    def test_list_input(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        original = [b'foo' * 4, b'bar' * 6]
+        frames = [cctx.compress(d) for d in original]
+
+        dctx = zstd.ZstdDecompressor()
+        result = dctx.multi_decompress_into_buffer(frames)
+
+        self.assertEqual(result.size, sum(map(len, original)))
+        self.assertEqual(result.tobytes(), b''.join(original))
+
+        for i, data in enumerate(original):
+            self.assertEqual(result[i].tobytes(), data)
+
+        self.assertEqual(result[0].offset, 0)
+        self.assertEqual(len(result[0]), 12)
+        self.assertEqual(result[1].offset, 12)
+        self.assertEqual(len(result[1]), 18)
+
+    def test_buffer_with_segments_input(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        original = [b'foo' * 4, b'bar' * 6]
+        frames = [cctx.compress(d) for d in original]
+
+        dctx = zstd.ZstdDecompressor()
+
+        segments = struct.pack('=QQQQ', 0, len(frames[0]), len(frames[0]), len(frames[1]))
+        b = zstd.BufferWithSegments(b''.join(frames), segments)
+
+        result = dctx.multi_decompress_into_buffer(b)
+
+        self.assertEqual(result[0].offset, 0)
+        self.assertEqual(len(result[0]), 12)
+        self.assertEqual(result[1].offset, 12)
+        self.assertEqual(len(result[1]), 18)

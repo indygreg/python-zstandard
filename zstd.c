@@ -65,6 +65,7 @@ static PyMethodDef zstd_methods[] = {
 	{ NULL, NULL }
 };
 
+void bufferutil_module_init(PyObject* mod);
 void compressobj_module_init(PyObject* mod);
 void compressor_module_init(PyObject* mod);
 void compressionparams_module_init(PyObject* mod);
@@ -99,6 +100,7 @@ void zstd_module_init(PyObject* m) {
 		return;
 	}
 
+	bufferutil_module_init(m);
 	compressionparams_module_init(m);
 	compressiondict_module_init(m);
 	compressobj_module_init(m);

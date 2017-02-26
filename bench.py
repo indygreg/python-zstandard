@@ -284,6 +284,13 @@ def decompress_zlib_decompress(chunks):
         d(chunk)
 
 
+@bench('discrete', 'multi_decompress_into_buffer()', require_content_size=True,
+       simple=True)
+def decompress_multi_decompress_into_buffer(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    zctx.multi_decompress_into_buffer(chunks)
+
+
 @bench('discrete', 'write_to()')
 def decompress_write_to(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)

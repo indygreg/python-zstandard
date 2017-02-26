@@ -589,6 +589,30 @@ Here is how this API should be used::
    data = dobj.decompress(compressed_chunk_0)
    data = dobj.decompress(compressed_chunk_1)
 
+Multiple Frame Decompression
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+(Not yet supported in CFFI bindings.)
+
+``multi_decompress_into_buffer(data)`` performs decompression of multiple
+frames as a single operation and returns a ``BufferWithSegments`` containing
+decompressed data for all inputs.
+
+Compressed frames can be passed to the function either as a list of
+bytes or as a ``BufferWithSegments`` instance. Each frame **must** have the
+original content size written inside (``write_content_size=True`` argument
+to ``ZstdCompressor``).
+
+This function is logically equivalent to performing ``dctx.decompress()``
+on each input frame and returning the result.
+
+This function exists to perform decompression on multiple frames as fast
+as possible by having as little overhead as possible. Since decompression is
+performed as a single operation and since the decompressed output is stored in
+a single buffer, extra memory allocations, Python objects, and Python function
+calls are avoided. This is ideal for scenarios where callers need to access
+decompressed data for multiple frames.
+
 Content-Only Dictionary Chain Decompression
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -879,6 +903,42 @@ estimate_decompression_context_size()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Estimate the memory size requirements for a decompressor instance.
+
+BufferWithSegments Type
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``BufferWithSegments`` type manages a memory buffer containing N discrete
+items at known memory locations and lengths (segments). This type exists to
+facilitate operations against multiple data blobs with minimal overhead. Use
+of this type avoids extra memory allocations, frees, and overhead with managing
+references to that memory (which may include Python object creation and garbage
+collection).
+
+A ``BufferWithSegments`` is essentially a memory buffer with a known length
+and an array of ``(offset, length)`` 64-bit unsigned integers defining the
+byte offset and length of each segment within the buffer.
+
+``len()`` of a ``BufferWithSegments`` returns the number of segments known to
+the instance. The ``.size`` attribute contains the total size in bytes of the
+instance.
+
+Instances conform to the buffer protocol. So a reference to the backing bytes
+can be obtained via ``memoryview(o)``. A *copy* of the backing bytes can also
+be obtained via ``.tobytes()``.
+
+Each segment in the instance can be obtained via ``o[index]`` (or by calling
+`__getitem__`` directly). The returned segment is a ``BufferSegment`` type. It
+also conforms to the buffer protocol. ``len()`` returns its length.
+``.tobytes()`` returns a copy of the backing bytes. ``.offset`` returns the
+offset of this segment within the ``BufferWithSegments`` instance.
+
+The ``.segments`` attribute is a ``BufferSegments`` instance. This type exposes
+the array of ``(offset, length)`` pairs that define the segments in the
+``BufferWithSegments``. The 64-bit unsigned integers in each pair use the
+host/native bit order.
+
+``BufferSegments`` conforms to the buffer protocol and allows accessing the
+raw bytes backing the ``(offset, length)`` array.
 
 Constants
 ---------

@@ -56,6 +56,7 @@ zstd_includes_legacy = [
 
 ext_sources = [
     'zstd.c',
+    'c-ext/bufferutil.c',
     'c-ext/compressiondict.c',
     'c-ext/compressobj.c',
     'c-ext/compressor.c',
