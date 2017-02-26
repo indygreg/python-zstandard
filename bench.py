@@ -14,6 +14,7 @@ import io
 import os
 import sys
 import time
+import zlib
 
 
 if sys.version_info[0] >= 3:
@@ -72,7 +73,7 @@ BENCHES = []
 
 
 def bench(mode, title, require_content_size=False,
-          simple=False):
+          simple=False, zlib=False):
     def wrapper(fn):
         if not fn.func_name.startswith(('compress_', 'decompress_')):
             raise ValueError('benchmark function must begin with '
@@ -82,6 +83,7 @@ def bench(mode, title, require_content_size=False,
         fn.title = title
         fn.require_content_size = require_content_size
         fn.simple = simple
+        fn.zlib = zlib
         BENCHES.append(fn)
         return fn
 
@@ -152,6 +154,24 @@ def compress_compressobj_size(chunks, opts):
         cobj = zctx.compressobj(size=len(chunk))
         cobj.compress(chunk)
         cobj.flush()
+
+
+@bench('discrete', 'compress()', simple=True, zlib=True)
+def compress_zlib_discrete(chunks, opts):
+    level = opts['zlib_level']
+    c = zlib.compress
+    for chunk in chunks:
+        c(chunk, level)
+
+
+@bench('stream', 'compressobj()', simple=True, zlib=True)
+def compress_zlib_compressobj(chunks, opts):
+    compressor = zlib.compressobj(opts['zlib_level'])
+    f = zlib.Z_SYNC_FLUSH
+    for chunk in chunks:
+        compressor.compress(chunk)
+        compressor.flush(f)
+    compressor.flush()
 
 
 @bench('stream', 'write_to()')
@@ -257,6 +277,13 @@ def decompress_reuse(chunks, opts):
         zctx.decompress(chunk)
 
 
+@bench('discrete', 'decompress()', simple=True, zlib=True)
+def decompress_zlib_decompress(chunks):
+    d = zlib.decompress
+    for chunk in chunks:
+        d(chunk)
+
+
 @bench('discrete', 'write_to()')
 def decompress_write_to(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
@@ -279,6 +306,14 @@ def decompress_decompressobj(chunks, opts):
     for chunk in chunks:
         decompressor = zctx.decompressobj()
         decompressor.decompress(chunk)
+
+
+@bench('stream', 'decompressobj()', simple=True, zlib=True)
+def decompress_zlib_stream(chunks):
+    dobj = zlib.decompressobj()
+    for chunk in chunks:
+        dobj.decompress(chunk)
+    dobj.flush()
 
 
 @bench('stream', 'write_to()')
@@ -382,12 +417,25 @@ def get_chunks(paths, limit_count):
     return chunks
 
 
-def get_benches(mode, direction):
+def get_benches(mode, direction, zlib=False):
     assert direction in ('compress', 'decompress')
     prefix = '%s_' % direction
 
-    return [fn for fn in BENCHES
-            if fn.func_name.startswith(prefix) and fn.mode == mode]
+    fns = []
+
+    for fn in BENCHES:
+        if not fn.func_name.startswith(prefix):
+            continue
+
+        if fn.mode != mode:
+            continue
+
+        if fn.zlib != zlib:
+            continue
+
+        fns.append(fn)
+
+    return fns
 
 
 def format_results(results, title, prefix, total_size):
@@ -397,6 +445,21 @@ def format_results(results, title, prefix, total_size):
     print('%s %s' % (prefix, title))
     print('%.6f wall; %.6f CPU; %.6f user; %.6f sys %.2f MB/s (best of %d)' % (
         best[3], best[0], best[1], best[2], rate / 1000000.0, len(results)))
+
+
+def bench_discrete_zlib_compression(chunks, opts):
+    total_size = sum(map(len, chunks))
+
+    for fn in get_benches('discrete', 'compress', zlib=True):
+        results = timer(lambda: fn(chunks, opts))
+        format_results(results, fn.title, 'compress discrete zlib', total_size)
+
+
+def bench_discrete_zlib_decompression(chunks, total_size):
+    for fn in get_benches('discrete', 'decompress', zlib=True):
+        results = timer(lambda: fn(chunks))
+        format_results(results, fn.title, 'decompress discrete zlib',
+                       total_size)
 
 
 def bench_discrete_compression(chunks, opts):
@@ -442,6 +505,20 @@ def bench_stream_decompression(chunks, total_size, opts):
         format_results(results, fn.title, 'decompress stream', total_size)
 
 
+def bench_stream_zlib_compression(chunks, opts):
+    total_size = sum(map(len, chunks))
+
+    for fn in get_benches('stream', 'compress', zlib=True):
+        results = timer(lambda: fn(chunks, opts))
+        format_results(results, fn.title, 'compress stream zlib', total_size)
+
+
+def bench_stream_zlib_decompression(chunks, total_size):
+    for fn in get_benches('stream', 'decompress', zlib=True):
+        results = timer(lambda: fn(chunks))
+        format_results(results, fn.title, 'decompress stream zlib', total_size)
+
+
 def bench_content_dict_compression(chunks, opts):
     total_size = sum(map(len, chunks))
 
@@ -484,6 +561,8 @@ if __name__ == '__main__':
                        help='Do not test decompression performance')
     group.add_argument('--only-simple', action='store_true',
                        help='Only run the simple APIs')
+    group.add_argument('--zlib', action='store_true',
+                       help='Benchmark against zlib')
 
     group = parser.add_argument_group('Compression Parameters')
     group.add_argument('-l', '--level', type=int,
@@ -497,6 +576,8 @@ if __name__ == '__main__':
     group.add_argument('--threads', type=int,
                        help='Use multi-threaded compression with this many '
                             'threads')
+    group.add_argument('--zlib-level', type=int, default=6,
+                       help='zlib compression level')
 
     group = parser.add_argument_group('Input Processing')
     group.add_argument('--limit-count', type=int,
@@ -542,6 +623,21 @@ if __name__ == '__main__':
         print('trained dictionary of size %d (wanted %d)' % (
             len(dict_data), args.dict_size))
 
+    if args.zlib and args.discrete:
+        compressed_discrete_zlib = []
+        ratios = []
+        for chunk in chunks:
+            c = zlib.compress(chunk, args.zlib_level)
+            compressed_discrete_zlib.append(c)
+            ratios.append(float(len(c)) / float(len(chunk)))
+
+        compressed_size = sum(map(len, compressed_discrete_zlib))
+        ratio = float(compressed_size) / float(orig_size) * 100.0
+        bad_count = sum(1 for r in ratios if r >= 1.00)
+        good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
+        print('zlib discrete compressed size: %d (%.2f%%); smaller: %.2f%%' % (
+            compressed_size, ratio, good_ratio))
+
     # In discrete mode, each input is compressed independently, possibly
     # with a dictionary.
     if args.discrete:
@@ -581,6 +677,21 @@ if __name__ == '__main__':
 
     # In stream mode the inputs are fed into a streaming compressor and
     # blocks are flushed for each input.
+
+    if args.zlib and args.stream:
+        compressed_stream_zlib = []
+        ratios = []
+        compressor = zlib.compressobj(args.zlib_level)
+        for chunk in chunks:
+            output = compressor.compress(chunk)
+            output += compressor.flush(zlib.Z_SYNC_FLUSH)
+            compressed_stream_zlib.append(output)
+
+        compressed_size = sum(map(len, compressed_stream_zlib))
+        ratio = float(compressed_size) / float(orig_size) * 100.0
+        print('stream zlib compressed size: %d (%.2f%%)' % (compressed_size,
+                                                            ratio))
+
     if args.stream:
         zctx = zstd.ZstdCompressor(**opts)
         compressed_stream = []
@@ -622,10 +733,16 @@ if __name__ == '__main__':
     print('')
 
     if not args.no_compression:
+        if args.zlib and args.discrete:
+            bench_discrete_zlib_compression(chunks,
+                                            {'zlib_level': args.zlib_level})
         if args.discrete:
             bench_discrete_compression(chunks, opts)
         if args.discrete_dict:
             bench_discrete_compression(chunks, dict_opts)
+        if args.zlib and args.stream:
+            bench_stream_zlib_compression(chunks,
+                                          {'zlib_level': args.zlib_level})
         if args.stream:
             bench_stream_compression(chunks, opts)
         if args.content_dict:
@@ -635,12 +752,17 @@ if __name__ == '__main__':
             print('')
 
     if not args.no_decompression:
+        if args.zlib and args.discrete:
+            bench_discrete_zlib_decompression(compressed_discrete_zlib,
+                                              orig_size)
         if args.discrete:
             bench_discrete_decompression(compressed_discrete, orig_size,
                                          opts)
         if args.discrete_dict:
             bench_discrete_decompression(compressed_discrete_dict,
                                          orig_size, dict_opts)
+        if args.zlib and args.stream:
+            bench_stream_zlib_decompression(compressed_stream_zlib, orig_size)
         if args.stream:
             bench_stream_decompression(compressed_stream, orig_size, opts)
         if args.content_dict:
