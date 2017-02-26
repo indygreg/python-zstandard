@@ -786,6 +786,7 @@ typedef struct {
 typedef struct {
 	FramePointer* frames;
 	Py_ssize_t framesSize;
+	unsigned long long compressedSize;
 	unsigned long long decompressedSize;
 } FrameSources;
 
@@ -913,6 +914,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	Py_ssize_t frameCount;
 	FramePointer* framePointers = NULL;
 	unsigned long long totalOutputSize = 0;
+	unsigned long long totalInputSize = 0;
 	FrameSources frameSources;
 	ZstdBufferWithSegments* result = NULL;
 	int instanceResult;
@@ -949,6 +951,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 
 			sourceData = (char*)buffer->data + buffer->segments[i].offset;
 			sourceSize = buffer->segments[i].length;
+			totalInputSize += sourceSize;
 
 			decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
 
@@ -991,6 +994,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 			}
 
 			PyBytes_AsStringAndSize(frame, &sourceData, &sourceSize);
+			totalInputSize += sourceSize;
 
 			decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
 
@@ -1017,6 +1021,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	   our generic decompression function. */
 	frameSources.frames = framePointers;
 	frameSources.framesSize = frameCount;
+	frameSources.compressedSize = totalInputSize;
 	frameSources.decompressedSize = totalOutputSize;
 
 	result = decompress_from_framesources(self, &frameSources);
