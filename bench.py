@@ -78,7 +78,7 @@ BENCHES = []
 
 def bench(mode, title, require_content_size=False,
           simple=False, zlib=False, threads_arg=False,
-          chunks_as_buffer=False):
+          chunks_as_buffer=False, decompressed_sizes_arg=False):
     def wrapper(fn):
         if not fn.__name__.startswith(('compress_', 'decompress_')):
             raise ValueError('benchmark function must begin with '
@@ -91,6 +91,7 @@ def bench(mode, title, require_content_size=False,
         fn.zlib = zlib
         fn.threads_arg = threads_arg
         fn.chunks_as_buffer = chunks_as_buffer
+        fn.decompressed_sizes_arg = decompressed_sizes_arg
 
         BENCHES.append(fn)
 
@@ -293,17 +294,37 @@ def decompress_zlib_decompress(chunks):
         d(chunk)
 
 
-@bench('discrete', 'multi_decompress_into_buffer() w/ buffer input',
-       require_content_size=True, simple=True, threads_arg=True,
+@bench('discrete', 'multi_decompress_into_buffer() w/ buffer input + sizes',
+       simple=True, threads_arg=True, decompressed_sizes_arg=True,
        chunks_as_buffer=True)
-def decompress_multi_decompress_into_buffer(chunks, opts, threads):
+def decompress_multi_decompress_into_buffer_buffer_and_size(chunks, opts, threads,
+                                            decompressed_sizes):
+    zctx = zstd.ZstdDecompressor(**opts)
+    zctx.multi_decompress_into_buffer(chunks,
+                                      decompressed_sizes=decompressed_sizes,
+                                      threads=threads)
+
+
+@bench('discrete', 'multi_decompress_into_buffer() w/ buffer input',
+       require_content_size=True, threads_arg=True, chunks_as_buffer=True)
+def decompress_multi_decompress_into_buffer_buffer(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.multi_decompress_into_buffer(chunks, threads=threads)
 
 
+@bench('discrete', 'multi_decompress_into_buffer() w/ list of bytes input + sizes',
+       threads_arg=True, decompressed_sizes_arg=True)
+def decompress_multi_decompress_into_buffer_list_and_sizes(chunks, opts, threads,
+                                            decompressed_sizes):
+    zctx = zstd.ZstdDecompressor(**opts)
+    zctx.multi_decompress_into_buffer(chunks,
+                                      decompressed_sizes=decompressed_sizes,
+                                      threads=threads)
+
+
 @bench('discrete', 'multi_decompress_into_buffer() w/ list of bytes input',
        require_content_size=True, threads_arg=True)
-def decompress_multi_decompress_into_buffer(chunks, opts, threads):
+def decompress_multi_decompress_into_buffer_list(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.multi_decompress_into_buffer(chunks, threads=threads)
 
@@ -537,6 +558,12 @@ def bench_discrete_decompression(orig_chunks, compressed_chunks,
 
             chunks_arg = zstd.BufferWithSegments(b''.join(compressed_chunks),
                                                  offsets.getvalue())
+
+        if fn.decompressed_sizes_arg:
+            # Ideally we'd use array.array here. But Python 2 doesn't support the
+            # Q format.
+            s = struct.Struct('=Q')
+            kwargs['decompressed_sizes'] = b''.join(s.pack(len(c)) for c in orig_chunks)
 
         results = timer(lambda: fn(chunks_arg, dopts, **kwargs))
         format_results(results, fn.title, prefix, total_size)
