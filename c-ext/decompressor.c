@@ -1079,6 +1079,15 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 		threads = 1;
 	}
 
+	/* TODO decompressed offsets and sizes are computed here, sequentially. This
+	   operation can be performed on multiple threads. We should do that here
+	   or defer the computation to decompress_from_framesources(). The part that
+	   requires this pass at all is the fact that we write decompressed output
+	   directly into the single, final buffer. That requires knowing offsets
+	   ahead of time. If each worker wrote to its own buffer, we could avoid
+	   this first pass.
+	*/
+
 	instanceResult = PyObject_IsInstance(frames, (PyObject*)&ZstdBufferWithSegmentsType);
 	if (-1 == instanceResult) {
 		return NULL;
