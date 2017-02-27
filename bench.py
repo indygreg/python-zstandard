@@ -12,6 +12,7 @@ Like most benchmarks, results should be treated with skepticism.
 
 import io
 import os
+import struct
 import sys
 import time
 import zlib
@@ -76,7 +77,8 @@ BENCHES = []
 
 
 def bench(mode, title, require_content_size=False,
-          simple=False, zlib=False, threads_arg=False):
+          simple=False, zlib=False, threads_arg=False,
+          chunks_as_buffer=False):
     def wrapper(fn):
         if not fn.__name__.startswith(('compress_', 'decompress_')):
             raise ValueError('benchmark function must begin with '
@@ -88,6 +90,7 @@ def bench(mode, title, require_content_size=False,
         fn.simple = simple
         fn.zlib = zlib
         fn.threads_arg = threads_arg
+        fn.chunks_as_buffer = chunks_as_buffer
 
         BENCHES.append(fn)
 
@@ -290,8 +293,16 @@ def decompress_zlib_decompress(chunks):
         d(chunk)
 
 
-@bench('discrete', 'multi_decompress_into_buffer()', require_content_size=True,
-       simple=True, threads_arg=True)
+@bench('discrete', 'multi_decompress_into_buffer() w/ buffer input',
+       require_content_size=True, simple=True, threads_arg=True,
+       chunks_as_buffer=True)
+def decompress_multi_decompress_into_buffer(chunks, opts, threads):
+    zctx = zstd.ZstdDecompressor(**opts)
+    zctx.multi_decompress_into_buffer(chunks, threads=threads)
+
+
+@bench('discrete', 'multi_decompress_into_buffer() w/ list of bytes input',
+       require_content_size=True, threads_arg=True)
 def decompress_multi_decompress_into_buffer(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.multi_decompress_into_buffer(chunks, threads=threads)
@@ -508,11 +519,26 @@ def bench_discrete_decompression(orig_chunks, compressed_chunks,
         if not opts.get('write_content_size') and fn.require_content_size:
             continue
 
+        chunks_arg = compressed_chunks
+
         kwargs = {}
         if fn.threads_arg:
             kwargs['threads'] = threads
 
-        results = timer(lambda: fn(compressed_chunks, dopts, **kwargs))
+        # Pass compressed frames in a BufferWithSegments rather than a list
+        # of bytes.
+        if fn.chunks_as_buffer:
+            s = struct.Struct('=QQ')
+            offsets = io.BytesIO()
+            current_offset = 0
+            for chunk in compressed_chunks:
+                offsets.write(s.pack(current_offset, len(chunk)))
+                current_offset += len(chunk)
+
+            chunks_arg = zstd.BufferWithSegments(b''.join(compressed_chunks),
+                                                 offsets.getvalue())
+
+        results = timer(lambda: fn(chunks_arg, dopts, **kwargs))
         format_results(results, fn.title, prefix, total_size)
 
 
