@@ -52,6 +52,8 @@ typedef struct {
 
 	void* dictData;
 	size_t dictSize;
+	unsigned k;
+	unsigned d;
 } ZstdCompressionDict;
 
 extern PyTypeObject ZstdCompressionDictType;
@@ -217,5 +219,6 @@ ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t
 int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize);
 ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
+ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);
 int cpu_count(void);

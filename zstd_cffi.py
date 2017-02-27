@@ -725,9 +725,11 @@ def get_frame_parameters(data):
 
 
 class ZstdCompressionDict(object):
-    def __init__(self, data):
+    def __init__(self, data, k=0, d=0):
         assert isinstance(data, bytes_type)
         self._data = data
+        self.k = k
+        self.d = d
 
     def __len__(self):
         return len(self._data)
@@ -778,6 +780,62 @@ def train_dictionary(dict_size, samples, selectivity=0, level=0,
                         ffi.string(lib.ZDICT_getErrorName(zresult)))
 
     return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:])
+
+
+def train_cover_dictionary(dict_size, samples, k=0, d=0,
+                           notifications=0, dict_id=0, level=0, optimize=False,
+                           steps=0, threads=0):
+    if not isinstance(samples, list):
+        raise TypeError('samples must be a list')
+
+    if threads < 0:
+        threads = _cpu_count()
+
+    total_size = sum(map(len, samples))
+
+    samples_buffer = new_nonzero('char[]', total_size)
+    sample_sizes = new_nonzero('size_t[]', len(samples))
+
+    offset = 0
+    for i, sample in enumerate(samples):
+        if not isinstance(sample, bytes_type):
+            raise ValueError('samples must be bytes')
+
+        l = len(sample)
+        ffi.memmove(samples_buffer + offset, sample, l)
+        offset += l
+        sample_sizes[i] = l
+
+    dict_data = new_nonzero('char[]', dict_size)
+
+    dparams = ffi.new('COVER_params_t *')[0]
+    dparams.k = k
+    dparams.d = d
+    dparams.steps = steps
+    dparams.nbThreads = threads
+    dparams.notificationLevel = notifications
+    dparams.dictID = dict_id
+    dparams.compressionLevel = level
+
+    if optimize:
+        zresult = lib.COVER_optimizeTrainFromBuffer(
+            ffi.addressof(dict_data), dict_size,
+            ffi.addressof(samples_buffer),
+            ffi.addressof(sample_sizes, 0), len(samples),
+            ffi.addressof(dparams))
+    else:
+        zresult = lib.COVER_trainFromBuffer(
+            ffi.addressof(dict_data), dict_size,
+            ffi.addressof(samples_buffer),
+            ffi.addressof(sample_sizes, 0), len(samples),
+            dparams)
+
+    if lib.ZDICT_isError(zresult):
+        raise ZstdError('cannot train dict: %s' %
+                        ffi.string(lib.ZDICT_getErrorName(zresult)))
+
+    return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:],
+                               k=dparams.k, d=dparams.d)
 
 
 class ZstdDecompressionObj(object):

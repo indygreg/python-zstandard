@@ -812,6 +812,72 @@ notifications
    default) means to write nothing. ``1`` writes errors. ``2`` writes
    progression info. ``3`` writes more details. And ``4`` writes all info.
 
+Cover Dictionaries
+^^^^^^^^^^^^^^^^^^
+
+An alternate dictionary training mechanism named *cover* is also available.
+More details about this training mechanism are available in the paper
+*Effective Construction of Relative Lempel-Ziv Dictionaries* (authors:
+Liao, Petri, Moffat, Wirth).
+
+To use this mechanism, use ``zstd.train_cover_dictionary()`` instead of
+``zstd.train_dictionary()``. The function behaves nearly the same except
+its arguments are different and the returned dictionary will contain ``k``
+and ``d`` attributes reflecting the parameters to the cover algorithm.
+
+.. note::
+
+   The ``k`` and ``d`` attributes are only populated on dictionary
+   instances created by this function. If a ``ZstdCompressionDict`` is
+   constructed from raw bytes data, the ``k`` and ``d`` attributes will
+   be ``0``.
+
+The segment and dmer size parameters to the cover algorithm can either be
+specified manually or you can ask ``train_cover_dictionary()`` to try
+multiple values and pick the best one, where *best* means the smallest
+compressed data size.
+
+In manual mode, the ``k`` and ``d`` arguments must be specified or a
+``ZstdError`` will be raised.
+
+In automatic mode (triggered by specifying ``optimize=True``), ``k``
+and ``d`` are optional. If a value isn't specified, then default values for
+both are tested.  The ``steps`` argument can control the number of steps
+through ``k`` values. The ``level`` argument defines the compression level
+that will be used when testing the compressed size. And ``threads`` can
+specify the number of threads to use for concurrent operation.
+
+This function takes the following arguments:
+
+dict_size
+   Target size in bytes of the dictionary to generate.
+samples
+   A list of bytes holding samples the dictionary will be trained from.
+k
+   Parameter to cover algorithm defining the segment size. A reasonable range
+   is [16, 2048+].
+d
+   Parameter to cover algorithm defining the dmer size. A reasonable range is
+   [6, 16]. ``d`` must be less than or equal to ``k``.
+dict_id
+   Integer dictionary ID for the produced dictionary. Default is 0, which uses
+   a random value.
+optimize
+   When true, test dictionary generation with multiple parameters.
+level
+   Integer target compression level when testing compression with
+   ``optimize=True``. Default is 1.
+steps
+   Number of steps through ``k`` values to perform when ``optimize=True``.
+   Default is 32.
+threads
+   Number of threads to use when ``optimize=True``. Default is 0, which means
+   to use a single thread. A negative value can be specified to use as many
+   threads as there are detected logical CPUs.
+notifications
+   Controls writing of informational messages to ``stderr``. See the
+   documentation for ``train_dictionary()`` for more.
+
 Explicit Compression Parameters
 -------------------------------
 

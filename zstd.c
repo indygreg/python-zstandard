@@ -54,6 +54,18 @@ PyDoc_STRVAR(train_dictionary__doc__,
 "\n"
 "The raw dictionary content will be returned\n");
 
+PyDoc_STRVAR(train_cover_dictionary__doc__,
+"train_cover_dictionary(dict_size, samples, k=None, d=None, notifications=0, dict_id=0, level=0)\n"
+"\n"
+"Train a dictionary from sample data using the COVER algorithm.\n"
+"\n"
+"This behaves like ``train_dictionary()`` except a different algorithm is\n"
+"used to create the dictionary. The algorithm has 2 parameters: ``k`` and\n"
+"``d``. These control the *segment size* and *dmer size*. A reasonable range\n"
+"for ``k`` is ``[16, 2048+]``. A reasonable range for ``d`` is ``[6, 16]``.\n"
+"``d`` must be less than or equal to ``k``.\n"
+);
+
 static char zstd_doc[] = "Interface to zstandard";
 
 static PyMethodDef zstd_methods[] = {
@@ -67,6 +79,8 @@ static PyMethodDef zstd_methods[] = {
 	METH_VARARGS, get_frame_parameters__doc__ },
 	{ "train_dictionary", (PyCFunction)train_dictionary,
 	METH_VARARGS | METH_KEYWORDS, train_dictionary__doc__ },
+	{ "train_cover_dictionary", (PyCFunction)train_cover_dictionary,
+	METH_VARARGS | METH_KEYWORDS, train_cover_dictionary__doc__ },
 	{ NULL, NULL }
 };
 
