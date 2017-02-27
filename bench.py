@@ -491,7 +491,8 @@ def bench_discrete_compression(chunks, opts, cover=False):
         format_results(results, fn.title, prefix, total_size)
 
 
-def bench_discrete_decompression(chunks, total_size, opts, cover=False,
+def bench_discrete_decompression(orig_chunks, compressed_chunks,
+                                 total_size, opts, cover=False,
                                  threads=None):
     dopts = {}
     if opts.get('dict_data'):
@@ -511,7 +512,7 @@ def bench_discrete_decompression(chunks, total_size, opts, cover=False,
         if fn.threads_arg:
             kwargs['threads'] = threads
 
-        results = timer(lambda: fn(chunks, dopts, **kwargs))
+        results = timer(lambda: fn(compressed_chunks, dopts, **kwargs))
         format_results(results, fn.title, prefix, total_size)
 
 
@@ -834,14 +835,14 @@ if __name__ == '__main__':
             bench_discrete_zlib_decompression(compressed_discrete_zlib,
                                               orig_size)
         if args.discrete:
-            bench_discrete_decompression(compressed_discrete, orig_size,
+            bench_discrete_decompression(chunks, compressed_discrete, orig_size,
                                          opts, threads=args.decompress_threads)
         if args.discrete_dict:
-            bench_discrete_decompression(compressed_discrete_dict,
+            bench_discrete_decompression(chunks, compressed_discrete_dict,
                                          orig_size, dict_opts,
                                          threads=args.decompress_threads)
         if args.discrete_cover_dict:
-            bench_discrete_decompression(compressed_discrete_cover_dict,
+            bench_discrete_decompression(chunks, compressed_discrete_cover_dict,
                                          orig_size, cover_dict_opts, cover=True,
                                          threads=args.decompress_threads)
         if args.zlib and args.stream:
