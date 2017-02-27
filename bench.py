@@ -24,7 +24,10 @@ else:
     bio = cStringIO.StringIO
 
 
-import zstd
+try:
+    import zstd
+except ImportError:
+    import zstd_cffi as zstd
 
 
 def timer(fn, miniter=3, minwall=3.0):
