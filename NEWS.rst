@@ -6,7 +6,7 @@ Version History
 
 * Support for training dictionaries using the COVER algorithm.
 * multi_decompress_into_buffer() API for decompressing multiple frames as a
-  single operation, as effeciently as possible.
+  single operation, as efficiently as possible.
 * Support for multi-threaded compression.
 * Disable deprecation warnings when compiling CFFI module.
 * Fixed memory leak in train_dictionary().

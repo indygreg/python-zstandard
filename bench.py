@@ -291,7 +291,7 @@ def decompress_zlib_decompress(chunks):
 
 
 @bench('discrete', 'multi_decompress_into_buffer()', require_content_size=True,
-       simple=True)
+       simple=True, threads_arg=True)
 def decompress_multi_decompress_into_buffer(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.multi_decompress_into_buffer(chunks, threads=threads)

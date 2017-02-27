@@ -632,3 +632,31 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         self.assertEqual(len(result[0]), 12)
         self.assertEqual(result[1].offset, 12)
         self.assertEqual(len(result[1]), 18)
+
+    def test_multiple_threads(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        frames = []
+        frames.extend(cctx.compress(b'x' * 64) for i in range(256))
+        frames.extend(cctx.compress(b'y' * 64) for i in range(256))
+
+        dctx = zstd.ZstdDecompressor()
+        result = dctx.multi_decompress_into_buffer(frames, threads=-1)
+
+        self.assertEqual(result.size, 2 * 64 * 256)
+        self.assertEqual(result[0].tobytes(), b'x' * 64)
+        self.assertEqual(result[256].tobytes(), b'y' * 64)
+
+    def test_item_failure(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+        frames = [cctx.compress(b'x' * 128), cctx.compress(b'y' * 128)]
+
+        frames[1] = frames[1] + b'extra'
+
+        dctx = zstd.ZstdDecompressor()
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Src size incorrect'):
+            dctx.multi_decompress_into_buffer(frames)
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Src size incorrect'):
+            dctx.multi_decompress_into_buffer(frames, threads=2)

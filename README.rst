@@ -594,7 +594,7 @@ Multiple Frame Decompression
 
 (Not yet supported in CFFI bindings.)
 
-``multi_decompress_into_buffer(data)`` performs decompression of multiple
+``multi_decompress_into_buffer()`` performs decompression of multiple
 frames as a single operation and returns a ``BufferWithSegments`` containing
 decompressed data for all inputs.
 
@@ -602,6 +602,11 @@ Compressed frames can be passed to the function either as a list of
 bytes or as a ``BufferWithSegments`` instance. Each frame **must** have the
 original content size written inside (``write_content_size=True`` argument
 to ``ZstdCompressor``).
+
+The ``threads`` argument controls the number of threads to use to perform
+decompression operations. The default (``0``) or the value ``1`` means to
+use a single thread. Negative values use the number of logical CPUs in the
+machine.
 
 This function is logically equivalent to performing ``dctx.decompress()``
 on each input frame and returning the result.
@@ -612,6 +617,11 @@ performed as a single operation and since the decompressed output is stored in
 a single buffer, extra memory allocations, Python objects, and Python function
 calls are avoided. This is ideal for scenarios where callers need to access
 decompressed data for multiple frames.
+
+Currently, the implementation always spawns multiple threads when requested,
+even if the amount of work to do is small. In the future, it will be smarter
+about avoiding threads and their associated overhead when the amount of
+work to do is small.
 
 Content-Only Dictionary Chain Decompression
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

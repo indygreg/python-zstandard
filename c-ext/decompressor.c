@@ -7,6 +7,7 @@
 */
 
 #include "python-zstandard.h"
+#include "pool.h"
 
 extern PyObject* ZstdError;
 
@@ -790,17 +791,84 @@ typedef struct {
 	unsigned long long decompressedSize;
 } FrameSources;
 
-ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames) {
+typedef struct {
+	/* Output buffer */
+	void* dest;
+	/* Offsets in output buffer */
+	BufferSegment* segments;
+	ZSTD_DCtx* dctx;
+	ZSTD_DDict* ddict;
+	/* Source records and length */
+	FramePointer* framePointers;
+	Py_ssize_t framePointerSize;
+	/* Which records to process. */
+	Py_ssize_t startOffset;
+	Py_ssize_t endOffset;
+	/* Item that error occurred on. */
+	Py_ssize_t errorOffset;
+	/* If an error occurred. */
+	int error;
+	/* result from zstd decompression operation */
+	size_t zresult;
+} PoolState;
+
+static void decompress_worker(PoolState* state) {
+	Py_ssize_t i = 0;
+	FramePointer* framePointers = state->framePointers;
+	size_t zresult;
+
+	for (i = state->startOffset; i <= state->endOffset; i++) {
+		void* source = framePointers[i].sourceData;
+		size_t sourceSize = framePointers[i].sourceSize;
+		void* dest = (char*)state->dest + framePointers[i].destOffset;
+		size_t destCapacity = framePointers[i].destSize;
+
+		if (state->ddict) {
+			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, destCapacity,
+				source, sourceSize, state->ddict);
+		}
+		else {
+			zresult = ZSTD_decompressDCtx(state->dctx, dest, destCapacity,
+				source, sourceSize);
+		}
+
+		if (ZSTD_isError(zresult)) {
+			state->error = 1;
+			state->zresult = zresult;
+			state->errorOffset = i;
+			break;
+		}
+		else if (zresult != destCapacity) {
+			state->error = 2;
+			state->zresult = zresult;
+			state->errorOffset = i;
+			break;
+		}
+
+		state->segments[i].offset = framePointers[i].destOffset;
+		state->segments[i].length = destCapacity;
+	}
+}
+
+ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames,
+	unsigned int threadCount) {
 	void* data = NULL;
 	void* dictData = NULL;
 	size_t dictSize = 0;
 	Py_ssize_t i = 0;
-	size_t zresult = 0;
 	int errored = 0;
-	unsigned long long destOffset = 0;
 	BufferSegment* segments = NULL;
-	ZstdBufferWithSegments* result;
+	ZstdBufferWithSegments* result = NULL;
 	FramePointer* framePointers = frames->frames;
+	unsigned long long workerBytes = 0;
+	int currentThread = 0;
+	Py_ssize_t workerStartOffset = 0;
+	POOL_ctx* pool = NULL;
+	PoolState* poolStates = NULL;
+	unsigned long long bytesPerWorker;
+
+	/* Caller should normalize 0 and negative values to 1 or later */
+	assert(threadCount >= 1);
 
 	if (decompressor->dict) {
 		dictData = decompressor->dict->dictData;
@@ -831,51 +899,111 @@ ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompres
 		return NULL;
 	}
 
-	/* TODO plug in a thread pool */
-	Py_BEGIN_ALLOW_THREADS
-	for (i = 0; i < frames->framesSize; i++) {
-		void* source = framePointers[i].sourceData;
-		size_t sourceSize = framePointers[i].sourceSize;
-		void* dest = (char*)data + framePointers[i].destOffset;
-		size_t destCapacity = framePointers[i].destSize;
+	/* If threadCount==1, we don't start a thread pool. But we do leverage the
+	   same API for dispatching work. */
+	poolStates = PyMem_Malloc(threadCount * sizeof(PoolState));
+	if (NULL == poolStates) {
+		PyErr_NoMemory();
+		PyMem_Free(data);
+		PyMem_Free(segments);
+		goto finally;
+	}
 
-		if (decompressor->ddict) {
-			zresult = ZSTD_decompress_usingDDict(decompressor->dctx, dest, destCapacity,
-				source, sourceSize, decompressor->ddict);
+	memset(poolStates, 0, threadCount * sizeof(PoolState));
+
+	if (threadCount > 1) {
+		pool = POOL_create(threadCount, 1);
+		if (NULL == pool) {
+			PyErr_SetString(ZstdError, "could not initialize zstd thread pool");
+			PyMem_Free(data);
+			PyMem_Free(segments);
+			goto finally;
+		}
+	}
+
+	bytesPerWorker = frames->compressedSize / threadCount;
+
+	for (i = 0; i < threadCount; i++) {
+		poolStates[i].dctx = ZSTD_createDCtx();
+		if (NULL == poolStates[i].dctx) {
+			PyErr_NoMemory();
+			PyMem_Free(data);
+			PyMem_Free(segments);
+			goto finally;
+		}
+
+		ZSTD_copyDCtx(poolStates[i].dctx, decompressor->dctx);
+
+		poolStates[i].dest = data;
+		poolStates[i].segments = segments;
+		poolStates[i].ddict = decompressor->ddict;
+		poolStates[i].framePointers = framePointers;
+		poolStates[i].framePointerSize = frames->framesSize;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	/* There are many ways to split work among workers.
+
+	   For now, we take a simple approach of splitting work so each worker
+	   gets roughly the same number of input bytes. This will result in more
+	   starvation than running N>threadCount jobs. But it avoids complications
+	   around state tracking, which could involve extra locking.
+	*/
+	for (i = 0; i < frames->framesSize; i++) {
+		workerBytes += frames->frames[i].sourceSize;
+
+		if (workerBytes >= bytesPerWorker) {
+			poolStates[currentThread].startOffset = workerStartOffset;
+			poolStates[currentThread].endOffset = i;
+
+			if (threadCount > 1) {
+				POOL_add(pool, (POOL_function)decompress_worker, &poolStates[currentThread]);
+			}
+			else {
+				decompress_worker(&poolStates[currentThread]);
+			}
+			currentThread++;
+			workerStartOffset = i + 1;
+			workerBytes = 0;
+		}
+	}
+
+	if (threadCount > 1 && workerStartOffset != frames->framesSize) {
+		poolStates[currentThread].startOffset = workerStartOffset;
+		poolStates[currentThread].endOffset = frames->framesSize - 1;
+		if (threadCount > 1) {
+			POOL_add(pool, (POOL_function)decompress_worker, &poolStates[currentThread]);
 		}
 		else {
-			zresult = ZSTD_decompressDCtx(decompressor->dctx, dest, destCapacity,
-				source, sourceSize);
+			decompress_worker(&poolStates[currentThread]);
 		}
+	}
 
-		if (ZSTD_isError(zresult)) {
-			errored = 1;
-			break;
-		}
-		else if (zresult != destCapacity) {
-			errored = 2;
-			break;
-		}
-
-		segments[i].offset = destOffset;
-		segments[i].length = zresult;
-
-		destOffset += zresult;
+	if (threadCount > 1) {
+		POOL_free(pool);
 	}
 	Py_END_ALLOW_THREADS
 
-	if (1 == errored) {
-		PyErr_Format(ZstdError, "decompression error: %s", ZSTD_getErrorName(zresult));
-	}
-	else if (2 == errored) {
-		PyErr_Format(ZstdError, "decompression error: decompressed %zu bytes; expected %llu",
-			zresult, framePointers[i].destSize);
+	for (i = 0; i < threadCount; i++) {
+		if (1 == poolStates[i].error) {
+			PyErr_Format(ZstdError, "error decompressing item %zd: %s",
+				poolStates[i].errorOffset, ZSTD_getErrorName(poolStates[i].zresult));
+			errored = 1;
+			break;
+		}
+		else if (2 == poolStates[i].error) {
+			PyErr_Format(ZstdError, "error decompressing item %zd: decompressed %zu bytes; expected %llu",
+				poolStates[i].errorOffset, poolStates[i].zresult,
+				framePointers[poolStates[i].errorOffset].destSize);
+			errored = 2;
+			break;
+		}
 	}
 
 	if (errored) {
 		PyMem_Free(data);
 		PyMem_Free(segments);
-		return NULL;
+		goto finally;
 	}
 
 	result = BufferWithSegments_FromMemory(data, frames->decompressedSize, segments,
@@ -886,6 +1014,18 @@ ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompres
 	if (NULL == result) {
 		PyMem_Free(data);
 		PyMem_Free(segments);
+	}
+
+finally:
+	if (poolStates) {
+		for (i = 0; i < threadCount; i++) {
+			PoolState state = poolStates[i];
+			if (state.dctx) {
+				ZSTD_freeDCtx(state.dctx);
+			}
+		}
+
+		PyMem_Free(poolStates);
 	}
 
 	return result;
@@ -902,15 +1042,21 @@ PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
 "data. All decompressed data is allocated in a single memory buffer. The\n"
 "``BufferWithSegments`` instance tracks which objects are at which offsets\n"
 "and their respective lengths.\n"
+"\n"
+"The ``threads`` argument controls how many threads to use for operations.\n"
+"Negative values will use the same number of threads as logical CPUs on the\n"
+"machine.\n"
 );
 
 static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"frames",
+		"threads",
 		NULL
 	};
 
 	PyObject* frames;
+	int threads = 0;
 	Py_ssize_t frameCount;
 	FramePointer* framePointers = NULL;
 	unsigned long long totalOutputSize = 0;
@@ -920,9 +1066,17 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	int instanceResult;
 	Py_ssize_t i;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:multi_decompress_into_buffer",
-		kwlist, &frames)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:multi_decompress_into_buffer",
+		kwlist, &frames, &threads)) {
 		return NULL;
+	}
+
+	if (threads < 0) {
+		threads = cpu_count();
+	}
+
+	if (threads < 2) {
+		threads = 1;
 	}
 
 	instanceResult = PyObject_IsInstance(frames, (PyObject*)&ZstdBufferWithSegmentsType);
@@ -1024,7 +1178,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	frameSources.compressedSize = totalInputSize;
 	frameSources.decompressedSize = totalOutputSize;
 
-	result = decompress_from_framesources(self, &frameSources);
+	result = decompress_from_framesources(self, &frameSources, threads);
 
 finally:
 	PyMem_Free(framePointers);
