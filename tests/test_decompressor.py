@@ -615,6 +615,22 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         self.assertEqual(result[1].offset, 12)
         self.assertEqual(len(result[1]), 18)
 
+    def test_list_input_frame_sizes(self):
+        cctx = zstd.ZstdCompressor(write_content_size=False)
+
+        original = [b'foo' * 4, b'bar' * 6, b'baz' * 8]
+        frames = [cctx.compress(d) for d in original]
+        sizes = struct.pack('=' + 'Q' * len(original), *map(len, original))
+
+        dctx = zstd.ZstdDecompressor()
+        result = dctx.multi_decompress_into_buffer(frames, decompressed_sizes=sizes)
+
+        self.assertEqual(result.size, sum(map(len, original)))
+        self.assertEqual(result.tobytes(), b''.join(original))
+
+        for i, data in enumerate(original):
+            self.assertEqual(result[i].tobytes(), data)
+
     def test_buffer_with_segments_input(self):
         cctx = zstd.ZstdCompressor(write_content_size=True)
 
@@ -632,6 +648,26 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         self.assertEqual(len(result[0]), 12)
         self.assertEqual(result[1].offset, 12)
         self.assertEqual(len(result[1]), 18)
+
+    def test_buffer_with_segments_sizes(self):
+        cctx = zstd.ZstdCompressor(write_content_size=False)
+        original = [b'foo' * 4, b'bar' * 6, b'baz' * 8]
+        frames = [cctx.compress(d) for d in original]
+        sizes = struct.pack('=' + 'Q' * len(original), *map(len, original))
+
+        segments = struct.pack('=QQQQQQ', 0, len(frames[0]),
+                               len(frames[0]), len(frames[1]),
+                               len(frames[0]) + len(frames[1]), len(frames[2]))
+        b = zstd.BufferWithSegments(b''.join(frames), segments)
+
+        dctx = zstd.ZstdDecompressor()
+        result = dctx.multi_decompress_into_buffer(b, decompressed_sizes=sizes)
+
+        self.assertEqual(result.size, sum(map(len, original)))
+        self.assertEqual(result.tobytes(), b''.join(original))
+
+        for i, data in enumerate(original):
+            self.assertEqual(result[i].tobytes(), data)
 
     def test_multiple_threads(self):
         cctx = zstd.ZstdCompressor(write_content_size=True)

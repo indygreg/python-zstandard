@@ -599,9 +599,16 @@ frames as a single operation and returns a ``BufferWithSegments`` containing
 decompressed data for all inputs.
 
 Compressed frames can be passed to the function either as a list of
-bytes or as a ``BufferWithSegments`` instance. Each frame **must** have the
-original content size written inside (``write_content_size=True`` argument
-to ``ZstdCompressor``).
+bytes or as a ``BufferWithSegments`` instance. The decompressed size of each
+frame must be discoverable. Unless the ``frame_sizes`` argument is specified,
+each frame **must** have the original content size written inside
+(``write_content_size=True`` argument to ``ZstdCompressor``).
+
+The ``decompressed_sizes`` argument is an object conforming to the buffer
+protocol which holds an array of 64-bit unsigned integers in the machine's
+native format defining the decompressed sizes of each frame. If this argument
+is passed, a pre-scan of ``frames`` to resolve decompressed sizes can be
+avoided. This makes operation faster.
 
 The ``threads`` argument controls the number of threads to use to perform
 decompression operations. The default (``0``) or the value ``1`` means to

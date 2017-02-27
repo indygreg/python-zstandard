@@ -1035,8 +1035,14 @@ PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
 "Decompress multiple frames into a single output buffer\n"
 "\n"
 "Receives a list of bytes or objects conforming to the buffer interface.\n"
-"Each byte sequence should resemble a compressed zstd frame. The original\n"
-"content size *must* be written into the zstd frame header.\n"
+"Each byte sequence should resemble a compressed zstd frame.\n"
+"\n"
+"Unless ``decompressed_sizes`` is specified, the content size *must* be\n"
+"written into the zstd frame header. If ``decompressed_sizes`` is specified,\n"
+"it is an object conforming to the buffer protocol that represents an array\n"
+"of 64-bit unsigned integers in the machine's native format. Specifying\n"
+"``decompressed_sizes`` avoids a pre-scan of each frame to determine its\n"
+"output size.\n"
 "\n"
 "Returns a ``BufferWithSegments`` instance containing the decompressed\n"
 "data. All decompressed data is allocated in a single memory buffer. The\n"
@@ -1051,14 +1057,17 @@ PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
 static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"frames",
+		"decompressed_sizes",
 		"threads",
 		NULL
 	};
 
 	PyObject* frames;
+	Py_buffer frameSizes;
 	int threads = 0;
 	Py_ssize_t frameCount;
 	FramePointer* framePointers = NULL;
+	unsigned long long* frameSizesP = NULL;
 	unsigned long long totalOutputSize = 0;
 	unsigned long long totalInputSize = 0;
 	FrameSources frameSources;
@@ -1066,9 +1075,24 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	int instanceResult;
 	Py_ssize_t i;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:multi_decompress_into_buffer",
-		kwlist, &frames, &threads)) {
+	memset(&frameSizes, 0, sizeof(frameSizes));
+
+#if PY_MAJOR_VERSION >= 3
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|y*i:multi_decompress_into_buffer",
+#else
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|s*i:multi_decompress_into_buffer",
+#endif
+		kwlist, &frames, &frameSizes, &threads)) {
 		return NULL;
+	}
+
+	if (frameSizes.buf) {
+		if (!PyBuffer_IsContiguous(&frameSizes, 'C') || frameSizes.ndim > 1) {
+			PyErr_SetString(PyExc_ValueError, "decompressed_sizes buffer should be contiguous and have a single dimension");
+			goto finally;
+		}
+
+		frameSizesP = (unsigned long long*)frameSizes.buf;
 	}
 
 	if (threads < 0) {
@@ -1096,6 +1120,12 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 		ZstdBufferWithSegments* buffer = (ZstdBufferWithSegments*)frames;
 		frameCount = buffer->segmentCount;
 
+		if (frameSizes.buf && frameSizes.len != frameCount * sizeof(unsigned long long)) {
+			PyErr_Format(PyExc_ValueError, "decompressed_sizes size mismatch; expected %zd, got %zd",
+				frameCount * sizeof(unsigned long long), frameSizes.len);
+			goto finally;
+		}
+
 		framePointers = PyMem_Malloc(frameCount * sizeof(FramePointer));
 		if (!framePointers) {
 			PyErr_NoMemory();
@@ -1116,12 +1146,17 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 			sourceSize = buffer->segments[i].length;
 			totalInputSize += sourceSize;
 
-			decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
+			if (frameSizesP) {
+				decompressedSize = frameSizesP[i];
+			}
+			else {
+				decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
 
-			if (0 == decompressedSize) {
-				PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
-					i);
-				goto finally;
+				if (0 == decompressedSize) {
+					PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
+						i);
+					goto finally;
+				}
 			}
 
 			framePointers[i].sourceData = sourceData;
@@ -1134,6 +1169,12 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	}
 	else if (PyList_Check(frames)) {
 		frameCount = PyList_GET_SIZE(frames);
+
+		if (frameSizes.buf && frameSizes.len != frameCount * sizeof(unsigned long long)) {
+			PyErr_Format(PyExc_ValueError, "decompressed_sizes size mismatch; expected %zd, got %zd",
+				frameCount * sizeof(unsigned long long), frameSizes.len);
+			goto finally;
+		}
 
 		framePointers = PyMem_Malloc(frameCount * sizeof(FramePointer));
 		if (!framePointers) {
@@ -1159,12 +1200,17 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 			PyBytes_AsStringAndSize(frame, &sourceData, &sourceSize);
 			totalInputSize += sourceSize;
 
-			decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
+			if (frameSizesP) {
+				decompressedSize = frameSizesP[i];
+			}
+			else {
+				decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
 
-			if (0 == decompressedSize) {
-				PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
-					i);
-				goto finally;
+				if (0 == decompressedSize) {
+					PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
+						i);
+					goto finally;
+				}
 			}
 
 			framePointers[i].sourceData = sourceData;
@@ -1190,6 +1236,9 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	result = decompress_from_framesources(self, &frameSources, threads);
 
 finally:
+	if (frameSizes.buf) {
+		PyBuffer_Release(&frameSizes);
+	}
 	PyMem_Free(framePointers);
 
 	return result;
