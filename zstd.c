@@ -8,6 +8,11 @@
 
 /* A Python C extension for Zstandard. */
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
+
 #include "python-zstandard.h"
 
 PyObject *ZstdError;
@@ -143,3 +148,36 @@ PyMODINIT_FUNC initzstd(void) {
 	}
 }
 #endif
+
+/* Attempt to resolve the number of CPUs in the system. */
+int cpu_count() {
+	int count = 0;
+
+#if defined(_WIN32)
+	SYSTEM_INFO si;
+	si.dwNumberOfProcessors = 0;
+	GetSystemInfo(&si);
+	count = si.dwNumberOfProcessors;
+#elif defined(__APPLE__)
+	int num;
+	size_t size = sizeof(int);
+
+	if (0 == sysctlbyname("hw.logicalcpu", &num, &size, NULL, 0)) {
+		count = num;
+	}
+#elif defined(__linux__)
+	count = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+	int mib[2];
+	size_t len = sizeof(count);
+	mib[0] = CTL_HW;
+	mib[1] = HW_NCPU;
+	if (0 != sysctl(mib, 2, &count, &len, NULL, 0)) {
+		count = 0;
+	}
+#elif defined(__hpux)
+	count = mpctl(MPC_GETNUMSPUS, NULL, NULL);
+#endif
+
+	return count;
+}

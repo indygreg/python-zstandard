@@ -8,6 +8,7 @@
 
 from __future__ import absolute_import, unicode_literals
 
+import os
 import sys
 
 from _zstd_cffi import (
@@ -60,6 +61,26 @@ STRATEGY_BTOPT = lib.ZSTD_btopt
 
 COMPRESSOBJ_FLUSH_FINISH = 0
 COMPRESSOBJ_FLUSH_BLOCK = 1
+
+
+def _cpu_count():
+    # os.cpu_count() was introducd in Python 3.4.
+    try:
+        return os.cpu_count() or 0
+    except AttributeError:
+        pass
+
+    # Linux.
+    try:
+        if sys.version_info[0] == 2:
+            return os.sysconf(b'SC_NPROCESSORS_ONLN')
+        else:
+            return os.sysconf(u'SC_NPROCESSORS_ONLN')
+    except (AttributeError, ValueError):
+        pass
+
+    # TODO implement on other platforms.
+    return 0
 
 
 class ZstdError(Exception):
