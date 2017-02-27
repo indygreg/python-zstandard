@@ -472,11 +472,14 @@ def bench_discrete_zlib_decompression(chunks, total_size):
                        total_size)
 
 
-def bench_discrete_compression(chunks, opts):
+def bench_discrete_compression(chunks, opts, cover=False):
     total_size = sum(map(len, chunks))
 
     if 'dict_data' in opts:
-        prefix = 'compress discrete dict'
+        if cover:
+            prefix = 'compress discrete cover dict'
+        else:
+            prefix = 'compress discrete dict'
     else:
         prefix = 'compress discrete'
 
@@ -485,11 +488,14 @@ def bench_discrete_compression(chunks, opts):
         format_results(results, fn.title, prefix, total_size)
 
 
-def bench_discrete_decompression(chunks, total_size, opts):
+def bench_discrete_decompression(chunks, total_size, opts, cover=False):
     dopts = {}
     if opts.get('dict_data'):
         dopts['dict_data'] = opts['dict_data']
-        prefix = 'decompress discrete dict'
+        if cover:
+            prefix = 'decompress discrete cover dict'
+        else:
+            prefix = 'decompress discrete dict'
     else:
         prefix = 'decompress discrete'
 
@@ -563,6 +569,9 @@ if __name__ == '__main__':
     group.add_argument('--discrete-dict', action='store_true',
                        help='Compress each input independently with a '
                             'dictionary')
+    group.add_argument('--discrete-cover-dict', action='store_true',
+                       help='Compress each input independently with a '
+                            'dictionary generated using the COVER algorithm')
 
     group = parser.add_argument_group('Benchmark Selection')
     group.add_argument('--no-compression', action='store_true',
@@ -586,6 +595,10 @@ if __name__ == '__main__':
     group.add_argument('--threads', type=int,
                        help='Use multi-threaded compression with this many '
                             'threads')
+    group.add_argument('--cover-k', type=int, default=0,
+                       help='Segment size parameter to COVER algorithm')
+    group.add_argument('--cover-d', type=int, default=0,
+                       help='Dmer size parameter to COVER algorithm')
     group.add_argument('--zlib-level', type=int, default=6,
                        help='zlib compression level')
 
@@ -632,6 +645,30 @@ if __name__ == '__main__':
                                           level=opts['level'])
         print('trained dictionary of size %d (wanted %d) (l=%d)' % (
             len(dict_data), args.dict_size, opts['level']))
+
+    if args.discrete_cover_dict:
+        if args.dict_sample_limit:
+            training_chunks = chunks[0:args.dict_sample_limit]
+        else:
+            training_chunks = chunks
+
+        cover_args = {
+            'k': args.cover_k,
+            'd': args.cover_d,
+            'optimize': False,
+            # Always use all available threads in optimize mode.
+            'threads': -1,
+            'level': opts['level'],
+        }
+        if not args.cover_k and not args.cover_d:
+            cover_args['optimize'] = True
+
+        cover_dict_data = zstd.train_cover_dictionary(args.dict_size,
+                                                      training_chunks,
+                                                      **cover_args)
+        print('trained cover dictionary of size %d (wanted %d); k=%d; d=%d' % (
+            len(cover_dict_data), args.dict_size,
+            cover_dict_data.k, cover_dict_data.d))
 
     if args.zlib and args.discrete:
         compressed_discrete_zlib = []
@@ -684,6 +721,24 @@ if __name__ == '__main__':
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
         print('discrete dict compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
             opts['level'], compressed_size, ratio, good_ratio))
+
+    if args.discrete_cover_dict:
+        cover_dict_opts = dict(opts)
+        cover_dict_opts['dict_data'] = cover_dict_data
+        zctx = zstd.ZstdCompressor(**cover_dict_opts)
+        compressed_discrete_cover_dict = []
+        ratios = []
+        for chunk in chunks:
+            c = zctx.compress(chunk)
+            compressed_discrete_cover_dict.append(c)
+            ratios.append(float(len(c)) / float(len(chunks)))
+
+        compressed_size = sum(map(len, compressed_discrete_cover_dict))
+        ratio = float(compressed_size) / float(orig_size) * 100.0
+        bad_count = sum(1 for r in ratios if r >= 1.00)
+        good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
+        print('discrete cover dict compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
+              opts['level'], compressed_size, ratio, good_ratio))
 
     # In stream mode the inputs are fed into a streaming compressor and
     # blocks are flushed for each input.
@@ -750,6 +805,8 @@ if __name__ == '__main__':
             bench_discrete_compression(chunks, opts)
         if args.discrete_dict:
             bench_discrete_compression(chunks, dict_opts)
+        if args.discrete_cover_dict:
+            bench_discrete_compression(chunks, cover_dict_opts, cover=True)
         if args.zlib and args.stream:
             bench_stream_zlib_compression(chunks,
                                           {'zlib_level': args.zlib_level})
@@ -771,6 +828,9 @@ if __name__ == '__main__':
         if args.discrete_dict:
             bench_discrete_decompression(compressed_discrete_dict,
                                          orig_size, dict_opts)
+        if args.discrete_cover_dict:
+            bench_discrete_decompression(compressed_discrete_cover_dict,
+                                         orig_size, cover_dict_opts, cover=True)
         if args.zlib and args.stream:
             bench_stream_zlib_decompression(compressed_stream_zlib, orig_size)
         if args.stream:
