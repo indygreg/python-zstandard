@@ -78,7 +78,7 @@ BENCHES = []
 def bench(mode, title, require_content_size=False,
           simple=False, zlib=False):
     def wrapper(fn):
-        if not fn.func_name.startswith(('compress_', 'decompress_')):
+        if not fn.__name__.startswith(('compress_', 'decompress_')):
             raise ValueError('benchmark function must begin with '
                              'compress_ or decompress_')
 
@@ -434,7 +434,7 @@ def get_benches(mode, direction, zlib=False):
     fns = []
 
     for fn in BENCHES:
-        if not fn.func_name.startswith(prefix):
+        if not fn.__name__.startswith(prefix):
             continue
 
         if fn.mode != mode:
