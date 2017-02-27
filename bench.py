@@ -572,7 +572,7 @@ if __name__ == '__main__':
                        help='Benchmark against zlib')
 
     group = parser.add_argument_group('Compression Parameters')
-    group.add_argument('-l', '--level', type=int,
+    group.add_argument('-l', '--level', type=int, default=3,
                         help='Compression level')
     group.add_argument('--write-size', action='store_true',
                        help='Write content size to zstd frames')
@@ -607,8 +607,7 @@ if __name__ == '__main__':
         BENCHES[:] = [fn for fn in BENCHES if fn.simple]
 
     opts = {}
-    if args.level:
-        opts['level'] = args.level
+    opts['level'] = args.level
     if args.write_size:
         opts['write_content_size'] = True
     if args.write_checksum:
@@ -626,9 +625,10 @@ if __name__ == '__main__':
         else:
             training_chunks = chunks
 
-        dict_data = zstd.train_dictionary(args.dict_size, training_chunks)
-        print('trained dictionary of size %d (wanted %d)' % (
-            len(dict_data), args.dict_size))
+        dict_data = zstd.train_dictionary(args.dict_size, training_chunks,
+                                          level=opts['level'])
+        print('trained dictionary of size %d (wanted %d) (l=%d)' % (
+            len(dict_data), args.dict_size, opts['level']))
 
     if args.zlib and args.discrete:
         compressed_discrete_zlib = []
@@ -642,8 +642,8 @@ if __name__ == '__main__':
         ratio = float(compressed_size) / float(orig_size) * 100.0
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
-        print('zlib discrete compressed size: %d (%.2f%%); smaller: %.2f%%' % (
-            compressed_size, ratio, good_ratio))
+        print('zlib discrete compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
+            args.zlib_level, compressed_size, ratio, good_ratio))
 
     # In discrete mode, each input is compressed independently, possibly
     # with a dictionary.
@@ -660,8 +660,8 @@ if __name__ == '__main__':
         ratio = float(compressed_size) / float(orig_size) * 100.0
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
-        print('discrete compressed size: %d (%.2f%%); smaller: %.2f%%' % (
-            compressed_size, ratio, good_ratio))
+        print('discrete compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
+            opts['level'], compressed_size, ratio, good_ratio))
 
     # Discrete dict mode is like discrete but trains a dictionary.
     if args.discrete_dict:
@@ -679,8 +679,8 @@ if __name__ == '__main__':
         ratio = float(compressed_size) / float(orig_size) * 100.0
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
-        print('discrete dict compressed size: %d (%.2f%%); smaller: %.2f%%' % (
-            compressed_size, ratio, good_ratio))
+        print('discrete dict compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
+            opts['level'], compressed_size, ratio, good_ratio))
 
     # In stream mode the inputs are fed into a streaming compressor and
     # blocks are flushed for each input.
@@ -696,8 +696,8 @@ if __name__ == '__main__':
 
         compressed_size = sum(map(len, compressed_stream_zlib))
         ratio = float(compressed_size) / float(orig_size) * 100.0
-        print('stream zlib compressed size: %d (%.2f%%)' % (compressed_size,
-                                                            ratio))
+        print('stream zlib compressed size (l=%d): %d (%.2f%%)' % (
+            args.zlib_level, compressed_size, ratio))
 
     if args.stream:
         zctx = zstd.ZstdCompressor(**opts)
@@ -711,8 +711,8 @@ if __name__ == '__main__':
 
         compressed_size = sum(map(len, compressed_stream))
         ratio = float(compressed_size) / float(orig_size) * 100.0
-        print('stream compressed size: %d (%.2f%%)' % (compressed_size,
-                                                       ratio))
+        print('stream compressed size (l=%d): %d (%.2f%%)' % (
+            opts['level'], compressed_size, ratio))
 
     if args.content_dict:
         compressed_content_dict = []
@@ -734,8 +734,8 @@ if __name__ == '__main__':
         ratio = float(compressed_size) / float(orig_size) * 100.0
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
-        print('content dict compressed size: %d (%.2f%%); smaller: %.2f%%' % (
-            compressed_size, ratio, good_ratio))
+        print('content dict compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
+            opts['level'], compressed_size, ratio, good_ratio))
 
     print('')
 
