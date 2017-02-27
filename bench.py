@@ -76,7 +76,7 @@ BENCHES = []
 
 
 def bench(mode, title, require_content_size=False,
-          simple=False, zlib=False):
+          simple=False, zlib=False, threads_arg=False):
     def wrapper(fn):
         if not fn.__name__.startswith(('compress_', 'decompress_')):
             raise ValueError('benchmark function must begin with '
@@ -87,7 +87,10 @@ def bench(mode, title, require_content_size=False,
         fn.require_content_size = require_content_size
         fn.simple = simple
         fn.zlib = zlib
+        fn.threads_arg = threads_arg
+
         BENCHES.append(fn)
+
         return fn
 
     return wrapper
@@ -289,9 +292,9 @@ def decompress_zlib_decompress(chunks):
 
 @bench('discrete', 'multi_decompress_into_buffer()', require_content_size=True,
        simple=True)
-def decompress_multi_decompress_into_buffer(chunks, opts):
+def decompress_multi_decompress_into_buffer(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
-    zctx.multi_decompress_into_buffer(chunks)
+    zctx.multi_decompress_into_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'write_to()')
@@ -488,7 +491,8 @@ def bench_discrete_compression(chunks, opts, cover=False):
         format_results(results, fn.title, prefix, total_size)
 
 
-def bench_discrete_decompression(chunks, total_size, opts, cover=False):
+def bench_discrete_decompression(chunks, total_size, opts, cover=False,
+                                 threads=None):
     dopts = {}
     if opts.get('dict_data'):
         dopts['dict_data'] = opts['dict_data']
@@ -503,7 +507,11 @@ def bench_discrete_decompression(chunks, total_size, opts, cover=False):
         if not opts.get('write_content_size') and fn.require_content_size:
             continue
 
-        results = timer(lambda: fn(chunks, dopts))
+        kwargs = {}
+        if fn.threads_arg:
+            kwargs['threads'] = threads
+
+        results = timer(lambda: fn(chunks, dopts, **kwargs))
         format_results(results, fn.title, prefix, total_size)
 
 
@@ -592,9 +600,12 @@ if __name__ == '__main__':
                        help='Write checksum data to zstd frames')
     group.add_argument('--dict-size', type=int, default=128 * 1024,
                        help='Maximum size of trained dictionary')
-    group.add_argument('--threads', type=int,
+    group.add_argument('--compress-threads', type=int,
                        help='Use multi-threaded compression with this many '
                             'threads')
+    group.add_argument('--decompress-threads', type=int, default=0,
+                       help='Use this many threads for decompression APIs that '
+                            'support multiple threads')
     group.add_argument('--cover-k', type=int, default=0,
                        help='Segment size parameter to COVER algorithm')
     group.add_argument('--cover-d', type=int, default=0,
@@ -628,7 +639,7 @@ if __name__ == '__main__':
         opts['write_content_size'] = True
     if args.write_checksum:
         opts['write_checksum'] = True
-    if args.threads:
+    if args.compress_threads:
         opts['threads'] = args.threads
 
     chunks = get_chunks(args.path, args.limit_count)
@@ -824,13 +835,15 @@ if __name__ == '__main__':
                                               orig_size)
         if args.discrete:
             bench_discrete_decompression(compressed_discrete, orig_size,
-                                         opts)
+                                         opts, threads=args.decompress_threads)
         if args.discrete_dict:
             bench_discrete_decompression(compressed_discrete_dict,
-                                         orig_size, dict_opts)
+                                         orig_size, dict_opts,
+                                         threads=args.decompress_threads)
         if args.discrete_cover_dict:
             bench_discrete_decompression(compressed_discrete_cover_dict,
-                                         orig_size, cover_dict_opts, cover=True)
+                                         orig_size, cover_dict_opts, cover=True,
+                                         threads=args.decompress_threads)
         if args.zlib and args.stream:
             bench_stream_zlib_decompression(compressed_stream_zlib, orig_size)
         if args.stream:
