@@ -393,7 +393,7 @@ PyTypeObject ZstdBufferSegmentsType = {
 	0,                         /* tp_dictoffset */
 	0,                         /* tp_init */
 	0,                         /* tp_alloc */
-	0,                         /* tp_new */
+	PyType_GenericNew,         /* tp_new */
 };
 
 PyDoc_STRVAR(BufferSegment__doc__,
@@ -515,7 +515,7 @@ PyTypeObject ZstdBufferSegmentType = {
 	0,                         /* tp_dictoffset */
 	0,                         /* tp_init */
 	0,                         /* tp_alloc */
-	0,                         /* tp_new */
+	PyType_GenericNew,         /* tp_new */
 };
 
 void bufferutil_module_init(PyObject* mod) {
