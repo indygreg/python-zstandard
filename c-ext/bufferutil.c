@@ -524,7 +524,7 @@ void bufferutil_module_init(PyObject* mod) {
 		return;
 	}
 
-	Py_IncRef((PyObject*)&ZstdBufferWithSegmentsType);
+	Py_INCREF(&ZstdBufferWithSegmentsType);
 	PyModule_AddObject(mod, "BufferWithSegments", (PyObject*)&ZstdBufferWithSegmentsType);
 
 	Py_TYPE(&ZstdBufferSegmentsType) = &PyType_Type;
@@ -532,7 +532,7 @@ void bufferutil_module_init(PyObject* mod) {
 		return;
 	}
 
-	Py_IncRef((PyObject*)&ZstdBufferSegmentsType);
+	Py_INCREF(&ZstdBufferSegmentsType);
 	PyModule_AddObject(mod, "BufferSegments", (PyObject*)&ZstdBufferSegmentsType);
 
 	Py_TYPE(&ZstdBufferSegmentType) = &PyType_Type;
@@ -540,6 +540,6 @@ void bufferutil_module_init(PyObject* mod) {
 		return;
 	}
 
-	Py_IncRef((PyObject*)&ZstdBufferSegmentType);
+	Py_INCREF(&ZstdBufferSegmentType);
 	PyModule_AddObject(mod, "BufferSegment", (PyObject*)&ZstdBufferSegmentType);
 }
