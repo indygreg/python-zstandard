@@ -685,19 +685,10 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 		return NULL;
 	}
 
-	result = PyObject_New(ZstdCompressorIterator, &ZstdCompressorIteratorType);
+	result = (ZstdCompressorIterator*)PyObject_CallObject((PyObject*)&ZstdCompressorIteratorType, NULL);
 	if (!result) {
 		return NULL;
 	}
-
-	result->compressor = NULL;
-	result->reader = NULL;
-	result->buffer = NULL;
-	result->cstream = NULL;
-	result->input.src = NULL;
-	result->output.dst = NULL;
-	result->readResult = NULL;
-
 	if (PyObject_HasAttrString(reader, "read")) {
 		result->reader = reader;
 		Py_INCREF(result->reader);
@@ -714,7 +705,6 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 			goto except;
 		}
 
-		result->bufferOffset = 0;
 		sourceSize = result->buffer->len;
 	}
 	else {
@@ -749,14 +739,6 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 		goto except;
 	}
 	result->output.size = outSize;
-	result->output.pos = 0;
-
-	result->input.src = NULL;
-	result->input.size = 0;
-	result->input.pos = 0;
-
-	result->finishedInput = 0;
-	result->finishedOutput = 0;
 
 	goto finally;
 
