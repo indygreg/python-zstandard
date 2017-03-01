@@ -106,8 +106,7 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	goto finally;
 
 except:
-	Py_DecRef(result);
-	result = NULL;
+	Py_CLEAR(result);
 
 finally:
 	PyMem_Free(output.dst);
