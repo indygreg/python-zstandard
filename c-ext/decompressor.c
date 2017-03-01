@@ -237,8 +237,8 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	totalReadPy = PyLong_FromSsize_t(totalRead);
 	totalWritePy = PyLong_FromSsize_t(totalWrite);
 	res = PyTuple_Pack(2, totalReadPy, totalWritePy);
-	Py_DecRef(totalReadPy);
-	Py_DecRef(totalWritePy);
+	Py_DECREF(totalReadPy);
+	Py_DECREF(totalWritePy);
 
 finally:
 	if (output.dst) {
@@ -353,18 +353,18 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "decompression error: %s", ZSTD_getErrorName(zresult));
-		Py_DecRef(result);
+		Py_DECREF(result);
 		return NULL;
 	}
 	else if (decompressedSize && zresult != decompressedSize) {
 		PyErr_Format(ZstdError, "decompression error: decompressed %zu bytes; expected %llu",
 			zresult, decompressedSize);
-		Py_DecRef(result);
+		Py_DECREF(result);
 		return NULL;
 	}
 	else if (zresult < destCapacity) {
 		if (_PyBytes_Resize(&result, zresult)) {
-			Py_DecRef(result);
+			Py_DECREF(result);
 			return NULL;
 		}
 	}
@@ -390,7 +390,7 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) 
 
 	result->dstream = DStream_from_ZstdDecompressor(self);
 	if (!result->dstream) {
-		Py_DecRef((PyObject*)result);
+		Py_DECREF(result);
 		return NULL;
 	}
 
