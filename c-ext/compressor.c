@@ -613,11 +613,10 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	result = PyObject_New(ZstdCompressionObj, &ZstdCompressionObjType);
+	result = (ZstdCompressionObj*)PyObject_CallObject((PyObject*)&ZstdCompressionObjType, NULL);
 	if (!result) {
 		return NULL;
 	}
-	result->cstream = NULL;
 
 	if (self->mtcctx) {
 		if (init_mtcstream(self, inSize)) {
@@ -640,12 +639,8 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 	result->output.size = outSize;
-	result->output.pos = 0;
-
 	result->compressor = self;
 	Py_INCREF(result->compressor);
-
-	result->finished = 0;
 
 	return result;
 }
