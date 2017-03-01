@@ -95,9 +95,11 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	}
 
 	/* TODO consider using dup2() to redirect zstd's stderr writing to a buffer */
+	Py_BEGIN_ALLOW_THREADS
 	zresult = ZDICT_trainFromBuffer_advanced(dict, capacity,
 		sampleBuffer, sampleSizes, (unsigned int)samplesLen,
 		zparams);
+	Py_END_ALLOW_THREADS
 	if (ZDICT_isError(zresult)) {
 		PyErr_Format(ZstdError, "Cannot train dict: %s", ZDICT_getErrorName(zresult));
 		PyMem_Free(dict);
