@@ -24,6 +24,11 @@ typedef enum {
 	compressorobj_flush_block,
 } CompressorObj_Flush;
 
+/*
+   Represents a CompressionParameters type.
+
+   This type is basically a wrapper around ZSTD_compressionParameters.
+*/
 typedef struct {
 	PyObject_HEAD
 	unsigned windowLog;
@@ -37,6 +42,11 @@ typedef struct {
 
 extern PyTypeObject CompressionParametersType;
 
+/*
+   Represents a FrameParameters type.
+
+   This type is basically a wrapper around ZSTD_frameParams.
+*/
 typedef struct {
 	PyObject_HEAD
 	unsigned long long frameContentSize;
@@ -47,26 +57,49 @@ typedef struct {
 
 extern PyTypeObject FrameParametersType;
 
+/*
+   Represents a ZstdCompressionDict type.
+
+   Instances hold data used for a zstd compression dictionary.
+*/
 typedef struct {
 	PyObject_HEAD
 
+	/* Pointer to dictionary data. Owned by self. */
 	void* dictData;
+	/* Size of dictionary data. */
 	size_t dictSize;
+	/* k parameter for cover dictionaries. Only populated by train_cover_dict(). */
 	unsigned k;
+	/* d parameter for cover dictionaries. Only populated by train_cover_dict(). */
 	unsigned d;
 } ZstdCompressionDict;
 
 extern PyTypeObject ZstdCompressionDictType;
 
+/*
+   Represents a ZstdCompressor type.
+*/
 typedef struct {
 	PyObject_HEAD
 
+	/* Configured compression level. Should be always set. */
 	int compressionLevel;
+	/* Pointer to compression dictionary to use. NULL if not using dictionary
+	   compression. */
 	ZstdCompressionDict* dict;
+	/* Compression context to use. Populated during object construction. NULL
+	   if using multi-threaded compression. */
 	ZSTD_CCtx* cctx;
+	/* Multi-threaded compression context to use. Populated during object
+	   construction. NULL if not using multi-threaded compression. */
 	ZSTDMT_CCtx* mtcctx;
+	/* Digest compression dictionary. NULL initially. Populated on first use. */
 	ZSTD_CDict* cdict;
+	/* Low-level compression parameter control. NULL unless passed to
+	   constructor. Takes precedence over `compressionLevel` if defined. */
 	CompressionParametersObject* cparams;
+	/* Controls zstd frame options. */
 	ZSTD_frameParameters fparams;
 } ZstdCompressor;
 
