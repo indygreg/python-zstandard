@@ -32,6 +32,10 @@ on Linux x86_x64 and Windows x86 and x86_64. The author is reasonably
 confident the extension is stable and works as advertised on these
 platforms.
 
+The CFFI bindings are mostly feature complete. Where a feature is implemented
+in CFFI, unit tests run against both C extension and CFFI implementation to
+ensure behavior parity.
+
 Expected Changes
 ----------------
 
@@ -47,9 +51,6 @@ The author is on the fence as to whether to support the extremely
 low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
 believe it a high priority at this time.
-
-The CFFI bindings are feature complete and all tests run against both
-the C extension and CFFI bindings to ensure behavior parity.
 
 Requirements
 ============
