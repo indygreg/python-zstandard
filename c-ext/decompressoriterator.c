@@ -26,11 +26,6 @@ static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator* self) {
 		self->buffer = NULL;
 	}
 
-	if (self->dstream) {
-		ZSTD_freeDStream(self->dstream);
-		self->dstream = NULL;
-	}
-
 	if (self->input.src) {
 		PyMem_Free((void*)self->input.src);
 		self->input.src = NULL;
@@ -50,6 +45,8 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 	DecompressorIteratorResult result;
 	size_t oldInputPos = self->input.pos;
 
+	assert(self->decompressor->dstream);
+
 	result.chunk = NULL;
 
 	chunk = PyBytes_FromStringAndSize(NULL, self->outSize);
@@ -63,7 +60,7 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 	self->output.pos = 0;
 
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_decompressStream(self->dstream, &self->output, &self->input);
+	zresult = ZSTD_decompressStream(self->decompressor->dstream, &self->output, &self->input);
 	Py_END_ALLOW_THREADS
 
 	/* We're done with the pointer. Nullify to prevent anyone from getting a

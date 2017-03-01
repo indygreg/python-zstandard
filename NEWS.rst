@@ -4,6 +4,9 @@ Version History
 0.8.0 (not yet released)
 ------------------------
 
+* ZSTD_DStream instances are now used across multiple operations on
+  ZstdDecompressor instances, resulting in much better performance for
+  APIs that do streaming.
 * train_dictionary() now releases the GIL.
 * Support for training dictionaries using the COVER algorithm.
 * multi_decompress_into_buffer() API for decompressing multiple frames as a

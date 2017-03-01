@@ -11,16 +11,33 @@
 
 extern PyObject* ZstdError;
 
-ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor) {
-	ZSTD_DStream* dstream;
+/**
+  * Ensure the ZSTD_DStream on a ZstdDecompressor is initialized and reset.
+  *
+  * This should be called before starting a decompression operation with a
+  * ZSTD_DStream on a ZstdDecompressor.
+  */
+int init_dstream(ZstdDecompressor* decompressor) {
 	void* dictData = NULL;
 	size_t dictSize = 0;
 	size_t zresult;
 
-	dstream = ZSTD_createDStream();
-	if (!dstream) {
+	/* Simple case of dstream already exists. Just reset it. */
+	if (decompressor->dstream) {
+		zresult = ZSTD_resetDStream(decompressor->dstream);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "could not reset DStream: %s",
+				ZSTD_getErrorName(zresult));
+			return -1;
+		}
+
+		return 0;
+	}
+
+	decompressor->dstream = ZSTD_createDStream();
+	if (!decompressor->dstream) {
 		PyErr_SetString(ZstdError, "could not create DStream");
-		return NULL;
+		return -1;
 	}
 
 	if (decompressor->dict) {
@@ -29,19 +46,23 @@ ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor) {
 	}
 
 	if (dictData) {
-		zresult = ZSTD_initDStream_usingDict(dstream, dictData, dictSize);
+		zresult = ZSTD_initDStream_usingDict(decompressor->dstream, dictData, dictSize);
 	}
 	else {
-		zresult = ZSTD_initDStream(dstream);
+		zresult = ZSTD_initDStream(decompressor->dstream);
 	}
 
 	if (ZSTD_isError(zresult)) {
+		/* Don't leave a reference to an invalid object. */
+		ZSTD_freeDStream(decompressor->dstream);
+		decompressor->dstream = NULL;
+
 		PyErr_Format(ZstdError, "could not initialize DStream: %s",
 			ZSTD_getErrorName(zresult));
-		return NULL;
+		return -1;
 	}
 
-	return dstream;
+	return 0;
 }
 
 PyDoc_STRVAR(Decompressor__doc__,
@@ -94,15 +115,21 @@ except:
 }
 
 static void Decompressor_dealloc(ZstdDecompressor* self) {
-	if (self->dctx) {
-		ZSTD_freeDCtx(self->dctx);
-	}
-
-	Py_XDECREF(self->dict);
+	Py_CLEAR(self->dict);
 
 	if (self->ddict) {
 		ZSTD_freeDDict(self->ddict);
 		self->ddict = NULL;
+	}
+
+	if (self->dstream) {
+		ZSTD_freeDStream(self->dstream);
+		self->dstream = NULL;
+	}
+
+	if (self->dctx) {
+		ZSTD_freeDCtx(self->dctx);
+		self->dctx = NULL;
 	}
 
 	PyObject_Del(self);
@@ -133,7 +160,6 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	PyObject* dest;
 	size_t inSize = ZSTD_DStreamInSize();
 	size_t outSize = ZSTD_DStreamOutSize();
-	ZSTD_DStream* dstream;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
 	Py_ssize_t totalRead = 0;
@@ -165,8 +191,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	/* Prevent free on uninitialized memory in finally. */
 	output.dst = NULL;
 
-	dstream = DStream_from_ZstdDecompressor(self);
-	if (!dstream) {
+	if (0 != init_dstream(self)) {
 		res = NULL;
 		goto finally;
 	}
@@ -204,7 +229,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 
 		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_decompressStream(dstream, &output, &input);
+			zresult = ZSTD_decompressStream(self->dstream, &output, &input);
 			Py_END_ALLOW_THREADS
 
 			if (ZSTD_isError(zresult)) {
@@ -231,9 +256,6 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 
 	/* Source stream is exhausted. Finish up. */
 
-	ZSTD_freeDStream(dstream);
-	dstream = NULL;
-
 	totalReadPy = PyLong_FromSsize_t(totalRead);
 	totalWritePy = PyLong_FromSsize_t(totalWrite);
 	res = PyTuple_Pack(2, totalReadPy, totalWritePy);
@@ -243,10 +265,6 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 finally:
 	if (output.dst) {
 		PyMem_Free(output.dst);
-	}
-
-	if (dstream) {
-		ZSTD_freeDStream(dstream);
 	}
 
 	return res;
@@ -388,8 +406,7 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) 
 		return NULL;
 	}
 
-	result->dstream = DStream_from_ZstdDecompressor(self);
-	if (!result->dstream) {
+	if (0 != init_dstream(self)) {
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -481,8 +498,7 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 	result->outSize = outSize;
 	result->skipBytes = skipBytes;
 
-	result->dstream = DStream_from_ZstdDecompressor(self);
-	if (!result->dstream) {
+	if (0 != init_dstream(self)) {
 		goto except;
 	}
 

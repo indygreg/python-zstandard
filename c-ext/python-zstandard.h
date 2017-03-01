@@ -157,6 +157,7 @@ typedef struct {
 
 	ZstdCompressionDict* dict;
 	ZSTD_DDict* ddict;
+	ZSTD_DStream* dstream;
 } ZstdDecompressor;
 
 extern PyTypeObject ZstdDecompressorType;
@@ -165,7 +166,6 @@ typedef struct {
 	PyObject_HEAD
 
 	ZstdDecompressor* decompressor;
-	ZSTD_DStream* dstream;
 	int finished;
 } ZstdDecompressionObj;
 
@@ -177,7 +177,6 @@ typedef struct {
 	ZstdDecompressor* decompressor;
 	PyObject* writer;
 	size_t outSize;
-	ZSTD_DStream* dstream;
 	int entered;
 } ZstdDecompressionWriter;
 
@@ -193,7 +192,6 @@ typedef struct {
 	size_t inSize;
 	size_t outSize;
 	size_t skipBytes;
-	ZSTD_DStream* dstream;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
 	Py_ssize_t readCount;
@@ -250,7 +248,7 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);
 PyObject* estimate_compression_context_size(PyObject* self, PyObject* args);
 ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize);
 int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize);
-ZSTD_DStream* DStream_from_ZstdDecompressor(ZstdDecompressor* decompressor);
+int init_dstream(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);
