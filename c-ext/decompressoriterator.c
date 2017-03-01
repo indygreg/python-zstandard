@@ -160,7 +160,7 @@ read_from_source:
 					PyErr_SetString(PyExc_ValueError,
 						"skip_bytes larger than first input chunk; "
 						"this scenario is currently unsupported");
-					Py_DecRef(readResult);
+					Py_XDECREF(readResult);
 					return NULL;
 				}
 
@@ -179,7 +179,7 @@ read_from_source:
 		else if (!self->readCount) {
 			self->finishedInput = 1;
 			self->finishedOutput = 1;
-			Py_DecRef(readResult);
+			Py_XDECREF(readResult);
 			PyErr_SetString(PyExc_StopIteration, "empty input");
 			return NULL;
 		}
@@ -188,7 +188,7 @@ read_from_source:
 		}
 
 		/* We've copied the data managed by memory. Discard the Python object. */
-		Py_DecRef(readResult);
+		Py_XDECREF(readResult);
 	}
 
 	result = read_decompressor_iterator(self);
