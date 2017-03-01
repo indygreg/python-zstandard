@@ -44,6 +44,10 @@ implemented on the ``ZstdCompressor`` and ``ZstdDecompressor`` types.
 Those APIs likely won't change significantly. Some low-level behavior
 (such as naming and types expected by arguments) may change.
 
+There will likely be arguments added to control the input and output
+buffer sizes (currently, certain operations read and write in chunk
+sizes using zstd's preferred defaults).
+
 There should be an API that accepts an object that conforms to the buffer
 interface and returns an iterator over compressed or decompressed output.
 
