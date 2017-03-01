@@ -798,7 +798,7 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	result = PyObject_New(ZstdCompressionWriter, &ZstdCompressionWriterType);
+	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
 	if (!result) {
 		return NULL;
 	}
@@ -810,11 +810,7 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 	Py_INCREF(result->writer);
 
 	result->sourceSize = sourceSize;
-
 	result->outSize = outSize;
-
-	result->entered = 0;
-	result->cstream = NULL;
 
 	return result;
 }
