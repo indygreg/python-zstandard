@@ -383,7 +383,7 @@ PyDoc_STRVAR(Decompressor_decompressobj__doc__,
 );
 
 static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) {
-	ZstdDecompressionObj* result = PyObject_New(ZstdDecompressionObj, &ZstdDecompressionObjType);
+	ZstdDecompressionObj* result = (ZstdDecompressionObj*)PyObject_CallObject((PyObject*)&ZstdDecompressionObjType, NULL);
 	if (!result) {
 		return NULL;
 	}
@@ -396,8 +396,6 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) 
 
 	result->decompressor = self;
 	Py_INCREF(result->decompressor);
-
-	result->finished = 0;
 
 	return result;
 }
@@ -448,17 +446,10 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 		return NULL;
 	}
 
-	result = PyObject_New(ZstdDecompressorIterator, &ZstdDecompressorIteratorType);
+	result = (ZstdDecompressorIterator*)PyObject_CallObject((PyObject*)&ZstdDecompressorIteratorType, NULL);
 	if (!result) {
 		return NULL;
 	}
-
-	result->decompressor = NULL;
-	result->reader = NULL;
-	result->buffer = NULL;
-	result->dstream = NULL;
-	result->input.src = NULL;
-	result->output.dst = NULL;
 
 	if (PyObject_HasAttrString(reader, "read")) {
 		result->reader = reader;
@@ -476,8 +467,6 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 		if (0 != PyObject_GetBuffer(reader, result->buffer, PyBUF_CONTIG_RO)) {
 			goto except;
 		}
-
-		result->bufferOffset = 0;
 	}
 	else {
 		PyErr_SetString(PyExc_ValueError,
@@ -502,16 +491,6 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 		PyErr_NoMemory();
 		goto except;
 	}
-	result->input.size = 0;
-	result->input.pos = 0;
-
-	result->output.dst = NULL;
-	result->output.size = 0;
-	result->output.pos = 0;
-
-	result->readCount = 0;
-	result->finishedInput = 0;
-	result->finishedOutput = 0;
 
 	goto finally;
 
@@ -564,7 +543,7 @@ static ZstdDecompressionWriter* Decompressor_write_to(ZstdDecompressor* self, Py
 		return NULL;
 	}
 
-	result = PyObject_New(ZstdDecompressionWriter, &ZstdDecompressionWriterType);
+	result = (ZstdDecompressionWriter*)PyObject_CallObject((PyObject*)&ZstdDecompressionWriterType, NULL);
 	if (!result) {
 		return NULL;
 	}
@@ -576,9 +555,6 @@ static ZstdDecompressionWriter* Decompressor_write_to(ZstdDecompressor* self, Py
 	Py_INCREF(result->writer);
 
 	result->outSize = outSize;
-
-	result->entered = 0;
-	result->dstream = NULL;
 
 	return result;
 }
