@@ -165,7 +165,7 @@ static ZstdBufferSegment* BufferWithSegments_item(ZstdBufferWithSegments* self, 
 		return NULL;
 	}
 
-	result = PyObject_New(ZstdBufferSegment, &ZstdBufferSegmentType);
+	result = (ZstdBufferSegment*)PyObject_CallObject((PyObject*)&ZstdBufferSegmentType, NULL);
 	if (NULL == result) {
 		return NULL;
 	}
@@ -217,7 +217,7 @@ PyDoc_STRVAR(BufferWithSegments_segments__doc__,
 );
 
 static ZstdBufferSegments* BufferWithSegments_segments(ZstdBufferWithSegments* self) {
-	ZstdBufferSegments* result = PyObject_New(ZstdBufferSegments, &ZstdBufferSegmentsType);
+	ZstdBufferSegments* result = (ZstdBufferSegments*)PyObject_CallObject((PyObject*)&ZstdBufferSegmentsType, NULL);
 	if (NULL == result) {
 		return NULL;
 	}
