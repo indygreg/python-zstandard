@@ -450,8 +450,8 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	totalReadPy = PyLong_FromSsize_t(totalRead);
 	totalWritePy = PyLong_FromSsize_t(totalWrite);
 	res = PyTuple_Pack(2, totalReadPy, totalWritePy);
-	Py_DecRef(totalReadPy);
-	Py_DecRef(totalWritePy);
+	Py_DECREF(totalReadPy);
+	Py_DECREF(totalWritePy);
 
 finally:
 	if (output.dst) {
@@ -771,9 +771,8 @@ except:
 		result->cstream = NULL;
 	}
 
-	Py_DecRef((PyObject*)result->compressor);
-	Py_DecRef(result->reader);
-
+	Py_XDECREF(result->compressor);
+	Py_XDECREF(result->reader);
 	Py_DECREF(result);
 	result = NULL;
 
