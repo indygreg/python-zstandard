@@ -214,7 +214,7 @@ void compressionparams_module_init(PyObject* mod) {
 		return;
 	}
 
-	Py_IncRef((PyObject*)&CompressionParametersType);
+	Py_INCREF(&CompressionParametersType);
 	PyModule_AddObject(mod, "CompressionParameters",
 		(PyObject*)&CompressionParametersType);
 }
