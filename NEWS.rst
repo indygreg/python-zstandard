@@ -4,6 +4,7 @@ Version History
 0.8.0 (not yet released)
 ------------------------
 
+* train_dictionary() now releases the GIL.
 * Support for training dictionaries using the COVER algorithm.
 * multi_decompress_into_buffer() API for decompressing multiple frames as a
   single operation, as efficiently as possible.
