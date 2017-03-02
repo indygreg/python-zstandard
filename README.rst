@@ -60,6 +60,12 @@ low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
 believe it a high priority at this time.
 
+There will likely be a refactoring of the module names. Currently,
+``zstd`` is a C extension and ``zstd_cffi`` is the CFFI interface.
+This means that all code for the C extension must be implemented in
+C. ``zstd`` may be converted to a Python module so code can be reused
+between CFFI and C and so not all code in the C extension has to be C.
+
 Requirements
 ============
 
