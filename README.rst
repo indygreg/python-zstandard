@@ -51,6 +51,10 @@ sizes using zstd's preferred defaults).
 There should be an API that accepts an object that conforms to the buffer
 interface and returns an iterator over compressed or decompressed output.
 
+There should be an API that exposes an ``io.RawIOBase`` interface to
+compressor and decompressor streams, like how ``gzip.GzipFile`` from
+the standard library works (issue 13).
+
 The author is on the fence as to whether to support the extremely
 low level compression and decompression APIs. It could be useful to
 support compression without the framing headers. But the author doesn't
