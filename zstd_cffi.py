@@ -1218,9 +1218,11 @@ class ZstdDecompressor(object):
     def _ensure_dstream(self):
         if self._dstream:
             zresult = lib.ZSTD_resetDStream(self._dstream)
-            if self._dstream == ffi.NULL:
+            if lib.ZSTD_isError(zresult):
                 raise ZstdError('could not reset DStream: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+            return
 
         self._dstream = lib.ZSTD_createDStream()
         if self._dstream == ffi.NULL:
