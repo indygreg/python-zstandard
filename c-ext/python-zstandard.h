@@ -101,6 +101,9 @@ typedef struct {
 	CompressionParametersObject* cparams;
 	/* Controls zstd frame options. */
 	ZSTD_frameParameters fparams;
+	/* Holds state for streaming compression. Shared across all invocation.
+	   Populated on first use. */
+	ZSTD_CStream* cstream;
 } ZstdCompressor;
 
 extern PyTypeObject ZstdCompressorType;
@@ -109,7 +112,6 @@ typedef struct {
 	PyObject_HEAD
 
 	ZstdCompressor* compressor;
-	ZSTD_CStream* cstream;
 	ZSTD_outBuffer output;
 	int finished;
 } ZstdCompressionObj;
@@ -123,7 +125,6 @@ typedef struct {
 	PyObject* writer;
 	Py_ssize_t sourceSize;
 	size_t outSize;
-	ZSTD_CStream* cstream;
 	int entered;
 } ZstdCompressionWriter;
 
@@ -140,7 +141,6 @@ typedef struct {
 	size_t inSize;
 	size_t outSize;
 
-	ZSTD_CStream* cstream;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
 	int finishedOutput;
@@ -246,7 +246,7 @@ void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_comp
 CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject* args);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);
 PyObject* estimate_compression_context_size(PyObject* self, PyObject* args);
-ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize);
+int init_cstream(ZstdCompressor* compressor, unsigned long long sourceSize);
 int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize);
 int init_dstream(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);

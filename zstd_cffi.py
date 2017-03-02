@@ -170,7 +170,7 @@ class ZstdCompressionWriter(object):
         if self._mtcctx:
             self._compressor._init_mtcstream(self._source_size)
         else:
-            self._cstream = self._compressor._get_cstream(self._source_size)
+            self._compressor._ensure_cstream(self._source_size)
         self._entered = True
         return self
 
@@ -188,7 +188,7 @@ class ZstdCompressionWriter(object):
                 if self._mtcctx:
                     zresult = lib.ZSTDMT_endStream(self._mtcctx, out_buffer)
                 else:
-                    zresult = lib.ZSTD_endStream(self._cstream, out_buffer)
+                    zresult = lib.ZSTD_endStream(self._compressor._cstream, out_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('error ending compression stream: %s' %
                                     ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -200,7 +200,6 @@ class ZstdCompressionWriter(object):
                 if zresult == 0:
                     break
 
-        self._cstream = None
         self._compressor = None
 
         return False
@@ -210,7 +209,7 @@ class ZstdCompressionWriter(object):
             raise ZstdError('cannot determine size of an inactive compressor; '
                             'call when a context manager is active')
 
-        return lib.ZSTD_sizeof_CStream(self._cstream)
+        return lib.ZSTD_sizeof_CStream(self._compressor._cstream)
 
     def write(self, data):
         if not self._entered:
@@ -237,7 +236,8 @@ class ZstdCompressionWriter(object):
                 zresult = lib.ZSTDMT_compressStream(self._mtcctx, out_buffer,
                                                     in_buffer)
             else:
-                zresult = lib.ZSTD_compressStream(self._cstream, out_buffer, in_buffer)
+                zresult = lib.ZSTD_compressStream(self._compressor._cstream, out_buffer,
+                                                  in_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -265,7 +265,7 @@ class ZstdCompressionWriter(object):
             if self._mtcctx:
                 zresult = lib.ZSTDMT_flushStream(self._mtcctx, out_buffer)
             else:
-                zresult = lib.ZSTD_flushStream(self._cstream, out_buffer)
+                zresult = lib.ZSTD_flushStream(self._compressor._cstream, out_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -298,7 +298,7 @@ class ZstdCompressionObj(object):
                 zresult = lib.ZSTDMT_compressStream(self._mtcctx,
                                                     self._out, source)
             else:
-                zresult = lib.ZSTD_compressStream(self._cstream, self._out,
+                zresult = lib.ZSTD_compressStream(self._compressor._cstream, self._out,
                                                   source)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
@@ -323,7 +323,7 @@ class ZstdCompressionObj(object):
             if self._mtcctx:
                 zresult = lib.ZSTDMT_flushStream(self._mtcctx, self._out)
             else:
-                zresult = lib.ZSTD_flushStream(self._cstream, self._out)
+                zresult = lib.ZSTD_flushStream(self._compressor._cstream, self._out)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -347,7 +347,7 @@ class ZstdCompressionObj(object):
             if self._mtcctx:
                 zresult = lib.ZSTDMT_endStream(self._mtcctx, self._out)
             else:
-                zresult = lib.ZSTD_endStream(self._cstream, self._out)
+                zresult = lib.ZSTD_endStream(self._compressor._cstream, self._out)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 ffi.string(lib.ZSTD_getErroName(zresult)))
@@ -358,9 +358,6 @@ class ZstdCompressionObj(object):
 
             if not zresult:
                 break
-
-        # GC compression stream immediately.
-        self._cstream = None
 
         return b''.join(chunks)
 
@@ -406,6 +403,8 @@ class ZstdCompressor(object):
             self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx)
             self._multithreaded = False
 
+        self._cstream = None
+
     def compress(self, data, allow_empty=False):
         if len(data) == 0 and self._fparams.contentSizeFlag and not allow_empty:
             raise ValueError('cannot write empty inputs when writing content sizes')
@@ -450,12 +449,10 @@ class ZstdCompressor(object):
     def compressobj(self, size=0):
         if self._multithreaded:
             self._init_mtcstream(size)
-            cstream = None
         else:
-            cstream = self._get_cstream(size)
+            self._ensure_cstream(size)
 
         cobj = ZstdCompressionObj()
-        cobj._cstream = cstream
         cobj._out = ffi.new('ZSTD_outBuffer *')
         cobj._dst_buffer = ffi.new('char[]', COMPRESSION_RECOMMENDED_OUTPUT_SIZE)
         cobj._out.dst = cobj._dst_buffer
@@ -484,7 +481,7 @@ class ZstdCompressor(object):
         if mt:
             self._init_mtcstream(size)
         else:
-            cstream = self._get_cstream(size)
+            self._ensure_cstream(size)
 
         in_buffer = ffi.new('ZSTD_inBuffer *')
         out_buffer = ffi.new('ZSTD_outBuffer *')
@@ -511,7 +508,8 @@ class ZstdCompressor(object):
                 if mt:
                     zresult = lib.ZSTDMT_compressStream(self._cctx, out_buffer, in_buffer)
                 else:
-                    zresult = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
+                    zresult = lib.ZSTD_compressStream(self._cstream,
+                                                      out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd compress error: %s' %
                                     ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -526,7 +524,7 @@ class ZstdCompressor(object):
             if mt:
                 zresult = lib.ZSTDMT_endStream(self._cctx, out_buffer)
             else:
-                zresult = lib.ZSTD_endStream(cstream, out_buffer)
+                zresult = lib.ZSTD_endStream(self._cstream, out_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -565,7 +563,7 @@ class ZstdCompressor(object):
         if self._multithreaded:
             self._init_mtcstream(size)
         else:
-            cstream = self._get_cstream(size)
+            self._ensure_cstream(size)
 
         in_buffer = ffi.new('ZSTD_inBuffer *')
         out_buffer = ffi.new('ZSTD_outBuffer *')
@@ -608,7 +606,7 @@ class ZstdCompressor(object):
                 if self._multithreaded:
                     zresult = lib.ZSTDMT_compressStream(self._cctx, out_buffer, in_buffer)
                 else:
-                    zresult = lib.ZSTD_compressStream(cstream, out_buffer, in_buffer)
+                    zresult = lib.ZSTD_compressStream(self._cstream, out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd compress error: %s' %
                                     ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -630,7 +628,7 @@ class ZstdCompressor(object):
             if self._multithreaded:
                 zresult = lib.ZSTDMT_endStream(self._cctx, out_buffer)
             else:
-                zresult = lib.ZSTD_endStream(cstream, out_buffer)
+                zresult = lib.ZSTD_endStream(self._cstream, out_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -643,7 +641,15 @@ class ZstdCompressor(object):
             if zresult == 0:
                 break
 
-    def _get_cstream(self, size):
+    def _ensure_cstream(self, size):
+        if self._cstream:
+            zresult = lib.ZSTD_resetCStream(self._cstream, size)
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('could not reset CStream: %s' %
+                                ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+            return
+
         cstream = lib.ZSTD_createCStream()
         if cstream == ffi.NULL:
             raise MemoryError()
@@ -670,7 +676,7 @@ class ZstdCompressor(object):
             raise Exception('cannot init CStream: %s' %
                             ffi.string(lib.ZSTD_getErrorName(zresult)))
 
-        return cstream
+        self._cstream = cstream
 
     def _init_mtcstream(self, size):
         assert self._multithreaded

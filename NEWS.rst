@@ -4,6 +4,9 @@ Version History
 0.8.0 (not yet released)
 ------------------------
 
+* ZSTD_CStream instances are now used across multiple operations on
+  ZstdCompressor instances, resulting in much better performance for
+  APIs that do streaming.
 * ZSTD_DStream instances are now used across multiple operations on
   ZstdDecompressor instances, resulting in much better performance for
   APIs that do streaming.

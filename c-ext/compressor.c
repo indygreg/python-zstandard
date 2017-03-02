@@ -28,22 +28,32 @@ int populate_cdict(ZstdCompressor* compressor, void* dictData, size_t dictSize, 
 }
 
 /**
-* Initialize a zstd CStream from a ZstdCompressor instance.
-*
-* Returns a ZSTD_CStream on success or NULL on failure. If NULL, a Python
-* exception will be set.
-*/
-ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t sourceSize) {
-	ZSTD_CStream* cstream;
+ * Ensure the ZSTD_CStream on a ZstdCompressor instance is initialized.
+ *
+ * Returns 0 on success. Other value on failure. Will set a Python exception
+ * on failure.
+ */
+int init_cstream(ZstdCompressor* compressor, unsigned long long sourceSize) {
 	ZSTD_parameters zparams;
 	void* dictData = NULL;
 	size_t dictSize = 0;
 	size_t zresult;
 
-	cstream = ZSTD_createCStream();
-	if (!cstream) {
-		PyErr_SetString(ZstdError, "cannot create CStream");
-		return NULL;
+	if (compressor->cstream) {
+		zresult = ZSTD_resetCStream(compressor->cstream, sourceSize);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "could not reset CStream: %s",
+				ZSTD_getErrorName(zresult));
+			return -1;
+		}
+
+		return 0;
+	}
+
+	compressor->cstream = ZSTD_createCStream();
+	if (!compressor->cstream) {
+		PyErr_SetString(ZstdError, "could not create CStream");
+		return -1;
 	}
 
 	if (compressor->dict) {
@@ -63,15 +73,17 @@ ZSTD_CStream* CStream_from_ZstdCompressor(ZstdCompressor* compressor, Py_ssize_t
 
 	zparams.fParams = compressor->fparams;
 
-	zresult = ZSTD_initCStream_advanced(cstream, dictData, dictSize, zparams, sourceSize);
+	zresult = ZSTD_initCStream_advanced(compressor->cstream, dictData, dictSize,
+		zparams, sourceSize);
 
 	if (ZSTD_isError(zresult)) {
-		ZSTD_freeCStream(cstream);
+		ZSTD_freeCStream(compressor->cstream);
+		compressor->cstream = NULL;
 		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
-		return NULL;
+		return -1;
 	}
 
-	return cstream;
+	return 0;;
 }
 
 int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize) {
@@ -251,6 +263,11 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 }
 
 static void ZstdCompressor_dealloc(ZstdCompressor* self) {
+	if (self->cstream) {
+		ZSTD_freeCStream(self->cstream);
+		self->cstream = NULL;
+	}
+
 	Py_XDECREF(self->cparams);
 	Py_XDECREF(self->dict);
 
@@ -303,7 +320,6 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	Py_ssize_t sourceSize = 0;
 	size_t inSize = ZSTD_CStreamInSize();
 	size_t outSize = ZSTD_CStreamOutSize();
-	ZSTD_CStream* cstream = NULL;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
 	Py_ssize_t totalRead = 0;
@@ -342,8 +358,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		}
 	}
 	else {
-		cstream = CStream_from_ZstdCompressor(self, sourceSize);
-		if (!cstream) {
+		if (0 != init_cstream(self, sourceSize)) {
 			res = NULL;
 			goto finally;
 		}
@@ -386,7 +401,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 				zresult = ZSTDMT_compressStream(self->mtcctx, &output, &input);
 			}
 			else {
-				zresult = ZSTD_compressStream(cstream, &output, &input);
+				zresult = ZSTD_compressStream(self->cstream, &output, &input);
 			}
 			Py_END_ALLOW_THREADS
 
@@ -416,7 +431,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 			zresult = ZSTDMT_endStream(self->mtcctx, &output);
 		}
 		else {
-			zresult = ZSTD_endStream(cstream, &output);
+			zresult = ZSTD_endStream(self->cstream, &output);
 		}
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
@@ -442,11 +457,6 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		}
 	}
 
-	if (cstream) {
-		ZSTD_freeCStream(cstream);
-		cstream = NULL;
-	}
-
 	totalReadPy = PyLong_FromSsize_t(totalRead);
 	totalWritePy = PyLong_FromSsize_t(totalWrite);
 	res = PyTuple_Pack(2, totalReadPy, totalWritePy);
@@ -456,10 +466,6 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 finally:
 	if (output.dst) {
 		PyMem_Free(output.dst);
-	}
-
-	if (cstream) {
-		ZSTD_freeCStream(cstream);
 	}
 
 	return res;
@@ -625,8 +631,7 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		}
 	}
 	else {
-		result->cstream = CStream_from_ZstdCompressor(self, inSize);
-		if (!result->cstream) {
+		if (0 != init_cstream(self, inSize)) {
 			Py_DECREF(result);
 			return NULL;
 		}
@@ -724,8 +729,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 		}
 	}
 	else {
-		result->cstream = CStream_from_ZstdCompressor(self, sourceSize);
-		if (!result->cstream) {
+		if (0 != init_cstream(self, sourceSize)) {
 			goto except;
 		}
 	}
@@ -743,11 +747,6 @@ static ZstdCompressorIterator* ZstdCompressor_read_from(ZstdCompressor* self, Py
 	goto finally;
 
 except:
-	if (result->cstream) {
-		ZSTD_freeCStream(result->cstream);
-		result->cstream = NULL;
-	}
-
 	Py_XDECREF(result->compressor);
 	Py_XDECREF(result->reader);
 	Py_DECREF(result);
