@@ -183,8 +183,10 @@ like the following::
 API
 ===
 
-The compiled C extension provides a ``zstd`` Python module. This module
-exposes the following interfaces.
+The compiled C extension provides a ``zstd`` Python module. The CFFI
+bindings provide a ``zstd_cffi`` module. Both provide an identical API
+interface. The types, functions, and attributes exposed by these modules
+are documented in the sections below.
 
 ZstdCompressor
 --------------
