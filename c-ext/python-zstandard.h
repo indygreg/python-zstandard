@@ -219,6 +219,8 @@ typedef struct {
 	Py_ssize_t segmentCount;
 } ZstdBufferSegments;
 
+extern PyTypeObject ZstdBufferSegmentsType;
+
 typedef struct {
 	PyObject_HEAD
 
@@ -227,6 +229,8 @@ typedef struct {
 	Py_ssize_t dataSize;
 	unsigned long long offset;
 } ZstdBufferSegment;
+
+extern PyTypeObject ZstdBufferSegmentType;
 
 typedef struct {
 	PyObject_HEAD
@@ -239,8 +243,6 @@ typedef struct {
 } ZstdBufferWithSegments;
 
 extern PyTypeObject ZstdBufferWithSegmentsType;
-extern PyTypeObject ZstdBufferSegmentType;
-extern PyTypeObject ZstdBufferSegmentsType;
 
 void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams);
 CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject* args);
