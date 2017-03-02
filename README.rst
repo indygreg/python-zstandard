@@ -188,6 +188,12 @@ bindings provide a ``zstd_cffi`` module. Both provide an identical API
 interface. The types, functions, and attributes exposed by these modules
 are documented in the sections below.
 
+.. note::
+
+   The documentation in this section makes references to various zstd
+   concepts and functionality. The ``Zstandard Concepts`` section below
+   explains these concepts in more detail.
+
 ZstdCompressor
 --------------
 
@@ -768,13 +774,7 @@ operations.
 Dictionary Creation and Management
 ----------------------------------
 
-Zstandard allows *dictionaries* to be used when compressing and
-decompressing data. The idea is that if you are compressing a lot of similar
-data, you can precompute common properties of that data (such as recurring
-byte sequences) to achieve better compression ratios.
-
-In Python, compression dictionaries are represented as the
-``ZstdCompressionDict`` type.
+Compression dictionaries are represented as the ``ZstdCompressionDict`` type.
 
 Instances can be constructed from bytes::
 
@@ -1140,6 +1140,78 @@ within a ``BufferWithSegments``.
 The array members are 64-bit unsigned integers using host/native bit order.
 
 Instances conform to the buffer protocol.
+
+Zstandard Concepts
+==================
+
+It is important to have a basic understanding of how Zstandard works in order
+to optimally use this library. This section aims to provide that knowledge.
+
+Frames and Compression Format
+-----------------------------
+
+Compressed zstd data almost always exists within a container called a
+*frame*. (For the technically curious, see the
+`specification <https://github.com/facebook/zstd/blob/3bee41a70eaf343fbcae3637b3f6edbe52f35ed8/doc/zstd_compression_format.md>_.)
+
+The frame contains a header and optional trailer. The header contains a
+magic number to self-identify as a zstd frame and a description of the
+compressed data that follows.
+
+Among other things, the frame *optionally* contains the size of the
+decompressed data the frame represents, a checksum of the decompressed
+data (to facilitate verification during decompression), and the ID of
+the dictionary used to compress the data.
+
+Compression and Decompression Contexts
+--------------------------------------
+
+In order to perform a compression or decompression operation with the zstd
+C API, you need what's called a *context*. A context essentially holds
+configuration and state for a compression or decompression operation. For
+example, a compression context holds the configured compression level.
+
+Contexts can be reused for multiple operations. Since creating and
+destroying contexts is not free, there are performance advantages to
+reusing contexts.
+
+The ``ZstdCompressor`` and ``ZstdDecompressor`` types are essentially
+wrappers around these contexts in the zstd C API.
+
+One-shot And Streaming Operations
+---------------------------------
+
+A compression or decompression operation can either be performed as a
+single *one-shot* operation or as a continuous *streaming* operation.
+
+In one-shot mode (the *simple* APIs provided by the Python interface),
+**all** input is handed to the compressor or decompressor as a single buffer
+and **all** output is returned as a single buffer.
+
+In streaming mode, input is delivered to the compressor or decompressor as
+a series of chunks via multiple function calls. Likewise, output is
+obtained in chunks as well.
+
+Streaming operations require an additional *stream* object to be created
+to track the operation. These are logical extensions of *context*
+instances.
+
+There are advantages and disadvantages to each mode of operation. There
+are scenarios where certain modes can't be used. See the
+``Choosing an API`` section for more.
+
+Dictionaries
+------------
+
+A compression *dictionary* is essentially data used to seed the compressor
+state so it can achieve better compression. The idea is that if you are
+compressing a lot of similar pieces of data (e.g. JSON documents or anything
+sharing similar structure), then you can find common patterns across multiple
+objects then leverage those common patterns during compression and
+decompression operations to achieve better compression ratios.
+
+Dictionary compression is generally only useful for small inputs - data no
+larger than a kilobyte or 2.
 
 Note on Zstandard's *Experimental* API
 ======================================
