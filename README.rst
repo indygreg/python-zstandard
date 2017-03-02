@@ -998,42 +998,6 @@ estimate_decompression_context_size()
 
 Estimate the memory size requirements for a decompressor instance.
 
-BufferWithSegments Type
-^^^^^^^^^^^^^^^^^^^^^^^
-
-The ``BufferWithSegments`` type manages a memory buffer containing N discrete
-items at known memory locations and lengths (segments). This type exists to
-facilitate operations against multiple data blobs with minimal overhead. Use
-of this type avoids extra memory allocations, frees, and overhead with managing
-references to that memory (which may include Python object creation and garbage
-collection).
-
-A ``BufferWithSegments`` is essentially a memory buffer with a known length
-and an array of ``(offset, length)`` 64-bit unsigned integers defining the
-byte offset and length of each segment within the buffer.
-
-``len()`` of a ``BufferWithSegments`` returns the number of segments known to
-the instance. The ``.size`` attribute contains the total size in bytes of the
-instance.
-
-Instances conform to the buffer protocol. So a reference to the backing bytes
-can be obtained via ``memoryview(o)``. A *copy* of the backing bytes can also
-be obtained via ``.tobytes()``.
-
-Each segment in the instance can be obtained via ``o[index]`` (or by calling
-`__getitem__`` directly). The returned segment is a ``BufferSegment`` type. It
-also conforms to the buffer protocol. ``len()`` returns its length.
-``.tobytes()`` returns a copy of the backing bytes. ``.offset`` returns the
-offset of this segment within the ``BufferWithSegments`` instance.
-
-The ``.segments`` attribute is a ``BufferSegments`` instance. This type exposes
-the array of ``(offset, length)`` pairs that define the segments in the
-``BufferWithSegments``. The 64-bit unsigned integers in each pair use the
-host/native bit order.
-
-``BufferSegments`` conforms to the buffer protocol and allows accessing the
-raw bytes backing the ``(offset, length)`` array.
-
 Constants
 ---------
 
@@ -1109,6 +1073,71 @@ example, the difference between *context* reuse and non-reuse for 100,000
 100 byte inputs will be significant (possiby over 10x faster to reuse contexts)
 whereas 10 1,000,000 byte inputs will be more similar in speed (because the
 time spent doing compression dwarfs time spent creating new *contexts*).
+
+Buffer Types
+------------
+
+The API exposes a handful of custom types for interfacing with memory buffers.
+The primary goal of these types is to facilitate efficient multi-object
+operations.
+
+The essential idea is to have a single memory allocation provide backing
+storage for multiple logical objects. This has 2 main advantages: fewer
+allocations and optimal memory access patterns. This avoids having to allocate
+a Python object for each logical object and furthermore ensures that access of
+data for objects can be sequential (read: fast) in memory.
+
+BufferWithSegments
+^^^^^^^^^^^^^^^^^^
+
+The ``BufferWithSegments`` type represents a memory buffer containing N
+discrete items of known lengths (segments). It is essentially a fixed size
+memory address and an array of 2-tuples of ``(offset, length)`` 64-bit
+unsigned native endian integers defining the byte offset and length of each
+segment within the buffer.
+
+Instances behave like containers.
+
+``len()`` returns the number of segments within the instance.
+
+``o[index]`` or ``__getitem__`` obtains a ``BufferSegment`` representing an
+individual segment within the backing buffer. That returned object references
+(not copies) memory. This means that iterating all objects doesn't copy
+data within the buffer.
+
+The ``.size`` attribute contains the total size in bytes of the backing
+buffer.
+
+Instances conform to the buffer protocol. So a reference to the backing bytes
+can be obtained via ``memoryview(o)``. A *copy* of the backing bytes can also
+be obtained via ``.tobytes()``.
+
+The ``.segments`` attribute exposes the array of ``(offset, length)`` for
+segments within the buffer. It is a ``BufferSegments`` type.
+
+BufferSegment
+^^^^^^^^^^^^^
+
+The ``BufferSegment`` type represents a segment within a ``BufferWithSegments``.
+It is essentially a reference to N bytes within a ``BufferWithSegments``.
+
+``len()`` returns the length of the segment in bytes.
+
+``.offset`` contains the byte offset of this segment within its parent
+``BufferWithSegments`` instance.
+
+The object conforms to the buffer protocol. ``.tobytes()`` can be called to
+obtain a ``bytes`` instance with a copy of the backing bytes.
+
+BufferSegments
+^^^^^^^^^^^^^^
+
+This type represents an array of ``(offset, length)`` integers defining segments
+within a ``BufferWithSegments``.
+
+The array members are 64-bit unsigned integers using host/native bit order.
+
+Instances conform to the buffer protocol.
 
 Note on Zstandard's *Experimental* API
 ======================================
