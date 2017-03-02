@@ -25,6 +25,18 @@ class TestBufferWithSegments(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, 'offset within segments array references memory'):
             zstd.BufferWithSegments(b'foo', ss.pack(0, 4))
 
+    def test_invalid_getitem(self):
+        b = zstd.BufferWithSegments(b'foo', ss.pack(0, 3))
+
+        with self.assertRaisesRegexp(IndexError, 'offset must be non-negative'):
+            test = b[-10]
+
+        with self.assertRaisesRegexp(IndexError, 'offset must be less than 1'):
+            test = b[1]
+
+        with self.assertRaisesRegexp(IndexError, 'offset must be less than 1'):
+            test = b[2]
+
     def test_single(self):
         b = zstd.BufferWithSegments(b'foo', ss.pack(0, 3))
         self.assertEqual(len(b), 1)

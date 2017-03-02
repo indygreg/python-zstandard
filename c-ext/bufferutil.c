@@ -166,12 +166,12 @@ static ZstdBufferSegment* BufferWithSegments_item(ZstdBufferWithSegments* self, 
 	ZstdBufferSegment* result = NULL;
 
 	if (i < 0) {
-		PyErr_SetString(PyExc_ValueError, "offset must be non-negative");
+		PyErr_SetString(PyExc_IndexError, "offset must be non-negative");
 		return NULL;
 	}
 
-	if (i > self->segmentCount) {
-		PyErr_Format(PyExc_ValueError, "offset must be less than %zd", self->segmentCount);
+	if (i >= self->segmentCount) {
+		PyErr_Format(PyExc_IndexError, "offset must be less than %zd", self->segmentCount);
 		return NULL;
 	}
 
