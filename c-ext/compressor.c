@@ -10,7 +10,7 @@
 
 extern PyObject* ZstdError;
 
-int populate_cdict(ZstdCompressor* compressor, void* dictData, size_t dictSize, ZSTD_parameters* zparams) {
+int populate_cdict(ZstdCompressor* compressor, ZSTD_parameters* zparams) {
 	ZSTD_customMem zmem;
 	assert(!compressor->cdict);
 	Py_BEGIN_ALLOW_THREADS
@@ -557,7 +557,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	potentially add an argument somewhere to control this behavior.
 	*/
 	if (dictData && !self->cdict) {
-		if (populate_cdict(self, dictData, dictSize, &zparams)) {
+		if (populate_cdict(self, &zparams)) {
 			Py_DECREF(output);
 			return NULL;
 		}
