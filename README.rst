@@ -1142,6 +1142,28 @@ The array members are 64-bit unsigned integers using host/native bit order.
 
 Instances conform to the buffer protocol.
 
+BufferWithSegmentsCollection
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``BufferWithSegmentsCollection`` type represents a virtual spanning view
+of multiple ``BufferWithSegments`` instances.
+
+Instances are constructed from 1 or more ``BufferWithSegments`` instances. The
+resulting object behaves like an ordered sequence whose members are the
+segments within each ``BufferWithSegments``.
+
+``len()`` returns the number of segments within all ``BufferWithSegments``
+instances.
+
+``o[index]`` and ``__getitem__(index)`` return the ``BufferSegment`` at
+that offset as if all ``BufferWithSegments`` instances were a single
+entity.
+
+If the object is composed of 2 ``BufferWithSegments`` instances with the
+first having 2 segments and the second have 3 segments, then ``b[0]``
+and ``b[1]`` access segments in the first object and ``b[2]``, ``b[3]``,
+and ``b[4]`` access segments from the second.
+
 Zstandard Concepts
 ==================
 

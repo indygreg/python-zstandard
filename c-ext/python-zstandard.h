@@ -244,6 +244,29 @@ typedef struct {
 
 extern PyTypeObject ZstdBufferWithSegmentsType;
 
+/**
+ * An ordered collection of BufferWithSegments exposed as a squashed collection.
+ *
+ * This type provides a virtual view spanning multiple BufferWithSegments
+ * instances. It allows multiple instances to be "chained" together and
+ * exposed as a single collection. e.g. if there are 2 buffers holding
+ * 10 segments each, then o[14] will access the 5th segment in the 2nd buffer.
+ */
+typedef struct {
+	PyObject_HEAD
+
+	/* An array of buffers that should be exposed through this instance. */
+	ZstdBufferWithSegments** buffers;
+	/* Number of elements in buffers array. */
+	Py_ssize_t bufferCount;
+	/* Array of first offset in each buffer instance. 0th entry corresponds
+	   to number of elements in the 0th buffer. 1st entry corresponds to the
+	   sum of elements in 0th and 1st buffers. */
+	Py_ssize_t* firstElements;
+} ZstdBufferWithSegmentsCollection;
+
+extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
+
 void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams);
 CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject* args);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);

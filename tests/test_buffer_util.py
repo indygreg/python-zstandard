@@ -58,3 +58,54 @@ class TestBufferWithSegments(unittest.TestCase):
         self.assertEqual(b[0].tobytes(), b'foo')
         self.assertEqual(b[1].tobytes(), b'foox')
         self.assertEqual(b[2].tobytes(), b'fooxy')
+
+
+class TestBufferWithSegmentsCollection(unittest.TestCase):
+    def test_empty_constructor(self):
+        with self.assertRaisesRegexp(ValueError, 'must pass at least 1 argument'):
+            zstd.BufferWithSegmentsCollection()
+
+    def test_argument_validation(self):
+        with self.assertRaisesRegexp(TypeError, 'arguments must be BufferWithSegments'):
+            zstd.BufferWithSegmentsCollection(None)
+
+        with self.assertRaisesRegexp(TypeError, 'arguments must be BufferWithSegments'):
+            zstd.BufferWithSegmentsCollection(zstd.BufferWithSegments(b'foo', ss.pack(0, 3)),
+                                              None)
+
+        with self.assertRaisesRegexp(ValueError, 'ZstdBufferWithSegments cannot be empty'):
+            zstd.BufferWithSegmentsCollection(zstd.BufferWithSegments(b'', b''))
+
+    def test_length(self):
+        b1 = zstd.BufferWithSegments(b'foo', ss.pack(0, 3))
+        b2 = zstd.BufferWithSegments(b'barbaz', b''.join([ss.pack(0, 3),
+                                                          ss.pack(3, 3)]))
+
+        c = zstd.BufferWithSegmentsCollection(b1)
+        self.assertEqual(len(c), 1)
+        self.assertEqual(c.size(), 3)
+
+        c = zstd.BufferWithSegmentsCollection(b2)
+        self.assertEqual(len(c), 2)
+        self.assertEqual(c.size(), 6)
+
+        c = zstd.BufferWithSegmentsCollection(b1, b2)
+        self.assertEqual(len(c), 3)
+        self.assertEqual(c.size(), 9)
+
+    def test_getitem(self):
+        b1 = zstd.BufferWithSegments(b'foo', ss.pack(0, 3))
+        b2 = zstd.BufferWithSegments(b'barbaz', b''.join([ss.pack(0, 3),
+                                                          ss.pack(3, 3)]))
+
+        c = zstd.BufferWithSegmentsCollection(b1, b2)
+
+        with self.assertRaisesRegexp(IndexError, 'offset must be less than 3'):
+            c[3]
+
+        with self.assertRaisesRegexp(IndexError, 'offset must be less than 3'):
+            c[4]
+
+        self.assertEqual(c[0].tobytes(), b'foo')
+        self.assertEqual(c[1].tobytes(), b'bar')
+        self.assertEqual(c[2].tobytes(), b'baz')
