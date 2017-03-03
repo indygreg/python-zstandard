@@ -240,6 +240,7 @@ typedef struct {
 	unsigned long long dataSize;
 	BufferSegment* segments;
 	Py_ssize_t segmentCount;
+	int useFree;
 } ZstdBufferWithSegments;
 
 extern PyTypeObject ZstdBufferWithSegmentsType;

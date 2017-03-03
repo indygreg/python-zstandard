@@ -28,14 +28,23 @@ static void BufferWithSegments_dealloc(ZstdBufferWithSegments* self) {
 	/* Backing memory is either canonically owned by a Py_buffer or by us. */
 	if (self->parent.buf) {
 		PyBuffer_Release(&self->parent);
-		self->data = NULL;
+	}
+	else if (self->useFree) {
+		free(self->data);
 	}
 	else {
 		PyMem_Free(self->data);
-		self->data = NULL;
 	}
 
-	PyMem_Free(self->segments);
+	self->data = NULL;
+
+	if (self->useFree) {
+		free(self->segments);
+	}
+	else {
+		PyMem_Free(self->segments);
+	}
+
 	self->segments = NULL;
 
 	PyObject_Del(self);
@@ -150,6 +159,8 @@ ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long 
 	if (NULL == result) {
 		return NULL;
 	}
+
+	result->useFree = 0;
 
 	memset(&result->parent, 0, sizeof(result->parent));
 	result->data = data;
