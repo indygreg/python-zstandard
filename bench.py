@@ -666,9 +666,8 @@ if __name__ == '__main__':
     group.add_argument('--compress-threads', type=int,
                        help='Use multi-threaded compression with this many '
                             'threads')
-    group.add_argument('--decompress-threads', type=int, default=0,
-                       help='Use this many threads for decompression APIs that '
-                            'support multiple threads')
+    group.add_argument('--batch-threads', type=int, default=0,
+                       help='Use this many threads for batch APIs')
     group.add_argument('--cover-k', type=int, default=0,
                        help='Segment size parameter to COVER algorithm')
     group.add_argument('--cover-d', type=int, default=0,
@@ -901,15 +900,15 @@ if __name__ == '__main__':
                                               orig_size)
         if args.discrete:
             bench_discrete_decompression(chunks, compressed_discrete, orig_size,
-                                         opts, threads=args.decompress_threads)
+                                         opts, threads=args.batch_threads)
         if args.discrete_dict:
             bench_discrete_decompression(chunks, compressed_discrete_dict,
                                          orig_size, dict_opts,
-                                         threads=args.decompress_threads)
+                                         threads=args.batch_threads)
         if args.discrete_cover_dict:
             bench_discrete_decompression(chunks, compressed_discrete_cover_dict,
                                          orig_size, cover_dict_opts, cover=True,
-                                         threads=args.decompress_threads)
+                                         threads=args.batch_threads)
         if args.zlib and args.stream:
             bench_stream_zlib_decompression(compressed_stream_zlib, orig_size)
         if args.stream:
