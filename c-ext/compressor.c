@@ -12,7 +12,11 @@ extern PyObject* ZstdError;
 
 int populate_cdict(ZstdCompressor* compressor, ZSTD_parameters* zparams) {
 	ZSTD_customMem zmem;
-	assert(!compressor->cdict);
+
+	if (compressor->cdict || !compressor->dict || !compressor->dict->dictData) {
+		return 0;
+	}
+
 	Py_BEGIN_ALLOW_THREADS
 	memset(&zmem, 0, sizeof(zmem));
 	compressor->cdict = ZSTD_createCDict_advanced(compressor->dict->dictData,
@@ -556,11 +560,9 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	https://github.com/facebook/zstd/issues/358 contains more info. We could
 	potentially add an argument somewhere to control this behavior.
 	*/
-	if (dictData && !self->cdict) {
-		if (populate_cdict(self, &zparams)) {
-			Py_DECREF(output);
-			return NULL;
-		}
+	if (0 != populate_cdict(self, &zparams)) {
+		Py_DECREF(output);
+		return NULL;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
