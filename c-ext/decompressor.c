@@ -862,6 +862,13 @@ ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompres
 	/* Caller should normalize 0 and negative values to 1 or later */
 	assert(threadCount >= 1);
 
+	/* More threads than inputs makes no sense under any conditions. */
+	threadCount = frames->framesSize < threadCount ? (unsigned int)frames->framesSize
+												   : threadCount;
+
+	/* TODO lower thread count if input size is too small and threads would just
+	   add overhead. */
+
 	if (decompressor->dict) {
 		dictData = decompressor->dict->dictData;
 		dictSize = decompressor->dict->dictSize;
