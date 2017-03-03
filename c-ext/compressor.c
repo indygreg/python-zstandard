@@ -7,6 +7,7 @@
 */
 
 #include "python-zstandard.h"
+#include "pool.h"
 
 extern PyObject* ZstdError;
 
@@ -818,6 +819,496 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 	return result;
 }
 
+typedef struct {
+	void* sourceData;
+	size_t sourceSize;
+} DataSource;
+
+typedef struct {
+	DataSource* sources;
+	Py_ssize_t sourcesSize;
+	unsigned long long totalSourceSize;
+} DataSources;
+
+typedef enum {
+	WorkerError_none = 0,
+	WorkerError_zstd = 1,
+	WorkerError_no_memory = 2,
+} WorkerError;
+
+/**
+ * Holds state for an individual worker performing multi_compress_into_buffer work.
+ */
+typedef struct {
+	/* Used for compression. */
+	ZSTD_CCtx* cctx;
+	ZSTD_CDict* cdict;
+	int cLevel;
+	CompressionParametersObject* cParams;
+	ZSTD_frameParameters fParams;
+
+	/* What to compress. */
+	DataSource* sources;
+	Py_ssize_t sourcesSize;
+	Py_ssize_t startOffset;
+	Py_ssize_t endOffset;
+	unsigned long long totalSourceSize;
+
+	/* Result storage. */
+	void* dest;
+	Py_ssize_t destSize;
+	BufferSegment* segments;
+
+	/* Error tracking. */
+	WorkerError error;
+	size_t zresult;
+	Py_ssize_t errorOffset;
+} WorkerState;
+
+static void compress_worker(WorkerState* state) {
+	Py_ssize_t i;
+	size_t zresult;
+	ZSTD_parameters zparams;
+	void* newDest;
+	size_t newSize;
+	Py_ssize_t destOffset = 0;
+	DataSource* sources = state->sources;
+
+	assert(!state->dest);
+	assert(!state->segments);
+
+	if (state->cParams) {
+		ztopy_compression_parameters(state->cParams, &zparams.cParams);
+	}
+
+	zparams.fParams = state->fParams;
+
+	/*
+	 * The total size of the compressed data is unknown until we actually
+	 * compress data. There are a number of memory management techniques
+	 * we could use. None are perfect.
+	 * 
+	 * TODO use a better memory allocation technique than reallocating a
+	 * buffer.
+	 */
+
+	state->segments = malloc((state->endOffset - state->startOffset + 1) * sizeof(BufferSegment));
+	if (NULL == state->segments) {
+		state->error = WorkerError_no_memory;
+		return;
+	}
+
+	/* Initial allocation assumes compresses to 25% original size. */
+	newSize = state->totalSourceSize >> 2;
+	if (newSize < 1048576) {
+		newSize |= 1048576;
+	}
+	newSize >>= 20;
+	newSize <<= 20;
+
+	state->dest = malloc(newSize);
+	if (NULL == state->dest) {
+		state->error = WorkerError_no_memory;
+		return;
+	}
+
+	state->destSize = newSize;
+
+	for (i = state->startOffset; i <= state->endOffset; i++) {
+		void* source = sources[i].sourceData;
+		size_t sourceSize = sources[i].sourceSize;
+		size_t destAvailable;
+		size_t destWanted;
+		void* dest;
+
+		destAvailable = state->destSize - destOffset;
+		destWanted = ZSTD_compressBound(sourceSize);
+
+		if (destWanted > destAvailable) {
+			if (destWanted > 1048576) {
+				destWanted >>= 20;
+				destWanted <<= 20;
+			}
+			else {
+				destWanted = 1048576;
+			}
+
+			newSize = state->destSize + destWanted;
+
+			newDest = realloc(state->dest, newSize);
+			if (NULL == newDest) {
+				state->error = WorkerError_no_memory;
+				return;
+			}
+
+			state->dest = newDest;
+			state->destSize = newSize;
+			destAvailable = state->destSize - destOffset;
+		}
+
+		dest = (char*)state->dest + destOffset;
+
+		if (state->cdict) {
+			zresult = ZSTD_compress_usingCDict(state->cctx, dest, destAvailable,
+				source, sourceSize, state->cdict);
+		}
+		else {
+			if (!state->cParams) {
+				zparams.cParams = ZSTD_getCParams(state->cLevel, sourceSize, 0);
+			}
+
+			zresult = ZSTD_compress_advanced(state->cctx, dest, destAvailable,
+				source, sourceSize, NULL, 0, zparams);
+		}
+
+		if (ZSTD_isError(zresult)) {
+			state->error = WorkerError_zstd;
+			state->zresult = zresult;
+			state->errorOffset = i;
+			break;
+		}
+
+		state->segments[i - state->startOffset].offset = destOffset;
+		state->segments[i - state->startOffset].length = zresult;
+
+		destOffset += zresult;
+	}
+
+	if (state->destSize > destOffset) {
+		newDest = realloc(state->dest, destOffset);
+		if (NULL == newDest) {
+			state->error = WorkerError_no_memory;
+			return;
+		}
+
+		state->dest = newDest;
+		state->destSize = destOffset;
+	}
+}
+
+ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* compressor,
+	DataSources* sources) {
+	unsigned int threadCount;
+	ZSTD_parameters zparams;
+	unsigned long long bytesPerWorker;
+	POOL_ctx* pool = NULL;
+	WorkerState* workerStates = NULL;
+	Py_ssize_t i;
+	unsigned long long workerBytes = 0;
+	Py_ssize_t workerStartOffset = 0;
+	size_t currentThread = 0;
+	int errored = 0;
+	PyObject* segmentsArg = NULL;
+	ZstdBufferWithSegments* buffer;
+	ZstdBufferWithSegmentsCollection* result = NULL;
+
+	assert(sources->sourcesSize > 0);
+	assert(sources->totalSourceSize > 0);
+
+	threadCount = compressor->threads;
+
+	if (threadCount < 2) {
+		threadCount = 1;
+	}
+
+	/* More threads than inputs makes no sense. */
+	threadCount = sources->sourcesSize < threadCount ? (unsigned int)sources->sourcesSize
+													 : threadCount;
+
+	/* TODO lower thread count when input size is too small and threads would add
+	overhead. */
+
+	/*
+	 * When dictionaries are used, parameters are derived from the size of the
+	 * first element.
+	 *
+	 * TODO come up with a better mechanism.
+	 */
+	memset(&zparams, 0, sizeof(zparams));
+	if (compressor->cparams) {
+		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
+	}
+	else {
+		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel,
+			sources->sources[0].sourceSize,
+			compressor->dict ? compressor->dict->dictSize : 0);
+	}
+
+	zparams.fParams = compressor->fparams;
+
+	if (0 != populate_cdict(compressor, &zparams)) {
+		return NULL;
+	}
+
+	workerStates = PyMem_Malloc(threadCount * sizeof(WorkerState));
+	if (NULL == workerStates) {
+		PyErr_NoMemory();
+		goto finally;
+	}
+
+	memset(workerStates, 0, threadCount * sizeof(WorkerState));
+
+	if (threadCount > 1) {
+		pool = POOL_create(threadCount, 1);
+		if (NULL == pool) {
+			PyErr_SetString(ZstdError, "could not initialize zstd thread pool");
+			goto finally;
+		}
+	}
+
+	bytesPerWorker = sources->totalSourceSize / threadCount;
+
+	for (i = 0; i < threadCount; i++) {
+		workerStates[i].cctx = ZSTD_createCCtx();
+		if (!workerStates[i].cctx) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
+		workerStates[i].cdict = compressor->cdict;
+		workerStates[i].cLevel = compressor->compressionLevel;
+		workerStates[i].cParams = compressor->cparams;
+		workerStates[i].fParams = compressor->fparams;
+
+		workerStates[i].sources = sources->sources;
+		workerStates[i].sourcesSize = sources->sourcesSize;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	for (i = 0; i < sources->sourcesSize; i++) {
+		workerBytes += sources->sources[i].sourceSize;
+
+		if (workerBytes >= bytesPerWorker) {
+			workerStates[currentThread].totalSourceSize = workerBytes;
+			workerStates[currentThread].startOffset = workerStartOffset;
+			workerStates[currentThread].endOffset = i;
+
+			if (threadCount > 1) {
+				POOL_add(pool, (POOL_function)compress_worker, &workerStates[currentThread]);
+			}
+			else {
+				compress_worker(&workerStates[currentThread]);
+			}
+
+			currentThread++;
+			workerStartOffset = i + 1;
+			workerBytes = 0;
+		}
+	}
+
+	if (threadCount > 1 && workerStartOffset != sources->sourcesSize) {
+		workerStates[currentThread].totalSourceSize = workerBytes;
+		workerStates[currentThread].startOffset = workerStartOffset;
+		workerStates[currentThread].endOffset = sources->sourcesSize - 1;
+
+		if (threadCount > 1) {
+			POOL_add(pool, (POOL_function)compress_worker, &workerStates[currentThread]);
+		}
+		else {
+			compress_worker(&workerStates[currentThread]);
+		}
+	}
+
+	if (threadCount > 1) {
+		POOL_free(pool);
+		pool = NULL;
+	}
+
+	Py_END_ALLOW_THREADS
+
+	for (i = 0; i < threadCount; i++) {
+		switch (workerStates[i].error) {
+		case WorkerError_no_memory:
+			PyErr_NoMemory();
+			errored = 1;
+			break;
+
+		case WorkerError_zstd:
+			PyErr_Format(ZstdError, "error compressing item %zd: %s",
+				workerStates[i].errorOffset, ZSTD_getErrorName(workerStates[i].zresult));
+			errored = 1;
+			break;
+		default:
+			;
+		}
+
+		if (errored) {
+			break;
+		}
+
+	}
+
+	if (errored) {
+		goto finally;
+	}
+
+	segmentsArg = PyTuple_New(threadCount);
+	if (NULL == segmentsArg) {
+		goto finally;
+	}
+
+	for (i = 0; i < threadCount; i++) {
+		WorkerState* state = &workerStates[i];
+		/* Since memory ownership is transferred, tell not to use PyMem_Free(). */
+		buffer = BufferWithSegments_FromMemory(state->dest, state->destSize,
+			state->segments, state->endOffset - state->startOffset + 1);
+
+		if (NULL == buffer) {
+			goto finally;
+		}
+
+		/* Tell instance to use free() instsead of PyMem_Free(). */
+		buffer->useFree = 1;
+
+		/*
+		   BufferWithSegments_FromMemory takes ownership of the backing memory.
+		   Unset it here so it doesn't get freed below.
+		*/
+		state->segments = NULL;
+		state->dest = NULL;
+
+		PyTuple_SET_ITEM(segmentsArg, i, (PyObject*)buffer);
+	}
+
+	result = (ZstdBufferWithSegmentsCollection*)PyObject_CallObject(
+		(PyObject*)&ZstdBufferWithSegmentsCollectionType, segmentsArg);
+
+finally:
+	Py_CLEAR(segmentsArg);
+
+	if (pool) {
+		POOL_free(pool);
+	}
+
+	if (workerStates) {
+		for (i = 0; i < threadCount; i++) {
+			WorkerState state = workerStates[i];
+
+			if (state.cctx) {
+				ZSTD_freeCCtx(state.cctx);
+			}
+
+			/* malloc() is used in worker thread. */
+			if (state.dest) {
+				free(state.dest);
+			}
+
+			if (state.segments) {
+				free(state.segments);
+			}
+		}
+
+		PyMem_Free(workerStates);
+	}
+
+	return result;
+}
+
+PyDoc_STRVAR(ZstdCompressor_multi_compress_into_buffer__doc__,
+"Compress multiple pieces of data as a single operation\n"
+"\n"
+"Receives either list of bytes or a ``BufferWithSegments`` instance holding\n"
+"data to compress. Returns a ``BufferWithSegmentsCollection`` holding\n"
+"compressed data.\n"
+"\n"
+"This function is optimized to perform multiple compression operations as\n"
+"as possible with as little overhead as possbile.\n"
+);
+
+static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_into_buffer(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
+	PyObject* data;
+	int instanceResult;
+	DataSources sources;
+	Py_ssize_t i;
+	ZstdBufferWithSegmentsCollection* result = NULL;
+
+	memset(&sources, 0, sizeof(sources));
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:multi_compress_into_buffer", kwlist,
+		&data)) {
+		return NULL;
+	}
+
+	instanceResult = PyObject_IsInstance(data, (PyObject*)&ZstdBufferWithSegmentsType);
+	if (-1 == instanceResult) {
+		return NULL;
+	}
+	else if (1 == instanceResult) {
+		ZstdBufferWithSegments* buffer = (ZstdBufferWithSegments*)data;
+
+		sources.sources = PyMem_Malloc(buffer->segmentCount * sizeof(DataSource));
+		if (NULL == sources.sources) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
+		for (i = 0; i < buffer->segmentCount; i++) {
+			sources.sources[i].sourceData = (char*)buffer->data + buffer->segments[i].offset;
+			sources.sources[i].sourceSize = buffer->segments[i].length;
+			sources.totalSourceSize += buffer->segments[i].length;
+		}
+
+		sources.sourcesSize = buffer->segmentCount;
+	}
+	else if (PyList_Check(data)) {
+		Py_ssize_t sourceCount = PyList_GET_SIZE(data);
+
+		sources.sources = PyMem_Malloc(sourceCount * sizeof(DataSource));
+		if (NULL == sources.sources) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
+		for (i = 0; i < sourceCount; i++) {
+			PyObject* source;
+			char* sourceData;
+			Py_ssize_t sourceSize;
+
+			source = PyList_GET_ITEM(data, i);
+
+			/* TODO support buffer interface */
+			if (0 == PyBytes_Check(source)) {
+				PyErr_Format(PyExc_TypeError, "item %zd not bytes", i);
+				goto finally;
+			}
+
+			PyBytes_AsStringAndSize(source, &sourceData, &sourceSize);
+
+			sources.sources[i].sourceData = (void*)sourceData;
+			sources.sources[i].sourceSize = sourceSize;
+			sources.totalSourceSize += sourceSize;
+		}
+
+		sources.sourcesSize = sourceCount;
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError, "argument must be list of BufferWithSegments");
+		goto finally;
+	}
+
+	if (0 == sources.sourcesSize) {
+		PyErr_SetString(PyExc_ValueError, "no source elements found");
+		goto finally;
+	}
+
+	if (0 == sources.totalSourceSize) {
+		PyErr_SetString(PyExc_ValueError, "source elements are empty");
+		goto finally;
+	}
+
+	result = compress_from_datasources(self, &sources);
+
+finally:
+	PyMem_Free(sources.sources);
+
+	return result;
+}
+
 static PyMethodDef ZstdCompressor_methods[] = {
 	{ "compress", (PyCFunction)ZstdCompressor_compress,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_compress__doc__ },
@@ -829,6 +1320,8 @@ static PyMethodDef ZstdCompressor_methods[] = {
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_from__doc__ },
 	{ "write_to", (PyCFunction)ZstdCompressor_write_to,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_write_to___doc__ },
+	{ "multi_compress_into_buffer", (PyCFunction)ZstdCompressor_multi_compress_into_buffer,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_multi_compress_into_buffer__doc__ },
 	{ NULL, NULL }
 };
 

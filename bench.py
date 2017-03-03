@@ -114,6 +114,20 @@ def compress_reuse(chunks, opts):
         zctx.compress(chunk)
 
 
+@bench('discrete', 'multi_compress_into_buffer() w/ buffer input',
+       simple=True, threads_arg=True, chunks_as_buffer=True)
+def compress_multi_compress_into_buffer_buffer(chunks, opts, threads):
+    zctx= zstd.ZstdCompressor(**opts)
+    zctx.multi_compress_into_buffer(chunks, threads=threads)
+
+
+@bench('discrete', 'multi_compress_into_buffer() w/ list input',
+       threads_arg=True)
+def compress_multi_compress_into_buffer_list(chunks, opts, threads):
+    zctx = zstd.ZstdCompressor(**opts)
+    zctx.multi_compress_into_buffer(chunks, threads=threads)
+
+
 @bench('discrete', 'write_to()')
 def compress_write_to(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
@@ -516,7 +530,7 @@ def bench_discrete_zlib_decompression(chunks, total_size):
                        total_size)
 
 
-def bench_discrete_compression(chunks, opts, cover=False):
+def bench_discrete_compression(chunks, opts, cover=False, threads=None):
     total_size = sum(map(len, chunks))
 
     if 'dict_data' in opts:
@@ -528,7 +542,24 @@ def bench_discrete_compression(chunks, opts, cover=False):
         prefix = 'compress discrete'
 
     for fn in get_benches('discrete', 'compress'):
-        results = timer(lambda: fn(chunks, opts))
+        chunks_arg = chunks
+
+        kwargs = {}
+        if fn.threads_arg:
+            kwargs['threads'] = threads
+
+        if fn.chunks_as_buffer:
+            s = struct.Struct('=QQ')
+            offsets = io.BytesIO()
+            current_offset = 0
+            for chunk in chunks:
+                offsets.write(s.pack(current_offset, len(chunk)))
+                current_offset += len(chunk)
+
+            chunks_arg = zstd.BufferWithSegments(b''.join(chunks),
+                                                 offsets.getvalue())
+
+        results = timer(lambda: fn(chunks_arg, opts, **kwargs))
         format_results(results, fn.title, prefix, total_size)
 
 
@@ -878,11 +909,14 @@ if __name__ == '__main__':
             bench_discrete_zlib_compression(chunks,
                                             {'zlib_level': args.zlib_level})
         if args.discrete:
-            bench_discrete_compression(chunks, opts)
+            bench_discrete_compression(chunks, opts,
+                                       threads=args.batch_threads)
         if args.discrete_dict:
-            bench_discrete_compression(chunks, dict_opts)
+            bench_discrete_compression(chunks, dict_opts,
+                                       threads=args.batch_threads)
         if args.discrete_cover_dict:
-            bench_discrete_compression(chunks, cover_dict_opts, cover=True)
+            bench_discrete_compression(chunks, cover_dict_opts,
+                                       cover=True, threads=args.batch_threads)
         if args.zlib and args.stream:
             bench_stream_zlib_compression(chunks,
                                           {'zlib_level': args.zlib_level})

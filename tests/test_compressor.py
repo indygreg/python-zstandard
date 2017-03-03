@@ -784,3 +784,81 @@ class TestCompressor_read_from(unittest.TestCase):
 
         compressed = b''.join(cctx.read_from(source))
         self.assertEqual(len(compressed), 295)
+
+
+class TestCompressor_multi_compress_into_buffer(unittest.TestCase):
+    def test_invalid_inputs(self):
+        cctx = zstd.ZstdCompressor()
+
+        with self.assertRaises(TypeError):
+            cctx.multi_compress_into_buffer(True)
+
+        with self.assertRaises(TypeError):
+            cctx.multi_compress_into_buffer((1, 2))
+
+        with self.assertRaisesRegexp(TypeError, 'item 0 not bytes'):
+            cctx.multi_compress_into_buffer([u'foo'])
+
+    def test_empty_input(self):
+        cctx = zstd.ZstdCompressor()
+
+        with self.assertRaisesRegexp(ValueError, 'no source elements found'):
+            cctx.multi_compress_into_buffer([])
+
+        with self.assertRaisesRegexp(ValueError, 'source elements are empty'):
+            cctx.multi_compress_into_buffer([b'', b'', b''])
+
+    def test_list_input(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+
+        original = [b'foo' * 12, b'bar' * 6]
+        frames = [cctx.compress(c) for c in original]
+        b = cctx.multi_compress_into_buffer(original)
+
+        self.assertIsInstance(b, zstd.BufferWithSegmentsCollection)
+
+        self.assertEqual(len(b), 2)
+        self.assertEqual(b.size(), 44)
+
+        self.assertEqual(b[0].tobytes(), frames[0])
+        self.assertEqual(b[1].tobytes(), frames[1])
+
+    def test_buffer_with_segments_input(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+
+        original = [b'foo' * 4, b'bar' * 6]
+        frames = [cctx.compress(c) for c in original]
+
+        offsets = struct.pack('=QQQQ', 0, len(original[0]),
+                                       len(original[0]), len(original[1]))
+        segments = zstd.BufferWithSegments(b''.join(original), offsets)
+
+        result = cctx.multi_compress_into_buffer(segments)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result.size(), 47)
+
+        self.assertEqual(result[0].tobytes(), frames[0])
+        self.assertEqual(result[1].tobytes(), frames[1])
+
+    def test_multiple_threads(self):
+        # threads argument will cause multi-threaded ZSTD APIs to be used, which will
+        # make output different.
+        refcctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+        reference = [refcctx.compress(b'x' * 64), refcctx.compress(b'y' * 64)]
+
+        cctx = zstd.ZstdCompressor(threads=-1, write_content_size=True,
+                                   write_checksum=True)
+
+        frames = []
+        frames.extend(b'x' * 64 for i in range(256))
+        frames.extend(b'y' * 64 for i in range(256))
+
+        result = cctx.multi_compress_into_buffer(frames)
+
+        self.assertEqual(len(result), 512)
+        for i in range(512):
+            if i < 256:
+                self.assertEqual(result[i].tobytes(), reference[0])
+            else:
+                self.assertEqual(result[i].tobytes(), reference[1])

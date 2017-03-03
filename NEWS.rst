@@ -4,6 +4,8 @@ Version History
 0.8.0 (not yet released)
 ------------------------
 
+* multi_compress_into_buffer() API for compressing multiple inputs as a
+  single operation, as efficiently as possible.
 * ZSTD_CStream instances are now used across multiple operations on
   ZstdCompressor instances, resulting in much better performance for
   APIs that do streaming.

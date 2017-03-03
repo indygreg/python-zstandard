@@ -435,6 +435,42 @@ the compressor::
    data = cobj.compress(b'foobar')
    data = cobj.flush()
 
+Batch Compression API
+^^^^^^^^^^^^^^^^^^^^^
+
+(Experimental. Not yet supported in CFFI bindings.)
+
+``multi_compress_into_buffer(data)`` performs compression of multiple
+inputs as a single operation.
+
+Data to be compressed can be passed either as a list containing bytes instances
+or a ``BufferWithSegments`` instance. In either case, each element of the
+container will be compressed individually using the configured parameters
+on the ``ZstdCompressor`` instance.
+
+If the ``ZstdCompressor`` was instantiated with a ``threads`` argument that
+resolves to a value larger than 1, multiple threads will be used to perform
+compression concurrently.
+
+The function returns a ``BufferWithSegmentsCollection``. This type represents
+N discrete memory allocations, eaching holding 1 or more compressed frames.
+
+The API and behavior of this function is experimental and will likely change.
+Known deficiencies include:
+
+* Destination buffers are always allocated in 1 MB intervals. This is too
+  large in some scenarios and too large in others. It needs to be smarter,
+  possibly by allowing the user to specify the value.
+* If asked to use multiple threads, it will always spawn that many threads,
+  even if the input is too small to use them. It should automatically lower
+  the thread count when the extra threads would just add overhead.
+* The output buffer allocation strategy is fixed and uses ``realloc()`` to
+  continuously grow the per-thread buffer. Allocating a new output buffer
+  instead of growing an existing one is likely a better strategy. Giving the
+  end-user control over the allocation strategy is another idea. It might
+  even be possible to provide an allocation mode that creates 1 output object
+  per input instead of requiring use of a shared output buffer.
+
 ZstdDecompressor
 ----------------
 
