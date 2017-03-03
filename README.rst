@@ -229,9 +229,10 @@ write_dict_id
    Defaults to True. The dictionary ID is only written if a dictionary
    is being used.
 threads
-   Number of threads to use for compression operations. Defaults to 0,
-   which means to use single-threaded compression. Read below for more info
-   on multi-threaded compression.
+   Enables and sets the number of threads to use for multi-threaded compression
+   operations. Defaults to 0, which means to use single-threaded compression.
+   Negative values will resolve to the number of logical CPUs in the system.
+   Read below for more info on multi-threaded compression.
 
 Unless specified otherwise, assume that no two methods of ``ZstdCompressor``
 instances can be called from multiple Python threads simultaneously. In other
