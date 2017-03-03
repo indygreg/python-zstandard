@@ -125,6 +125,16 @@ ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long 
 	ZstdBufferWithSegments* result = NULL;
 	Py_ssize_t i;
 
+	if (NULL == data) {
+		PyErr_SetString(PyExc_ValueError, "data is NULL");
+		return NULL;
+	}
+
+	if (NULL == segments) {
+		PyErr_SetString(PyExc_ValueError, "segments is NULL");
+		return NULL;
+	}
+
 	for (i = 0; i < segmentsSize; i++) {
 		BufferSegment* segment = &segments[i];
 
