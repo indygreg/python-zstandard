@@ -706,7 +706,7 @@ if __name__ == '__main__':
     if args.write_checksum:
         opts['write_checksum'] = True
     if args.compress_threads:
-        opts['threads'] = args.threads
+        opts['threads'] = args.compress_threads
 
     chunks = get_chunks(args.path, args.limit_count, args.chunk_encoding)
     orig_size = sum(map(len, chunks))
