@@ -208,6 +208,8 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		threads = cpu_count();
 	}
 
+	self->threads = threads;
+
 	/* TODO streaming compression does support these. So move these checks to
 	   compress() */
 	if (threads && dict) {

@@ -85,6 +85,8 @@ typedef struct {
 
 	/* Configured compression level. Should be always set. */
 	int compressionLevel;
+	/* Number of threads to use for operations. */
+	unsigned int threads;
 	/* Pointer to compression dictionary to use. NULL if not using dictionary
 	   compression. */
 	ZstdCompressionDict* dict;
