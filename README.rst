@@ -611,7 +611,7 @@ Here is how this API should be used::
 Multiple Frame Decompression
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-(Not yet supported in CFFI bindings.)
+(Experimental. Not yet supported in CFFI bindings.)
 
 ``multi_decompress_into_buffer()`` performs decompression of multiple
 frames as a single operation and returns a ``BufferWithSegments`` containing
