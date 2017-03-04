@@ -783,6 +783,12 @@ typedef struct {
 	unsigned long long decompressedSize;
 } FrameSources;
 
+typedef enum {
+	WorkerError_none = 0,
+	WorkerError_zstd = 1,
+	WorkerError_sizeMismatch = 2,
+} WorkerError;
+
 typedef struct {
 	/* Output buffer */
 	void* dest;
@@ -799,7 +805,7 @@ typedef struct {
 	/* Item that error occurred on. */
 	Py_ssize_t errorOffset;
 	/* If an error occurred. */
-	int error;
+	WorkerError error;
 	/* result from zstd decompression operation */
 	size_t zresult;
 } WorkerState;
@@ -825,13 +831,13 @@ static void decompress_worker(WorkerState* state) {
 		}
 
 		if (ZSTD_isError(zresult)) {
-			state->error = 1;
+			state->error = WorkerError_zstd;
 			state->zresult = zresult;
 			state->errorOffset = i;
 			break;
 		}
 		else if (zresult != destCapacity) {
-			state->error = 2;
+			state->error = WorkerError_sizeMismatch;
 			state->zresult = zresult;
 			state->errorOffset = i;
 			break;
@@ -987,17 +993,30 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	Py_END_ALLOW_THREADS
 
 	for (i = 0; i < threadCount; i++) {
-		if (1 == workerStates[i].error) {
+		switch (workerStates[i].error) {
+		case WorkerError_none:
+			break;
+
+		case WorkerError_zstd:
 			PyErr_Format(ZstdError, "error decompressing item %zd: %s",
 				workerStates[i].errorOffset, ZSTD_getErrorName(workerStates[i].zresult));
 			errored = 1;
 			break;
-		}
-		else if (2 == workerStates[i].error) {
+
+		case WorkerError_sizeMismatch:
 			PyErr_Format(ZstdError, "error decompressing item %zd: decompressed %zu bytes; expected %llu",
 				workerStates[i].errorOffset, workerStates[i].zresult,
 				framePointers[workerStates[i].errorOffset].destSize);
-			errored = 2;
+			errored = 1;
+			break;
+		default:
+			PyErr_Format(ZstdError, "unhandled error type: %d; this is a bug",
+				workerStates[i].error);
+			errored = 1;
+			break;
+		}
+
+		if (errored) {
 			break;
 		}
 	}
