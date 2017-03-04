@@ -205,20 +205,6 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 
 	self->threads = threads;
 
-	/* TODO streaming compression does support these. So move these checks to
-	   compress() */
-	if (threads && dict) {
-		PyErr_SetString(PyExc_ValueError,
-			"dictionaries are not supported for multi-threaded compression");
-		return -1;
-	}
-
-	if (threads && params) {
-		PyErr_SetString(PyExc_ValueError,
-			"compression parameters are not supported for multi-threaded compression");
-		return -1;
-	}
-
 	/* We create a ZSTD_CCtx for reuse among multiple operations to reduce the
 	   overhead of each compression operation. */
 	if (threads) {
@@ -508,6 +494,18 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|O:compress",
 #endif
 		kwlist, &source, &sourceSize, &allowEmpty)) {
+		return NULL;
+	}
+
+	if (self->threads && self->dict) {
+		PyErr_SetString(ZstdError,
+			"compress() cannot be used with both dictionaries and multi-threaded compression");
+		return NULL;
+	}
+
+	if (self->threads && self->cparams) {
+		PyErr_SetString(ZstdError,
+			"compress() cannot be used with both compression parameters and multi-threaded compression");
 		return NULL;
 	}
 

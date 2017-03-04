@@ -374,12 +374,6 @@ class ZstdCompressor(object):
         if threads < 0:
             threads = _cpu_count()
 
-        if threads and dict_data:
-            raise ValueError('dictionaries are not supported for multi-threaded compression')
-
-        if threads and compression_params:
-            raise ValueError('compression parameters are not supported for multi-threaded compression')
-
         self._compression_level = level
         self._dict_data = dict_data
         self._cparams = compression_params
@@ -408,6 +402,12 @@ class ZstdCompressor(object):
     def compress(self, data, allow_empty=False):
         if len(data) == 0 and self._fparams.contentSizeFlag and not allow_empty:
             raise ValueError('cannot write empty inputs when writing content sizes')
+
+        if self._multithreaded and self._dict_data:
+            raise ZstdError('compress() cannot be used with both dictionaries and multi-threaded compression')
+
+        if self._multithreaded and self._cparams:
+            raise ZstdError('compress() cannot be used with both compression parameters and multi-threaded compression')
 
         # TODO use a CDict for performance.
         dict_data = ffi.NULL

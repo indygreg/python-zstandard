@@ -37,6 +37,9 @@ class TestCompressor(unittest.TestCase):
         with self.assertRaises(ValueError):
             zstd.ZstdCompressor(level=23)
 
+
+@make_cffi
+class TestCompressor_compress(unittest.TestCase):
     def test_multithreaded_unsupported(self):
         samples = []
         for i in range(128):
@@ -45,16 +48,16 @@ class TestCompressor(unittest.TestCase):
 
         d = zstd.train_dictionary(8192, samples)
 
-        with self.assertRaisesRegexp(ValueError, 'dictionaries are not supported for multi-threaded'):
-            zstd.ZstdCompressor(dict_data=d, threads=2)
+        cctx = zstd.ZstdCompressor(dict_data=d, threads=2)
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'compress\(\) cannot be used with both dictionaries and multi-threaded compression'):
+            cctx.compress(b'foo')
 
         params = zstd.get_compression_parameters(3)
-        with self.assertRaisesRegexp(ValueError, 'compression parameters are not supported for multi-threaded'):
-            zstd.ZstdCompressor(compression_params=params, threads=2)
+        cctx = zstd.ZstdCompressor(compression_params=params, threads=2)
+        with self.assertRaisesRegexp(zstd.ZstdError, 'compress\(\) cannot be used with both compression parameters and multi-threaded compression'):
+            cctx.compress(b'foo')
 
-
-@make_cffi
-class TestCompressor_compress(unittest.TestCase):
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1)
         result = cctx.compress(b'')
