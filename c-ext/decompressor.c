@@ -861,7 +861,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	PoolState* poolStates = NULL;
 	unsigned long long bytesPerWorker;
 
-	/* Caller should normalize 0 and negative values to 1 or later */
+	/* Caller should normalize 0 and negative values to 1 or larger. */
 	assert(threadCount >= 1);
 
 	/* More threads than inputs makes no sense under any conditions. */
