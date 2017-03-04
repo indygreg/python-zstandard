@@ -181,12 +181,6 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	PyObject* writeDictID = NULL;
 	int threads = 0;
 
-	self->cctx = NULL;
-	self->mtcctx = NULL;
-	self->dict = NULL;
-	self->cparams = NULL;
-	self->cdict = NULL;
-
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!O!OOOi:ZstdCompressor",
 		kwlist,	&level, &ZstdCompressionDictType, &dict,
 		&CompressionParametersType, &params,
