@@ -1123,7 +1123,7 @@ finally:
 }
 
 PyDoc_STRVAR(Decompressor_multi_decompress_to_buffer__doc__,
-"Decompress multiple frames into a single output buffer\n"
+"Decompress multiple frames to output buffers\n"
 "\n"
 "Receives a ``BufferWithSegments`` or a list of bytes-like objects .\n"
 "Each byte sequence should resemble a compressed zstd frame.\n"
