@@ -642,7 +642,7 @@ static PyObject* BufferWithSegmentsCollection_size(ZstdBufferWithSegmentsCollect
 	return PyLong_FromUnsignedLongLong(size);
 }
 
-static Py_ssize_t BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection* self) {
+Py_ssize_t BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection* self) {
 	return self->firstElements[self->bufferCount - 1];
 }
 

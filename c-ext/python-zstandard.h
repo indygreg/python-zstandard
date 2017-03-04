@@ -280,4 +280,5 @@ int init_dstream(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);
+Py_ssize_t BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection*);
 int cpu_count(void);
