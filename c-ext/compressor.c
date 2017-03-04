@@ -1214,7 +1214,6 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 	};
 
 	PyObject* data;
-	int instanceResult;
 	DataSources sources;
 	Py_ssize_t i;
 	ZstdBufferWithSegmentsCollection* result = NULL;
@@ -1226,11 +1225,7 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 		return NULL;
 	}
 
-	instanceResult = PyObject_IsInstance(data, (PyObject*)&ZstdBufferWithSegmentsType);
-	if (-1 == instanceResult) {
-		return NULL;
-	}
-	else if (1 == instanceResult) {
+	if (PyObject_TypeCheck(data, &ZstdBufferWithSegmentsType)) {
 		ZstdBufferWithSegments* buffer = (ZstdBufferWithSegments*)data;
 
 		sources.sources = PyMem_Malloc(buffer->segmentCount * sizeof(DataSource));
