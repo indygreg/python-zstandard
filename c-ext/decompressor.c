@@ -802,9 +802,9 @@ typedef struct {
 	int error;
 	/* result from zstd decompression operation */
 	size_t zresult;
-} PoolState;
+} WorkerState;
 
-static void decompress_worker(PoolState* state) {
+static void decompress_worker(WorkerState* state) {
 	Py_ssize_t i = 0;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
@@ -858,7 +858,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	int currentThread = 0;
 	Py_ssize_t workerStartOffset = 0;
 	POOL_ctx* pool = NULL;
-	PoolState* poolStates = NULL;
+	WorkerState* workerStates = NULL;
 	unsigned long long bytesPerWorker;
 
 	/* Caller should normalize 0 and negative values to 1 or larger. */
@@ -902,15 +902,15 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 	/* If threadCount==1, we don't start a thread pool. But we do leverage the
 	   same API for dispatching work. */
-	poolStates = PyMem_Malloc(threadCount * sizeof(PoolState));
-	if (NULL == poolStates) {
+	workerStates = PyMem_Malloc(threadCount * sizeof(WorkerState));
+	if (NULL == workerStates) {
 		PyErr_NoMemory();
 		PyMem_Free(data);
 		PyMem_Free(segments);
 		goto finally;
 	}
 
-	memset(poolStates, 0, threadCount * sizeof(PoolState));
+	memset(workerStates, 0, threadCount * sizeof(WorkerState));
 
 	if (threadCount > 1) {
 		pool = POOL_create(threadCount, 1);
@@ -925,21 +925,21 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	bytesPerWorker = frames->compressedSize / threadCount;
 
 	for (i = 0; i < threadCount; i++) {
-		poolStates[i].dctx = ZSTD_createDCtx();
-		if (NULL == poolStates[i].dctx) {
+		workerStates[i].dctx = ZSTD_createDCtx();
+		if (NULL == workerStates[i].dctx) {
 			PyErr_NoMemory();
 			PyMem_Free(data);
 			PyMem_Free(segments);
 			goto finally;
 		}
 
-		ZSTD_copyDCtx(poolStates[i].dctx, decompressor->dctx);
+		ZSTD_copyDCtx(workerStates[i].dctx, decompressor->dctx);
 
-		poolStates[i].dest = data;
-		poolStates[i].segments = segments;
-		poolStates[i].ddict = decompressor->ddict;
-		poolStates[i].framePointers = framePointers;
-		poolStates[i].framePointerSize = frames->framesSize;
+		workerStates[i].dest = data;
+		workerStates[i].segments = segments;
+		workerStates[i].ddict = decompressor->ddict;
+		workerStates[i].framePointers = framePointers;
+		workerStates[i].framePointerSize = frames->framesSize;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
@@ -954,14 +954,14 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		workerBytes += frames->frames[i].sourceSize;
 
 		if (workerBytes >= bytesPerWorker) {
-			poolStates[currentThread].startOffset = workerStartOffset;
-			poolStates[currentThread].endOffset = i;
+			workerStates[currentThread].startOffset = workerStartOffset;
+			workerStates[currentThread].endOffset = i;
 
 			if (threadCount > 1) {
-				POOL_add(pool, (POOL_function)decompress_worker, &poolStates[currentThread]);
+				POOL_add(pool, (POOL_function)decompress_worker, &workerStates[currentThread]);
 			}
 			else {
-				decompress_worker(&poolStates[currentThread]);
+				decompress_worker(&workerStates[currentThread]);
 			}
 			currentThread++;
 			workerStartOffset = i + 1;
@@ -970,13 +970,13 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	}
 
 	if (threadCount > 1 && workerStartOffset != frames->framesSize) {
-		poolStates[currentThread].startOffset = workerStartOffset;
-		poolStates[currentThread].endOffset = frames->framesSize - 1;
+		workerStates[currentThread].startOffset = workerStartOffset;
+		workerStates[currentThread].endOffset = frames->framesSize - 1;
 		if (threadCount > 1) {
-			POOL_add(pool, (POOL_function)decompress_worker, &poolStates[currentThread]);
+			POOL_add(pool, (POOL_function)decompress_worker, &workerStates[currentThread]);
 		}
 		else {
-			decompress_worker(&poolStates[currentThread]);
+			decompress_worker(&workerStates[currentThread]);
 		}
 	}
 
@@ -987,16 +987,16 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	Py_END_ALLOW_THREADS
 
 	for (i = 0; i < threadCount; i++) {
-		if (1 == poolStates[i].error) {
+		if (1 == workerStates[i].error) {
 			PyErr_Format(ZstdError, "error decompressing item %zd: %s",
-				poolStates[i].errorOffset, ZSTD_getErrorName(poolStates[i].zresult));
+				workerStates[i].errorOffset, ZSTD_getErrorName(workerStates[i].zresult));
 			errored = 1;
 			break;
 		}
-		else if (2 == poolStates[i].error) {
+		else if (2 == workerStates[i].error) {
 			PyErr_Format(ZstdError, "error decompressing item %zd: decompressed %zu bytes; expected %llu",
-				poolStates[i].errorOffset, poolStates[i].zresult,
-				framePointers[poolStates[i].errorOffset].destSize);
+				workerStates[i].errorOffset, workerStates[i].zresult,
+				framePointers[workerStates[i].errorOffset].destSize);
 			errored = 2;
 			break;
 		}
@@ -1034,15 +1034,15 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 finally:
 	Py_CLEAR(resultArg);
 
-	if (poolStates) {
+	if (workerStates) {
 		for (i = 0; i < threadCount; i++) {
-			PoolState state = poolStates[i];
+			WorkerState state = workerStates[i];
 			if (state.dctx) {
 				ZSTD_freeDCtx(state.dctx);
 			}
 		}
 
-		PyMem_Free(poolStates);
+		PyMem_Free(workerStates);
 	}
 
 	POOL_free(pool);
