@@ -1163,7 +1163,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 	unsigned long long totalInputSize = 0;
 	FrameSources frameSources;
 	ZstdBufferWithSegmentsCollection* result = NULL;
-	int instanceResult;
 	Py_ssize_t i;
 
 	memset(&frameSizes, 0, sizeof(frameSizes));
@@ -1194,11 +1193,7 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 		threads = 1;
 	}
 
-	instanceResult = PyObject_IsInstance(frames, (PyObject*)&ZstdBufferWithSegmentsType);
-	if (-1 == instanceResult) {
-		return NULL;
-	}
-	else if (1 == instanceResult) {
+	if (PyObject_TypeCheck(frames, &ZstdBufferWithSegmentsType)) {
 		ZstdBufferWithSegments* buffer = (ZstdBufferWithSegments*)frames;
 		frameCount = buffer->segmentCount;
 
