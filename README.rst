@@ -645,8 +645,8 @@ Here is how this API should be used::
    data = dobj.decompress(compressed_chunk_0)
    data = dobj.decompress(compressed_chunk_1)
 
-Multiple Frame Decompression
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Batch Decompression API
+^^^^^^^^^^^^^^^^^^^^^^^
 
 (Experimental. Not yet supported in CFFI bindings.)
 
