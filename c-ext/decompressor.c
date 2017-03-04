@@ -1125,7 +1125,7 @@ finally:
 PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
 "Decompress multiple frames into a single output buffer\n"
 "\n"
-"Receives a list of bytes or objects conforming to the buffer interface.\n"
+"Receives a ``BufferWithSegments`` or a list of bytes-like objects .\n"
 "Each byte sequence should resemble a compressed zstd frame.\n"
 "\n"
 "Unless ``decompressed_sizes`` is specified, the content size *must* be\n"
@@ -1157,6 +1157,7 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 	Py_buffer frameSizes;
 	int threads = 0;
 	Py_ssize_t frameCount;
+	Py_buffer* frameBuffers = NULL;
 	FramePointer* framePointers = NULL;
 	unsigned long long* frameSizesP = NULL;
 	unsigned long long totalInputSize = 0;
@@ -1251,31 +1252,33 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 			goto finally;
 		}
 
+		/*
+		 * It is not clear whether Py_buffer.buf is still valid after
+		 * PyBuffer_Release. So, we hold a reference to all Py_buffer instances
+		 * for the duration of the operation.
+		 */
+		frameBuffers = PyMem_Malloc(frameCount * sizeof(Py_buffer));
+		if (NULL == frameBuffers) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
+		memset(frameBuffers, 0, frameCount * sizeof(Py_buffer));
+
 		/* Do a pass to assemble info about our input buffers and output sizes. */
 		for (i = 0; i < frameCount; i++) {
-			PyObject* frame;
-			char* sourceData;
-			Py_ssize_t sourceSize;
-			unsigned long long decompressedSize = 0;
-
-			frame = PyList_GET_ITEM(frames, i);
-
-			/* TODO support buffer interface */
-			if (0 == PyBytes_Check(frame)) {
-				PyErr_Format(PyExc_ValueError, "item %zd not bytes", i);
+			if (0 != PyObject_GetBuffer(PyList_GET_ITEM(frames, i),
+				&frameBuffers[i], PyBUF_CONTIG_RO)) {
+				PyErr_Clear();
+				PyErr_Format(PyExc_TypeError, "item %zd not a bytes like object", i);
 				goto finally;
 			}
 
-			PyBytes_AsStringAndSize(frame, &sourceData, &sourceSize);
-			totalInputSize += sourceSize;
+			totalInputSize += frameBuffers[i].len;
 
-			if (frameSizesP) {
-				decompressedSize = frameSizesP[i];
-			}
-
-			framePointers[i].sourceData = sourceData;
-			framePointers[i].sourceSize = sourceSize;
-			framePointers[i].destSize = decompressedSize;
+			framePointers[i].sourceData = frameBuffers[i].buf;
+			framePointers[i].sourceSize = frameBuffers[i].len;
+			framePointers[i].destSize = frameSizesP ? frameSizesP[i] : 0;
 		}
 	}
 	else {
@@ -1296,6 +1299,14 @@ finally:
 		PyBuffer_Release(&frameSizes);
 	}
 	PyMem_Free(framePointers);
+
+	if (frameBuffers) {
+		for (i = 0; i < frameCount; i++) {
+			PyBuffer_Release(&frameBuffers[i]);
+		}
+
+		PyMem_Free(frameBuffers);
+	}
 
 	return result;
 }

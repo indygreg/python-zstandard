@@ -589,7 +589,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         with self.assertRaises(TypeError):
             dctx.multi_decompress_into_buffer((1, 2))
 
-        with self.assertRaisesRegexp(ValueError, 'item 0 not bytes'):
+        with self.assertRaisesRegexp(TypeError, 'item 0 not a bytes like object'):
             dctx.multi_decompress_into_buffer([u'foo'])
 
         with self.assertRaisesRegexp(ValueError, 'could not determine decompressed size of item 0'):

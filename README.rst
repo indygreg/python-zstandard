@@ -656,17 +656,24 @@ Batch Decompression API
 frames as a single operation and returns a ``BufferWithSegmentsCollection``
 containing decompressed data for all inputs.
 
-Compressed frames can be passed to the function either as a list of
-bytes or as a ``BufferWithSegments`` instance. The decompressed size of each
-frame must be discoverable. Unless the ``frame_sizes`` argument is specified,
-each frame **must** have the original content size written inside
-(``write_content_size=True`` argument to ``ZstdCompressor``).
+Compressed frames can be passed to the function either as a
+``BufferWithSegments`` or as list containing objects that conform to the
+buffer protocol. For best performance, pass a ``BufferWithSegments``, as
+minimal input validation will be done for that type. If calling from
+Python (as opposed to C), constructing a ``BufferWithSegments`` will
+likely add more overhead than would be cancelled out from validation
+inside ``multi_decompress_into_buffer()``, so a list is likely faster
+in this scenario.
+
+The decompressed size of each frame must be discoverable. It can either be
+embedded within the zstd frame (``write_content_size=True`` argument to
+``ZstdCompressor``) or passed in via the ``decompressed_sizes`` argument.
 
 The ``decompressed_sizes`` argument is an object conforming to the buffer
 protocol which holds an array of 64-bit unsigned integers in the machine's
 native format defining the decompressed sizes of each frame. If this argument
-is passed, a pre-scan of ``frames`` to resolve decompressed sizes can be
-avoided. This makes operation faster.
+is passed, it avoids having to scan each frame for its decompressed size.
+This frame scanning can add noticeable overhead in some scenarios.
 
 The ``threads`` argument controls the number of threads to use to perform
 decompression operations. The default (``0``) or the value ``1`` means to
