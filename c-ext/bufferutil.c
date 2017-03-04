@@ -582,7 +582,7 @@ static int BufferWithSegmentsCollection_init(ZstdBufferWithSegmentsCollection* s
 
 	for (i = 0; i < size; i++) {
 		PyObject* item = PyTuple_GET_ITEM(args, i);
-		if (1 != PyObject_IsInstance(item, (PyObject*)&ZstdBufferWithSegmentsType)) {
+		if (!PyObject_TypeCheck(item, &ZstdBufferWithSegmentsType)) {
 			PyErr_SetString(PyExc_TypeError, "arguments must be BufferWithSegments instances");
 			return -1;
 		}
