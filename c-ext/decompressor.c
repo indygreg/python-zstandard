@@ -780,7 +780,6 @@ typedef struct {
 	FramePointer* frames;
 	Py_ssize_t framesSize;
 	unsigned long long compressedSize;
-	unsigned long long decompressedSize;
 } FrameSources;
 
 typedef enum {
@@ -1160,7 +1159,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 	Py_ssize_t frameCount;
 	FramePointer* framePointers = NULL;
 	unsigned long long* frameSizesP = NULL;
-	unsigned long long totalOutputSize = 0;
 	unsigned long long totalInputSize = 0;
 	FrameSources frameSources;
 	ZstdBufferWithSegmentsCollection* result = NULL;
@@ -1236,8 +1234,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 			framePointers[i].sourceData = sourceData;
 			framePointers[i].sourceSize = sourceSize;
 			framePointers[i].destSize = decompressedSize;
-
-			totalOutputSize += decompressedSize;
 		}
 	}
 	else if (PyList_Check(frames)) {
@@ -1280,8 +1276,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 			framePointers[i].sourceData = sourceData;
 			framePointers[i].sourceSize = sourceSize;
 			framePointers[i].destSize = decompressedSize;
-
-			totalOutputSize += decompressedSize;
 		}
 	}
 	else {
@@ -1294,7 +1288,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 	frameSources.frames = framePointers;
 	frameSources.framesSize = frameCount;
 	frameSources.compressedSize = totalInputSize;
-	frameSources.decompressedSize = totalOutputSize;
 
 	result = decompress_from_framesources(self, &frameSources, threads);
 
