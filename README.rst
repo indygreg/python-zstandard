@@ -191,8 +191,8 @@ are documented in the sections below.
 .. note::
 
    The documentation in this section makes references to various zstd
-   concepts and functionality. The ``Zstandard Concepts`` section below
-   explains these concepts in more detail.
+   concepts and functionality. The ``Concepts`` section below explains
+   these concepts in more detail.
 
 ZstdCompressor
 --------------
@@ -1206,16 +1206,18 @@ first having 2 segments and the second have 3 segments, then ``b[0]``
 and ``b[1]`` access segments in the first object and ``b[2]``, ``b[3]``,
 and ``b[4]`` access segments from the second.
 
-Zstandard Concepts
-==================
+Concepts
+========
 
 It is important to have a basic understanding of how Zstandard works in order
-to optimally use this library. This section aims to provide that knowledge.
+to optimally use this library. In addition, there are some low-level Python
+concepts that are worth explaining to aid understanding. This section aims to
+provide that knowledge.
 
-Frames and Compression Format
------------------------------
+Zstandard Frames and Compression Format
+---------------------------------------
 
-Compressed zstd data almost always exists within a container called a
+Compressed zstandard data almost always exists within a container called a
 *frame*. (For the technically curious, see the
 `specification <https://github.com/facebook/zstd/blob/3bee41a70eaf343fbcae3637b3f6edbe52f35ed8/doc/zstd_compression_format.md>_.)
 
@@ -1224,9 +1226,16 @@ magic number to self-identify as a zstd frame and a description of the
 compressed data that follows.
 
 Among other things, the frame *optionally* contains the size of the
-decompressed data the frame represents, a checksum of the decompressed
-data (to facilitate verification during decompression), and the ID of
-the dictionary used to compress the data.
+decompressed data the frame represents, a 32-bit checksum of the
+decompressed data (to facilitate verification during decompression),
+and the ID of the dictionary used to compress the data.
+
+Storing the original content size in the frame (``write_content_size=True``
+to ``ZstdCompressor``) is important for performance in some scenarios. Having
+the decompressed size stored there (or storing it elsewhere) allows
+decompression to perform a single memory allocation that is exactly sized to
+the output. This is faster than continuously growing a memory buffer to hold
+output.
 
 Compression and Decompression Contexts
 --------------------------------------
@@ -1276,7 +1285,34 @@ objects then leverage those common patterns during compression and
 decompression operations to achieve better compression ratios.
 
 Dictionary compression is generally only useful for small inputs - data no
-larger than a kilobyte or 2.
+larger than a few kilobytes. The upper bound on this range is highly dependent
+on the input data and the dictionary.
+
+Python Buffer Protocol
+----------------------
+
+Many functions in the library operate on objects that implement Python's
+`buffer protocol <https://docs.python.org/3.6/c-api/buffer.html>`_.
+
+The *buffer protocol* is an internal implementation detail of a Python
+type that allows instances of that type (objects) to be exposed as a raw
+pointer (or buffer) in the C API. In other words, it allows objects to be
+exposed as an array of bytes.
+
+From the perspective of the C API, objects implementing the *buffer protocol*
+all look the same: they are just a pointer to a memory address of a defined
+length. This allows the C API to be largely type agnostic when accessing their
+data. This allows custom types to be passed in without first converting them
+to a specific type.
+
+Many Python types implement the buffer protocol. These include ``bytes``
+(``str`` on Python 2), ``bytearray``, ``array.array``, ``io.BytesIO``,
+``mmap.mmap``, and ``memoryview``.
+
+``python-zstandard`` APIs that accept objects conforming to the buffer
+protocol require that the buffer is *C contiguous* and has a single
+dimension (``ndim==1``). This is usually the case. An example of where it
+is not is a Numpy matrix type.
 
 Note on Zstandard's *Experimental* API
 ======================================
