@@ -982,6 +982,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 	if (threadCount > 1) {
 		POOL_free(pool);
+		pool = NULL;
 	}
 	Py_END_ALLOW_THREADS
 
@@ -1043,6 +1044,8 @@ finally:
 
 		PyMem_Free(poolStates);
 	}
+
+	POOL_free(pool);
 
 	return result;
 }
