@@ -651,8 +651,8 @@ Batch Decompression API
 (Experimental. Not yet supported in CFFI bindings.)
 
 ``multi_decompress_into_buffer()`` performs decompression of multiple
-frames as a single operation and returns a ``BufferWithSegments`` containing
-decompressed data for all inputs.
+frames as a single operation and returns a ``BufferWithSegmentsCollection``
+containing decompressed data for all inputs.
 
 Compressed frames can be passed to the function either as a list of
 bytes or as a ``BufferWithSegments`` instance. The decompressed size of each

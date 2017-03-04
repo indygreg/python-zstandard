@@ -842,7 +842,7 @@ static void decompress_worker(PoolState* state) {
 	}
 }
 
-ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames,
+ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames,
 	unsigned int threadCount) {
 	void* data = NULL;
 	void* dictData = NULL;
@@ -850,7 +850,9 @@ ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompres
 	Py_ssize_t i = 0;
 	int errored = 0;
 	BufferSegment* segments = NULL;
-	ZstdBufferWithSegments* result = NULL;
+	ZstdBufferWithSegments* bws = NULL;
+	PyObject* resultArg = NULL;
+	ZstdBufferWithSegmentsCollection* result = NULL;
 	FramePointer* framePointers = frames->frames;
 	unsigned long long workerBytes = 0;
 	int currentThread = 0;
@@ -1005,17 +1007,32 @@ ZstdBufferWithSegments* decompress_from_framesources(ZstdDecompressor* decompres
 		goto finally;
 	}
 
-	result = BufferWithSegments_FromMemory(data, frames->decompressedSize, segments,
+	bws = BufferWithSegments_FromMemory(data, frames->decompressedSize, segments,
 		frames->framesSize);
 
 	/* Memory ownership is transferred to BufferWithSegments. So if construction
 	   fails, destroy here otherwise it will leak. */
-	if (NULL == result) {
+	if (NULL == bws) {
 		PyMem_Free(data);
 		PyMem_Free(segments);
+		goto finally;
 	}
 
+	resultArg = PyTuple_New(1);
+	if (NULL == resultArg) {
+		/* Decrementing the refcount will free now-owned memory. */
+		Py_CLEAR(bws);
+		goto finally;
+	}
+
+	PyTuple_SET_ITEM(resultArg, 0, (PyObject*)bws);
+
+	result = (ZstdBufferWithSegmentsCollection*)PyObject_CallObject(
+		(PyObject*)&ZstdBufferWithSegmentsCollectionType, resultArg);
+
 finally:
+	Py_CLEAR(resultArg);
+
 	if (poolStates) {
 		for (i = 0; i < threadCount; i++) {
 			PoolState state = poolStates[i];
@@ -1043,7 +1060,7 @@ PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
 "``decompressed_sizes`` avoids a pre-scan of each frame to determine its\n"
 "output size.\n"
 "\n"
-"Returns a ``BufferWithSegments`` instance containing the decompressed\n"
+"Returns a ``BufferWithSegmentsCollection`` containing the decompressed\n"
 "data. All decompressed data is allocated in a single memory buffer. The\n"
 "``BufferWithSegments`` instance tracks which objects are at which offsets\n"
 "and their respective lengths.\n"
@@ -1053,7 +1070,7 @@ PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
 "machine.\n"
 );
 
-static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buffer(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"frames",
 		"decompressed_sizes",
@@ -1070,7 +1087,7 @@ static ZstdBufferWithSegments* Decompressor_multi_decompress_into_buffer(ZstdDec
 	unsigned long long totalOutputSize = 0;
 	unsigned long long totalInputSize = 0;
 	FrameSources frameSources;
-	ZstdBufferWithSegments* result = NULL;
+	ZstdBufferWithSegmentsCollection* result = NULL;
 	int instanceResult;
 	Py_ssize_t i;
 

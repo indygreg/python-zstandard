@@ -604,8 +604,8 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         result = dctx.multi_decompress_into_buffer(frames)
 
-        self.assertEqual(result.size, sum(map(len, original)))
-        self.assertEqual(result.tobytes(), b''.join(original))
+        self.assertEqual(len(result), len(frames))
+        self.assertEqual(result.size(), sum(map(len, original)))
 
         for i, data in enumerate(original):
             self.assertEqual(result[i].tobytes(), data)
@@ -625,8 +625,8 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         result = dctx.multi_decompress_into_buffer(frames, decompressed_sizes=sizes)
 
-        self.assertEqual(result.size, sum(map(len, original)))
-        self.assertEqual(result.tobytes(), b''.join(original))
+        self.assertEqual(len(result), len(frames))
+        self.assertEqual(result.size(), sum(map(len, original)))
 
         for i, data in enumerate(original):
             self.assertEqual(result[i].tobytes(), data)
@@ -644,6 +644,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
 
         result = dctx.multi_decompress_into_buffer(b)
 
+        self.assertEqual(len(result), len(frames))
         self.assertEqual(result[0].offset, 0)
         self.assertEqual(len(result[0]), 12)
         self.assertEqual(result[1].offset, 12)
@@ -663,8 +664,8 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         result = dctx.multi_decompress_into_buffer(b, decompressed_sizes=sizes)
 
-        self.assertEqual(result.size, sum(map(len, original)))
-        self.assertEqual(result.tobytes(), b''.join(original))
+        self.assertEqual(len(result), len(frames))
+        self.assertEqual(result.size(), sum(map(len, original)))
 
         for i, data in enumerate(original):
             self.assertEqual(result[i].tobytes(), data)
@@ -679,7 +680,8 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         result = dctx.multi_decompress_into_buffer(frames, threads=-1)
 
-        self.assertEqual(result.size, 2 * 64 * 256)
+        self.assertEqual(len(result), len(frames))
+        self.assertEqual(result.size(), 2 * 64 * 256)
         self.assertEqual(result[0].tobytes(), b'x' * 64)
         self.assertEqual(result[256].tobytes(), b'y' * 64)
 
