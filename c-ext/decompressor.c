@@ -786,19 +786,21 @@ typedef struct {
 typedef enum {
 	WorkerError_none = 0,
 	WorkerError_zstd = 1,
-	WorkerError_sizeMismatch = 2,
+	WorkerError_memory = 2,
+	WorkerError_sizeMismatch = 3,
+	WorkerError_unknownSize = 4,
 } WorkerError;
 
 typedef struct {
-	/* Output buffer */
+	/* Output buffer and offsets. */
 	void* dest;
-	/* Offsets in output buffer */
+	Py_ssize_t destSize;
 	BufferSegment* segments;
+
 	ZSTD_DCtx* dctx;
 	ZSTD_DDict* ddict;
 	/* Source records and length */
 	FramePointer* framePointers;
-	Py_ssize_t framePointerSize;
 	/* Which records to process. */
 	Py_ssize_t startOffset;
 	Py_ssize_t endOffset;
@@ -811,9 +813,60 @@ typedef struct {
 } WorkerState;
 
 static void decompress_worker(WorkerState* state) {
-	Py_ssize_t i = 0;
+	Py_ssize_t i;
+	Py_ssize_t localOffset = 0;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
+	unsigned long long currentOffset = 0;
+
+	assert(NULL == state->dest);
+	assert(0 == state->destSize);
+	assert(NULL == state->segments);
+
+	/*
+	 * We need to allocate a buffer to hold decompressed data. How we do this
+	 * depends on what we know about the output. The following scenarios are
+	 * possible:
+	 *
+	 * 1. All structs defining frames declare the output size.
+	 * 2. The decompressed size is embedded within the zstd frame.
+	 * 3. The decompressed size is not stored anywhere.
+	 *
+	 * For now, we only support #1 and #2.
+	 */
+
+	/* Resolve ouput segments. */
+	for (i = state->startOffset; i <= state->endOffset; i++) {
+		FramePointer* fp = &framePointers[i];
+
+		if (0 == fp->destSize) {
+			fp->destSize = ZSTD_getDecompressedSize(fp->sourceData, fp->sourceSize);
+			if (0 == fp->destSize) {
+				state->error = WorkerError_unknownSize;
+				state->errorOffset = i;
+				return;
+			}
+		}
+
+		fp->destOffset = currentOffset;
+		currentOffset += fp->destSize;
+	}
+
+	/* currentOffset is now the total output size. */
+	state->dest = malloc(currentOffset);
+	if (NULL == state->dest) {
+		state->error = WorkerError_memory;
+		return;
+	}
+
+	state->destSize = currentOffset;
+
+	state->segments = malloc((state->endOffset - state->startOffset + 1) * sizeof(BufferSegment));
+	if (NULL == state->segments) {
+		/* Caller will free state->dest as part of cleanup. */
+		state->error = WorkerError_memory;
+		return;
+	}
 
 	for (i = state->startOffset; i <= state->endOffset; i++) {
 		void* source = framePointers[i].sourceData;
@@ -843,19 +896,18 @@ static void decompress_worker(WorkerState* state) {
 			break;
 		}
 
-		state->segments[i].offset = framePointers[i].destOffset;
-		state->segments[i].length = destCapacity;
+		state->segments[localOffset].offset = framePointers[i].destOffset;
+		state->segments[localOffset].length = destCapacity;
+		localOffset++;
 	}
 }
 
 ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames,
 	unsigned int threadCount) {
-	void* data = NULL;
 	void* dictData = NULL;
 	size_t dictSize = 0;
 	Py_ssize_t i = 0;
 	int errored = 0;
-	BufferSegment* segments = NULL;
 	ZstdBufferWithSegments* bws = NULL;
 	PyObject* resultArg = NULL;
 	ZstdBufferWithSegmentsCollection* result = NULL;
@@ -893,26 +945,11 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		}
 	}
 
-	data = PyMem_Malloc(frames->decompressedSize);
-	if (NULL == data) {
-		PyErr_NoMemory();
-		return NULL;
-	}
-
-	segments = PyMem_Malloc(frames->framesSize * sizeof(BufferSegment));
-	if (!segments) {
-		PyMem_Free(data);
-		PyErr_NoMemory();
-		return NULL;
-	}
-
 	/* If threadCount==1, we don't start a thread pool. But we do leverage the
 	   same API for dispatching work. */
 	workerStates = PyMem_Malloc(threadCount * sizeof(WorkerState));
 	if (NULL == workerStates) {
 		PyErr_NoMemory();
-		PyMem_Free(data);
-		PyMem_Free(segments);
 		goto finally;
 	}
 
@@ -922,8 +959,6 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		pool = POOL_create(threadCount, 1);
 		if (NULL == pool) {
 			PyErr_SetString(ZstdError, "could not initialize zstd thread pool");
-			PyMem_Free(data);
-			PyMem_Free(segments);
 			goto finally;
 		}
 	}
@@ -934,18 +969,13 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		workerStates[i].dctx = ZSTD_createDCtx();
 		if (NULL == workerStates[i].dctx) {
 			PyErr_NoMemory();
-			PyMem_Free(data);
-			PyMem_Free(segments);
 			goto finally;
 		}
 
 		ZSTD_copyDCtx(workerStates[i].dctx, decompressor->dctx);
 
-		workerStates[i].dest = data;
-		workerStates[i].segments = segments;
 		workerStates[i].ddict = decompressor->ddict;
 		workerStates[i].framePointers = framePointers;
-		workerStates[i].framePointerSize = frames->framesSize;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
@@ -1003,12 +1033,24 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 			errored = 1;
 			break;
 
+		case WorkerError_memory:
+			PyErr_NoMemory();
+			errored = 1;
+			break;
+
 		case WorkerError_sizeMismatch:
 			PyErr_Format(ZstdError, "error decompressing item %zd: decompressed %zu bytes; expected %llu",
 				workerStates[i].errorOffset, workerStates[i].zresult,
 				framePointers[workerStates[i].errorOffset].destSize);
 			errored = 1;
 			break;
+
+		case WorkerError_unknownSize:
+			PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
+				workerStates[i].errorOffset);
+			errored = 1;
+			break;
+
 		default:
 			PyErr_Format(ZstdError, "unhandled error type: %d; this is a bug",
 				workerStates[i].error);
@@ -1022,30 +1064,35 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	}
 
 	if (errored) {
-		PyMem_Free(data);
-		PyMem_Free(segments);
 		goto finally;
 	}
 
-	bws = BufferWithSegments_FromMemory(data, frames->decompressedSize, segments,
-		frames->framesSize);
-
-	/* Memory ownership is transferred to BufferWithSegments. So if construction
-	   fails, destroy here otherwise it will leak. */
-	if (NULL == bws) {
-		PyMem_Free(data);
-		PyMem_Free(segments);
-		goto finally;
-	}
-
-	resultArg = PyTuple_New(1);
+	resultArg = PyTuple_New(threadCount);
 	if (NULL == resultArg) {
-		/* Decrementing the refcount will free now-owned memory. */
-		Py_CLEAR(bws);
 		goto finally;
 	}
 
-	PyTuple_SET_ITEM(resultArg, 0, (PyObject*)bws);
+	for (i = 0; i < threadCount; i++) {
+		WorkerState* state = &workerStates[i];
+
+		bws = BufferWithSegments_FromMemory(state->dest, state->destSize,
+			state->segments, state->endOffset - state->startOffset + 1);
+		if (NULL == bws) {
+			goto finally;
+		}
+
+		/*
+		 * Memory for buffer and segments was allocated using malloc() in worker
+		 * and the memory is transferred to the BufferWithSegments instance. So
+		 * tell instance to use free() and NULL the reference in the state struct
+		 * so it isn't freed below.
+		 */
+		bws->useFree = 1;
+		state->dest = NULL;
+		state->segments = NULL;
+
+		PyTuple_SET_ITEM(resultArg, i, (PyObject*)bws);
+	}
 
 	result = (ZstdBufferWithSegmentsCollection*)PyObject_CallObject(
 		(PyObject*)&ZstdBufferWithSegmentsCollectionType, resultArg);
@@ -1059,6 +1106,13 @@ finally:
 			if (state.dctx) {
 				ZSTD_freeDCtx(state.dctx);
 			}
+
+			/*
+			 * Will be NULL if memory transfered to a BufferWithSegments.
+			 * Otherwise it is left over after an error occurred.
+			 */
+			free(state.dest);
+			free(state.segments);
 		}
 
 		PyMem_Free(workerStates);
@@ -1141,15 +1195,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 		threads = 1;
 	}
 
-	/* TODO decompressed offsets and sizes are computed here, sequentially. This
-	   operation can be performed on multiple threads. We should do that here
-	   or defer the computation to decompress_from_framesources(). The part that
-	   requires this pass at all is the fact that we write decompressed output
-	   directly into the single, final buffer. That requires knowing offsets
-	   ahead of time. If each worker wrote to its own buffer, we could avoid
-	   this first pass.
-	*/
-
 	instanceResult = PyObject_IsInstance(frames, (PyObject*)&ZstdBufferWithSegmentsType);
 	if (-1 == instanceResult) {
 		return NULL;
@@ -1173,7 +1218,7 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 		for (i = 0; i < frameCount; i++) {
 			void* sourceData;
 			unsigned long long sourceSize;
-			unsigned long long decompressedSize;
+			unsigned long long decompressedSize = 0;
 
 			if (buffer->segments[i].offset + buffer->segments[i].length > buffer->dataSize) {
 				PyErr_Format(PyExc_ValueError, "item %zd has offset outside memory area", i);
@@ -1187,19 +1232,9 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 			if (frameSizesP) {
 				decompressedSize = frameSizesP[i];
 			}
-			else {
-				decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
-
-				if (0 == decompressedSize) {
-					PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
-						i);
-					goto finally;
-				}
-			}
 
 			framePointers[i].sourceData = sourceData;
 			framePointers[i].sourceSize = sourceSize;
-			framePointers[i].destOffset = totalOutputSize;
 			framePointers[i].destSize = decompressedSize;
 
 			totalOutputSize += decompressedSize;
@@ -1225,7 +1260,7 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 			PyObject* frame;
 			char* sourceData;
 			Py_ssize_t sourceSize;
-			unsigned long long decompressedSize;
+			unsigned long long decompressedSize = 0;
 
 			frame = PyList_GET_ITEM(frames, i);
 
@@ -1241,19 +1276,9 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 			if (frameSizesP) {
 				decompressedSize = frameSizesP[i];
 			}
-			else {
-				decompressedSize = ZSTD_getDecompressedSize(sourceData, sourceSize);
-
-				if (0 == decompressedSize) {
-					PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
-						i);
-					goto finally;
-				}
-			}
 
 			framePointers[i].sourceData = sourceData;
 			framePointers[i].sourceSize = sourceSize;
-			framePointers[i].destOffset = totalOutputSize;
 			framePointers[i].destSize = decompressedSize;
 
 			totalOutputSize += decompressedSize;
