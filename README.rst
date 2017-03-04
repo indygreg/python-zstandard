@@ -671,6 +671,12 @@ decompression operations. The default (``0``) or the value ``1`` means to
 use a single thread. Negative values use the number of logical CPUs in the
 machine.
 
+.. note::
+
+   It is possible to pass a ``mmap.mmap()`` instance into this function by
+   wrapping it with a ``BufferWithSegments`` instance (which will define the
+   offsets of frames within the memory mapped region).
+
 This function is logically equivalent to performing ``dctx.decompress()``
 on each input frame and returning the result.
 
