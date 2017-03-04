@@ -246,6 +246,8 @@ Simple API
    cctx = zstd.ZstdCompressor()
    compressed = cctx.compress(b'data to compress')
 
+The ``data`` argument can be any object that implements the *buffer protocol*.
+
 Unless ``compression_params`` or ``dict_data`` are passed to the
 ``ZstdCompressor``, each invocation of ``compress()`` will calculate the
 optimal compression parameters for the configured compression ``level`` and
