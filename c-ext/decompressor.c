@@ -1122,7 +1122,7 @@ finally:
 	return result;
 }
 
-PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
+PyDoc_STRVAR(Decompressor_multi_decompress_to_buffer__doc__,
 "Decompress multiple frames into a single output buffer\n"
 "\n"
 "Receives a ``BufferWithSegments`` or a list of bytes-like objects .\n"
@@ -1145,7 +1145,7 @@ PyDoc_STRVAR(Decompressor_multi_decompress_into_buffer__doc__,
 "machine.\n"
 );
 
-static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buffer(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"frames",
 		"decompressed_sizes",
@@ -1169,9 +1169,9 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_into_buff
 	memset(&frameSizes, 0, sizeof(frameSizes));
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|y*i:multi_decompress_into_buffer",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|y*i:multi_decompress_to_buffer",
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|s*i:multi_decompress_into_buffer",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|s*i:multi_decompress_to_buffer",
 #endif
 		kwlist, &frames, &frameSizes, &threads)) {
 		return NULL;
@@ -1324,8 +1324,8 @@ static PyMethodDef Decompressor_methods[] = {
 	Decompressor_write_to__doc__ },
 	{ "decompress_content_dict_chain", (PyCFunction)Decompressor_decompress_content_dict_chain,
 	  METH_VARARGS | METH_KEYWORDS, Decompressor_decompress_content_dict_chain__doc__ },
-	{ "multi_decompress_into_buffer", (PyCFunction)Decompressor_multi_decompress_into_buffer,
-	  METH_VARARGS | METH_KEYWORDS, Decompressor_multi_decompress_into_buffer__doc__ },
+	{ "multi_decompress_to_buffer", (PyCFunction)Decompressor_multi_decompress_to_buffer,
+	  METH_VARARGS | METH_KEYWORDS, Decompressor_multi_decompress_to_buffer__doc__ },
 	{ NULL, NULL }
 };
 

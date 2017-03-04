@@ -829,7 +829,7 @@ typedef enum {
 } WorkerError;
 
 /**
- * Holds state for an individual worker performing multi_compress_into_buffer work.
+ * Holds state for an individual worker performing multi_compress_to_buffer work.
  */
 typedef struct {
 	/* Used for compression. */
@@ -1196,7 +1196,7 @@ finally:
 	return result;
 }
 
-PyDoc_STRVAR(ZstdCompressor_multi_compress_into_buffer__doc__,
+PyDoc_STRVAR(ZstdCompressor_multi_compress_to_buffer__doc__,
 "Compress multiple pieces of data as a single operation\n"
 "\n"
 "Receives either list of bytes or a ``BufferWithSegments`` instance holding\n"
@@ -1207,7 +1207,7 @@ PyDoc_STRVAR(ZstdCompressor_multi_compress_into_buffer__doc__,
 "as possible with as little overhead as possbile.\n"
 );
 
-static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_into_buffer(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"data",
 		NULL
@@ -1221,7 +1221,7 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_into_buff
 
 	memset(&sources, 0, sizeof(sources));
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:multi_compress_into_buffer", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:multi_compress_to_buffer", kwlist,
 		&data)) {
 		return NULL;
 	}
@@ -1312,8 +1312,8 @@ static PyMethodDef ZstdCompressor_methods[] = {
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_from__doc__ },
 	{ "write_to", (PyCFunction)ZstdCompressor_write_to,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_write_to___doc__ },
-	{ "multi_compress_into_buffer", (PyCFunction)ZstdCompressor_multi_compress_into_buffer,
-	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_multi_compress_into_buffer__doc__ },
+	{ "multi_compress_to_buffer", (PyCFunction)ZstdCompressor_multi_compress_to_buffer,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_multi_compress_to_buffer__doc__ },
 	{ NULL, NULL }
 };
 

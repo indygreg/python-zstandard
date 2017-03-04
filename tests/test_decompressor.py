@@ -579,21 +579,21 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
 
 
 # TODO enable for CFFI
-class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
+class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
     def test_invalid_inputs(self):
         dctx = zstd.ZstdDecompressor()
 
         with self.assertRaises(TypeError):
-            dctx.multi_decompress_into_buffer(True)
+            dctx.multi_decompress_to_buffer(True)
 
         with self.assertRaises(TypeError):
-            dctx.multi_decompress_into_buffer((1, 2))
+            dctx.multi_decompress_to_buffer((1, 2))
 
         with self.assertRaisesRegexp(TypeError, 'item 0 not a bytes like object'):
-            dctx.multi_decompress_into_buffer([u'foo'])
+            dctx.multi_decompress_to_buffer([u'foo'])
 
         with self.assertRaisesRegexp(ValueError, 'could not determine decompressed size of item 0'):
-            dctx.multi_decompress_into_buffer([b'foobarbaz'])
+            dctx.multi_decompress_to_buffer([b'foobarbaz'])
 
     def test_list_input(self):
         cctx = zstd.ZstdCompressor(write_content_size=True)
@@ -602,7 +602,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         frames = [cctx.compress(d) for d in original]
 
         dctx = zstd.ZstdDecompressor()
-        result = dctx.multi_decompress_into_buffer(frames)
+        result = dctx.multi_decompress_to_buffer(frames)
 
         self.assertEqual(len(result), len(frames))
         self.assertEqual(result.size(), sum(map(len, original)))
@@ -623,7 +623,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         sizes = struct.pack('=' + 'Q' * len(original), *map(len, original))
 
         dctx = zstd.ZstdDecompressor()
-        result = dctx.multi_decompress_into_buffer(frames, decompressed_sizes=sizes)
+        result = dctx.multi_decompress_to_buffer(frames, decompressed_sizes=sizes)
 
         self.assertEqual(len(result), len(frames))
         self.assertEqual(result.size(), sum(map(len, original)))
@@ -642,7 +642,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         segments = struct.pack('=QQQQ', 0, len(frames[0]), len(frames[0]), len(frames[1]))
         b = zstd.BufferWithSegments(b''.join(frames), segments)
 
-        result = dctx.multi_decompress_into_buffer(b)
+        result = dctx.multi_decompress_to_buffer(b)
 
         self.assertEqual(len(result), len(frames))
         self.assertEqual(result[0].offset, 0)
@@ -662,7 +662,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         b = zstd.BufferWithSegments(b''.join(frames), segments)
 
         dctx = zstd.ZstdDecompressor()
-        result = dctx.multi_decompress_into_buffer(b, decompressed_sizes=sizes)
+        result = dctx.multi_decompress_to_buffer(b, decompressed_sizes=sizes)
 
         self.assertEqual(len(result), len(frames))
         self.assertEqual(result.size(), sum(map(len, original)))
@@ -678,7 +678,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         frames.extend(cctx.compress(b'y' * 64) for i in range(256))
 
         dctx = zstd.ZstdDecompressor()
-        result = dctx.multi_decompress_into_buffer(frames, threads=-1)
+        result = dctx.multi_decompress_to_buffer(frames, threads=-1)
 
         self.assertEqual(len(result), len(frames))
         self.assertEqual(result.size(), 2 * 64 * 256)
@@ -694,7 +694,7 @@ class TestDecompressor_multi_decompress_into_buffer(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Src size incorrect'):
-            dctx.multi_decompress_into_buffer(frames)
+            dctx.multi_decompress_to_buffer(frames)
 
         with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Src size incorrect'):
-            dctx.multi_decompress_into_buffer(frames, threads=2)
+            dctx.multi_decompress_to_buffer(frames, threads=2)

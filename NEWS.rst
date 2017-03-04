@@ -4,7 +4,7 @@ Version History
 0.8.0 (not yet released)
 ------------------------
 
-* multi_compress_into_buffer() API for compressing multiple inputs as a
+* multi_compress_to_buffer() API for compressing multiple inputs as a
   single operation, as efficiently as possible.
 * ZSTD_CStream instances are now used across multiple operations on
   ZstdCompressor instances, resulting in much better performance for
@@ -14,7 +14,7 @@ Version History
   APIs that do streaming.
 * train_dictionary() now releases the GIL.
 * Support for training dictionaries using the COVER algorithm.
-* multi_decompress_into_buffer() API for decompressing multiple frames as a
+* multi_decompress_to_buffer() API for decompressing multiple frames as a
   single operation, as efficiently as possible.
 * Support for multi-threaded compression.
 * Disable deprecation warnings when compiling CFFI module.

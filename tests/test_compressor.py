@@ -789,34 +789,34 @@ class TestCompressor_read_from(unittest.TestCase):
         self.assertEqual(len(compressed), 295)
 
 
-class TestCompressor_multi_compress_into_buffer(unittest.TestCase):
+class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
     def test_invalid_inputs(self):
         cctx = zstd.ZstdCompressor()
 
         with self.assertRaises(TypeError):
-            cctx.multi_compress_into_buffer(True)
+            cctx.multi_compress_to_buffer(True)
 
         with self.assertRaises(TypeError):
-            cctx.multi_compress_into_buffer((1, 2))
+            cctx.multi_compress_to_buffer((1, 2))
 
         with self.assertRaisesRegexp(TypeError, 'item 0 not bytes'):
-            cctx.multi_compress_into_buffer([u'foo'])
+            cctx.multi_compress_to_buffer([u'foo'])
 
     def test_empty_input(self):
         cctx = zstd.ZstdCompressor()
 
         with self.assertRaisesRegexp(ValueError, 'no source elements found'):
-            cctx.multi_compress_into_buffer([])
+            cctx.multi_compress_to_buffer([])
 
         with self.assertRaisesRegexp(ValueError, 'source elements are empty'):
-            cctx.multi_compress_into_buffer([b'', b'', b''])
+            cctx.multi_compress_to_buffer([b'', b'', b''])
 
     def test_list_input(self):
         cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
 
         original = [b'foo' * 12, b'bar' * 6]
         frames = [cctx.compress(c) for c in original]
-        b = cctx.multi_compress_into_buffer(original)
+        b = cctx.multi_compress_to_buffer(original)
 
         self.assertIsInstance(b, zstd.BufferWithSegmentsCollection)
 
@@ -836,7 +836,7 @@ class TestCompressor_multi_compress_into_buffer(unittest.TestCase):
                                        len(original[0]), len(original[1]))
         segments = zstd.BufferWithSegments(b''.join(original), offsets)
 
-        result = cctx.multi_compress_into_buffer(segments)
+        result = cctx.multi_compress_to_buffer(segments)
 
         self.assertEqual(len(result), 2)
         self.assertEqual(result.size(), 47)
@@ -857,7 +857,7 @@ class TestCompressor_multi_compress_into_buffer(unittest.TestCase):
         frames.extend(b'x' * 64 for i in range(256))
         frames.extend(b'y' * 64 for i in range(256))
 
-        result = cctx.multi_compress_into_buffer(frames)
+        result = cctx.multi_compress_to_buffer(frames)
 
         self.assertEqual(len(result), 512)
         for i in range(512):

@@ -442,7 +442,7 @@ Batch Compression API
 
 (Experimental. Not yet supported in CFFI bindings.)
 
-``multi_compress_into_buffer(data)`` performs compression of multiple
+``multi_compress_to_buffer(data)`` performs compression of multiple
 inputs as a single operation.
 
 Data to be compressed can be passed either as a list containing bytes instances
@@ -652,7 +652,7 @@ Batch Decompression API
 
 (Experimental. Not yet supported in CFFI bindings.)
 
-``multi_decompress_into_buffer()`` performs decompression of multiple
+``multi_decompress_to_buffer()`` performs decompression of multiple
 frames as a single operation and returns a ``BufferWithSegmentsCollection``
 containing decompressed data for all inputs.
 
@@ -662,7 +662,7 @@ buffer protocol. For best performance, pass a ``BufferWithSegments``, as
 minimal input validation will be done for that type. If calling from
 Python (as opposed to C), constructing a ``BufferWithSegments`` will
 likely add more overhead than would be cancelled out from validation
-inside ``multi_decompress_into_buffer()``, so a list is likely faster
+inside ``multi_decompress_to_buffer()``, so a list is likely faster
 in this scenario.
 
 The decompressed size of each frame must be discoverable. It can either be

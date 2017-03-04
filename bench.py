@@ -114,18 +114,18 @@ def compress_reuse(chunks, opts):
         zctx.compress(chunk)
 
 
-@bench('discrete', 'multi_compress_into_buffer() w/ buffer input',
+@bench('discrete', 'multi_compress_to_buffer() w/ buffer input',
        simple=True, threads_arg=True, chunks_as_buffer=True)
-def compress_multi_compress_into_buffer_buffer(chunks, opts, threads):
+def compress_multi_compress_to_buffer_buffer(chunks, opts, threads):
     zctx= zstd.ZstdCompressor(**opts)
-    zctx.multi_compress_into_buffer(chunks, threads=threads)
+    zctx.multi_compress_to_buffer(chunks, threads=threads)
 
 
-@bench('discrete', 'multi_compress_into_buffer() w/ list input',
+@bench('discrete', 'multi_compress_to_buffer() w/ list input',
        threads_arg=True)
-def compress_multi_compress_into_buffer_list(chunks, opts, threads):
+def compress_multi_compress_to_buffer_list(chunks, opts, threads):
     zctx = zstd.ZstdCompressor(**opts)
-    zctx.multi_compress_into_buffer(chunks, threads=threads)
+    zctx.multi_compress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'write_to()')
@@ -308,39 +308,39 @@ def decompress_zlib_decompress(chunks):
         d(chunk)
 
 
-@bench('discrete', 'multi_decompress_into_buffer() w/ buffer input + sizes',
+@bench('discrete', 'multi_decompress_to_buffer() w/ buffer input + sizes',
        simple=True, threads_arg=True, decompressed_sizes_arg=True,
        chunks_as_buffer=True)
-def decompress_multi_decompress_into_buffer_buffer_and_size(chunks, opts, threads,
+def decompress_multi_decompress_to_buffer_buffer_and_size(chunks, opts, threads,
                                             decompressed_sizes):
     zctx = zstd.ZstdDecompressor(**opts)
-    zctx.multi_decompress_into_buffer(chunks,
-                                      decompressed_sizes=decompressed_sizes,
-                                      threads=threads)
+    zctx.multi_decompress_to_buffer(chunks,
+                                    decompressed_sizes=decompressed_sizes,
+                                    threads=threads)
 
 
-@bench('discrete', 'multi_decompress_into_buffer() w/ buffer input',
+@bench('discrete', 'multi_decompress_to_buffer() w/ buffer input',
        require_content_size=True, threads_arg=True, chunks_as_buffer=True)
-def decompress_multi_decompress_into_buffer_buffer(chunks, opts, threads):
+def decompress_multi_decompress_to_buffer_buffer(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
-    zctx.multi_decompress_into_buffer(chunks, threads=threads)
+    zctx.multi_decompress_to_buffer(chunks, threads=threads)
 
 
-@bench('discrete', 'multi_decompress_into_buffer() w/ list of bytes input + sizes',
+@bench('discrete', 'multi_decompress_to_buffer() w/ list of bytes input + sizes',
        threads_arg=True, decompressed_sizes_arg=True)
-def decompress_multi_decompress_into_buffer_list_and_sizes(chunks, opts, threads,
+def decompress_multi_decompress_to_buffer_list_and_sizes(chunks, opts, threads,
                                             decompressed_sizes):
     zctx = zstd.ZstdDecompressor(**opts)
-    zctx.multi_decompress_into_buffer(chunks,
+    zctx.multi_decompress_to_buffer(chunks,
                                       decompressed_sizes=decompressed_sizes,
                                       threads=threads)
 
 
-@bench('discrete', 'multi_decompress_into_buffer() w/ list of bytes input',
+@bench('discrete', 'multi_decompress_to_buffer() w/ list of bytes input',
        require_content_size=True, threads_arg=True)
-def decompress_multi_decompress_into_buffer_list(chunks, opts, threads):
+def decompress_multi_decompress_to_buffer_list(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
-    zctx.multi_decompress_into_buffer(chunks, threads=threads)
+    zctx.multi_decompress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'write_to()')
