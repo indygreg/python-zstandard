@@ -798,18 +798,19 @@ typedef enum {
 } WorkerError;
 
 typedef struct {
-	/* Output storage. */
-	DestBuffer* destBuffers;
-	Py_ssize_t destCount;
-
-	ZSTD_DCtx* dctx;
-	ZSTD_DDict* ddict;
-
 	/* Source records and length */
 	FramePointer* framePointers;
 	/* Which records to process. */
 	Py_ssize_t startOffset;
 	Py_ssize_t endOffset;
+
+	/* Compression state and settings. */
+	ZSTD_DCtx* dctx;
+	ZSTD_DDict* ddict;
+
+	/* Output storage. */
+	DestBuffer* destBuffers;
+	Py_ssize_t destCount;
 
 	/* Item that error occurred on. */
 	Py_ssize_t errorOffset;
