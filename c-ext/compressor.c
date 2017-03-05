@@ -936,7 +936,7 @@ static void compress_worker(WorkerState* state) {
 		allocationSize = roundpow2(boundSize);
 	}
 
-	destBuffer->dest = calloc(1, allocationSize);
+	destBuffer->dest = malloc(allocationSize);
 	if (NULL == destBuffer->dest) {
 		state->error = WorkerError_no_memory;
 		return;
@@ -1010,7 +1010,7 @@ static void compress_worker(WorkerState* state) {
 				allocationSize = roundpow2(boundSize);
 			}
 
-			destBuffer->dest = calloc(1, allocationSize);
+			destBuffer->dest = malloc(allocationSize);
 			if (NULL == destBuffer->dest) {
 				state->error = WorkerError_no_memory;
 				return;
