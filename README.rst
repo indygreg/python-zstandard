@@ -656,14 +656,14 @@ Batch Decompression API
 frames as a single operation and returns a ``BufferWithSegmentsCollection``
 containing decompressed data for all inputs.
 
-Compressed frames can be passed to the function either as a
-``BufferWithSegments`` or as list containing objects that conform to the
-buffer protocol. For best performance, pass a ``BufferWithSegments``, as
+Compressed frames can be passed to the function as a ``BufferWithSegments``,
+a ``BufferWithSegmentsCollection``, or as a list containing objects that
+conform to the buffer protocol. For best performance, pass a
+``BufferWithSegmentsCollection`` or a ``BufferWithSegments``, as
 minimal input validation will be done for that type. If calling from
-Python (as opposed to C), constructing a ``BufferWithSegments`` will
-likely add more overhead than would be cancelled out from validation
-inside ``multi_decompress_to_buffer()``, so a list is likely faster
-in this scenario.
+Python (as opposed to C), constructing one of these instances may add
+overhead cancelling out the performance overhead of validation for list
+inputs.
 
 The decompressed size of each frame must be discoverable. It can either be
 embedded within the zstd frame (``write_content_size=True`` argument to

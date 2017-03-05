@@ -670,6 +670,49 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         for i, data in enumerate(original):
             self.assertEqual(result[i].tobytes(), data)
 
+    def test_buffer_with_segments_collection_input(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        original = [
+            b'foo0' * 2,
+            b'foo1' * 3,
+            b'foo2' * 4,
+            b'foo3' * 5,
+            b'foo4' * 6,
+        ]
+
+        frames = cctx.multi_compress_to_buffer(original)
+
+        # Check round trip.
+        dctx = zstd.ZstdDecompressor()
+        decompressed = dctx.multi_decompress_to_buffer(frames, threads=3)
+
+        self.assertEqual(len(decompressed), len(original))
+
+        for i, data in enumerate(original):
+            self.assertEqual(data, decompressed[i].tobytes())
+
+        # And a manual mode.
+        b = b''.join([frames[0].tobytes(), frames[1].tobytes()])
+        b1 = zstd.BufferWithSegments(b, struct.pack('=QQQQ',
+                                                    0, len(frames[0]),
+                                                    len(frames[0]), len(frames[1])))
+
+        b = b''.join([frames[2].tobytes(), frames[3].tobytes(), frames[4].tobytes()])
+        b2 = zstd.BufferWithSegments(b, struct.pack('=QQQQQQ',
+                                                    0, len(frames[2]),
+                                                    len(frames[2]), len(frames[3]),
+                                                    len(frames[2]) + len(frames[3]), len(frames[4])))
+
+        c = zstd.BufferWithSegmentsCollection(b1, b2)
+
+        dctx = zstd.ZstdDecompressor()
+        decompressed = dctx.multi_decompress_to_buffer(c)
+
+        self.assertEqual(len(decompressed), 5)
+        for i in range(5):
+            self.assertEqual(decompressed[i].tobytes(), original[i])
+
     def test_multiple_threads(self):
         cctx = zstd.ZstdCompressor(write_content_size=True)
 

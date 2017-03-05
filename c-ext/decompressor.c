@@ -1125,8 +1125,9 @@ finally:
 PyDoc_STRVAR(Decompressor_multi_decompress_to_buffer__doc__,
 "Decompress multiple frames to output buffers\n"
 "\n"
-"Receives a ``BufferWithSegments`` or a list of bytes-like objects .\n"
-"Each byte sequence should resemble a compressed zstd frame.\n"
+"Receives a ``BufferWithSegments``, a ``BufferWithSegmentsCollection`` or a\n"
+"list of bytes-like objects. Each item in the passed collection should be a\n"
+"compressed zstd frame.\n"
 "\n"
 "Unless ``decompressed_sizes`` is specified, the content size *must* be\n"
 "written into the zstd frame header. If ``decompressed_sizes`` is specified,\n"
@@ -1230,6 +1231,48 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 			framePointers[i].sourceData = sourceData;
 			framePointers[i].sourceSize = sourceSize;
 			framePointers[i].destSize = decompressedSize;
+		}
+	}
+	else if (PyObject_TypeCheck(frames, &ZstdBufferWithSegmentsCollectionType)) {
+		Py_ssize_t offset = 0;
+		Py_ssize_t j;
+		ZstdBufferWithSegments* buffer;
+		ZstdBufferWithSegmentsCollection* collection = (ZstdBufferWithSegmentsCollection*)frames;
+
+		frameCount = BufferWithSegmentsCollection_length(collection);
+
+		if (frameSizes.buf && frameSizes.len != frameCount) {
+			PyErr_Format(PyExc_ValueError,
+				"decompressed_sizes size mismatch; expected %zd; got %zd",
+				frameCount * sizeof(unsigned long long), frameSizes.len);
+			goto finally;
+		}
+
+		framePointers = PyMem_Malloc(frameCount * sizeof(FramePointer));
+		if (NULL == framePointers) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
+		/* Iterate the data structure directly because it is faster. */
+		for (i = 0; i < collection->bufferCount; i++) {
+			buffer = collection->buffers[i];
+
+			for (j = 0; j < buffer->segmentCount; j++) {
+				if (buffer->segments[j].offset + buffer->segments[j].length > buffer->dataSize) {
+					PyErr_Format(PyExc_ValueError, "item %zd has offset outside memory area",
+						offset);
+					goto finally;
+				}
+
+				totalInputSize += buffer->segments[i].length;
+
+				framePointers[offset].sourceData = (char*)buffer->data + buffer->segments[j].offset;
+				framePointers[offset].sourceSize = buffer->segments[j].length;
+				framePointers[offset].destSize = frameSizesP ? frameSizesP[offset] : 0;
+
+				offset++;
+			}
 		}
 	}
 	else if (PyList_Check(frames)) {
