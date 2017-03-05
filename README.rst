@@ -780,49 +780,6 @@ Output from multi-threaded compression does not require any special handling
 on the decompression side. In other words, any zstd decompressor should be able
 to consume data produced with multi-threaded compression.
 
-Choosing an API
----------------
-
-Various forms of compression and decompression APIs are provided because each
-are suitable for different use cases.
-
-The simple/one-shot APIs are useful for small data, when the decompressed
-data size is known (either recorded in the zstd frame header via
-``write_content_size`` or known via an out-of-band mechanism, such as a file
-size).
-
-A limitation of the simple APIs is that input or output data must fit in memory.
-And unless using advanced tricks with Python *buffer objects*, both input and
-output must fit in memory simultaneously.
-
-Another limitation is that compression or decompression is performed as a single
-operation. So if you feed large input, it could take a long time for the
-function to return.
-
-The streaming APIs do not have the limitations of the simple API. The cost to
-this is they are more complex to use than a single function call.
-
-The streaming APIs put the caller in control of compression and decompression
-behavior by allowing them to directly control either the input or output side
-of the operation.
-
-With the streaming input APIs, the caller feeds data into the compressor or
-decompressor as they see fit. Output data will only be written after the caller
-has explicitly written data.
-
-With the streaming output APIs, the caller consumes output from the compressor
-or decompressor as they see fit. The compressor or decompressor will only
-consume data from the source when the caller is ready to receive it.
-
-One end of the streaming APIs involves a file-like object that must
-``write()`` output data or ``read()`` input data. Depending on what the
-backing storage for these objects is, those operations may not complete quickly.
-For example, when streaming compressed data to a file, the ``write()`` into
-a streaming compressor could result in a ``write()`` to the filesystem, which
-may take a long time to finish due to slow I/O on the filesystem. So, there
-may be overhead in streaming APIs beyond the compression and decompression
-operations.
-
 Dictionary Creation and Management
 ----------------------------------
 
@@ -1214,6 +1171,49 @@ If the object is composed of 2 ``BufferWithSegments`` instances with the
 first having 2 segments and the second have 3 segments, then ``b[0]``
 and ``b[1]`` access segments in the first object and ``b[2]``, ``b[3]``,
 and ``b[4]`` access segments from the second.
+
+Choosing an API
+===============
+
+Various forms of compression and decompression APIs are provided because each
+are suitable for different use cases.
+
+The simple/one-shot APIs are useful for small data, when the decompressed
+data size is known (either recorded in the zstd frame header via
+``write_content_size`` or known via an out-of-band mechanism, such as a file
+size).
+
+A limitation of the simple APIs is that input or output data must fit in memory.
+And unless using advanced tricks with Python *buffer objects*, both input and
+output must fit in memory simultaneously.
+
+Another limitation is that compression or decompression is performed as a single
+operation. So if you feed large input, it could take a long time for the
+function to return.
+
+The streaming APIs do not have the limitations of the simple API. The cost to
+this is they are more complex to use than a single function call.
+
+The streaming APIs put the caller in control of compression and decompression
+behavior by allowing them to directly control either the input or output side
+of the operation.
+
+With the streaming input APIs, the caller feeds data into the compressor or
+decompressor as they see fit. Output data will only be written after the caller
+has explicitly written data.
+
+With the streaming output APIs, the caller consumes output from the compressor
+or decompressor as they see fit. The compressor or decompressor will only
+consume data from the source when the caller is ready to receive it.
+
+One end of the streaming APIs involves a file-like object that must
+``write()`` output data or ``read()`` input data. Depending on what the
+backing storage for these objects is, those operations may not complete quickly.
+For example, when streaming compressed data to a file, the ``write()`` into
+a streaming compressor could result in a ``write()`` to the filesystem, which
+may take a long time to finish due to slow I/O on the filesystem. So, there
+may be overhead in streaming APIs beyond the compression and decompression
+operations.
 
 Concepts
 ========
