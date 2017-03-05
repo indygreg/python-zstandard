@@ -826,6 +826,7 @@ typedef struct {
 	void* dest;
 	Py_ssize_t destSize;
 	BufferSegment* segments;
+	Py_ssize_t segmentsSize;
 } DestBuffer;
 
 typedef enum {
@@ -863,11 +864,14 @@ typedef struct {
 } WorkerState;
 
 static void compress_worker(WorkerState* state) {
-	Py_ssize_t inputOffset;
+	Py_ssize_t inputOffset = state->startOffset;
+	Py_ssize_t remainingItems = state->endOffset - state->startOffset + 1;
+	Py_ssize_t currentBufferStartOffset = state->startOffset;
 	size_t zresult;
 	ZSTD_parameters zparams;
 	void* newDest;
-	size_t newSize;
+	size_t allocationSize;
+	size_t boundSize;
 	Py_ssize_t destOffset = 0;
 	DataSource* sources = state->sources;
 	DestBuffer* destBuffer;
@@ -883,78 +887,147 @@ static void compress_worker(WorkerState* state) {
 
 	/*
 	 * The total size of the compressed data is unknown until we actually
-	 * compress data. There are a number of memory management techniques
-	 * we could use. None are perfect.
+	 * compress data. That means we can't pre-allocate the exact size we need.
 	 * 
-	 * Our strategy for now is to allocate N buffers of roughly similar sizes
-	 * holding output. Each buffer contains 1 or more compressed frames. These
-	 * get converted to BufferWithSegments instances later.
+	 * There is a cost to every allocation and reallocation. So, it is in our
+	 * interest to minimize the number of allocations.
 	 *
-	 * TODO actually use N buffers instead of 1.
+	 * There is also a cost to too few allocations. If allocations are too
+	 * large they may fail. If buffers are shared and all inputs become
+	 * irrelevant at different lifetimes, then a reference to one segment
+	 * in the buffer will keep the entire buffer alive. This leads to excessive
+	 * memory usage.
+	 *
+	 * Our current strategy is to assume a compression ratio of 16:1 and
+	 * allocate buffers of that size, rounded up to the nearest power of 2
+	 * (because computers like round numbers). That ratio is greater than what
+	 * most inputs achieve. This is by design: we don't want to over-allocate.
+	 * But we don't want to under-allocate and lead to too many buffers either.
 	 */
 
 	state->destCount = 1;
 
-	state->destBuffers = malloc(1 * sizeof(DestBuffer));
+	state->destBuffers = calloc(1, sizeof(DestBuffer));
 	if (NULL == state->destBuffers) {
 		state->error = WorkerError_no_memory;
 		return;
 	}
 
-	destBuffer = &state->destBuffers[0];
+	destBuffer = &state->destBuffers[state->destCount - 1];
 
-	destBuffer->segments = malloc((state->endOffset - state->startOffset + 1) * sizeof(BufferSegment));
+	/*
+	 * Rather than track bounds and grow the segments buffer, allocate space
+	 * to hold remaining items then truncate when we're done with it.
+	 */
+	destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 	if (NULL == destBuffer->segments) {
 		state->error = WorkerError_no_memory;
 		return;
 	}
 
-	/* Initial allocation assumes compresses to 25% original size. */
-	newSize = state->totalSourceSize >> 2;
-	if (newSize < 1048576) {
-		newSize |= 1048576;
-	}
-	newSize >>= 20;
-	newSize <<= 20;
+	destBuffer->segmentsSize = remainingItems;
 
-	destBuffer->dest = malloc(newSize);
+	allocationSize = roundpow2(state->totalSourceSize >> 4);
+
+	/* If the maximum size of the output is larger than that, round up. */
+	boundSize = ZSTD_compressBound(sources[inputOffset].sourceSize);
+
+	if (boundSize > allocationSize) {
+		allocationSize = roundpow2(boundSize);
+	}
+
+	destBuffer->dest = calloc(1, allocationSize);
 	if (NULL == destBuffer->dest) {
 		state->error = WorkerError_no_memory;
 		return;
 	}
 
-	destBuffer->destSize = newSize;
+	destBuffer->destSize = allocationSize;
 
 	for (inputOffset = state->startOffset; inputOffset <= state->endOffset; inputOffset++) {
 		void* source = sources[inputOffset].sourceData;
 		size_t sourceSize = sources[inputOffset].sourceSize;
 		size_t destAvailable;
-		size_t destWanted;
 		void* dest;
 
 		destAvailable = destBuffer->destSize - destOffset;
-		destWanted = ZSTD_compressBound(sourceSize);
+		boundSize = ZSTD_compressBound(sourceSize);
 
-		if (destWanted > destAvailable) {
-			if (destWanted > 1048576) {
-				destWanted >>= 20;
-				destWanted <<= 20;
+		/*
+		 * Not enough space in current buffer to hold largest compressed output.
+		 * So allocate and switch to a new output buffer.
+		 */
+		if (boundSize > destAvailable) {
+			/*
+			 * The downsizing of the existing buffer is optional. It should be cheap
+			 * (unlike growing). So we just do it.
+			 */
+			if (destAvailable) {
+				newDest = realloc(destBuffer->dest, destOffset);
+				if (NULL == newDest) {
+					state->error = WorkerError_no_memory;
+					return;
+				}
+
+				destBuffer->dest = newDest;
+				destBuffer->destSize = destOffset;
 			}
-			else {
-				destWanted = 1048576;
-			}
 
-			newSize = destBuffer->destSize + destWanted;
-
-			newDest = realloc(destBuffer->dest, newSize);
+			/* Truncate segments buffer. */
+			newDest = realloc(destBuffer->segments,
+				(inputOffset - currentBufferStartOffset + 1) * sizeof(BufferSegment));
 			if (NULL == newDest) {
 				state->error = WorkerError_no_memory;
 				return;
 			}
 
-			destBuffer->dest = newDest;
-			destBuffer->destSize = newSize;
-			destAvailable = destBuffer->destSize - destOffset;
+			destBuffer->segments = newDest;
+			destBuffer->segmentsSize = inputOffset - currentBufferStartOffset;
+
+			/* Grow space for new struct. */
+			/* TODO consider over-allocating so we don't do this every time. */
+			newDest = realloc(state->destBuffers, (state->destCount + 1) * sizeof(DestBuffer));
+			if (NULL == newDest) {
+				state->error = WorkerError_no_memory;
+				return;
+			}
+
+			state->destBuffers = newDest;
+			state->destCount++;
+
+			destBuffer = &state->destBuffers[state->destCount - 1];
+
+			/* Don't take any chances with non-NULL pointers. */
+			memset(destBuffer, 0, sizeof(DestBuffer));
+
+			/**
+			 * We could dynamically update allocation size based on work done so far.
+			 * For now, keep is simple.
+			 */
+			allocationSize = roundpow2(state->totalSourceSize >> 4);
+
+			if (boundSize > allocationSize) {
+				allocationSize = roundpow2(boundSize);
+			}
+
+			destBuffer->dest = calloc(1, allocationSize);
+			if (NULL == destBuffer->dest) {
+				state->error = WorkerError_no_memory;
+				return;
+			}
+
+			destBuffer->destSize = allocationSize;
+			destAvailable = allocationSize;
+			destOffset = 0;
+
+			destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
+			if (NULL == destBuffer->segments) {
+				state->error = WorkerError_no_memory;
+				return;
+			}
+
+			destBuffer->segmentsSize = remainingItems;
+			currentBufferStartOffset = inputOffset;
 		}
 
 		dest = (char*)destBuffer->dest + destOffset;
@@ -979,10 +1052,11 @@ static void compress_worker(WorkerState* state) {
 			break;
 		}
 
-		destBuffer->segments[inputOffset - state->startOffset].offset = destOffset;
-		destBuffer->segments[inputOffset - state->startOffset].length = zresult;
+		destBuffer->segments[inputOffset - currentBufferStartOffset].offset = destOffset;
+		destBuffer->segments[inputOffset - currentBufferStartOffset].length = zresult;
 
 		destOffset += zresult;
+		remainingItems--;
 	}
 
 	if (destBuffer->destSize > destOffset) {
@@ -1010,6 +1084,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	size_t currentThread = 0;
 	int errored = 0;
 	Py_ssize_t segmentsCount = 0;
+	Py_ssize_t segmentIndex;
 	PyObject* segmentsArg = NULL;
 	ZstdBufferWithSegments* buffer;
 	ZstdBufferWithSegmentsCollection* result = NULL;
@@ -1165,14 +1240,16 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 		goto finally;
 	}
 
+	segmentIndex = 0;
+
 	for (i = 0; i < threadCount; i++) {
 		Py_ssize_t j;
 		WorkerState* state = &workerStates[i];
 
 		for (j = 0; j < state->destCount; j++) {
-			buffer = BufferWithSegments_FromMemory(
-				state->destBuffers[j].dest, state->destBuffers[j].destSize,
-				state->destBuffers[j].segments, state->endOffset - state->startOffset + 1);
+			DestBuffer* destBuffer = &state->destBuffers[j];
+			buffer = BufferWithSegments_FromMemory(destBuffer->dest, destBuffer->destSize,
+				destBuffer->segments, destBuffer->segmentsSize);
 
 			if (NULL == buffer) {
 				goto finally;
@@ -1185,10 +1262,10 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 			 * BufferWithSegments_FromMemory takes ownership of the backing memory.
 			 * Unset it here so it doesn't get freed below.
 			 */
-			state->destBuffers[j].dest = NULL;
-			state->destBuffers[j].segments = NULL;
+			destBuffer->dest = NULL;
+			destBuffer->segments = NULL;
 
-			PyTuple_SET_ITEM(segmentsArg, i, (PyObject*)buffer);
+			PyTuple_SET_ITEM(segmentsArg, segmentIndex++, (PyObject*)buffer);
 		}
 	}
 
