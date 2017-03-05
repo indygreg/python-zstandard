@@ -195,3 +195,15 @@ int cpu_count() {
 
 	return count;
 }
+
+size_t roundpow2(size_t i) {
+	i--;
+	i |= i >> 1;
+	i |= i >> 2;
+	i |= i >> 4;
+	i |= i >> 8;
+	i |= i >> 16;
+	i++;
+
+	return i;
+}

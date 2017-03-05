@@ -282,3 +282,4 @@ ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyOb
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);
 Py_ssize_t BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection*);
 int cpu_count(void);
+size_t roundpow2(size_t);
