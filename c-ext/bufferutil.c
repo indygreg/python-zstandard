@@ -719,6 +719,7 @@ PyTypeObject ZstdBufferWithSegmentsCollectionType = {
 	0,                         /* tp_clear */
 	0,                         /* tp_richcompare */
 	0,                         /* tp_weaklistoffset */
+	/* TODO implement iterator for performance. */
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
 	BufferWithSegmentsCollection_methods, /* tp_methods */
