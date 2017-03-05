@@ -772,7 +772,6 @@ finally:
 typedef struct {
 	void* sourceData;
 	size_t sourceSize;
-	unsigned long long destOffset;
 	unsigned long long destSize;
 } FramePointer;
 
@@ -827,6 +826,7 @@ static void decompress_worker(WorkerState* state) {
 	Py_ssize_t frameIndex;
 	Py_ssize_t localOffset = 0;
 	Py_ssize_t remainingItems = state->endOffset - state->startOffset + 1;
+	size_t destOffset = 0;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
 	unsigned long long currentOffset = 0;
@@ -860,7 +860,6 @@ static void decompress_worker(WorkerState* state) {
 			}
 		}
 
-		fp->destOffset = currentOffset;
 		currentOffset += fp->destSize;
 	}
 
@@ -895,7 +894,7 @@ static void decompress_worker(WorkerState* state) {
 	for (frameIndex = state->startOffset; frameIndex <= state->endOffset; frameIndex++) {
 		void* source = framePointers[frameIndex].sourceData;
 		size_t sourceSize = framePointers[frameIndex].sourceSize;
-		void* dest = (char*)destBuffer->dest + framePointers[frameIndex].destOffset;
+		void* dest = (char*)destBuffer->dest + destOffset;
 		size_t decompressedSize = framePointers[frameIndex].destSize;
 
 		assert(decompressedSize > 0); /* For now. */
@@ -922,8 +921,9 @@ static void decompress_worker(WorkerState* state) {
 			break;
 		}
 
-		destBuffer->segments[localOffset].offset = framePointers[frameIndex].destOffset;
+		destBuffer->segments[localOffset].offset = destOffset;
 		destBuffer->segments[localOffset].length = decompressedSize;
+		destOffset += zresult;
 		localOffset++;
 		remainingItems--;
 	}
