@@ -831,6 +831,7 @@ static void decompress_worker(WorkerState* state) {
 
 	assert(NULL == state->destBuffers);
 	assert(0 == state->destCount);
+	assert(state->endOffset - state->startOffset >= 0);
 
 	/*
 	 * We need to allocate a buffer to hold decompressed data. How we do this
