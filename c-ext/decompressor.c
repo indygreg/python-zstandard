@@ -898,6 +898,8 @@ static void decompress_worker(WorkerState* state) {
 		void* dest = (char*)destBuffer->dest + framePointers[frameIndex].destOffset;
 		size_t decompressedSize = framePointers[frameIndex].destSize;
 
+		assert(decompressedSize > 0); /* For now. */
+
 		if (state->ddict) {
 			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, decompressedSize,
 				source, sourceSize, state->ddict);
