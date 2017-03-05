@@ -826,6 +826,7 @@ static void decompress_worker(WorkerState* state) {
 	DestBuffer* destBuffer;
 	Py_ssize_t frameIndex;
 	Py_ssize_t localOffset = 0;
+	Py_ssize_t remainingItems = state->endOffset - state->startOffset + 1;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
 	unsigned long long currentOffset = 0;
@@ -882,14 +883,14 @@ static void decompress_worker(WorkerState* state) {
 
 	destBuffer->destSize = currentOffset;
 
-	destBuffer->segments = calloc(state->endOffset - state->startOffset + 1, sizeof(BufferSegment));
+	destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 	if (NULL == destBuffer->segments) {
 		/* Caller will free state->dest as part of cleanup. */
 		state->error = WorkerError_memory;
 		return;
 	}
 
-	destBuffer->segmentsSize = state->endOffset - state->startOffset + 1;
+	destBuffer->segmentsSize = remainingItems;
 
 	for (frameIndex = state->startOffset; frameIndex <= state->endOffset; frameIndex++) {
 		void* source = framePointers[frameIndex].sourceData;
@@ -922,6 +923,7 @@ static void decompress_worker(WorkerState* state) {
 		destBuffer->segments[localOffset].offset = framePointers[frameIndex].destOffset;
 		destBuffer->segments[localOffset].length = destCapacity;
 		localOffset++;
+		remainingItems--;
 	}
 }
 
