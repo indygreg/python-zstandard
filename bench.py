@@ -117,15 +117,15 @@ def compress_reuse(chunks, opts):
 @bench('discrete', 'multi_compress_to_buffer() w/ buffer input',
        simple=True, threads_arg=True, chunks_as_buffer=True)
 def compress_multi_compress_to_buffer_buffer(chunks, opts, threads):
-    zctx= zstd.ZstdCompressor(**opts)
-    zctx.multi_compress_to_buffer(chunks, threads=threads)
+    zctx= zstd.ZstdCompressor(threads=threads, **opts)
+    zctx.multi_compress_to_buffer(chunks)
 
 
 @bench('discrete', 'multi_compress_to_buffer() w/ list input',
        threads_arg=True)
 def compress_multi_compress_to_buffer_list(chunks, opts, threads):
-    zctx = zstd.ZstdCompressor(**opts)
-    zctx.multi_compress_to_buffer(chunks, threads=threads)
+    zctx = zstd.ZstdCompressor(threads=threads, **opts)
+    zctx.multi_compress_to_buffer(chunks)
 
 
 @bench('discrete', 'write_to()')
