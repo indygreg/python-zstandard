@@ -822,6 +822,12 @@ typedef struct {
 	unsigned long long totalSourceSize;
 } DataSources;
 
+typedef struct {
+	void* dest;
+	Py_ssize_t destSize;
+	BufferSegment* segments;
+} DestBuffer;
+
 typedef enum {
 	WorkerError_none = 0,
 	WorkerError_zstd = 1,
@@ -847,9 +853,8 @@ typedef struct {
 	unsigned long long totalSourceSize;
 
 	/* Result storage. */
-	void* dest;
-	Py_ssize_t destSize;
-	BufferSegment* segments;
+	DestBuffer* destBuffers;
+	Py_ssize_t destCount;
 
 	/* Error tracking. */
 	WorkerError error;
@@ -865,9 +870,10 @@ static void compress_worker(WorkerState* state) {
 	size_t newSize;
 	Py_ssize_t destOffset = 0;
 	DataSource* sources = state->sources;
+	DestBuffer* destBuffer;
 
-	assert(!state->dest);
-	assert(!state->segments);
+	assert(!state->destBuffers);
+	assert(0 == state->destCount);
 
 	if (state->cParams) {
 		ztopy_compression_parameters(state->cParams, &zparams.cParams);
@@ -880,12 +886,25 @@ static void compress_worker(WorkerState* state) {
 	 * compress data. There are a number of memory management techniques
 	 * we could use. None are perfect.
 	 * 
-	 * TODO use a better memory allocation technique than reallocating a
-	 * buffer.
+	 * Our strategy for now is to allocate N buffers of roughly similar sizes
+	 * holding output. Each buffer contains 1 or more compressed frames. These
+	 * get converted to BufferWithSegments instances later.
+	 *
+	 * TODO actually use N buffers instead of 1.
 	 */
 
-	state->segments = malloc((state->endOffset - state->startOffset + 1) * sizeof(BufferSegment));
-	if (NULL == state->segments) {
+	state->destCount = 1;
+
+	state->destBuffers = malloc(1 * sizeof(DestBuffer));
+	if (NULL == state->destBuffers) {
+		state->error = WorkerError_no_memory;
+		return;
+	}
+
+	destBuffer = &state->destBuffers[0];
+
+	destBuffer->segments = malloc((state->endOffset - state->startOffset + 1) * sizeof(BufferSegment));
+	if (NULL == destBuffer->segments) {
 		state->error = WorkerError_no_memory;
 		return;
 	}
@@ -898,13 +917,13 @@ static void compress_worker(WorkerState* state) {
 	newSize >>= 20;
 	newSize <<= 20;
 
-	state->dest = malloc(newSize);
-	if (NULL == state->dest) {
+	destBuffer->dest = malloc(newSize);
+	if (NULL == destBuffer->dest) {
 		state->error = WorkerError_no_memory;
 		return;
 	}
 
-	state->destSize = newSize;
+	destBuffer->destSize = newSize;
 
 	for (i = state->startOffset; i <= state->endOffset; i++) {
 		void* source = sources[i].sourceData;
@@ -913,7 +932,7 @@ static void compress_worker(WorkerState* state) {
 		size_t destWanted;
 		void* dest;
 
-		destAvailable = state->destSize - destOffset;
+		destAvailable = destBuffer->destSize - destOffset;
 		destWanted = ZSTD_compressBound(sourceSize);
 
 		if (destWanted > destAvailable) {
@@ -925,20 +944,20 @@ static void compress_worker(WorkerState* state) {
 				destWanted = 1048576;
 			}
 
-			newSize = state->destSize + destWanted;
+			newSize = destBuffer->destSize + destWanted;
 
-			newDest = realloc(state->dest, newSize);
+			newDest = realloc(destBuffer->dest, newSize);
 			if (NULL == newDest) {
 				state->error = WorkerError_no_memory;
 				return;
 			}
 
-			state->dest = newDest;
-			state->destSize = newSize;
-			destAvailable = state->destSize - destOffset;
+			destBuffer->dest = newDest;
+			destBuffer->destSize = newSize;
+			destAvailable = destBuffer->destSize - destOffset;
 		}
 
-		dest = (char*)state->dest + destOffset;
+		dest = (char*)destBuffer->dest + destOffset;
 
 		if (state->cdict) {
 			zresult = ZSTD_compress_usingCDict(state->cctx, dest, destAvailable,
@@ -960,21 +979,21 @@ static void compress_worker(WorkerState* state) {
 			break;
 		}
 
-		state->segments[i - state->startOffset].offset = destOffset;
-		state->segments[i - state->startOffset].length = zresult;
+		destBuffer->segments[i - state->startOffset].offset = destOffset;
+		destBuffer->segments[i - state->startOffset].length = zresult;
 
 		destOffset += zresult;
 	}
 
-	if (state->destSize > destOffset) {
-		newDest = realloc(state->dest, destOffset);
+	if (destBuffer->destSize > destOffset) {
+		newDest = realloc(destBuffer->dest, destOffset);
 		if (NULL == newDest) {
 			state->error = WorkerError_no_memory;
 			return;
 		}
 
-		state->dest = newDest;
-		state->destSize = destOffset;
+		destBuffer->dest = newDest;
+		destBuffer->destSize = destOffset;
 	}
 }
 
@@ -990,6 +1009,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	Py_ssize_t workerStartOffset = 0;
 	size_t currentThread = 0;
 	int errored = 0;
+	Py_ssize_t segmentsCount = 0;
 	PyObject* segmentsArg = NULL;
 	ZstdBufferWithSegments* buffer;
 	ZstdBufferWithSegmentsCollection* result = NULL;
@@ -1134,32 +1154,42 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 		goto finally;
 	}
 
-	segmentsArg = PyTuple_New(threadCount);
+	segmentsCount = 0;
+	for (i = 0; i < threadCount; i++) {
+		WorkerState* state = &workerStates[i];
+		segmentsCount += state->destCount;
+	}
+
+	segmentsArg = PyTuple_New(segmentsCount);
 	if (NULL == segmentsArg) {
 		goto finally;
 	}
 
 	for (i = 0; i < threadCount; i++) {
+		Py_ssize_t j;
 		WorkerState* state = &workerStates[i];
-		/* Since memory ownership is transferred, tell not to use PyMem_Free(). */
-		buffer = BufferWithSegments_FromMemory(state->dest, state->destSize,
-			state->segments, state->endOffset - state->startOffset + 1);
 
-		if (NULL == buffer) {
-			goto finally;
+		for (j = 0; j < state->destCount; j++) {
+			buffer = BufferWithSegments_FromMemory(
+				state->destBuffers[j].dest, state->destBuffers[j].destSize,
+				state->destBuffers[j].segments, state->endOffset - state->startOffset + 1);
+
+			if (NULL == buffer) {
+				goto finally;
+			}
+
+			/* Tell instance to use free() instsead of PyMem_Free(). */
+			buffer->useFree = 1;
+
+			/*
+			 * BufferWithSegments_FromMemory takes ownership of the backing memory.
+			 * Unset it here so it doesn't get freed below.
+			 */
+			state->destBuffers[j].dest = NULL;
+			state->destBuffers[j].segments = NULL;
+
+			PyTuple_SET_ITEM(segmentsArg, i, (PyObject*)buffer);
 		}
-
-		/* Tell instance to use free() instsead of PyMem_Free(). */
-		buffer->useFree = 1;
-
-		/*
-		   BufferWithSegments_FromMemory takes ownership of the backing memory.
-		   Unset it here so it doesn't get freed below.
-		*/
-		state->segments = NULL;
-		state->dest = NULL;
-
-		PyTuple_SET_ITEM(segmentsArg, i, (PyObject*)buffer);
 	}
 
 	result = (ZstdBufferWithSegmentsCollection*)PyObject_CallObject(
@@ -1173,6 +1203,8 @@ finally:
 	}
 
 	if (workerStates) {
+		Py_ssize_t j;
+
 		for (i = 0; i < threadCount; i++) {
 			WorkerState state = workerStates[i];
 
@@ -1181,13 +1213,16 @@ finally:
 			}
 
 			/* malloc() is used in worker thread. */
-			if (state.dest) {
-				free(state.dest);
+
+			for (j = 0; j < state.destCount; j++) {
+				if (state.destBuffers) {
+					free(state.destBuffers[j].dest);
+					free(state.destBuffers[j].segments);
+				}
 			}
 
-			if (state.segments) {
-				free(state.segments);
-			}
+
+			free(state.destBuffers);
 		}
 
 		PyMem_Free(workerStates);
