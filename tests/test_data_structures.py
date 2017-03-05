@@ -32,7 +32,7 @@ class TestCompressionParameters(unittest.TestCase):
                                    zstd.CHAINLOG_MIN,
                                    zstd.HASHLOG_MIN,
                                    zstd.SEARCHLOG_MIN,
-                                   zstd.SEARCHLENGTH_MIN,
+                                   zstd.SEARCHLENGTH_MIN + 1,
                                    zstd.TARGETLENGTH_MIN,
                                    zstd.STRATEGY_FAST)
 
@@ -40,7 +40,7 @@ class TestCompressionParameters(unittest.TestCase):
                                    zstd.CHAINLOG_MAX,
                                    zstd.HASHLOG_MAX,
                                    zstd.SEARCHLOG_MAX,
-                                   zstd.SEARCHLENGTH_MAX,
+                                   zstd.SEARCHLENGTH_MAX - 1,
                                    zstd.TARGETLENGTH_MAX,
                                    zstd.STRATEGY_BTOPT)
 
@@ -152,23 +152,16 @@ if hypothesis:
                           s_searchlength, s_targetlength, s_strategy)
         def test_valid_init(self, windowlog, chainlog, hashlog, searchlog,
                             searchlength, targetlength, strategy):
-            p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
-                                           searchlog, searchlength,
-                                           targetlength, strategy)
-
-            # Verify we can instantiate a compressor with the supplied values.
             # ZSTD_checkCParams moves the goal posts on us from what's advertised
             # in the constants. So move along with them.
             if searchlength == zstd.SEARCHLENGTH_MIN and strategy in (zstd.STRATEGY_FAST, zstd.STRATEGY_GREEDY):
                 searchlength += 1
-                p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
-                                searchlog, searchlength,
-                                targetlength, strategy)
             elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
                 searchlength -= 1
-                p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
-                                searchlog, searchlength,
-                                targetlength, strategy)
+
+            p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
+                                           searchlog, searchlength,
+                                           targetlength, strategy)
 
             cctx = zstd.ZstdCompressor(compression_params=p)
             with cctx.write_to(io.BytesIO()):
@@ -180,6 +173,11 @@ if hypothesis:
                                                    hashlog, searchlog,
                                                    searchlength, targetlength,
                                                    strategy):
+            if searchlength == zstd.SEARCHLENGTH_MIN and strategy in (zstd.STRATEGY_FAST, zstd.STRATEGY_GREEDY):
+                searchlength += 1
+            elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
+                searchlength -= 1
+
             p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
                                 searchlog, searchlength,
                                 targetlength, strategy)

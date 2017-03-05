@@ -67,6 +67,8 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	unsigned searchLength;
 	unsigned targetLength;
 	unsigned strategy;
+	ZSTD_compressionParameters params;
+	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "IIIIIII:CompressionParameters",
 		kwlist, &windowLog, &chainLog, &hashLog, &searchLog, &searchLength,
@@ -116,6 +118,15 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	self->searchLength = searchLength;
 	self->targetLength = targetLength;
 	self->strategy = strategy;
+
+	ztopy_compression_parameters(self, &params);
+	zresult = ZSTD_checkCParams(params);
+
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(PyExc_ValueError, "invalid compression parameters: %s",
+			ZSTD_getErrorName(zresult));
+		return -1;
+	}
 
 	return 0;
 }

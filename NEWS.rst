@@ -4,6 +4,8 @@ Version History
 0.8.0 (not yet released)
 ------------------------
 
+* CompressionParameters instances now perform extra validation by calling
+  ZSTD_checkCParams() at construction time.
 * multi_compress_to_buffer() API for compressing multiple inputs as a
   single operation, as efficiently as possible.
 * ZSTD_CStream instances are now used across multiple operations on

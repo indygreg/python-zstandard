@@ -119,6 +119,11 @@ class CompressionParameters(object):
         self.target_length = target_length
         self.strategy = strategy
 
+        zresult = lib.ZSTD_checkCParams(self.as_compression_parameters())
+        if lib.ZSTD_isError(zresult):
+            raise ValueError('invalid compression parameters: %s',
+                             ffi.string(lib.ZSTD_getErrorName(zresult)))
+
     def as_compression_parameters(self):
         p = ffi.new('ZSTD_compressionParameters *')[0]
         p.windowLog = self.window_log
