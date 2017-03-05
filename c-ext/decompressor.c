@@ -808,6 +808,7 @@ typedef struct {
 	/* Compression state and settings. */
 	ZSTD_DCtx* dctx;
 	ZSTD_DDict* ddict;
+	int requireOutputSizes;
 
 	/* Output storage. */
 	DestBuffer* destBuffers;
@@ -851,7 +852,7 @@ static void decompress_worker(WorkerState* state) {
 
 		if (0 == fp->destSize) {
 			fp->destSize = ZSTD_getDecompressedSize(fp->sourceData, fp->sourceSize);
-			if (0 == fp->destSize) {
+			if (0 == fp->destSize && state->requireOutputSizes) {
 				state->error = WorkerError_unknownSize;
 				state->errorOffset = i;
 				return;
@@ -1000,6 +1001,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 		workerStates[i].ddict = decompressor->ddict;
 		workerStates[i].framePointers = framePointers;
+		workerStates[i].requireOutputSizes = 1;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
