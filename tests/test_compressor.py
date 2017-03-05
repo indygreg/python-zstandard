@@ -844,6 +844,38 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         self.assertEqual(result[0].tobytes(), frames[0])
         self.assertEqual(result[1].tobytes(), frames[1])
 
+    def test_buffer_with_segments_collection_input(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+
+        original = [
+            b'foo1',
+            b'foo2' * 2,
+            b'foo3' * 3,
+            b'foo4' * 4,
+            b'foo5' * 5,
+        ]
+
+        frames = [cctx.compress(c) for c in original]
+
+        b = b''.join([original[0], original[1]])
+        b1 = zstd.BufferWithSegments(b, struct.pack('=QQQQ',
+                                                    0, len(original[0]),
+                                                    len(original[0]), len(original[1])))
+        b = b''.join([original[2], original[3], original[4]])
+        b2 = zstd.BufferWithSegments(b, struct.pack('=QQQQQQ',
+                                                    0, len(original[2]),
+                                                    len(original[2]), len(original[3]),
+                                                    len(original[2]) + len(original[3]), len(original[4])))
+
+        c = zstd.BufferWithSegmentsCollection(b1, b2)
+
+        result = cctx.multi_compress_to_buffer(c)
+
+        self.assertEqual(len(result), len(frames))
+
+        for i, frame in enumerate(frames):
+            self.assertEqual(result[i].tobytes(), frame)
+
     def test_multiple_threads(self):
         # threads argument will cause multi-threaded ZSTD APIs to be used, which will
         # make output different.

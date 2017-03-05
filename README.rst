@@ -445,9 +445,9 @@ Batch Compression API
 ``multi_compress_to_buffer(data)`` performs compression of multiple
 inputs as a single operation.
 
-Data to be compressed can be passed either as a list containing bytes instances
-or a ``BufferWithSegments`` instance. In either case, each element of the
-container will be compressed individually using the configured parameters
+Data to be compressed can be passed as a ``BufferWithSegmentsCollection``, a
+``BufferWithSegments``, or a list containing bytes instances. Each element of
+the container will be compressed individually using the configured parameters
 on the ``ZstdCompressor`` instance.
 
 If the ``ZstdCompressor`` was instantiated with a ``threads`` argument that

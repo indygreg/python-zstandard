@@ -1199,9 +1199,9 @@ finally:
 PyDoc_STRVAR(ZstdCompressor_multi_compress_to_buffer__doc__,
 "Compress multiple pieces of data as a single operation\n"
 "\n"
-"Receives either list of bytes or a ``BufferWithSegments`` instance holding\n"
-"data to compress. Returns a ``BufferWithSegmentsCollection`` holding\n"
-"compressed data.\n"
+"Receives a ``BufferWithSegmentsCollection``, a ``BufferWithSegments``, or\n"
+"a list of bytes holding data to compress.\n"
+"Returns a ``BufferWithSegmentsCollection`` holding compressed data.\n"
 "\n"
 "This function is optimized to perform multiple compression operations as\n"
 "as possible with as little overhead as possbile.\n"
@@ -1241,6 +1241,35 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 		}
 
 		sources.sourcesSize = buffer->segmentCount;
+	}
+	else if (PyObject_TypeCheck(data, &ZstdBufferWithSegmentsCollectionType)) {
+		Py_ssize_t sourceCount;
+		Py_ssize_t j;
+		Py_ssize_t offset = 0;
+		ZstdBufferWithSegments* buffer;
+		ZstdBufferWithSegmentsCollection* collection = (ZstdBufferWithSegmentsCollection*)data;
+
+		sourceCount = BufferWithSegmentsCollection_length(collection);
+
+		sources.sources = PyMem_Malloc(sourceCount * sizeof(DataSource));
+		if (NULL == sources.sources) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
+		for (i = 0; i < collection->bufferCount; i++) {
+			buffer = collection->buffers[i];
+
+			for (j = 0; j < buffer->segmentCount; j++) {
+				sources.sources[offset].sourceData = (char*)buffer->data + buffer->segments[j].offset;
+				sources.sources[offset].sourceSize = buffer->segments[j].length;
+				sources.totalSourceSize += buffer->segments[j].length;
+
+				offset++;
+			}
+		}
+
+		sources.sourcesSize = sourceCount;
 	}
 	else if (PyList_Check(data)) {
 		Py_ssize_t sourceCount = PyList_GET_SIZE(data);
