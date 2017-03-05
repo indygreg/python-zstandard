@@ -896,14 +896,14 @@ static void decompress_worker(WorkerState* state) {
 		void* source = framePointers[frameIndex].sourceData;
 		size_t sourceSize = framePointers[frameIndex].sourceSize;
 		void* dest = (char*)destBuffer->dest + framePointers[frameIndex].destOffset;
-		size_t destCapacity = framePointers[frameIndex].destSize;
+		size_t decompressedSize = framePointers[frameIndex].destSize;
 
 		if (state->ddict) {
-			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, destCapacity,
+			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, decompressedSize,
 				source, sourceSize, state->ddict);
 		}
 		else {
-			zresult = ZSTD_decompressDCtx(state->dctx, dest, destCapacity,
+			zresult = ZSTD_decompressDCtx(state->dctx, dest, decompressedSize,
 				source, sourceSize);
 		}
 
@@ -913,7 +913,7 @@ static void decompress_worker(WorkerState* state) {
 			state->errorOffset = frameIndex;
 			break;
 		}
-		else if (zresult != destCapacity) {
+		else if (zresult != decompressedSize) {
 			state->error = WorkerError_sizeMismatch;
 			state->zresult = zresult;
 			state->errorOffset = frameIndex;
@@ -921,7 +921,7 @@ static void decompress_worker(WorkerState* state) {
 		}
 
 		destBuffer->segments[localOffset].offset = framePointers[frameIndex].destOffset;
-		destBuffer->segments[localOffset].length = destCapacity;
+		destBuffer->segments[localOffset].length = decompressedSize;
 		localOffset++;
 		remainingItems--;
 	}
