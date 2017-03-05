@@ -803,6 +803,7 @@ typedef struct {
 	/* Which records to process. */
 	Py_ssize_t startOffset;
 	Py_ssize_t endOffset;
+	unsigned long long totalSourceSize;
 
 	/* Compression state and settings. */
 	ZSTD_DCtx* dctx;
@@ -1014,6 +1015,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		if (workerBytes >= bytesPerWorker) {
 			workerStates[currentThread].startOffset = workerStartOffset;
 			workerStates[currentThread].endOffset = i;
+			workerStates[currentThread].totalSourceSize = workerBytes;
 
 			if (threadCount > 1) {
 				POOL_add(pool, (POOL_function)decompress_worker, &workerStates[currentThread]);
@@ -1030,6 +1032,8 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	if (threadCount > 1 && workerStartOffset != frames->framesSize) {
 		workerStates[currentThread].startOffset = workerStartOffset;
 		workerStates[currentThread].endOffset = frames->framesSize - 1;
+		workerStates[currentThread].totalSourceSize = workerBytes;
+
 		if (threadCount > 1) {
 			POOL_add(pool, (POOL_function)decompress_worker, &workerStates[currentThread]);
 		}
