@@ -782,6 +782,13 @@ typedef struct {
 	unsigned long long compressedSize;
 } FrameSources;
 
+typedef struct {
+	void* dest;
+	Py_ssize_t destSize;
+	BufferSegment* segments;
+	Py_ssize_t segmentsSize;
+} DestBuffer;
+
 typedef enum {
 	WorkerError_none = 0,
 	WorkerError_zstd = 1,
@@ -791,10 +798,9 @@ typedef enum {
 } WorkerError;
 
 typedef struct {
-	/* Output buffer and offsets. */
-	void* dest;
-	Py_ssize_t destSize;
-	BufferSegment* segments;
+	/* Output storage. */
+	DestBuffer* destBuffers;
+	Py_ssize_t destCount;
 
 	ZSTD_DCtx* dctx;
 	ZSTD_DDict* ddict;
@@ -812,15 +818,15 @@ typedef struct {
 } WorkerState;
 
 static void decompress_worker(WorkerState* state) {
+	DestBuffer* destBuffer;
 	Py_ssize_t i;
 	Py_ssize_t localOffset = 0;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
 	unsigned long long currentOffset = 0;
 
-	assert(NULL == state->dest);
-	assert(0 == state->destSize);
-	assert(NULL == state->segments);
+	assert(NULL == state->destBuffers);
+	assert(0 == state->destCount);
 
 	/*
 	 * We need to allocate a buffer to hold decompressed data. How we do this
@@ -851,26 +857,38 @@ static void decompress_worker(WorkerState* state) {
 		currentOffset += fp->destSize;
 	}
 
-	/* currentOffset is now the total output size. */
-	state->dest = malloc(currentOffset);
-	if (NULL == state->dest) {
+	state->destBuffers = calloc(1, sizeof(DestBuffer));
+	if (NULL == state->destBuffers) {
 		state->error = WorkerError_memory;
 		return;
 	}
 
-	state->destSize = currentOffset;
+	state->destCount = 1;
 
-	state->segments = malloc((state->endOffset - state->startOffset + 1) * sizeof(BufferSegment));
-	if (NULL == state->segments) {
+	destBuffer = &state->destBuffers[state->destCount - 1];
+
+	/* currentOffset is now the total output size. */
+	destBuffer->dest = malloc(currentOffset);
+	if (NULL == destBuffer->dest) {
+		state->error = WorkerError_memory;
+		return;
+	}
+
+	destBuffer->destSize = currentOffset;
+
+	destBuffer->segments = calloc(state->endOffset - state->startOffset + 1, sizeof(BufferSegment));
+	if (NULL == destBuffer->segments) {
 		/* Caller will free state->dest as part of cleanup. */
 		state->error = WorkerError_memory;
 		return;
 	}
 
+	destBuffer->segmentsSize = state->endOffset - state->startOffset + 1;
+
 	for (i = state->startOffset; i <= state->endOffset; i++) {
 		void* source = framePointers[i].sourceData;
 		size_t sourceSize = framePointers[i].sourceSize;
-		void* dest = (char*)state->dest + framePointers[i].destOffset;
+		void* dest = (char*)destBuffer->dest + framePointers[i].destOffset;
 		size_t destCapacity = framePointers[i].destSize;
 
 		if (state->ddict) {
@@ -895,8 +913,8 @@ static void decompress_worker(WorkerState* state) {
 			break;
 		}
 
-		state->segments[localOffset].offset = framePointers[i].destOffset;
-		state->segments[localOffset].length = destCapacity;
+		destBuffer->segments[localOffset].offset = framePointers[i].destOffset;
+		destBuffer->segments[localOffset].length = destCapacity;
 		localOffset++;
 	}
 }
@@ -907,8 +925,10 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	size_t dictSize = 0;
 	Py_ssize_t i = 0;
 	int errored = 0;
+	Py_ssize_t segmentsCount;
 	ZstdBufferWithSegments* bws = NULL;
 	PyObject* resultArg = NULL;
+	Py_ssize_t resultIndex;
 	ZstdBufferWithSegmentsCollection* result = NULL;
 	FramePointer* framePointers = frames->frames;
 	unsigned long long workerBytes = 0;
@@ -1066,31 +1086,43 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		goto finally;
 	}
 
-	resultArg = PyTuple_New(threadCount);
+	segmentsCount = 0;
+	for (i = 0; i < threadCount; i++) {
+		segmentsCount += workerStates[i].destCount;
+	}
+
+	resultArg = PyTuple_New(segmentsCount);
 	if (NULL == resultArg) {
 		goto finally;
 	}
 
+	resultIndex = 0;
+
 	for (i = 0; i < threadCount; i++) {
+		Py_ssize_t bufferIndex;
 		WorkerState* state = &workerStates[i];
 
-		bws = BufferWithSegments_FromMemory(state->dest, state->destSize,
-			state->segments, state->endOffset - state->startOffset + 1);
-		if (NULL == bws) {
-			goto finally;
+		for (bufferIndex = 0; bufferIndex < state->destCount; bufferIndex++) {
+			DestBuffer* destBuffer = &state->destBuffers[bufferIndex];
+
+			bws = BufferWithSegments_FromMemory(destBuffer->dest, destBuffer->destSize,
+				destBuffer->segments, destBuffer->segmentsSize);
+			if (NULL == bws) {
+				goto finally;
+			}
+
+			/*
+			* Memory for buffer and segments was allocated using malloc() in worker
+			* and the memory is transferred to the BufferWithSegments instance. So
+			* tell instance to use free() and NULL the reference in the state struct
+			* so it isn't freed below.
+			*/
+			bws->useFree = 1;
+			destBuffer->dest = NULL;
+			destBuffer->segments = NULL;
+
+			PyTuple_SET_ITEM(resultArg, resultIndex++, (PyObject*)bws);
 		}
-
-		/*
-		 * Memory for buffer and segments was allocated using malloc() in worker
-		 * and the memory is transferred to the BufferWithSegments instance. So
-		 * tell instance to use free() and NULL the reference in the state struct
-		 * so it isn't freed below.
-		 */
-		bws->useFree = 1;
-		state->dest = NULL;
-		state->segments = NULL;
-
-		PyTuple_SET_ITEM(resultArg, i, (PyObject*)bws);
 	}
 
 	result = (ZstdBufferWithSegmentsCollection*)PyObject_CallObject(
@@ -1101,17 +1133,25 @@ finally:
 
 	if (workerStates) {
 		for (i = 0; i < threadCount; i++) {
-			WorkerState state = workerStates[i];
-			if (state.dctx) {
-				ZSTD_freeDCtx(state.dctx);
+			Py_ssize_t bufferIndex;
+			WorkerState* state = &workerStates[i];
+
+			if (state->dctx) {
+				ZSTD_freeDCtx(state->dctx);
 			}
 
-			/*
-			 * Will be NULL if memory transfered to a BufferWithSegments.
-			 * Otherwise it is left over after an error occurred.
-			 */
-			free(state.dest);
-			free(state.segments);
+			for (bufferIndex = 0; bufferIndex < state->destCount; bufferIndex++) {
+				if (state->destBuffers) {
+					/*
+					* Will be NULL if memory transfered to a BufferWithSegments.
+					* Otherwise it is left over after an error occurred.
+					*/
+					free(state->destBuffers[bufferIndex].dest);
+					free(state->destBuffers[bufferIndex].segments);
+				}
+			}
+
+			free(state->destBuffers);
 		}
 
 		PyMem_Free(workerStates);
