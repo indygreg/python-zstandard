@@ -799,7 +799,7 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         with self.assertRaises(TypeError):
             cctx.multi_compress_to_buffer((1, 2))
 
-        with self.assertRaisesRegexp(TypeError, 'item 0 not bytes'):
+        with self.assertRaisesRegexp(TypeError, 'item 0 not a bytes like object'):
             cctx.multi_compress_to_buffer([u'foo'])
 
     def test_empty_input(self):

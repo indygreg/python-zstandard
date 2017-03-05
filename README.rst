@@ -446,7 +446,7 @@ Batch Compression API
 inputs as a single operation.
 
 Data to be compressed can be passed as a ``BufferWithSegmentsCollection``, a
-``BufferWithSegments``, or a list containing bytes instances. Each element of
+``BufferWithSegments``, or a list containing byte like objects. Each element of
 the container will be compressed individually using the configured parameters
 on the ``ZstdCompressor`` instance.
 

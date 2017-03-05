@@ -1200,7 +1200,8 @@ PyDoc_STRVAR(ZstdCompressor_multi_compress_to_buffer__doc__,
 "Compress multiple pieces of data as a single operation\n"
 "\n"
 "Receives a ``BufferWithSegmentsCollection``, a ``BufferWithSegments``, or\n"
-"a list of bytes holding data to compress.\n"
+"a list of bytes like objects holding data to compress.\n"
+"\n"
 "Returns a ``BufferWithSegmentsCollection`` holding compressed data.\n"
 "\n"
 "This function is optimized to perform multiple compression operations as\n"
@@ -1214,8 +1215,10 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 	};
 
 	PyObject* data;
+	Py_buffer* dataBuffers = NULL;
 	DataSources sources;
 	Py_ssize_t i;
+	Py_ssize_t sourceCount = 0;
 	ZstdBufferWithSegmentsCollection* result = NULL;
 
 	memset(&sources, 0, sizeof(sources));
@@ -1243,7 +1246,6 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 		sources.sourcesSize = buffer->segmentCount;
 	}
 	else if (PyObject_TypeCheck(data, &ZstdBufferWithSegmentsCollectionType)) {
-		Py_ssize_t sourceCount;
 		Py_ssize_t j;
 		Py_ssize_t offset = 0;
 		ZstdBufferWithSegments* buffer;
@@ -1272,7 +1274,7 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 		sources.sourcesSize = sourceCount;
 	}
 	else if (PyList_Check(data)) {
-		Py_ssize_t sourceCount = PyList_GET_SIZE(data);
+		sourceCount = PyList_GET_SIZE(data);
 
 		sources.sources = PyMem_Malloc(sourceCount * sizeof(DataSource));
 		if (NULL == sources.sources) {
@@ -1280,24 +1282,30 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 			goto finally;
 		}
 
+		/*
+		 * It isn't clear whether the address referred to by Py_buffer.buf
+		 * is still valid after PyBuffer_Release. We we hold a reference to all
+		 * Py_buffer instances for the duration of the operation.
+		 */
+		dataBuffers = PyMem_Malloc(sourceCount * sizeof(Py_buffer));
+		if (NULL == dataBuffers) {
+			PyErr_NoMemory();
+			goto finally;
+		}
+
+		memset(dataBuffers, 0, sourceCount * sizeof(Py_buffer));
+
 		for (i = 0; i < sourceCount; i++) {
-			PyObject* source;
-			char* sourceData;
-			Py_ssize_t sourceSize;
-
-			source = PyList_GET_ITEM(data, i);
-
-			/* TODO support buffer interface */
-			if (0 == PyBytes_Check(source)) {
-				PyErr_Format(PyExc_TypeError, "item %zd not bytes", i);
+			if (0 != PyObject_GetBuffer(PyList_GET_ITEM(data, i),
+				&dataBuffers[i], PyBUF_CONTIG_RO)) {
+				PyErr_Clear();
+				PyErr_Format(PyExc_TypeError, "item %zd not a bytes like object", i);
 				goto finally;
 			}
 
-			PyBytes_AsStringAndSize(source, &sourceData, &sourceSize);
-
-			sources.sources[i].sourceData = (void*)sourceData;
-			sources.sources[i].sourceSize = sourceSize;
-			sources.totalSourceSize += sourceSize;
+			sources.sources[i].sourceData = dataBuffers[i].buf;
+			sources.sources[i].sourceSize = dataBuffers[i].len;
+			sources.totalSourceSize += dataBuffers[i].len;
 		}
 
 		sources.sourcesSize = sourceCount;
@@ -1321,6 +1329,14 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 
 finally:
 	PyMem_Free(sources.sources);
+
+	if (dataBuffers) {
+		for (i = 0; i < sourceCount; i++) {
+			PyBuffer_Release(&dataBuffers[i]);
+		}
+
+		PyMem_Free(dataBuffers);
+	}
 
 	return result;
 }
