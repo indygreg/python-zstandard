@@ -1198,7 +1198,7 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 		ZstdBufferWithSegments* buffer = (ZstdBufferWithSegments*)frames;
 		frameCount = buffer->segmentCount;
 
-		if (frameSizes.buf && frameSizes.len != frameCount * sizeof(unsigned long long)) {
+		if (frameSizes.buf && frameSizes.len != frameCount * (Py_ssize_t)sizeof(unsigned long long)) {
 			PyErr_Format(PyExc_ValueError, "decompressed_sizes size mismatch; expected %zd, got %zd",
 				frameCount * sizeof(unsigned long long), frameSizes.len);
 			goto finally;
@@ -1278,7 +1278,7 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 	else if (PyList_Check(frames)) {
 		frameCount = PyList_GET_SIZE(frames);
 
-		if (frameSizes.buf && frameSizes.len != frameCount * sizeof(unsigned long long)) {
+		if (frameSizes.buf && frameSizes.len != frameCount * (Py_ssize_t)sizeof(unsigned long long)) {
 			PyErr_Format(PyExc_ValueError, "decompressed_sizes size mismatch; expected %zd, got %zd",
 				frameCount * sizeof(unsigned long long), frameSizes.len);
 			goto finally;
