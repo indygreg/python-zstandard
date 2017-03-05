@@ -804,11 +804,13 @@ typedef struct {
 
 	ZSTD_DCtx* dctx;
 	ZSTD_DDict* ddict;
+
 	/* Source records and length */
 	FramePointer* framePointers;
 	/* Which records to process. */
 	Py_ssize_t startOffset;
 	Py_ssize_t endOffset;
+
 	/* Item that error occurred on. */
 	Py_ssize_t errorOffset;
 	/* If an error occurred. */
