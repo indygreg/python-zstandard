@@ -829,7 +829,7 @@ static void decompress_worker(WorkerState* state) {
 	size_t destOffset = 0;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
-	unsigned long long currentOffset = 0;
+	unsigned long long totalOutputSize = 0;
 
 	assert(NULL == state->destBuffers);
 	assert(0 == state->destCount);
@@ -860,7 +860,7 @@ static void decompress_worker(WorkerState* state) {
 			}
 		}
 
-		currentOffset += fp->destSize;
+		totalOutputSize += fp->destSize;
 	}
 
 	state->destBuffers = calloc(1, sizeof(DestBuffer));
@@ -873,14 +873,13 @@ static void decompress_worker(WorkerState* state) {
 
 	destBuffer = &state->destBuffers[state->destCount - 1];
 
-	/* currentOffset is now the total output size. */
-	destBuffer->dest = malloc(currentOffset);
+	destBuffer->dest = malloc(totalOutputSize);
 	if (NULL == destBuffer->dest) {
 		state->error = WorkerError_memory;
 		return;
 	}
 
-	destBuffer->destSize = currentOffset;
+	destBuffer->destSize = totalOutputSize;
 
 	destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 	if (NULL == destBuffer->segments) {
