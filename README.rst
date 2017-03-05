@@ -1175,45 +1175,44 @@ and ``b[4]`` access segments from the second.
 Choosing an API
 ===============
 
-Various forms of compression and decompression APIs are provided because each
-are suitable for different use cases.
+There are multiple APIs for performing compression and decompression. This is
+because different applications have different needs and the library wants to
+facilitate optimal use in as many use cases as possible.
 
-The simple/one-shot APIs are useful for small data, when the decompressed
-data size is known (either recorded in the zstd frame header via
-``write_content_size`` or known via an out-of-band mechanism, such as a file
-size).
+From a high-level, APIs are divided into *one-shot* and *streaming*. See
+the ``Concepts`` section for a description of how these are different at
+the C layer.
 
-A limitation of the simple APIs is that input or output data must fit in memory.
-And unless using advanced tricks with Python *buffer objects*, both input and
-output must fit in memory simultaneously.
+The *one-shot* APIs are useful for small data, where the input or output
+size is known. (The size can come from a buffer length, file size, or
+stored in the zstd frame header.) A limitation of the *one-shot* APIs is that
+input and output must fit in memory simultaneously. For say a 4 GB input,
+this is often not feasible.
 
-Another limitation is that compression or decompression is performed as a single
-operation. So if you feed large input, it could take a long time for the
-function to return.
+The *one-shot* APIs also perform all work as a single operation. So, if you
+feed it large input, it could take a long time for the function to return.
 
-The streaming APIs do not have the limitations of the simple API. The cost to
-this is they are more complex to use than a single function call.
+The streaming APIs do not have the limitations of the simple API. But the
+price you pay for this flexibility is that they are more complex than a
+single function call.
 
 The streaming APIs put the caller in control of compression and decompression
 behavior by allowing them to directly control either the input or output side
 of the operation.
 
-With the streaming input APIs, the caller feeds data into the compressor or
-decompressor as they see fit. Output data will only be written after the caller
-has explicitly written data.
+With the *streaming input*, *compressor*, and *decompressor* APIs, the caller
+has full control over the input to the compression or decompression stream.
+They can directly choose when new data is operated on.
 
-With the streaming output APIs, the caller consumes output from the compressor
-or decompressor as they see fit. The compressor or decompressor will only
-consume data from the source when the caller is ready to receive it.
+With the *streaming ouput* APIs, the caller has full control over the output
+of the compression or decompression stream. It can choose when to receive
+new data.
 
-One end of the streaming APIs involves a file-like object that must
-``write()`` output data or ``read()`` input data. Depending on what the
-backing storage for these objects is, those operations may not complete quickly.
-For example, when streaming compressed data to a file, the ``write()`` into
-a streaming compressor could result in a ``write()`` to the filesystem, which
-may take a long time to finish due to slow I/O on the filesystem. So, there
-may be overhead in streaming APIs beyond the compression and decompression
-operations.
+When using the *streaming* APIs that operate on file-like or stream objects,
+it is important to consider what happens in that object when I/O is requested.
+There is potential for long pauses as data is read or written from the
+underlying stream (say from interacting with a filesystem or network). This
+could add considerable overhead.
 
 Concepts
 ========
