@@ -863,7 +863,7 @@ typedef struct {
 } WorkerState;
 
 static void compress_worker(WorkerState* state) {
-	Py_ssize_t i;
+	Py_ssize_t inputOffset;
 	size_t zresult;
 	ZSTD_parameters zparams;
 	void* newDest;
@@ -925,9 +925,9 @@ static void compress_worker(WorkerState* state) {
 
 	destBuffer->destSize = newSize;
 
-	for (i = state->startOffset; i <= state->endOffset; i++) {
-		void* source = sources[i].sourceData;
-		size_t sourceSize = sources[i].sourceSize;
+	for (inputOffset = state->startOffset; inputOffset <= state->endOffset; inputOffset++) {
+		void* source = sources[inputOffset].sourceData;
+		size_t sourceSize = sources[inputOffset].sourceSize;
 		size_t destAvailable;
 		size_t destWanted;
 		void* dest;
@@ -975,12 +975,12 @@ static void compress_worker(WorkerState* state) {
 		if (ZSTD_isError(zresult)) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;
-			state->errorOffset = i;
+			state->errorOffset = inputOffset;
 			break;
 		}
 
-		destBuffer->segments[i - state->startOffset].offset = destOffset;
-		destBuffer->segments[i - state->startOffset].length = zresult;
+		destBuffer->segments[inputOffset - state->startOffset].offset = destOffset;
+		destBuffer->segments[inputOffset - state->startOffset].length = zresult;
 
 		destOffset += zresult;
 	}
