@@ -1323,6 +1323,30 @@ protocol require that the buffer is *C contiguous* and has a single
 dimension (``ndim==1``). This is usually the case. An example of where it
 is not is a Numpy matrix type.
 
+Requiring Output Sizes for Non-Streaming Decompression APIs
+-----------------------------------------------------------
+
+Non-streaming decompression APIs require that either the output size is
+explicitly defined (either in the zstd frame header or passed into the
+function) or that a max output size is specified. This restriction is for
+your safety.
+
+The *one-shot* decompression APIs store the decompressed result in a
+single buffer. This means that a buffer needs to be pre-allocated to hold
+the result. If the decompressed size is not known, then there is no universal
+good default size to use. Any default will fail or will be highly sub-optimal
+in some scenarios (it will either be too small or will put stress on the
+memory allocator to allocate a too large block).
+
+A *helpful* API may retry decompression with buffers of increasing size.
+While useful, there are obvious performance disadvantages, namely redoing
+decompression N times until it works. In addition, there is a security
+concern. Say the input came from highly compressible data, like 1 GB of the
+same byte value. The output size could be several magnitudes larger than the
+input size. An input of <100KB could decompress to >1GB. Without a bounds
+restriction on the decompressed size, certain inputs could exhaust all system
+memory. That's not good and is why the maximum output size is limited.
+
 Note on Zstandard's *Experimental* API
 ======================================
 
