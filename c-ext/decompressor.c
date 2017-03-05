@@ -824,7 +824,7 @@ typedef struct {
 
 static void decompress_worker(WorkerState* state) {
 	DestBuffer* destBuffer;
-	Py_ssize_t i;
+	Py_ssize_t frameIndex;
 	Py_ssize_t localOffset = 0;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
@@ -847,14 +847,14 @@ static void decompress_worker(WorkerState* state) {
 	 */
 
 	/* Resolve ouput segments. */
-	for (i = state->startOffset; i <= state->endOffset; i++) {
-		FramePointer* fp = &framePointers[i];
+	for (frameIndex = state->startOffset; frameIndex <= state->endOffset; frameIndex++) {
+		FramePointer* fp = &framePointers[frameIndex];
 
 		if (0 == fp->destSize) {
 			fp->destSize = ZSTD_getDecompressedSize(fp->sourceData, fp->sourceSize);
 			if (0 == fp->destSize && state->requireOutputSizes) {
 				state->error = WorkerError_unknownSize;
-				state->errorOffset = i;
+				state->errorOffset = frameIndex;
 				return;
 			}
 		}
@@ -891,11 +891,11 @@ static void decompress_worker(WorkerState* state) {
 
 	destBuffer->segmentsSize = state->endOffset - state->startOffset + 1;
 
-	for (i = state->startOffset; i <= state->endOffset; i++) {
-		void* source = framePointers[i].sourceData;
-		size_t sourceSize = framePointers[i].sourceSize;
-		void* dest = (char*)destBuffer->dest + framePointers[i].destOffset;
-		size_t destCapacity = framePointers[i].destSize;
+	for (frameIndex = state->startOffset; frameIndex <= state->endOffset; frameIndex++) {
+		void* source = framePointers[frameIndex].sourceData;
+		size_t sourceSize = framePointers[frameIndex].sourceSize;
+		void* dest = (char*)destBuffer->dest + framePointers[frameIndex].destOffset;
+		size_t destCapacity = framePointers[frameIndex].destSize;
 
 		if (state->ddict) {
 			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, destCapacity,
@@ -909,17 +909,17 @@ static void decompress_worker(WorkerState* state) {
 		if (ZSTD_isError(zresult)) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;
-			state->errorOffset = i;
+			state->errorOffset = frameIndex;
 			break;
 		}
 		else if (zresult != destCapacity) {
 			state->error = WorkerError_sizeMismatch;
 			state->zresult = zresult;
-			state->errorOffset = i;
+			state->errorOffset = frameIndex;
 			break;
 		}
 
-		destBuffer->segments[localOffset].offset = framePointers[i].destOffset;
+		destBuffer->segments[localOffset].offset = framePointers[frameIndex].destOffset;
 		destBuffer->segments[localOffset].length = destCapacity;
 		localOffset++;
 	}
