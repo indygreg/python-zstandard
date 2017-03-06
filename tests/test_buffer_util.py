@@ -9,6 +9,7 @@ import zstd
 
 ss = struct.Struct('=QQ')
 
+
 class TestBufferWithSegments(unittest.TestCase):
     def test_arguments(self):
         with self.assertRaises(TypeError):

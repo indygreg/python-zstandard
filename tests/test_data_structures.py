@@ -1,5 +1,3 @@
-import io
-
 try:
     import unittest2 as unittest
 except ImportError:
@@ -116,4 +114,3 @@ class TestFrameParameters(unittest.TestCase):
         self.assertEqual(params.window_size, 262144)
         self.assertEqual(params.dict_id, 15)
         self.assertTrue(params.has_checksum)
-

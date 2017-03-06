@@ -64,6 +64,7 @@ class OpCountingBytesIO(io.BytesIO):
 
 _source_files = []
 
+
 def random_input_data():
     """Obtain the raw content of source files.
 

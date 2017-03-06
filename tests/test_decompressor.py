@@ -1,6 +1,4 @@
-import array
 import io
-import os
 import random
 import struct
 import sys
@@ -15,7 +13,6 @@ import zstd
 from .common import (
     make_cffi,
     OpCountingBytesIO,
-    random_input_data,
 )
 
 
@@ -52,7 +49,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         compressed = cctx.compress(b'foobar')
 
         dctx = zstd.ZstdDecompressor()
-        decompressed  = dctx.decompress(compressed)
+        decompressed = dctx.decompress(compressed)
         self.assertEqual(decompressed, b'foobar')
 
     def test_max_output_size(self):
@@ -295,7 +292,6 @@ class TestDecompressor_write_to(unittest.TestCase):
                 if not isinstance(c, str):
                     c = s.pack(c)
                 decompressor.write(c)
-
 
         self.assertEqual(dest.getvalue(), b'foobarfoobar')
         self.assertEqual(dest._write_count, len(dest.getvalue()))

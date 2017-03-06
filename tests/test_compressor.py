@@ -13,7 +13,6 @@ import zstd
 from .common import (
     make_cffi,
     OpCountingBytesIO,
-    random_input_data,
 )
 
 
@@ -300,6 +299,7 @@ class TestCompressor_compressobj(unittest.TestCase):
         compressed = b''.join(chunks)
 
         self.assertEqual(len(compressed), 295)
+
 
 @make_cffi
 class TestCompressor_copy_stream(unittest.TestCase):
