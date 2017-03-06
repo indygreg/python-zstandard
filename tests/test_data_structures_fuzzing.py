@@ -1,4 +1,5 @@
 import io
+import os
 
 try:
     import unittest2 as unittest
@@ -40,6 +41,7 @@ s_strategy = strategies.sampled_from((zstd.STRATEGY_FAST,
 
 
 @make_cffi
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 class TestCompressionParametersHypothesis(unittest.TestCase):
     @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
                         s_searchlength, s_targetlength, s_strategy)
