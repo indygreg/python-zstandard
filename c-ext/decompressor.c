@@ -1395,7 +1395,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 	}
 	else if (PyObject_TypeCheck(frames, &ZstdBufferWithSegmentsCollectionType)) {
 		Py_ssize_t offset = 0;
-		Py_ssize_t j;
 		ZstdBufferWithSegments* buffer;
 		ZstdBufferWithSegmentsCollection* collection = (ZstdBufferWithSegmentsCollection*)frames;
 
@@ -1416,19 +1415,20 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 
 		/* Iterate the data structure directly because it is faster. */
 		for (i = 0; i < collection->bufferCount; i++) {
+			Py_ssize_t segmentIndex;
 			buffer = collection->buffers[i];
 
-			for (j = 0; j < buffer->segmentCount; j++) {
-				if (buffer->segments[j].offset + buffer->segments[j].length > buffer->dataSize) {
+			for (segmentIndex = 0; segmentIndex < buffer->segmentCount; segmentIndex++) {
+				if (buffer->segments[segmentIndex].offset + buffer->segments[segmentIndex].length > buffer->dataSize) {
 					PyErr_Format(PyExc_ValueError, "item %zd has offset outside memory area",
 						offset);
 					goto finally;
 				}
 
-				totalInputSize += buffer->segments[i].length;
+				totalInputSize += buffer->segments[segmentIndex].length;
 
-				framePointers[offset].sourceData = (char*)buffer->data + buffer->segments[j].offset;
-				framePointers[offset].sourceSize = buffer->segments[j].length;
+				framePointers[offset].sourceData = (char*)buffer->data + buffer->segments[segmentIndex].offset;
+				framePointers[offset].sourceSize = buffer->segments[segmentIndex].length;
 				framePointers[offset].destSize = frameSizesP ? frameSizesP[offset] : 0;
 
 				offset++;
