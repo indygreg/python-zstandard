@@ -9,7 +9,7 @@ try:
     import hypothesis
     import hypothesis.strategies as strategies
 except ImportError:
-    unittest.skip('hypothesis not available')
+    raise unittest.SkipTest('hypothesis not available')
 
 import zstd
 
