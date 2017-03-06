@@ -1116,6 +1116,15 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	for (i = 0; i < frames->framesSize; i++) {
 		workerBytes += frames->frames[i].sourceSize;
 
+		/*
+		 * The last worker/thread needs to handle all remaining work. Don't
+		 * trigger it prematurely. Defer to the block outside of the loop.
+		 * (But still process this loop so workerBytes is correct.
+		 */
+		if (currentThread == threadCount - 1) {
+			continue;
+		}
+
 		if (workerBytes >= bytesPerWorker) {
 			workerStates[currentThread].startOffset = workerStartOffset;
 			workerStates[currentThread].endOffset = i;
@@ -1133,7 +1142,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		}
 	}
 
-	if (threadCount > 1 && workerStartOffset != frames->framesSize) {
+	if (workerBytes) {
 		workerStates[currentThread].startOffset = workerStartOffset;
 		workerStates[currentThread].endOffset = frames->framesSize - 1;
 		workerStates[currentThread].totalSourceSize = workerBytes;
