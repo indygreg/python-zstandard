@@ -908,6 +908,23 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
 
 
 if hypothesis:
+    class TestCompressor_write_to_fuzzing(unittest.TestCase):
+        @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
+        @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                          level=strategies.integers(min_value=1, max_value=5),
+                          write_size=strategies.integers(min_value=1, max_value=1048576))
+        def test_write_size_variance(self, original, level, write_size):
+            refctx = zstd.ZstdCompressor(level=level)
+            ref_frame = refctx.compress(original)
+
+            cctx = zstd.ZstdCompressor(level=level)
+            b = io.BytesIO()
+            with cctx.write_to(b, size=len(original), write_size=write_size) as compressor:
+                compressor.write(original)
+
+            self.assertEqual(b.getvalue(), ref_frame)
+
+
     class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
         @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
         @hypothesis.given(original=strategies.lists(strategies.sampled_from(random_input_data()),
