@@ -1,4 +1,5 @@
 import io
+import os
 
 try:
     import unittest2 as unittest
@@ -20,6 +21,7 @@ from .common import (
 compression_levels = strategies.integers(min_value=1, max_value=22)
 
 
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi
 class TestRoundTrip(unittest.TestCase):
     @hypothesis.given(strategies.binary(), compression_levels)

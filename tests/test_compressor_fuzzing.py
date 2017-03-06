@@ -38,6 +38,7 @@ class TestCompressor_write_to_fuzzing(unittest.TestCase):
         self.assertEqual(b.getvalue(), ref_frame)
 
 
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.lists(strategies.sampled_from(random_input_data()),
                                                 min_size=1, max_size=1024),

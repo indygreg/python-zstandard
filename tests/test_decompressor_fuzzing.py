@@ -18,8 +18,8 @@ from . common import (
 )
 
 
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 class TestDecompressor_multi_decompress_to_buffer_fuzzing(unittest.TestCase):
-    @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
     @hypothesis.given(original=strategies.lists(strategies.sampled_from(random_input_data()),
                                         min_size=1, max_size=1024),
                 threads=strategies.integers(min_value=1, max_value=8),
