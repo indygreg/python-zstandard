@@ -15,11 +15,13 @@ except ImportError:
 import zstd
 
 from . common import (
+    make_cffi,
     random_input_data,
 )
 
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
+@make_cffi
 class TestCompressor_write_to_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                         level=strategies.integers(min_value=1, max_value=5),
