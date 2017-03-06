@@ -1,7 +1,14 @@
 import hashlib
 import io
+import os
 import struct
 import sys
+
+try:
+    import hypothesis
+    import hypothesis.strategies as strategies
+except ImportError:
+    hypothesis = None
 
 try:
     import unittest2 as unittest
@@ -13,6 +20,7 @@ import zstd
 from .common import (
     make_cffi,
     OpCountingBytesIO,
+    random_input_data,
 )
 
 
@@ -897,3 +905,37 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
                 self.assertEqual(result[i].tobytes(), reference[0])
             else:
                 self.assertEqual(result[i].tobytes(), reference[1])
+
+
+if hypothesis:
+    class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
+        @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
+        @hypothesis.given(original=strategies.lists(strategies.sampled_from(random_input_data()),
+                                                    min_size=1, max_size=1024),
+                          threads=strategies.integers(min_value=1, max_value=8),
+                          use_dict=strategies.booleans())
+        def test_data_equivalence(self, original, threads, use_dict):
+            kwargs = {}
+
+            # Use a content dictionary because it is cheap to create.
+            if use_dict:
+                kwargs['dict_data'] = zstd.ZstdCompressionDict(original[0])
+
+            cctx = zstd.ZstdCompressor(level=1,
+                                       threads=threads,
+                                       write_content_size=True,
+                                       write_checksum=True,
+                                       **kwargs)
+
+            result = cctx.multi_compress_to_buffer(original)
+
+            self.assertEqual(len(result), len(original))
+
+            # The frame produced via the batch APIs may not be bit identical to that
+            # produced by compress() because compression parameters are adjusted
+            # from the first input in batch mode. So the only thing we can do is
+            # verify the decompressed data matches the input.
+            dctx = zstd.ZstdDecompressor(**kwargs)
+
+            for i, frame in enumerate(result):
+                self.assertEqual(dctx.decompress(frame), original[i])
