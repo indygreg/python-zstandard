@@ -822,11 +822,14 @@ typedef struct {
 } WorkerState;
 
 static void decompress_worker(WorkerState* state) {
+	size_t allocationSize;
 	DestBuffer* destBuffer;
 	Py_ssize_t frameIndex;
 	Py_ssize_t localOffset = 0;
+	Py_ssize_t currentBufferStartIndex = state->startOffset;
 	Py_ssize_t remainingItems = state->endOffset - state->startOffset + 1;
-	size_t destOffset = 0;
+	void* tmpBuf;
+	Py_ssize_t destOffset = 0;
 	FramePointer* framePointers = state->framePointers;
 	size_t zresult;
 	unsigned long long totalOutputSize = 0;
@@ -873,13 +876,21 @@ static void decompress_worker(WorkerState* state) {
 
 	destBuffer = &state->destBuffers[state->destCount - 1];
 
-	destBuffer->dest = malloc(totalOutputSize);
+	assert(framePointers[state->startOffset].destSize > 0); /* For now. */
+
+	allocationSize = roundpow2(state->totalSourceSize);
+
+	if (framePointers[state->startOffset].destSize > allocationSize) {
+		allocationSize = roundpow2(framePointers[state->startOffset].destSize);
+	}
+
+	destBuffer->dest = malloc(allocationSize);
 	if (NULL == destBuffer->dest) {
 		state->error = WorkerError_memory;
 		return;
 	}
 
-	destBuffer->destSize = totalOutputSize;
+	destBuffer->destSize = allocationSize;
 
 	destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 	if (NULL == destBuffer->segments) {
@@ -891,12 +902,88 @@ static void decompress_worker(WorkerState* state) {
 	destBuffer->segmentsSize = remainingItems;
 
 	for (frameIndex = state->startOffset; frameIndex <= state->endOffset; frameIndex++) {
-		void* source = framePointers[frameIndex].sourceData;
-		size_t sourceSize = framePointers[frameIndex].sourceSize;
-		void* dest = (char*)destBuffer->dest + destOffset;
-		size_t decompressedSize = framePointers[frameIndex].destSize;
+		const void* source = framePointers[frameIndex].sourceData;
+		const size_t sourceSize = framePointers[frameIndex].sourceSize;
+		void* dest;
+		const size_t decompressedSize = framePointers[frameIndex].destSize;
+		size_t destAvailable = destBuffer->destSize - destOffset;
 
 		assert(decompressedSize > 0); /* For now. */
+
+		/*
+		 * Not enough space in current buffer. Finish current before and allocate and
+		 * switch to a new one.
+		 */
+		if (decompressedSize > destAvailable) {
+			/*
+			 * Shrinking the destination buffer is optional. But it should be cheap,
+			 * so we just do it.
+			 */
+			if (destAvailable) {
+				tmpBuf = realloc(destBuffer->dest, destOffset);
+				if (NULL == tmpBuf) {
+					state->error = WorkerError_memory;
+					return;
+				}
+
+				destBuffer->dest = tmpBuf;
+				destBuffer->destSize = destOffset;
+			}
+
+			/* Truncate segments buffer. */
+			tmpBuf = realloc(destBuffer->segments,
+				(frameIndex - currentBufferStartIndex) * sizeof(BufferSegment));
+			if (NULL == tmpBuf) {
+				state->error = WorkerError_memory;
+				return;
+			}
+
+			destBuffer->segments = tmpBuf;
+			destBuffer->segmentsSize = frameIndex - currentBufferStartIndex;
+
+			/* Grow space for new DestBuffer. */
+			tmpBuf = realloc(state->destBuffers, (state->destCount + 1) * sizeof(DestBuffer));
+			if (NULL == tmpBuf) {
+				state->error = WorkerError_memory;
+				return;
+			}
+
+			state->destBuffers = tmpBuf;
+			state->destCount++;
+
+			destBuffer = &state->destBuffers[state->destCount - 1];
+
+			/* Don't take any chances will non-NULL pointers. */
+			memset(destBuffer, 0, sizeof(DestBuffer));
+
+			allocationSize = roundpow2(state->totalSourceSize);
+
+			if (decompressedSize > allocationSize) {
+				allocationSize = roundpow2(decompressedSize);
+			}
+
+			destBuffer->dest = malloc(allocationSize);
+			if (NULL == destBuffer->dest) {
+				state->error = WorkerError_memory;
+				return;
+			}
+
+			destBuffer->destSize = allocationSize;
+			destAvailable = allocationSize;
+			destOffset = 0;
+			localOffset = 0;
+
+			destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
+			if (NULL == destBuffer->segments) {
+				state->error = WorkerError_memory;
+				return;
+			}
+
+			destBuffer->segmentsSize = remainingItems;
+			currentBufferStartIndex = frameIndex;
+		}
+
+		dest = (char*)destBuffer->dest + destOffset;
 
 		if (state->ddict) {
 			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, decompressedSize,
@@ -911,13 +998,13 @@ static void decompress_worker(WorkerState* state) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;
 			state->errorOffset = frameIndex;
-			break;
+			return;
 		}
 		else if (zresult != decompressedSize) {
 			state->error = WorkerError_sizeMismatch;
 			state->zresult = zresult;
 			state->errorOffset = frameIndex;
-			break;
+			return;
 		}
 
 		destBuffer->segments[localOffset].offset = destOffset;
@@ -925,6 +1012,17 @@ static void decompress_worker(WorkerState* state) {
 		destOffset += zresult;
 		localOffset++;
 		remainingItems--;
+	}
+
+	if (destBuffer->destSize > destOffset) {
+		tmpBuf = realloc(destBuffer->dest, destOffset);
+		if (NULL == tmpBuf) {
+			state->error = WorkerError_memory;
+			return;
+		}
+
+		destBuffer->dest = tmpBuf;
+		destBuffer->destSize = destOffset;
 	}
 }
 
