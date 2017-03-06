@@ -1165,7 +1165,18 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	for (i = 0; i < sources->sourcesSize; i++) {
 		workerBytes += sources->sources[i].sourceSize;
 
+		/*
+		 * The last worker/thread needs to handle all remaining work. Don't
+		 * trigger it prematurely. Defer to the block outside of the loop
+		 * to run the last worker/thread. But do still process this loop
+		 * so workerBytes is correct.
+		 */
+		if (currentThread == threadCount - 1) {
+			continue;
+		}
+
 		if (workerBytes >= bytesPerWorker) {
+			assert(currentThread < threadCount);
 			workerStates[currentThread].totalSourceSize = workerBytes;
 			workerStates[currentThread].startOffset = workerStartOffset;
 			workerStates[currentThread].endOffset = i;
@@ -1183,7 +1194,8 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 		}
 	}
 
-	if (threadCount > 1 && workerStartOffset != sources->sourcesSize) {
+	if (workerBytes) {
+		assert(currentThread < threadCount);
 		workerStates[currentThread].totalSourceSize = workerBytes;
 		workerStates[currentThread].startOffset = workerStartOffset;
 		workerStates[currentThread].endOffset = sources->sourcesSize - 1;
