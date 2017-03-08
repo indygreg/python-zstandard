@@ -60,6 +60,38 @@ class TestCompressor_copy_stream_fuzzing(unittest.TestCase):
 
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
+@make_cffi
+class TestCompressor_compressobj_fuzzing(unittest.TestCase):
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      chunk_sizes=strategies.streaming(
+                          strategies.integers(min_value=1, max_value=4096)))
+    def test_random_input_sizes(self, original, level, chunk_sizes):
+        chunk_sizes = iter(chunk_sizes)
+
+        refctx = zstd.ZstdCompressor(level=level)
+        ref_frame = refctx.compress(original)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        cobj = cctx.compressobj(size=len(original))
+
+        chunks = []
+        i = 0
+        while True:
+            chunk_size = next(chunk_sizes)
+            source = original[i:i + chunk_size]
+            if not source:
+                break
+
+            chunks.append(cobj.compress(source))
+            i += chunk_size
+
+        chunks.append(cobj.flush())
+
+        self.assertEqual(b''.join(chunks), ref_frame)
+
+
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.lists(strategies.sampled_from(random_input_data()),
                                                 min_size=1, max_size=1024),
