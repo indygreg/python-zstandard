@@ -50,6 +50,26 @@ class TestDecompressor_write_to_fuzzing(unittest.TestCase):
 
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
+@make_cffi
+class TestDecompressor_copy_stream_fuzzing(unittest.TestCase):
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      read_size=strategies.integers(min_value=1, max_value=8192),
+                      write_size=strategies.integers(min_value=1, max_value=8192))
+    def test_read_write_size_variance(self, original, level, read_size, write_size):
+        cctx = zstd.ZstdCompressor(level=level)
+        frame = cctx.compress(original)
+
+        source = io.BytesIO(frame)
+        dest = io.BytesIO()
+
+        dctx = zstd.ZstdDecompressor()
+        dctx.copy_stream(source, dest, read_size=read_size, write_size=write_size)
+
+        self.assertEqual(dest.getvalue(), original)
+
+
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 class TestDecompressor_multi_decompress_to_buffer_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.lists(strategies.sampled_from(random_input_data()),
                                         min_size=1, max_size=1024),
