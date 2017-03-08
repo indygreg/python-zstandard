@@ -731,20 +731,20 @@ Each zstd frame **must** have the content size written.
 The following Python code can be used to produce a *content-only dictionary
 chain*::
 
-	def make_chain(inputs):
-	    frames = []
+    def make_chain(inputs):
+        frames = []
 
-		# First frame is compressed in standalone/discrete mode.
-		zctx = zstd.ZstdCompressor(write_content_size=True)
-		frames.append(zctx.compress(inputs[0]))
+        # First frame is compressed in standalone/discrete mode.
+        zctx = zstd.ZstdCompressor(write_content_size=True)
+        frames.append(zctx.compress(inputs[0]))
 
-		# Subsequent frames use the previous fulltext as a content-only dictionary
-		for i, raw in enumerate(inputs[1:]):
-		    dict_data = zstd.ZstdCompressionDict(inputs[i])
-			zctx = zstd.ZstdCompressor(write_content_size=True, dict_data=dict_data)
-			frames.append(zctx.compress(raw))
+        # Subsequent frames use the previous fulltext as a content-only dictionary
+        for i, raw in enumerate(inputs[1:]):
+            dict_data = zstd.ZstdCompressionDict(inputs[i])
+            zctx = zstd.ZstdCompressor(write_content_size=True, dict_data=dict_data)
+            frames.append(zctx.compress(raw))
 
-		return frames
+        return frames
 
 ``decompress_content_dict_chain()`` returns the uncompressed data of the last
 element in the input chain.
