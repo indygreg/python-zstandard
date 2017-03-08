@@ -791,6 +791,12 @@ class TestCompressor_read_from(unittest.TestCase):
 
 
 class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
+    def test_multithreaded_unsupported(self):
+        cctx = zstd.ZstdCompressor(threads=2)
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'function cannot be called on ZstdCompressor configured for multi-threaded compression'):
+            cctx.multi_compress_to_buffer([b'foo'])
+
     def test_invalid_inputs(self):
         cctx = zstd.ZstdCompressor()
 
@@ -883,14 +889,13 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         refcctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
         reference = [refcctx.compress(b'x' * 64), refcctx.compress(b'y' * 64)]
 
-        cctx = zstd.ZstdCompressor(threads=-1, write_content_size=True,
-                                   write_checksum=True)
+        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
 
         frames = []
         frames.extend(b'x' * 64 for i in range(256))
         frames.extend(b'y' * 64 for i in range(256))
 
-        result = cctx.multi_compress_to_buffer(frames)
+        result = cctx.multi_compress_to_buffer(frames, threads=-1)
 
         self.assertEqual(len(result), 512)
         for i in range(512):

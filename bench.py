@@ -117,15 +117,15 @@ def compress_reuse(chunks, opts):
 @bench('discrete', 'multi_compress_to_buffer() w/ buffer input',
        simple=True, threads_arg=True, chunks_as_buffer=True)
 def compress_multi_compress_to_buffer_buffer(chunks, opts, threads):
-    zctx= zstd.ZstdCompressor(threads=threads, **opts)
-    zctx.multi_compress_to_buffer(chunks)
+    zctx= zstd.ZstdCompressor(**opts)
+    zctx.multi_compress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'multi_compress_to_buffer() w/ list input',
        threads_arg=True)
 def compress_multi_compress_to_buffer_list(chunks, opts, threads):
-    zctx = zstd.ZstdCompressor(threads=threads, **opts)
-    zctx.multi_compress_to_buffer(chunks)
+    zctx = zstd.ZstdCompressor(**opts)
+    zctx.multi_compress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'write_to()')
@@ -795,13 +795,11 @@ if __name__ == '__main__':
     # In discrete mode, each input is compressed independently, possibly
     # with a dictionary.
     if args.discrete:
-        # Always use multiple threads here so we complete faster.
-        local_opts = dict(opts)
-        local_opts['threads'] = -1
-        zctx = zstd.ZstdCompressor(**local_opts)
+        zctx = zstd.ZstdCompressor(**opts)
         compressed_discrete = []
         ratios = []
-        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks)):
+        # Always use multiple threads here so we complete faster.
+        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
             compressed_discrete.append(c.tobytes())
             ratios.append(float(len(c)) / float(len(chunks[i])))
 
@@ -816,12 +814,10 @@ if __name__ == '__main__':
     if args.discrete_dict:
         dict_opts = dict(opts)
         dict_opts['dict_data'] = dict_data
-        local_opts = dict(dict_opts)
-        local_opts['threads'] = -1
-        zctx = zstd.ZstdCompressor(**local_opts)
+        zctx = zstd.ZstdCompressor(**dict_opts)
         compressed_discrete_dict = []
         ratios = []
-        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks)):
+        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
             compressed_discrete_dict.append(c.tobytes())
             ratios.append(float(len(c)) / float(len(chunks[i])))
 
@@ -835,12 +831,10 @@ if __name__ == '__main__':
     if args.discrete_cover_dict:
         cover_dict_opts = dict(opts)
         cover_dict_opts['dict_data'] = cover_dict_data
-        local_opts = dict(cover_dict_opts)
-        local_opts['threads'] = -1
-        zctx = zstd.ZstdCompressor(**local_opts)
+        zctx = zstd.ZstdCompressor(**cover_dict_opts)
         compressed_discrete_cover_dict = []
         ratios = []
-        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks)):
+        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
             compressed_discrete_cover_dict.append(c.tobytes())
             ratios.append(float(len(c)) / float(len(chunks[i])))
 

@@ -1072,8 +1072,7 @@ static void compress_worker(WorkerState* state) {
 }
 
 ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* compressor,
-	DataSources* sources) {
-	unsigned int threadCount;
+	DataSources* sources, unsigned int threadCount) {
 	ZSTD_parameters zparams;
 	unsigned long long bytesPerWorker;
 	POOL_ctx* pool = NULL;
@@ -1091,12 +1090,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 
 	assert(sources->sourcesSize > 0);
 	assert(sources->totalSourceSize > 0);
-
-	threadCount = compressor->threads;
-
-	if (threadCount < 2) {
-		threadCount = 1;
-	}
+	assert(threadCount >= 1);
 
 	/* More threads than inputs makes no sense. */
 	threadCount = sources->sourcesSize < threadCount ? (unsigned int)sources->sourcesSize
@@ -1335,21 +1329,37 @@ PyDoc_STRVAR(ZstdCompressor_multi_compress_to_buffer__doc__,
 static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"data",
+		"threads",
 		NULL
 	};
 
 	PyObject* data;
+	int threads = 0;
 	Py_buffer* dataBuffers = NULL;
 	DataSources sources;
 	Py_ssize_t i;
 	Py_ssize_t sourceCount = 0;
 	ZstdBufferWithSegmentsCollection* result = NULL;
 
+	if (self->mtcctx) {
+		PyErr_SetString(ZstdError,
+			"function cannot be called on ZstdCompressor configured for multi-threaded compression");
+		return NULL;
+	}
+
 	memset(&sources, 0, sizeof(sources));
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:multi_compress_to_buffer", kwlist,
-		&data)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:multi_compress_to_buffer", kwlist,
+		&data, &threads)) {
 		return NULL;
+	}
+
+	if (threads < 0) {
+		threads = cpu_count();
+	}
+
+	if (threads < 2) {
+		threads = 1;
 	}
 
 	if (PyObject_TypeCheck(data, &ZstdBufferWithSegmentsType)) {
@@ -1449,7 +1459,7 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 		goto finally;
 	}
 
-	result = compress_from_datasources(self, &sources);
+	result = compress_from_datasources(self, &sources, threads);
 
 finally:
 	PyMem_Free(sources.sources);

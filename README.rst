@@ -235,7 +235,10 @@ threads
    Enables and sets the number of threads to use for multi-threaded compression
    operations. Defaults to 0, which means to use single-threaded compression.
    Negative values will resolve to the number of logical CPUs in the system.
-   Read below for more info on multi-threaded compression.
+   Read below for more info on multi-threaded compression. This argument only
+   controls thread count for operations that operate on individual pieces of
+   data. APIs that spawn multiple threads for working on multiple pieces of
+   data have their own ``threads`` argument.
 
 Unless specified otherwise, assume that no two methods of ``ZstdCompressor``
 instances can be called from multiple Python threads simultaneously. In other
@@ -445,7 +448,7 @@ Batch Compression API
 
 (Experimental. Not yet supported in CFFI bindings.)
 
-``multi_compress_to_buffer(data)`` performs compression of multiple
+``multi_compress_to_buffer(data, [threads=0])`` performs compression of multiple
 inputs as a single operation.
 
 Data to be compressed can be passed as a ``BufferWithSegmentsCollection``, a
@@ -453,9 +456,9 @@ Data to be compressed can be passed as a ``BufferWithSegmentsCollection``, a
 the container will be compressed individually using the configured parameters
 on the ``ZstdCompressor`` instance.
 
-If the ``ZstdCompressor`` was instantiated with a ``threads`` argument that
-resolves to a value larger than 1, multiple threads will be used to perform
-compression concurrently.
+The ``threads`` argument controls how many threads to use for compression. The
+default is ``0`` which means to use a single thread. Negative values use the
+number of logical CPUs in the machine.
 
 The function returns a ``BufferWithSegmentsCollection``. This type represents
 N discrete memory allocations, eaching holding 1 or more compressed frames.

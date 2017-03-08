@@ -128,12 +128,12 @@ class TestDecompressor_multi_decompress_to_buffer_fuzzing(unittest.TestCase):
         if use_dict:
             kwargs['dict_data'] = zstd.ZstdCompressionDict(original[0])
 
-        cctx = zstd.ZstdCompressor(level=1, threads=-1,
-                                    write_content_size=True,
-                                    write_checksum=True,
-                                    **kwargs)
+        cctx = zstd.ZstdCompressor(level=1,
+                                   write_content_size=True,
+                                   write_checksum=True,
+                                   **kwargs)
 
-        frames_buffer = cctx.multi_compress_to_buffer(original)
+        frames_buffer = cctx.multi_compress_to_buffer(original, threads=-1)
 
         dctx = zstd.ZstdDecompressor(**kwargs)
 

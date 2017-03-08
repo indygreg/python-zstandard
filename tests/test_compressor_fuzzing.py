@@ -125,12 +125,11 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
             kwargs['dict_data'] = zstd.ZstdCompressionDict(original[0])
 
         cctx = zstd.ZstdCompressor(level=1,
-                                    threads=threads,
-                                    write_content_size=True,
-                                    write_checksum=True,
-                                    **kwargs)
+                                   write_content_size=True,
+                                   write_checksum=True,
+                                   **kwargs)
 
-        result = cctx.multi_compress_to_buffer(original)
+        result = cctx.multi_compress_to_buffer(original, threads=-1)
 
         self.assertEqual(len(result), len(original))
 
