@@ -1,3 +1,4 @@
+import io
 import os
 
 try:
@@ -14,8 +15,38 @@ except ImportError:
 import zstd
 
 from . common import (
+    make_cffi,
     random_input_data,
 )
+
+
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
+@make_cffi
+class TestDecompressor_write_to_fuzzing(unittest.TestCase):
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      write_size=strategies.integers(min_value=1, max_value=8192),
+                      input_sizes=strategies.streaming(
+                          strategies.integers(min_value=1, max_value=4096)))
+    def test_write_size_variance(self, original, level, write_size, input_sizes):
+        input_sizes = iter(input_sizes)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        frame = cctx.compress(original)
+
+        dctx = zstd.ZstdDecompressor()
+        source = io.BytesIO(frame)
+        dest = io.BytesIO()
+
+        with dctx.write_to(dest, write_size=write_size) as decompressor:
+            while True:
+                chunk = source.read(next(input_sizes))
+                if not chunk:
+                    break
+
+                decompressor.write(chunk)
+
+        self.assertEqual(dest.getvalue(), original)
 
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
