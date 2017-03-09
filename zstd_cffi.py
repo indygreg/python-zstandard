@@ -8,6 +8,58 @@
 
 from __future__ import absolute_import, unicode_literals
 
+# This should match what the C extension exports.
+__all__ = [
+    #'BufferSegment',
+    #'BufferSegments',
+    #'BufferWithSegments',
+    #'BufferWithSegmentsCollection',
+    'CompressionParameters',
+    'ZstdCompressionDict',
+    'ZstdCompressor',
+    'ZstdError',
+    'ZstdDecompressor',
+    'FrameParameters',
+    'estimate_compression_context_size',
+    'estimate_decompression_context_size',
+    'get_compression_parameters',
+    'get_frame_parameters',
+    'train_cover_dictionary',
+    'train_dictionary',
+
+    # Constants.
+    'COMPRESSOBJ_FLUSH_FINISH',
+    'COMPRESSOBJ_FLUSH_BLOCK',
+    'ZSTD_VERSION',
+    'FRAME_HEADER',
+    'MAX_COMPRESSION_LEVEL',
+    'COMPRESSION_RECOMMENDED_INPUT_SIZE',
+    'COMPRESSION_RECOMMENDED_OUTPUT_SIZE',
+    'DECOMPRESSION_RECOMMENDED_INPUT_SIZE',
+    'DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE',
+    'MAGIC_NUMBER',
+    'WINDOWLOG_MIN',
+    'WINDOWLOG_MAX',
+    'CHAINLOG_MIN',
+    'CHAINLOG_MAX',
+    'HASHLOG_MIN',
+    'HASHLOG_MAX',
+    'HASHLOG3_MAX',
+    'SEARCHLOG_MIN',
+    'SEARCHLOG_MAX',
+    'SEARCHLENGTH_MIN',
+    'SEARCHLENGTH_MAX',
+    'TARGETLENGTH_MIN',
+    'TARGETLENGTH_MAX',
+    'STRATEGY_FAST',
+    'STRATEGY_DFAST',
+    'STRATEGY_GREEDY',
+    'STRATEGY_LAZY',
+    'STRATEGY_LAZY2',
+    'STRATEGY_BTLAZY2',
+    'STRATEGY_BTOPT',
+]
+
 import os
 import sys
 
