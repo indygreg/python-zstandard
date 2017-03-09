@@ -1,11 +1,12 @@
+===============
 Version History
 ===============
 
 0.9.0 (not yet released)
-------------------------
+========================
 
 0.8.0 (released 2017-03-08)
----------------------------
+===========================
 
 * CompressionParameters now has a estimated_compression_context_size() method.
   zstd.estimate_compression_context_size() is now deprecated and slated for
@@ -33,7 +34,7 @@ Version History
   DictParameters instance to control dictionary generation.
 
 0.7.0 (released 2017-02-07)
----------------------------
+===========================
 
 * Added zstd.get_frame_parameters() to obtain info about a zstd frame.
 * Added ZstdDecompressor.decompress_content_dict_chain() for efficient
@@ -60,7 +61,7 @@ Version History
 * DictParameters instances now expose their values as attributes.
 
 0.6.0 (released 2017-01-14)
----------------------------
+===========================
 
 * Support for legacy zstd protocols (build time opt in feature).
 * Automation improvements to test against Python 3.6, latest versions
@@ -77,17 +78,17 @@ Version History
 * Disallow compress(b'') when writing content sizes by default (issue #11).
 
 0.5.2 (released 2016-11-12)
----------------------------
+===========================
 
 * more packaging fixes for source distribution
 
 0.5.1 (released 2016-11-12)
----------------------------
+===========================
 
 * setup_zstd.py is included in the source distribution
 
 0.5.0 (released 2016-11-10)
----------------------------
+===========================
 
 * Vendored version of zstd updated to 1.1.1.
 * Continuous integration for Python 3.6 and 3.7
@@ -112,8 +113,8 @@ Version History
 * The monolithic ``zstd.c`` file has been split into a header file defining
   types and separate ``.c`` source files for the implementation.
 
-History of the Project
-======================
+Older History
+=============
 
 2016-08-31 - Zstandard 1.0.0 is released and Gregory starts hacking on a
 Python extension for use by the Mercurial project. A very hacky prototype
