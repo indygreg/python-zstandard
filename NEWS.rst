@@ -1,8 +1,8 @@
 Version History
 ===============
 
-0.8.0 (not yet released)
-------------------------
+0.8.0 (released 2017-03-08)
+---------------------------
 
 * CompressionParameters now has a estimated_compression_context_size() method.
   zstd.estimate_compression_context_size() is now deprecated and slated for

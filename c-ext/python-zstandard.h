@@ -17,7 +17,7 @@
 #include "zdict.h"
 #include "zstdmt_compress.h"
 
-#define PYTHON_ZSTANDARD_VERSION "0.7.0"
+#define PYTHON_ZSTANDARD_VERSION "0.8.0"
 
 typedef enum {
 	compressorobj_flush_finish,
