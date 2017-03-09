@@ -1,4 +1,5 @@
 import io
+import os
 import random
 import struct
 import sys
@@ -406,6 +407,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         decompressed = b''.join(chunks)
         self.assertEqual(decompressed, source.getvalue())
 
+    @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
     def test_large_input(self):
         bytes = list(struct.Struct('>B').pack(i) for i in range(256))
         compressed = io.BytesIO()
