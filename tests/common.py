@@ -1,3 +1,4 @@
+import imp
 import inspect
 import io
 import os
@@ -7,10 +8,36 @@ import types
 def make_cffi(cls):
     """Decorator to add CFFI versions of each test method."""
 
-    try:
-        import zstd_cffi
-    except ImportError:
+    # The module containing this class definition should
+    # `import zstandard as zstd`. Otherwise things may blow up.
+    mod = inspect.getmodule(cls)
+    if not hasattr(mod, 'zstd'):
+        raise Exception('test module does not contain "zstd" symbol')
+
+    if not hasattr(mod.zstd, 'backend'):
+        raise Exception('zstd symbol does not have "backend" attribute; did '
+                        'you `import zstandard as zstd`?')
+
+    # If `import zstandard` already chose the cffi backend, there is nothing
+    # for us to do: we only add the cffi variation if the default backend
+    # is the C extension.
+    if mod.zstd.backend == 'cffi':
         return cls
+
+    old_env = dict(os.environ)
+    os.environ['PYTHON_ZSTANDARD_IMPORT_POLICY'] = 'cffi'
+    mod_info = imp.find_module('zstandard')
+    try:
+        try:
+            mod = imp.load_module('zstandard_cffi', *mod_info)
+        except ImportError:
+            return cls
+    finally:
+        os.environ.clear()
+        os.environ.update(old_env)
+
+    if mod.backend != 'cffi':
+        raise Exception('got the zstandard %s backend instead of cffi' % mod.backend)
 
     # If CFFI version is available, dynamically construct test methods
     # that use it.
@@ -29,13 +56,13 @@ def make_cffi(cls):
         # the function object and install it in a new attribute.
         if isinstance(fn, types.FunctionType):
             globs = dict(fn.__globals__)
-            globs['zstd'] = zstd_cffi
+            globs['zstd'] = mod
             new_fn = types.FunctionType(fn.__code__, globs, name,
                                         fn.__defaults__, fn.__closure__)
             new_method = new_fn
         else:
             globs = dict(fn.__func__.func_globals)
-            globs['zstd'] = zstd_cffi
+            globs['zstd'] = mod
             new_fn = types.FunctionType(fn.__func__.func_code, globs, name,
                                         fn.__func__.func_defaults,
                                         fn.__func__.func_closure)
