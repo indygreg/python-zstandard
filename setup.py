@@ -70,6 +70,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     keywords='zstandard zstd compression',
+    packages=['zstandard'],
     ext_modules=extensions,
     test_suite='tests',
     install_requires=install_requires,

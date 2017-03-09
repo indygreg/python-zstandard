@@ -5,6 +5,20 @@ Version History
 0.9.0 (not yet released)
 ========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* The primary module is now ``zstandard``. Please change imports of ``zstd``
+  and ``zstd_cffi`` to ``import zstandard``. See the README for more.
+
+Changes
+-------
+
+* Introduce the ``zstandard`` module to import and re-export the C or CFFI
+  *backend* as appropriate. Behavior can be controlled via the
+  ``PYTHON_ZSTANDARD_IMPORT_POLICY`` environment variable. See README for
+  usage info.
+
 0.8.0 (released 2017-03-08)
 ===========================
 

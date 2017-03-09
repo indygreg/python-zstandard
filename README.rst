@@ -188,9 +188,41 @@ like the following::
 API
 ===
 
-The compiled C extension provides a ``zstd`` Python module. The CFFI
-bindings provide a ``zstd_cffi`` module. Both provide an identical API
-interface. The types, functions, and attributes exposed by these modules
+To interface with Zstandard, simply import the ``zstandard`` module::
+
+   import zstandard
+
+It is a popular convention to alias the module as a different name for
+brevity::
+
+   import zstandard as zstd
+
+This module attempts to import and use either the C extension or CFFI
+implementation. On Python platforms known to support C extensions (like
+CPython), it raises an ImportError if the C extension cannot be imported.
+On Python platforms known to not support C extensions (like PyPy), it only
+attempts to import the CFFI implementation and raises ImportError if that
+can't be done. On other platforms, it first tries to import the C extension
+then falls back to CFFI if that fails and raises ImportError if CFFI fails.
+
+To change the module import behavior, a ``PYTHON_ZSTANDARD_IMPORT_POLICY``
+environment variable can be set. The following values are accepted:
+
+default
+   The behavior described above.
+cffi_fallback
+   Always try to import the C extension then fall back to CFFI if that
+   fails.
+cext
+   Only attempt to import the C extension.
+cffi
+   Only attempt to import the CFFI implementation.
+
+In addition, the ``zstandard`` module exports a ``backend`` attribute
+containing the string name of the backend being used. It will be one
+of ``cext`` or ``cffi`` (for *C extension* and *cffi*, respectively).
+
+The types, functions, and attributes exposed by the ``zstandard`` module
 are documented in the sections below.
 
 .. note::
