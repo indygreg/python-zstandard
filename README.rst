@@ -20,9 +20,11 @@ State of Project
 ================
 
 The project is officially in beta state. The author is reasonably satisfied
-with the current API and that functionality works as advertised. There
-may be some backwards incompatible changes before 1.0. Though the author
-does not intend to make any major changes to the Python API.
+that functionality works as advertised. **There will be some backwards
+incompatible changes before 1.0, probably in the 0.9 release.** This may
+involve renaming the main module from *zstd* to *zstandard* and renaming
+various types and methods. Pin the package version to prevent unwanted
+breakage when this change occurs!
 
 This project is vendored and distributed with Mercurial 4.1, where it is
 used in a production capacity.
