@@ -4,7 +4,7 @@
 #
 # This script is a bit hacky. But it gets the job done.
 
-import sys
+import argparse
 
 import requests
 
@@ -14,10 +14,18 @@ def make_request(session, path):
     return session.get(url)
 
 
-def download_artifacts(project):
+def download_artifacts(project, build):
     session = requests.session()
 
-    project_info = make_request(session, 'projects/%s' % project)
+    project_info = make_request(session, 'projects/%s/build/%s' % (
+        project, build))
+
+    if project_info.status_code == 404:
+        raise Exception('could not find build: %s' % build)
+
+    if project_info.status_code != 200:
+        raise Exception('non-200 response: %s' % project_info.text)
+
     jobs = project_info.json()['build']['jobs']
 
     for job in jobs:
@@ -41,4 +49,11 @@ def download_artifacts(project):
 
 
 if __name__ == "__main__":
-    download_artifacts(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('build', help='which build to download. e.g. "master-300"')
+    parser.add_argument('--project', default='indygreg/python-zstandard',
+                        help='which AppVeyor project to download')
+
+    args = parser.parse_args()
+
+    download_artifacts(args.project, args.build)
