@@ -16,14 +16,19 @@ except ImportError:
 import setup_zstd
 
 SUPPORT_LEGACY = False
+SYSTEM_ZSTD = False
 
 if "--legacy" in sys.argv:
     SUPPORT_LEGACY = True
     sys.argv.remove("--legacy")
 
+if "--system-zstd" in sys.argv:
+    SYSTEM_ZSTD = True
+    sys.argv.remove("--system-zstd")
+
 # Code for obtaining the Extension instance is in its own module to
 # facilitate reuse in other projects.
-extensions = [setup_zstd.get_c_extension(SUPPORT_LEGACY, 'zstd')]
+extensions = [setup_zstd.get_c_extension(SUPPORT_LEGACY, SYSTEM_ZSTD, 'zstd')]
 
 if cffi:
     import make_cffi

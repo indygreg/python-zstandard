@@ -41,7 +41,6 @@ zstd_sources_legacy = ['zstd/%s' % p for p in (
 )]
 
 zstd_includes = [
-    'c-ext',
     'zstd',
     'zstd/common',
     'zstd/compress',
@@ -54,7 +53,14 @@ zstd_includes_legacy = [
     'zstd/legacy',
 ]
 
+ext_includes = [
+    'c-ext',
+    'zstd/common',
+]
+
 ext_sources = [
+    'zstd/common/pool.c',
+    'zstd/common/threading.c',
     'zstd.c',
     'c-ext/bufferutil.c',
     'c-ext/compressiondict.c',
@@ -76,27 +82,36 @@ zstd_depends = [
 ]
 
 
-def get_c_extension(support_legacy=False, name='zstd'):
+def get_c_extension(support_legacy=False, system_zstd=False, name='zstd'):
     """Obtain a distutils.extension.Extension for the C extension."""
     root = os.path.abspath(os.path.dirname(__file__))
 
-    sources = [os.path.join(root, p) for p in zstd_sources + ext_sources]
-    if support_legacy:
-        sources.extend([os.path.join(root, p) for p in zstd_sources_legacy])
+    sources = set([os.path.join(root, p) for p in ext_sources])
+    if not system_zstd:
+        sources.update([os.path.join(root, p) for p in zstd_sources])
+        if support_legacy:
+            sources.update([os.path.join(root, p) for p in zstd_sources_legacy])
+    sources = list(sources)
 
-    include_dirs = [os.path.join(root, d) for d in zstd_includes]
-    if support_legacy:
-        include_dirs.extend([os.path.join(root, d) for d in zstd_includes_legacy])
+    include_dirs = set([os.path.join(root, d) for d in ext_includes])
+    if not system_zstd:
+        include_dirs.update([os.path.join(root, d) for d in zstd_includes])
+        if support_legacy:
+            include_dirs.update([os.path.join(root, d) for d in zstd_includes_legacy])
+    include_dirs = list(include_dirs)
 
     depends = [os.path.join(root, p) for p in zstd_depends]
 
     extra_args = ['-DZSTD_MULTITHREAD']
 
-    if support_legacy:
+    if not system_zstd and support_legacy:
         extra_args.append('-DZSTD_LEGACY_SUPPORT=1')
+
+    libraries = ['zstd'] if system_zstd else []
 
     # TODO compile with optimizations.
     return Extension(name, sources,
                      include_dirs=include_dirs,
                      depends=depends,
-                     extra_compile_args=extra_args)
+                     extra_compile_args=extra_args,
+                     libraries=libraries)

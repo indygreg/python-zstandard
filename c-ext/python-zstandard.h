@@ -12,10 +12,9 @@
 
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZDICT_STATIC_LINKING_ONLY
-#include "mem.h"
-#include "zstd.h"
-#include "zdict.h"
-#include "zstdmt_compress.h"
+#include <zstd.h>
+#include <zdict.h>
+#include <zstdmt_compress.h>
 
 #define PYTHON_ZSTANDARD_VERSION "0.7.0"
 
