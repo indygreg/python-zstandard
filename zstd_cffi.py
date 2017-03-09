@@ -124,6 +124,9 @@ class CompressionParameters(object):
             raise ValueError('invalid compression parameters: %s',
                              ffi.string(lib.ZSTD_getErrorName(zresult)))
 
+    def estimated_compression_context_size(self):
+        return lib.ZSTD_estimateCCtxSize(self.as_compression_parameters())
+
     def as_compression_parameters(self):
         p = ffi.new('ZSTD_compressionParameters *')[0]
         p.windowLog = self.window_log

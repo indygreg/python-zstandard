@@ -52,6 +52,13 @@ class TestCompressionParameters(unittest.TestCase):
         self.assertEqual(p.target_length, 8)
         self.assertEqual(p.strategy, 1)
 
+    def test_estimated_compression_context_size(self):
+        p = zstd.CompressionParameters(20, 16, 17,  1,  5, 16, zstd.STRATEGY_DFAST)
+
+        # 32-bit has slightly different values from 64-bit.
+        self.assertAlmostEqual(p.estimated_compression_context_size(), 1287076,
+                               delta=110)
+
 
 @make_cffi
 class TestFrameParameters(unittest.TestCase):

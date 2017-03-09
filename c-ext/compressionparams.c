@@ -131,6 +131,18 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	return 0;
 }
 
+PyDoc_STRVAR(CompressionParameters_estimated_compression_context_size__doc__,
+"Estimate the size in bytes of a compression context for compression parameters\n"
+);
+
+PyObject* CompressionParameters_estimated_compression_context_size(CompressionParametersObject* self) {
+	ZSTD_compressionParameters params;
+
+	ztopy_compression_parameters(self, &params);
+
+	return PyLong_FromSize_t(ZSTD_estimateCCtxSize(params));
+}
+
 PyObject* estimate_compression_context_size(PyObject* self, PyObject* args) {
 	CompressionParametersObject* params;
 	ZSTD_compressionParameters zparams;
@@ -152,6 +164,16 @@ PyDoc_STRVAR(CompressionParameters__doc__,
 static void CompressionParameters_dealloc(PyObject* self) {
 	PyObject_Del(self);
 }
+
+static PyMethodDef CompressionParameters_methods[] = {
+	{
+		"estimated_compression_context_size",
+		(PyCFunction)CompressionParameters_estimated_compression_context_size,
+		METH_NOARGS,
+		CompressionParameters_estimated_compression_context_size__doc__
+	},
+	{ NULL, NULL }
+};
 
 static PyMemberDef CompressionParameters_members[] = {
 	{ "window_log", T_UINT,
@@ -206,7 +228,7 @@ PyTypeObject CompressionParametersType = {
 	0,                         /* tp_weaklistoffset */
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
-	0,                         /* tp_methods */
+	CompressionParameters_methods, /* tp_methods */
 	CompressionParameters_members, /* tp_members */
 	0,                         /* tp_getset */
 	0,                         /* tp_base */

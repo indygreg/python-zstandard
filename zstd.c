@@ -69,6 +69,7 @@ PyDoc_STRVAR(train_cover_dictionary__doc__,
 static char zstd_doc[] = "Interface to zstandard";
 
 static PyMethodDef zstd_methods[] = {
+	/* TODO remove since it is a method on CompressionParameters. */
 	{ "estimate_compression_context_size", (PyCFunction)estimate_compression_context_size,
 	METH_VARARGS, estimate_compression_context_size__doc__ },
 	{ "estimate_decompression_context_size", (PyCFunction)estimate_decompression_context_size,
