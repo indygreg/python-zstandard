@@ -5,7 +5,7 @@ try:
 except ImportError:
     import unittest
 
-import zstd
+import zstandard as zstd
 
 from . common import (
     make_cffi,

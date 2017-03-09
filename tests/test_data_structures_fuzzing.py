@@ -12,7 +12,7 @@ try:
 except ImportError:
     raise unittest.SkipTest('hypothesis not available')
 
-import zstd
+import zstandard as zstd
 
 from .common import (
     make_cffi,
