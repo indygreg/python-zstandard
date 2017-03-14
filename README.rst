@@ -360,16 +360,15 @@ To see how much memory is being used by the streaming compressor::
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
 
-``read_from(reader)`` provides a mechanism to stream data out of a compressor
-as an iterator of data chunks.::
+``read_to_iter(reader)`` provides a mechanism to stream data out of a
+compressor as an iterator of data chunks.::
 
    cctx = zstd.ZstdCompressor()
-   for chunk in cctx.read_from(fh):
+   for chunk in cctx.read_to_iter(fh):
         # Do something with emitted data.
 
-``read_from()`` accepts an object that has a ``read(size)`` method or conforms
-to the buffer protocol. (``bytes`` and ``memoryview`` are 2 common types that
-provide the buffer protocol.)
+``read_to_iter()`` accepts an object that has a ``read(size)`` method or
+conforms to the buffer protocol.
 
 Uncompressed data is fetched from the source either by calling ``read(size)``
 or by fetching a slice of data from the object directly (in the case where
@@ -380,23 +379,24 @@ If reading from the source via ``read()``, ``read()`` will be called until
 it raises or returns an empty bytes (``b''``). It is perfectly valid for
 the source to deliver fewer bytes than were what requested by ``read(size)``.
 
-Like ``write_to()``, ``read_from()`` also accepts a ``size`` argument
+Like ``write_to()``, ``read_to_iter()`` also accepts a ``size`` argument
 declaring the size of the input stream::
 
     cctx = zstd.ZstdCompressor()
-    for chunk in cctx.read_from(fh, size=some_int):
+    for chunk in cctx.read_to_iter(fh, size=some_int):
         pass
 
 You can also control the size that data is ``read()`` from the source and
 the ideal size of output chunks::
 
     cctx = zstd.ZstdCompressor()
-    for chunk in cctx.read_from(fh, read_size=16384, write_size=8192):
+    for chunk in cctx.read_to_iter(fh, read_size=16384, write_size=8192):
         pass
 
-Unlike ``write_to()``, ``read_from()`` does not give direct control over the
-sizes of chunks fed into the compressor. Instead, chunk sizes will be whatever
-the object being read from delivers. These will often be of a uniform size.
+Unlike ``write_to()``, ``read_to_iter()`` does not give direct control
+over the sizes of chunks fed into the compressor. Instead, chunk sizes will
+be whatever the object being read from delivers. These will often be of a
+uniform size.
 
 Stream Copying API
 ^^^^^^^^^^^^^^^^^^

@@ -10,10 +10,15 @@ Backwards Compatibility Notes
 
 * The primary module is now ``zstandard``. Please change imports of ``zstd``
   and ``zstd_cffi`` to ``import zstandard``. See the README for more.
+* ``ZstdCompressor.read_from()`` has been renamed to
+  ``ZstdCompressor.read_to_iter()``. ``read_from()`` is aliases to the new
+  name and will be deleted in a future release.
 
 Changes
 -------
 
+* Renamed ``ZstdCompressor.read_from()`` to ``ZstdCompressor.read_to_iter()``.
+  ``read_from()`` is still available at its old location.
 * Introduce the ``zstandard`` module to import and re-export the C or CFFI
   *backend* as appropriate. Behavior can be controlled via the
   ``PYTHON_ZSTANDARD_IMPORT_POLICY`` environment variable. See README for

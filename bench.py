@@ -143,19 +143,19 @@ def compress_write_to_size(chunks, opts):
             compressor.write(chunk)
 
 
-@bench('discrete', 'read_from()')
-def compress_read_from(chunks, opts):
+@bench('discrete', 'read_to_iter()')
+def compress_read_to_iter(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
-        for d in zctx.read_from(bio(chunk)):
+        for d in zctx.read_to_iter(bio(chunk)):
             pass
 
 
-@bench('discrete', 'read_from() w/ input size')
-def compress_read_from_size(chunks, opts):
+@bench('discrete', 'read_to_iter() w/ input size')
+def compress_read_to_iter_size(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
-        for d in zctx.read_from(bio(chunk), size=len(chunk)):
+        for d in zctx.read_to_iter(bio(chunk), size=len(chunk)):
             pass
 
 
@@ -243,24 +243,24 @@ def compress_content_dict_write_to_size(chunks, opts):
     compress_content_dict_write_to(chunks, opts, use_size=True)
 
 
-@bench('content-dict', 'read_from()')
-def compress_content_dict_read_from(chunks, opts, use_size=False):
+@bench('content-dict', 'read_to_iter()')
+def compress_content_dict_read_to_iter(chunks, opts, use_size=False):
     zctx = zstd.ZstdCompressor(**opts)
     size = len(chunks[0]) if use_size else 0
-    for o in zctx.read_from(bio(chunks[0]), size=size):
+    for o in zctx.read_to_iter(bio(chunks[0]), size=size):
         pass
 
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
         zctx = zstd.ZstdCompressor(dict_data=d, **opts)
         size = len(chunk) if use_size else 0
-        for o in zctx.read_from(bio(chunk), size=size):
+        for o in zctx.read_to_iter(bio(chunk), size=size):
             pass
 
 
-@bench('content-dict', 'read_from() w/ input size')
-def compress_content_dict_read_from_size(chunks, opts):
-    compress_content_dict_read_from(chunks, opts, use_size=True)
+@bench('content-dict', 'read_to_iter() w/ input size')
+def compress_content_dict_read_to_iter_size(chunks, opts):
+    compress_content_dict_read_to_iter(chunks, opts, use_size=True)
 
 
 @bench('content-dict', 'compressobj()')

@@ -86,7 +86,7 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(len(result), 999)
         self.assertEqual(result[0:4], b'\x28\xb5\x2f\xfd')
 
-        # This matches the test for read_from() below.
+        # This matches the test for read_to_iter() below.
         cctx = zstd.ZstdCompressor(level=1)
         result = cctx.compress(b'f' * zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE + b'o')
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x40\x54\x00\x00'
@@ -689,34 +689,34 @@ class TestCompressor_write_to(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_read_from(unittest.TestCase):
+class TestCompressor_read_to_iter(unittest.TestCase):
     def test_type_validation(self):
         cctx = zstd.ZstdCompressor()
 
         # Object with read() works.
-        for chunk in cctx.read_from(io.BytesIO()):
+        for chunk in cctx.read_to_iter(io.BytesIO()):
             pass
 
         # Buffer protocol works.
-        for chunk in cctx.read_from(b'foobar'):
+        for chunk in cctx.read_to_iter(b'foobar'):
             pass
 
         with self.assertRaisesRegexp(ValueError, 'must pass an object with a read'):
-            for chunk in cctx.read_from(True):
+            for chunk in cctx.read_to_iter(True):
                 pass
 
     def test_read_empty(self):
         cctx = zstd.ZstdCompressor(level=1)
 
         source = io.BytesIO()
-        it = cctx.read_from(source)
+        it = cctx.read_to_iter(source)
         chunks = list(it)
         self.assertEqual(len(chunks), 1)
         compressed = b''.join(chunks)
         self.assertEqual(compressed, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
 
         # And again with the buffer protocol.
-        it = cctx.read_from(b'')
+        it = cctx.read_to_iter(b'')
         chunks = list(it)
         self.assertEqual(len(chunks), 1)
         compressed2 = b''.join(chunks)
@@ -732,7 +732,7 @@ class TestCompressor_read_from(unittest.TestCase):
 
         # Creating an iterator should not perform any compression until
         # first read.
-        it = cctx.read_from(source, size=len(source.getvalue()))
+        it = cctx.read_to_iter(source, size=len(source.getvalue()))
         self.assertEqual(source.tell(), 0)
 
         # We should have exactly 2 output chunks.
@@ -764,7 +764,7 @@ class TestCompressor_read_from(unittest.TestCase):
         self.assertFalse(params.has_checksum)
 
         # Now check the buffer protocol.
-        it = cctx.read_from(source.getvalue())
+        it = cctx.read_to_iter(source.getvalue())
         chunks = list(it)
         self.assertEqual(len(chunks), 2)
         self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
@@ -772,7 +772,7 @@ class TestCompressor_read_from(unittest.TestCase):
     def test_read_write_size(self):
         source = OpCountingBytesIO(b'foobarfoobar')
         cctx = zstd.ZstdCompressor(level=3)
-        for chunk in cctx.read_from(source, read_size=1, write_size=1):
+        for chunk in cctx.read_to_iter(source, read_size=1, write_size=1):
             self.assertEqual(len(chunk), 1)
 
         self.assertEqual(source._read_count, len(source.getvalue()) + 1)
@@ -786,7 +786,7 @@ class TestCompressor_read_from(unittest.TestCase):
 
         cctx = zstd.ZstdCompressor(threads=2)
 
-        compressed = b''.join(cctx.read_from(source))
+        compressed = b''.join(cctx.read_to_iter(source))
         self.assertEqual(len(compressed), 295)
 
 

@@ -607,9 +607,9 @@ class ZstdCompressor(object):
 
         return ZstdCompressionWriter(self, writer, size, write_size)
 
-    def read_from(self, reader, size=0,
-                  read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
-                  write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+    def read_to_iter(self, reader, size=0,
+                     read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
+                     write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
         if hasattr(reader, 'read'):
             have_read = True
         elif hasattr(reader, '__getitem__'):
@@ -700,6 +700,9 @@ class ZstdCompressor(object):
 
             if zresult == 0:
                 break
+
+    read_from = read_to_iter
+
 
     def _ensure_cstream(self, size):
         if self._cstream:
