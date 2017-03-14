@@ -147,7 +147,7 @@ def compress_write_to_size(chunks, opts):
 def compress_read_to_iter(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
-        for d in zctx.read_to_iter(bio(chunk)):
+        for d in zctx.read_to_iter(chunk):
             pass
 
 
@@ -155,7 +155,7 @@ def compress_read_to_iter(chunks, opts):
 def compress_read_to_iter_size(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
-        for d in zctx.read_to_iter(bio(chunk), size=len(chunk)):
+        for d in zctx.read_to_iter(chunk, size=len(chunk)):
             pass
 
 
@@ -247,14 +247,14 @@ def compress_content_dict_write_to_size(chunks, opts):
 def compress_content_dict_read_to_iter(chunks, opts, use_size=False):
     zctx = zstd.ZstdCompressor(**opts)
     size = len(chunks[0]) if use_size else 0
-    for o in zctx.read_to_iter(bio(chunks[0]), size=size):
+    for o in zctx.read_to_iter(chunks[0], size=size):
         pass
 
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
         zctx = zstd.ZstdCompressor(dict_data=d, **opts)
         size = len(chunk) if use_size else 0
-        for o in zctx.read_to_iter(bio(chunk), size=size):
+        for o in zctx.read_to_iter(chunk, size=size):
             pass
 
 
@@ -352,7 +352,7 @@ def decompress_write_to(chunks, opts):
 def decompress_read_to_iter(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
-        for d in zctx.read_to_iter(bio(chunk)):
+        for d in zctx.read_to_iter(chunk):
             pass
 
 
@@ -419,12 +419,12 @@ def decompress_content_dict_write_to(chunks, opts):
 @bench('content-dict', 'read_to_iter()')
 def decompress_content_dict_read_to_iter(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
-    last = b''.join(zctx.read_to_iter(bio(chunks[0])))
+    last = b''.join(zctx.read_to_iter(chunks[0]))
 
     for chunk in chunks[1:]:
         d = zstd.ZstdCompressionDict(last)
         zctx = zstd.ZstdDecompressor(dict_data=d, **opts)
-        last = b''.join(zctx.read_to_iter(bio(chunk)))
+        last = b''.join(zctx.read_to_iter(chunk))
 
 
 @bench('content-dict', 'decompressobj()')
