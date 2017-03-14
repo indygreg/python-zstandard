@@ -1081,9 +1081,9 @@ class ZstdDecompressor(object):
         self._ensure_dstream()
         return ZstdDecompressionObj(self)
 
-    def read_from(self, reader, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
-                  write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-                  skip_bytes=0):
+    def read_to_iter(self, reader, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+                     write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+                     skip_bytes=0):
         if skip_bytes >= read_size:
             raise ValueError('skip_bytes must be smaller than read_size')
 
@@ -1158,6 +1158,8 @@ class ZstdDecompressor(object):
             continue
 
         # If we get here, input is exhausted.
+
+    read_from = read_to_iter
 
     def write_to(self, writer, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
         if not hasattr(writer, 'write'):

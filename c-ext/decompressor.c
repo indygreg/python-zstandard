@@ -417,8 +417,8 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) 
 	return result;
 }
 
-PyDoc_STRVAR(Decompressor_read_from__doc__,
-"read_from(reader[, read_size=default, write_size=default, skip_bytes=0])\n"
+PyDoc_STRVAR(Decompressor_read_to_iter__doc__,
+"read_to_iter(reader[, read_size=default, write_size=default, skip_bytes=0])\n"
 "Read compressed data and return an iterator\n"
 "\n"
 "Returns an iterator of decompressed data chunks produced from reading from\n"
@@ -437,7 +437,7 @@ PyDoc_STRVAR(Decompressor_read_from__doc__,
 "the source.\n"
 );
 
-static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdDecompressorIterator* Decompressor_read_to_iter(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"reader",
 		"read_size",
@@ -452,7 +452,7 @@ static ZstdDecompressorIterator* Decompressor_read_from(ZstdDecompressor* self, 
 	ZstdDecompressorIterator* result;
 	size_t skipBytes = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kkk:read_from", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kkk:read_to_iter", kwlist,
 		&reader, &inSize, &outSize, &skipBytes)) {
 		return NULL;
 	}
@@ -1516,8 +1516,11 @@ static PyMethodDef Decompressor_methods[] = {
 	Decompressor_decompress__doc__ },
 	{ "decompressobj", (PyCFunction)Decompressor_decompressobj, METH_NOARGS,
 	Decompressor_decompressobj__doc__ },
-	{ "read_from", (PyCFunction)Decompressor_read_from, METH_VARARGS | METH_KEYWORDS,
-	Decompressor_read_from__doc__ },
+	{ "read_to_iter", (PyCFunction)Decompressor_read_to_iter, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_read_to_iter__doc__ },
+	/* TODO Remove deprecated API */
+	{ "read_from", (PyCFunction)Decompressor_read_to_iter, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_read_to_iter__doc__ },
 	{ "write_to", (PyCFunction)Decompressor_write_to, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_write_to__doc__ },
 	{ "decompress_content_dict_chain", (PyCFunction)Decompressor_decompress_content_dict_chain,

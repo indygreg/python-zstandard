@@ -299,29 +299,29 @@ class TestDecompressor_write_to(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor_read_from(unittest.TestCase):
+class TestDecompressor_read_to_iter(unittest.TestCase):
     def test_type_validation(self):
         dctx = zstd.ZstdDecompressor()
 
         # Object with read() works.
-        dctx.read_from(io.BytesIO())
+        dctx.read_to_iter(io.BytesIO())
 
         # Buffer protocol works.
-        dctx.read_from(b'foobar')
+        dctx.read_to_iter(b'foobar')
 
         with self.assertRaisesRegexp(ValueError, 'must pass an object with a read'):
-            b''.join(dctx.read_from(True))
+            b''.join(dctx.read_to_iter(True))
 
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
 
         source = io.BytesIO()
-        it = dctx.read_from(source)
+        it = dctx.read_to_iter(source)
         # TODO this is arguably wrong. Should get an error about missing frame foo.
         with self.assertRaises(StopIteration):
             next(it)
 
-        it = dctx.read_from(b'')
+        it = dctx.read_to_iter(b'')
         with self.assertRaises(StopIteration):
             next(it)
 
@@ -329,11 +329,11 @@ class TestDecompressor_read_from(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         source = io.BytesIO(b'foobar')
-        it = dctx.read_from(source)
+        it = dctx.read_to_iter(source)
         with self.assertRaisesRegexp(zstd.ZstdError, 'Unknown frame descriptor'):
             next(it)
 
-        it = dctx.read_from(b'foobar')
+        it = dctx.read_to_iter(b'foobar')
         with self.assertRaisesRegexp(zstd.ZstdError, 'Unknown frame descriptor'):
             next(it)
 
@@ -345,7 +345,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         source.seek(0)
 
         dctx = zstd.ZstdDecompressor()
-        it = dctx.read_from(source)
+        it = dctx.read_to_iter(source)
 
         # No chunks should be emitted since there is no data.
         with self.assertRaises(StopIteration):
@@ -359,17 +359,17 @@ class TestDecompressor_read_from(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with self.assertRaisesRegexp(ValueError, 'skip_bytes must be smaller than read_size'):
-            b''.join(dctx.read_from(b'', skip_bytes=1, read_size=1))
+            b''.join(dctx.read_to_iter(b'', skip_bytes=1, read_size=1))
 
         with self.assertRaisesRegexp(ValueError, 'skip_bytes larger than first input chunk'):
-            b''.join(dctx.read_from(b'foobar', skip_bytes=10))
+            b''.join(dctx.read_to_iter(b'foobar', skip_bytes=10))
 
     def test_skip_bytes(self):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         compressed = cctx.compress(b'foobar')
 
         dctx = zstd.ZstdDecompressor()
-        output = b''.join(dctx.read_from(b'hdr' + compressed, skip_bytes=3))
+        output = b''.join(dctx.read_to_iter(b'hdr' + compressed, skip_bytes=3))
         self.assertEqual(output, b'foobar')
 
     def test_large_output(self):
@@ -383,7 +383,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         compressed.seek(0)
 
         dctx = zstd.ZstdDecompressor()
-        it = dctx.read_from(compressed)
+        it = dctx.read_to_iter(compressed)
 
         chunks = []
         chunks.append(next(it))
@@ -396,7 +396,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         self.assertEqual(decompressed, source.getvalue())
 
         # And again with buffer protocol.
-        it = dctx.read_from(compressed.getvalue())
+        it = dctx.read_to_iter(compressed.getvalue())
         chunks = []
         chunks.append(next(it))
         chunks.append(next(it))
@@ -428,7 +428,7 @@ class TestDecompressor_read_from(unittest.TestCase):
                            zstd.DECOMPRESSION_RECOMMENDED_INPUT_SIZE)
 
         dctx = zstd.ZstdDecompressor()
-        it = dctx.read_from(compressed)
+        it = dctx.read_to_iter(compressed)
 
         chunks = []
         chunks.append(next(it))
@@ -442,7 +442,7 @@ class TestDecompressor_read_from(unittest.TestCase):
         self.assertEqual(len(decompressed), input_size)
 
         # And again with buffer protocol.
-        it = dctx.read_from(compressed.getvalue())
+        it = dctx.read_to_iter(compressed.getvalue())
 
         chunks = []
         chunks.append(next(it))
@@ -475,13 +475,13 @@ class TestDecompressor_read_from(unittest.TestCase):
         self.assertEqual(simple, source.getvalue())
 
         compressed.seek(0)
-        streamed = b''.join(dctx.read_from(compressed))
+        streamed = b''.join(dctx.read_to_iter(compressed))
         self.assertEqual(streamed, source.getvalue())
 
     def test_read_write_size(self):
         source = OpCountingBytesIO(zstd.ZstdCompressor().compress(b'foobarfoobar'))
         dctx = zstd.ZstdDecompressor()
-        for chunk in dctx.read_from(source, read_size=1, write_size=1):
+        for chunk in dctx.read_to_iter(source, read_size=1, write_size=1):
             self.assertEqual(len(chunk), 1)
 
         self.assertEqual(source._read_count, len(source.getvalue()))

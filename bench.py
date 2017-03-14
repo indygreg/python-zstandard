@@ -348,11 +348,11 @@ def decompress_write_to(chunks, opts):
             decompressor.write(chunk)
 
 
-@bench('discrete', 'read_from()')
-def decompress_read_from(chunks, opts):
+@bench('discrete', 'read_to_iter()')
+def decompress_read_to_iter(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
-        for d in zctx.read_from(bio(chunk)):
+        for d in zctx.read_to_iter(bio(chunk)):
             pass
 
 
@@ -416,15 +416,15 @@ def decompress_content_dict_write_to(chunks, opts):
             last = b.getvalue()
 
 
-@bench('content-dict', 'read_from()')
-def decompress_content_dict_read_from(chunks, opts):
+@bench('content-dict', 'read_to_iter()')
+def decompress_content_dict_read_to_iter(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
-    last = b''.join(zctx.read_from(bio(chunks[0])))
+    last = b''.join(zctx.read_to_iter(bio(chunks[0])))
 
     for chunk in chunks[1:]:
         d = zstd.ZstdCompressionDict(last)
         zctx = zstd.ZstdDecompressor(dict_data=d, **opts)
-        last = b''.join(zctx.read_from(bio(chunk)))
+        last = b''.join(zctx.read_to_iter(bio(chunk)))
 
 
 @bench('content-dict', 'decompressobj()')

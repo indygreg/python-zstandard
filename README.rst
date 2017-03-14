@@ -602,42 +602,41 @@ You can see how much memory is being used by the decompressor::
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
 
-``read_from(fh)`` provides a mechanism to stream decompressed data out of a
+``read_to_iter(fh)`` provides a mechanism to stream decompressed data out of a
 compressed source as an iterator of data chunks.:: 
 
     dctx = zstd.ZstdDecompressor()
-    for chunk in dctx.read_from(fh):
+    for chunk in dctx.read_to_iter(fh):
         # Do something with original data.
 
-``read_from()`` accepts a) an object with a ``read(size)`` method that will
+``read_to_iter()`` accepts a) an object with a ``read(size)`` method that will
 return  compressed bytes b) an object conforming to the buffer protocol that
-can expose its data as a contiguous range of bytes. The ``bytes`` and
-``memoryview`` types expose this buffer protocol.
+can expose its data as a contiguous range of bytes.
 
-``read_from()`` returns an iterator whose elements are chunks of the
+``read_to_iter()`` returns an iterator whose elements are chunks of the
 decompressed data.
 
 The size of requested ``read()`` from the source can be specified::
 
     dctx = zstd.ZstdDecompressor()
-    for chunk in dctx.read_from(fh, read_size=16384):
+    for chunk in dctx.read_to_iter(fh, read_size=16384):
         pass
 
 It is also possible to skip leading bytes in the input data::
 
     dctx = zstd.ZstdDecompressor()
-    for chunk in dctx.read_from(fh, skip_bytes=1):
+    for chunk in dctx.read_to_iter(fh, skip_bytes=1):
         pass
 
 Skipping leading bytes is useful if the source data contains extra
 *header* data but you want to avoid the overhead of making a buffer copy
 or allocating a new ``memoryview`` object in order to decompress the data.
 
-Similarly to ``ZstdCompressor.read_from()``, the consumer of the iterator
+Similarly to ``ZstdCompressor.read_to_iter()``, the consumer of the iterator
 controls when data is decompressed. If the iterator isn't consumed,
 decompression is put on hold.
 
-When ``read_from()`` is passed an object conforming to the buffer protocol,
+When ``read_to_iter()`` is passed an object conforming to the buffer protocol,
 the behavior may seem similar to what occurs when the simple decompression
 API is used. However, this API works when the decompressed size is unknown.
 Furthermore, if feeding large inputs, the decompressor will work in chunks
