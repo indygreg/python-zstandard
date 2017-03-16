@@ -567,12 +567,14 @@ class CompressionReader(object):
                     self._finished_input = True
                     return
 
-                self._in_buffer.src = ffi.from_buffer(data)
-                self._in_buffer.size = len(data)
+                data_buffer = ffi.from_buffer(data)
+                self._in_buffer.src = data_buffer
+                self._in_buffer.size = len(data_buffer)
                 self._in_buffer.pos = 0
             else:
-                self._in_buffer.src = ffi.from_buffer(self._source)
-                self._in_buffer.size = len(self._source)
+                data_buffer = ffi.from_buffer(self._source)
+                self._in_buffer.src = data_buffer
+                self._in_buffer.size = len(data_buffer)
                 self._in_buffer.pos = 0
 
         result = compress_input()
@@ -1270,12 +1272,14 @@ class DecompressionReader(object):
                     self._finished_input = True
                     return
 
-                self._in_buffer.src = ffi.from_buffer(data)
-                self._in_buffer.size = len(data)
+                data_buffer = ffi.from_buffer(data)
+                self._in_buffer.src = data_buffer
+                self._in_buffer.size = len(data_buffer)
                 self._in_buffer.pos = 0
             else:
-                self._in_buffer.src = ffi.from_buffer(self._source)
-                self._in_buffer.size = len(self._source)
+                data_buffer = ffi.from_buffer(self._source)
+                self._in_buffer.src = data_buffer
+                self._in_buffer.size = len(data_buffer)
                 self._in_buffer.pos = 0
 
         get_input()
