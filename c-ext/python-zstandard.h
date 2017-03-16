@@ -12,9 +12,9 @@
 
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZDICT_STATIC_LINKING_ONLY
-#include "zstd.h"
-#include "zdict.h"
-#include "zstdmt_compress.h"
+#include <zstd.h>
+#include <zdict.h>
+#include <zstdmt_compress.h>
 
 #define PYTHON_ZSTANDARD_VERSION "0.9.0.dev0"
 

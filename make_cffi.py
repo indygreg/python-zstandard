@@ -142,11 +142,11 @@ ffi = cffi.FFI()
 # if we use the deprecated functions it shouldn't be a huge problem.
 ffi.set_source('_zstd_cffi', '''
 #define ZSTD_STATIC_LINKING_ONLY
-#include "zstd.h"
+#include <zstd.h>
 #define ZDICT_STATIC_LINKING_ONLY
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
-#include "zdict.h"
-#include "zstdmt_compress.h"
+#include <zdict.h>
+#include <zstdmt_compress.h>
 ''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
 
 DEFINE = re.compile(b'^\\#define ([a-zA-Z0-9_]+) ')
