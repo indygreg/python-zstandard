@@ -474,14 +474,7 @@ static ZstdDecompressorIterator* Decompressor_read_to_iter(ZstdDecompressor* sel
 	}
 	else if (1 == PyObject_CheckBuffer(reader)) {
 		/* Object claims it is a buffer. Try to get a handle to it. */
-		result->buffer = PyMem_Malloc(sizeof(Py_buffer));
-		if (!result->buffer) {
-			goto except;
-		}
-
-		memset(result->buffer, 0, sizeof(Py_buffer));
-
-		if (0 != PyObject_GetBuffer(reader, result->buffer, PyBUF_CONTIG_RO)) {
+		if (0 != PyObject_GetBuffer(reader, &result->buffer, PyBUF_CONTIG_RO)) {
 			goto except;
 		}
 	}

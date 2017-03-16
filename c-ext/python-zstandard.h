@@ -244,7 +244,7 @@ typedef struct {
 
 	ZstdDecompressor* decompressor;
 	PyObject* reader;
-	Py_buffer* buffer;
+	Py_buffer buffer;
 	Py_ssize_t bufferOffset;
 	size_t inSize;
 	size_t outSize;

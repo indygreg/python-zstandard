@@ -20,10 +20,9 @@ static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator* self) {
 	Py_XDECREF(self->decompressor);
 	Py_XDECREF(self->reader);
 
-	if (self->buffer) {
-		PyBuffer_Release(self->buffer);
-		PyMem_FREE(self->buffer);
-		self->buffer = NULL;
+	if (self->buffer.buf) {
+		PyBuffer_Release(&self->buffer);
+		memset(&self->buffer, 0, sizeof(self->buffer));
 	}
 
 	if (self->input.src) {
@@ -137,15 +136,15 @@ read_from_source:
 			PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
 		}
 		else {
-			assert(self->buffer && self->buffer->buf);
+			assert(self->buffer.buf);
 
 			/* Only support contiguous C arrays for now */
-			assert(self->buffer->strides == NULL && self->buffer->suboffsets == NULL);
-			assert(self->buffer->itemsize == 1);
+			assert(self->buffer.strides == NULL && self->buffer.suboffsets == NULL);
+			assert(self->buffer.itemsize == 1);
 
 			/* TODO avoid memcpy() below */
-			readBuffer = (char *)self->buffer->buf + self->bufferOffset;
-			bufferRemaining = self->buffer->len - self->bufferOffset;
+			readBuffer = (char *)self->buffer.buf + self->bufferOffset;
+			bufferRemaining = self->buffer.len - self->bufferOffset;
 			readSize = min(bufferRemaining, (Py_ssize_t)self->inSize);
 			self->bufferOffset += readSize;
 		}
