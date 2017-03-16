@@ -47,6 +47,10 @@ static ZstdDecompressionReader* reader_enter(ZstdDecompressionReader* self) {
 		return NULL;
 	}
 
+	if (0 != init_dstream(self->decompressor)) {
+		return NULL;
+	}
+
 	self->entered = 1;
 
 	Py_INCREF(self);

@@ -574,11 +574,6 @@ static ZstdDecompressionReader* Decompressor_stream_reader(ZstdDecompressor* sel
 		return NULL;
 	}
 
-	if (0 != init_dstream(self)) {
-		Py_CLEAR(result);
-		return NULL;
-	}
-
 	result->decompressor = self;
 	Py_INCREF(self);
 
