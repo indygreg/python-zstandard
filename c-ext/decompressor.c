@@ -511,13 +511,6 @@ static ZstdDecompressorIterator* Decompressor_read_to_iter(ZstdDecompressor* sel
 	goto finally;
 
 except:
-	Py_CLEAR(result->reader);
-
-	if (result->buffer) {
-		PyBuffer_Release(result->buffer);
-		result->buffer = NULL;
-	}
-
 	Py_CLEAR(result);
 
 finally:
