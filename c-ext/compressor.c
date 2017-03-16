@@ -496,18 +496,11 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		result->readSize = readSize;
 	}
 	else if (1 == PyObject_CheckBuffer(source)) {
-		result->buffer = PyMem_Malloc(sizeof(Py_buffer));
-		if (!result->buffer) {
+		if (0 != PyObject_GetBuffer(source, &result->buffer, PyBUF_CONTIG_RO)) {
 			goto except;
 		}
 
-		memset(result->buffer, 0, sizeof(Py_buffer));
-
-		if (0 != PyObject_GetBuffer(source, result->buffer, PyBUF_CONTIG_RO)) {
-			goto except;
-		}
-
-		sourceSize = result->buffer->len;
+		sourceSize = result->buffer.len;
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError,

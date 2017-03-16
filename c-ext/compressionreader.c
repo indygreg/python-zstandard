@@ -34,9 +34,9 @@ static void reader_dealloc(ZstdCompressionReader* self) {
 	Py_XDECREF(self->compressor);
 	Py_XDECREF(self->reader);
 
-	if (self->buffer) {
-		PyBuffer_Release(self->buffer);
-		PyMem_Free(self->buffer);
+	if (self->buffer.buf) {
+		PyBuffer_Release(&self->buffer);
+		memset(&self->buffer, 0, sizeof(self->buffer));
 	}
 
 	PyObject_Del(self);
@@ -79,10 +79,9 @@ static PyObject* reader_exit(ZstdCompressionReader* self, PyObject* args) {
 
 	/* Release resources associated with source. */
 	Py_CLEAR(self->reader);
-	if (self->buffer) {
-		PyBuffer_Release(self->buffer);
-		PyMem_Free(self->buffer);
-		self->buffer = NULL;
+	if (self->buffer.buf) {
+		PyBuffer_Release(&self->buffer);
+		memset(&self->buffer, 0, sizeof(self->buffer));
 	}
 
     Py_CLEAR(self->compressor);
@@ -215,7 +214,7 @@ readinput:
 			memset(&self->input, 0, sizeof(self->input));
 			Py_CLEAR(self->readResult);
 
-			if (self->buffer) {
+			if (self->buffer.buf) {
 				self->finishedInput = 1;
 			}
 		}
@@ -272,10 +271,10 @@ readinput:
 			PyBuffer_Release(&buffer);
 		}
 		else {
-			assert(self->buffer && self->buffer->buf);
+			assert(self->buffer.buf);
 
-			self->input.src = self->buffer->buf;
-			self->input.size = self->buffer->len;
+			self->input.src = self->buffer.buf;
+			self->input.size = self->buffer.len;
 			self->input.pos = 0;
 		}
 	}
