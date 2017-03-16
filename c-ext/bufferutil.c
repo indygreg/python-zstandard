@@ -123,7 +123,7 @@ except:
 	PyBuffer_Release(&self->parent);
 	PyBuffer_Release(&segments);
 	return -1;
-};
+}
 
 /**
  * Construct a BufferWithSegments from existing memory and offsets.
