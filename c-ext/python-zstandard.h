@@ -12,7 +12,6 @@
 
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZDICT_STATIC_LINKING_ONLY
-#include "mem.h"
 #include "zstd.h"
 #include "zdict.h"
 #include "zstdmt_compress.h"
