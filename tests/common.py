@@ -4,6 +4,11 @@ import io
 import os
 import types
 
+try:
+    import hypothesis
+except ImportError:
+    hypothesis = None
+
 
 def make_cffi(cls):
     """Decorator to add CFFI versions of each test method."""
@@ -113,3 +118,15 @@ def random_input_data():
                 pass
 
     return _source_files
+
+
+if hypothesis:
+    default_settings = hypothesis.settings()
+    hypothesis.settings.register_profile('default', default_settings)
+
+    ci_settings = hypothesis.settings(max_examples=2500,
+                                      max_iterations=2500)
+    hypothesis.settings.register_profile('ci', ci_settings)
+
+    hypothesis.settings.load_profile(
+        os.environ.get('HYPOTHESIS_PROFILE', 'default'))
