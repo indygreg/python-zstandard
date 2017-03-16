@@ -515,7 +515,7 @@ except:
 
 	if (result->buffer) {
 		PyBuffer_Release(result->buffer);
-		Py_CLEAR(result->buffer);
+		result->buffer = NULL;
 	}
 
 	Py_CLEAR(result);
