@@ -437,7 +437,6 @@ class CompressionReader(object):
         self._mtcctx = compressor._cctx if compressor._multithreaded else None
 
         self._in_buffer = ffi.new('ZSTD_inBuffer *')
-        self._out_buffer = ffi.new('ZSTD_outBuffer *')
 
     def __enter__(self):
         if self._entered:
@@ -520,26 +519,27 @@ class CompressionReader(object):
         if size < 1:
             raise ValueError('cannot read negative or size 0 amounts')
 
-        self._out_buffer.dst = ffi.new('char[]', size)
-        self._out_buffer.size = size
-        self._out_buffer.pos = 0
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = ffi.new('char[]', size)
+        out_buffer.size = size
+        out_buffer.pos = 0
 
         def compress_input():
             if self._in_buffer.pos >= self._in_buffer.size:
                 return
 
-            old_pos = self._out_buffer.pos
+            old_pos = out_buffer.pos
 
             if self._mtcctx:
                 zresult = lib.ZSTDMT_compressStream(self._mtcctx,
-                                                    self._out_buffer,
+                                                    out_buffer,
                                                     self._in_buffer)
             else:
                 zresult = lib.ZSTD_compressStream(self._compressor._cstream,
-                                                  self._out_buffer,
+                                                  out_buffer,
                                                   self._in_buffer)
 
-            self._bytes_compressed += self._out_buffer.pos - old_pos
+            self._bytes_compressed += out_buffer.pos - old_pos
 
             if self._in_buffer.pos == self._in_buffer.size:
                 self._in_buffer.src = ffi.NULL
@@ -553,12 +553,8 @@ class CompressionReader(object):
                 raise ZstdError('zstd compress error: %s',
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
 
-            if self._out_buffer.pos and self._out_buffer.pos == self._out_buffer.size:
-                result = ffi.buffer(self._out_buffer.dst, self._out_buffer.pos)[:]
-                self._out_buffer.dst = ffi.NULL
-                self._out_buffer.pos = 0
-                self._out_buffer.size = 0
-                return result
+            if out_buffer.pos and out_buffer.pos == out_buffer.size:
+                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         def get_input():
             if self._finished_input:
@@ -590,15 +586,15 @@ class CompressionReader(object):
                 return result
 
         # EOF
-        old_pos = self._out_buffer.pos
+        old_pos = out_buffer.pos
 
         if self._mtcctx:
-            zresult = lib.ZSTDMT_endStream(self._mtcctx, self._out_buffer)
+            zresult = lib.ZSTDMT_endStream(self._mtcctx, out_buffer)
         else:
             zresult = lib.ZSTD_endStream(self._compressor._cstream,
-                                         self._out_buffer)
+                                         out_buffer)
 
-        self._bytes_compressed += self._out_buffer.pos - old_pos
+        self._bytes_compressed += out_buffer.pos - old_pos
 
         if lib.ZSTD_isError(zresult):
             raise ZstdError('error ending compression stream: %s',
@@ -607,7 +603,7 @@ class CompressionReader(object):
         if zresult == 0:
             self._finished_output = True
 
-        return ffi.buffer(self._out_buffer.dst, self._out_buffer.pos)[:]
+        return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
 
 class ZstdCompressor(object):
