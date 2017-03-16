@@ -31,9 +31,9 @@ def make_cffi(cls):
 
     old_env = dict(os.environ)
     os.environ['PYTHON_ZSTANDARD_IMPORT_POLICY'] = 'cffi'
-    mod_info = imp.find_module('zstandard')
     try:
         try:
+            mod_info = imp.find_module('zstandard')
             mod = imp.load_module('zstandard_cffi', *mod_info)
         except ImportError:
             return cls
