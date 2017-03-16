@@ -765,18 +765,11 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 		Py_INCREF(result->reader);
 	}
 	else if (1 == PyObject_CheckBuffer(reader)) {
-		result->buffer = PyMem_Malloc(sizeof(Py_buffer));
-		if (!result->buffer) {
+		if (0 != PyObject_GetBuffer(reader, &result->buffer, PyBUF_CONTIG_RO)) {
 			goto except;
 		}
 
-		memset(result->buffer, 0, sizeof(Py_buffer));
-
-		if (0 != PyObject_GetBuffer(reader, result->buffer, PyBUF_CONTIG_RO)) {
-			goto except;
-		}
-
-		sourceSize = result->buffer->len;
+		sourceSize = result->buffer.len;
 	}
 	else {
 		PyErr_SetString(PyExc_ValueError,
