@@ -187,6 +187,162 @@ class TestDecompressor_copy_stream(unittest.TestCase):
 
 
 @make_cffi
+class TestDecompressor_stream_reader(unittest.TestCase):
+    def test_context_manager(self):
+        dctx = zstd.ZstdDecompressor()
+
+        reader = dctx.stream_reader(b'foo')
+        with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
+            reader.read(1)
+
+        with dctx.stream_reader(b'foo') as reader:
+            with self.assertRaisesRegexp(ValueError, 'cannot __enter__ multiple times'):
+                with reader as reader2:
+                    pass
+
+    def test_not_implemented(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(b'foo') as reader:
+            with self.assertRaises(NotImplementedError):
+                reader.readline()
+
+            with self.assertRaises(NotImplementedError):
+                reader.readlines()
+
+            with self.assertRaises(NotImplementedError):
+                reader.readall()
+
+            with self.assertRaises(NotImplementedError):
+                iter(reader)
+
+            with self.assertRaises(NotImplementedError):
+                next(reader)
+
+            with self.assertRaises(io.UnsupportedOperation):
+                reader.write(b'foo')
+
+            with self.assertRaises(io.UnsupportedOperation):
+                reader.writelines([])
+
+    def test_constant_methods(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(b'foo') as reader:
+            self.assertTrue(reader.readable())
+            self.assertFalse(reader.writable())
+            self.assertFalse(reader.seekable())
+            self.assertFalse(reader.isatty())
+            self.assertIsNone(reader.flush())
+
+    def test_read_closed(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(b'foo') as reader:
+            reader.close()
+            with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+                reader.read(1)
+
+    def test_bad_read_size(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(b'foo') as reader:
+            with self.assertRaisesRegexp(ValueError, 'cannot read negative or size 0 amounts'):
+                reader.read(-1)
+
+            with self.assertRaisesRegexp(ValueError, 'cannot read negative or size 0 amounts'):
+                reader.read(0)
+
+    def test_read_buffer(self):
+        cctx = zstd.ZstdCompressor()
+
+        source = b''.join([b'foo' * 60, b'bar' * 60, b'baz' * 60])
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(frame) as reader:
+            self.assertEqual(reader.tell(), 0)
+
+            # We should get entire frame in one read.
+            result = reader.read(8192)
+            self.assertEqual(result, source)
+            self.assertEqual(reader.tell(), len(source))
+
+            # Read after EOF should return empty bytes.
+            self.assertEqual(reader.read(), b'')
+            self.assertEqual(reader.tell(), len(result))
+
+        self.assertTrue(reader.closed())
+
+    def test_read_buffer_small_chunks(self):
+        cctx = zstd.ZstdCompressor()
+        source = b''.join([b'foo' * 60, b'bar' * 60, b'baz' * 60])
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+        chunks = []
+
+        with dctx.stream_reader(frame, read_size=1) as reader:
+            while True:
+                chunk = reader.read(1)
+                if not chunk:
+                    break
+
+                chunks.append(chunk)
+                self.assertEqual(reader.tell(), sum(map(len, chunks)))
+
+        self.assertEqual(b''.join(chunks), source)
+
+    def test_read_stream(self):
+        cctx = zstd.ZstdCompressor()
+        source = b''.join([b'foo' * 60, b'bar' * 60, b'baz' * 60])
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+        with dctx.stream_reader(io.BytesIO(frame)) as reader:
+            self.assertEqual(reader.tell(), 0)
+
+            chunk = reader.read(8192)
+            self.assertEqual(chunk, source)
+            self.assertEqual(reader.tell(), len(source))
+            self.assertEqual(reader.read(), b'')
+            self.assertEqual(reader.tell(), len(source))
+
+    def test_read_stream_small_chunks(self):
+        cctx = zstd.ZstdCompressor()
+        source = b''.join([b'foo' * 60, b'bar' * 60, b'baz' * 60])
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+        chunks = []
+
+        with dctx.stream_reader(io.BytesIO(frame), read_size=1) as reader:
+            while True:
+                chunk = reader.read(1)
+                if not chunk:
+                    break
+
+                chunks.append(chunk)
+                self.assertEqual(reader.tell(), sum(map(len, chunks)))
+
+        self.assertEqual(b''.join(chunks), source)
+
+    def test_read_after_exit(self):
+        cctx = zstd.ZstdCompressor()
+        frame = cctx.compress(b'foo' * 60)
+
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(frame) as reader:
+            while reader.read(16):
+                pass
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
+            reader.read(10)
+
+
+@make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):
     def test_simple(self):
         data = zstd.ZstdCompressor(level=1).compress(b'foobar')

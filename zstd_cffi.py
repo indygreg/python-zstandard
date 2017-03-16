@@ -1148,6 +1148,155 @@ class ZstdDecompressionObj(object):
         return b''.join(chunks)
 
 
+class DecompressionReader(object):
+    def __init__(self, decompressor, source, read_size):
+        self._decompressor = decompressor
+        self._source = source
+        self._read_size = read_size
+        self._entered = False
+        self._closed = False
+        self._bytes_decompressed = 0
+        self._finished_input = False
+        self._finished_output = False
+        self._in_buffer = ffi.new('ZSTD_inBuffer *')
+
+    def __enter__(self):
+        if self._entered:
+            raise ValueError('cannot __enter__ multiple times')
+
+        self._entered = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._entered = False
+        self._closed = True
+        self._source = None
+        self._compressor = None
+
+        return False
+
+    def readable(self):
+        return True
+
+    def writable(self):
+        return False
+
+    def seekable(self):
+        return False
+
+    def readline(self):
+        raise NotImplementedError()
+
+    def readlines(self):
+        raise NotImplementedError()
+
+    def write(self, data):
+        raise io.UnsupportedOperation()
+
+    def writelines(self, lines):
+        raise io.UnsupportedOperation()
+
+    def isatty(self):
+        return False
+
+    def flush(self):
+        return None
+
+    def close(self):
+        self._closed = True
+        return None
+
+    def closed(self):
+        return self._closed
+
+    def tell(self):
+        return self._bytes_decompressed
+
+    def readall(self):
+        raise NotImplementedError()
+
+    def __iter__(self):
+        raise NotImplementedError()
+
+    def __next__(self):
+        raise NotImplementedError()
+
+    next = __next__
+
+    def read(self, size=-1):
+        if not self._entered:
+            raise ZstdError('read() must be called from an active context manager')
+
+        if self._closed:
+            raise ValueError('stream is closed')
+
+        if self._finished_output:
+            return b''
+
+        if size < 1:
+            raise ValueError('cannot read negative or size 0 amounts')
+
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = ffi.new('char[]', size)
+        out_buffer.size = size
+        out_buffer.pos = 0
+
+        def decompress():
+            zresult = lib.ZSTD_decompressStream(self._decompressor._dstream,
+                                                out_buffer, self._in_buffer)
+
+            if self._in_buffer.pos == self._in_buffer.size:
+                self._in_buffer.src = ffi.NULL
+                self._in_buffer.pos = 0
+                self._in_buffer.size = 0
+
+                if not hasattr(self._source, 'read'):
+                    self._finished_input = True
+
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('zstd decompress error: %s',
+                                ffi.string(lib.ZSTD_getErrorName(zresult)))
+            elif zresult == 0:
+                self._finished_output = True
+
+            if out_buffer.pos and out_buffer.pos == out_buffer.size:
+                self._bytes_decompressed += out_buffer.size
+                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
+        def get_input():
+            if self._finished_input:
+                return
+
+            if hasattr(self._source, 'read'):
+                data = self._source.read(self._read_size)
+
+                if not data:
+                    self._finished_input = True
+                    return
+
+                self._in_buffer.src = ffi.from_buffer(data)
+                self._in_buffer.size = len(data)
+                self._in_buffer.pos = 0
+            else:
+                self._in_buffer.src = ffi.from_buffer(self._source)
+                self._in_buffer.size = len(self._source)
+                self._in_buffer.pos = 0
+
+        get_input()
+        result = decompress()
+        if result:
+            return result
+
+        while not self._finished_input:
+            get_input()
+            result = decompress()
+            if result:
+                return result
+
+        self._bytes_decompressed += out_buffer.pos
+        return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
+
 class ZstdDecompressionWriter(object):
     def __init__(self, decompressor, writer, write_size):
         self._decompressor = decompressor
@@ -1273,6 +1422,10 @@ class ZstdDecompressor(object):
                             (zresult, output_size))
 
         return ffi.buffer(result_buffer, zresult)[:]
+
+    def stream_reader(self, source, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE):
+        self._ensure_dstream()
+        return DecompressionReader(self, source, read_size)
 
     def decompressobj(self):
         self._ensure_dstream()

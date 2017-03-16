@@ -617,6 +617,42 @@ result in a lot of work for the memory allocator and may result in
 If the exact size of decompressed data is unknown, it is **strongly**
 recommended to use a streaming API.
 
+Stream Reader API
+^^^^^^^^^^^^^^^^^
+
+``stream_reader(source)`` can be used to obtain an object conforming to the
+``io.RawIOBase`` interface for reading decompressed output as a stream::
+
+   with open(path, 'rb') as fh:
+       dctx = zstd.ZstdDecpmpressor()
+       with dctx.stream_reader(fh) as reader:
+           while True:
+               chunk = reader.read(16384)
+               if not chunk:
+                   break
+
+               # Do something with decompressed chunk.
+
+The stream can only be read within a context manager. When the context
+manager exits, the stream is closed and the underlying resource is
+released and future operations against the stream will fail.
+
+The ``source`` argument to ``stream_reader()`` can be any object with a
+``read(size)`` method or any object implementing the *buffer protocol*.
+
+If the ``source`` is a stream, you can specify how large ``read()`` requests
+to that stream should be via the ``read_size`` argument. It defaults to
+``zstandard.DECOMPRESSION_RECOMMENDED_INPUT_SIZE``.::
+
+   with open(path, 'rb') as fh:
+       dctx = zstd.ZstdDecompressor()
+	   # Will perform fh.read(8192) when obtaining data for the decompressor.
+	   with dctx.stream_reader(fh, read_size=8192) as reader:
+	       ...
+
+The stream returned by ``stream_reader()`` is neither writable nor seekable
+``tell()`` returns the number of decompressed bytes emitted so far.
+
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 

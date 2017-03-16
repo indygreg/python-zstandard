@@ -198,6 +198,40 @@ extern PyTypeObject ZstdDecompressionObjType;
 typedef struct {
 	PyObject_HEAD
 
+	/* Parent decompressor to which this object is associated. */
+	ZstdDecompressor* decompressor;
+	/* Object to read() from (if reading from a stream). */
+	PyObject* reader;
+	/* Size for read() operations on reader. */
+	size_t readSize;
+	/* Buffer to read from (if reading from a buffer). */
+	Py_buffer buffer;
+
+	/* Whether the context manager is active. */
+	int entered;
+	/* Whether we've closed the stream. */
+	int closed;
+
+	/* Number of bytes decompressed and returned to user. */
+	unsigned long long bytesDecompressed;
+
+	/* Tracks data going into decompressor. */
+	ZSTD_inBuffer input;
+
+	/* Holds output from read() operation on reader. */
+	PyObject* readResult;
+
+	/* Whether all input has been sent to the decompressor. */
+	int finishedInput;
+	/* Whether all output has been flushed from the decompressor. */
+	int finishedOutput;
+} ZstdDecompressionReader;
+
+extern PyTypeObject ZstdDecompressionReaderType;
+
+typedef struct {
+	PyObject_HEAD
+
 	ZstdDecompressor* decompressor;
 	PyObject* writer;
 	size_t outSize;

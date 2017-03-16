@@ -96,6 +96,7 @@ void compressionwriter_module_init(PyObject* mod);
 void compressoriterator_module_init(PyObject* mod);
 void decompressor_module_init(PyObject* mod);
 void decompressobj_module_init(PyObject* mod);
+void decompressionreader_module_init(PyObject *mod);
 void decompressionwriter_module_init(PyObject* mod);
 void decompressoriterator_module_init(PyObject* mod);
 void frameparams_module_init(PyObject* mod);
@@ -132,6 +133,7 @@ void zstd_module_init(PyObject* m) {
 	constants_module_init(m);
 	decompressor_module_init(m);
 	decompressobj_module_init(m);
+	decompressionreader_module_init(m);
 	decompressionwriter_module_init(m);
 	decompressoriterator_module_init(m);
 	frameparams_module_init(m);

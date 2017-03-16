@@ -349,6 +349,15 @@ def decompress_multi_decompress_to_buffer_list(chunks, opts, threads):
     zctx.multi_decompress_to_buffer(chunks, threads=threads)
 
 
+@bench('discrete', 'stream_reader()')
+def decompress_stream_reader(chunks, opts):
+    zctx = zstd.ZstdDecompressor(**opts)
+    for chunk in chunks:
+        with zctx.stream_reader(chunk) as reader:
+            while reader.read(16384):
+                pass
+
+
 @bench('discrete', 'write_to()')
 def decompress_write_to(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)

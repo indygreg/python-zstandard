@@ -525,6 +525,66 @@ finally:
 	return result;
 }
 
+PyDoc_STRVAR(Decompressor_stream_reader__doc__,
+"stream_reader(source, [read_size=default])\n"
+"\n"
+"Obtain an object that behaves like an I/O stream that can be used for\n"
+"reading decompressed output from an object.\n"
+"\n"
+"The source object can be any object with a ``read(size)`` method or that\n"
+"conforms to the buffer protocol.\n"
+);
+
+static ZstdDecompressionReader* Decompressor_stream_reader(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"source",
+		"read_size",
+		NULL
+	};
+
+	PyObject* source;
+	size_t readSize = ZSTD_DStreamInSize();
+	ZstdDecompressionReader* result;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k:stream_reader", kwlist,
+		&source, &readSize)) {
+		return NULL;
+	}
+
+	result = (ZstdDecompressionReader*)PyObject_CallObject((PyObject*)&ZstdDecompressionReaderType, NULL);
+	if (NULL == result) {
+		return NULL;
+	}
+
+	if (PyObject_HasAttrString(source, "read")) {
+		result->reader = source;
+		Py_INCREF(source);
+		result->readSize = readSize;
+	}
+	else if (1 == PyObject_CheckBuffer(source)) {
+		if (0 != PyObject_GetBuffer(source, &result->buffer, PyBUF_CONTIG_RO)) {
+			Py_CLEAR(result);
+			return NULL;
+		}
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+			"must pass an object with a read() method or that conforms to the buffer protocol");
+		Py_CLEAR(result);
+		return NULL;
+	}
+
+	if (0 != init_dstream(self)) {
+		Py_CLEAR(result);
+		return NULL;
+	}
+
+	result->decompressor = self;
+	Py_INCREF(self);
+
+	return result;
+}
+
 PyDoc_STRVAR(Decompressor_write_to__doc__,
 "Create a context manager to write decompressed data to an object.\n"
 "\n"
@@ -1521,6 +1581,8 @@ static PyMethodDef Decompressor_methods[] = {
 	/* TODO Remove deprecated API */
 	{ "read_from", (PyCFunction)Decompressor_read_to_iter, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_read_to_iter__doc__ },
+	{ "stream_reader", (PyCFunction)Decompressor_stream_reader,
+	METH_VARARGS | METH_KEYWORDS, Decompressor_stream_reader__doc__ },
 	{ "write_to", (PyCFunction)Decompressor_write_to, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_write_to__doc__ },
 	{ "decompress_content_dict_chain", (PyCFunction)Decompressor_decompress_content_dict_chain,
