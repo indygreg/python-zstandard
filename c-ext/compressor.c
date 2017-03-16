@@ -799,10 +799,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 	goto finally;
 
 except:
-	Py_XDECREF(result->compressor);
-	Py_XDECREF(result->reader);
-	Py_DECREF(result);
-	result = NULL;
+	Py_CLEAR(result);
 
 finally:
 	return result;
