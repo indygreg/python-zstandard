@@ -10,4 +10,5 @@ syntax: glob
 build
 dist
 venv
+venv3
 zstandard.egg-info
