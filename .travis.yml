@@ -18,6 +18,10 @@ matrix:
     - python: 3.5
       env: CONDA=1
 
+env:
+  global:
+    - HYPOTHESIS_PROFILE=ci
+
 install:
   - source ci/travis-install.sh
 
