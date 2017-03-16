@@ -106,7 +106,8 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 		return -1;
 	}
 
-	if (strategy < ZSTD_fast || strategy > ZSTD_btopt) {
+    /* ZSTD_fast is 0 and compiler may complain about `< 0` check with unsigned. */
+	if ((int)strategy < ZSTD_fast || strategy > ZSTD_btopt) {
 		PyErr_SetString(PyExc_ValueError, "invalid strategy value");
 		return -1;
 	}
