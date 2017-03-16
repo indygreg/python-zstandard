@@ -17,13 +17,16 @@ import setup_zstd
 
 SUPPORT_LEGACY = False
 
-if "--legacy" in sys.argv:
+if '--legacy' in sys.argv:
     SUPPORT_LEGACY = True
-    sys.argv.remove("--legacy")
+    sys.argv.remove('--legacy')
 
 # Code for obtaining the Extension instance is in its own module to
 # facilitate reuse in other projects.
-extensions = [setup_zstd.get_c_extension(SUPPORT_LEGACY, 'zstd')]
+extensions = [
+    setup_zstd.get_c_extension(name='zstd',
+                               support_legacy=SUPPORT_LEGACY),
+]
 
 install_requires = []
 
