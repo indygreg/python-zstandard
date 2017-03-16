@@ -17,6 +17,8 @@ Backwards Compatibility Notes
 Changes
 -------
 
+* New ``ZstdCompressor.stream_reader()`` API to obtain a read-only i/o stream of
+  compressed data for a source.
 * Renamed ``ZstdDecompressor.read_from()`` to ``ZstdDecompressor.read_to_iter()``.
   The old name is still available.
 * Renamed ``ZstdCompressor.read_from()`` to ``ZstdCompressor.read_to_iter()``.

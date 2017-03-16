@@ -60,6 +60,7 @@ __all__ = [
     'STRATEGY_BTOPT',
 ]
 
+import io
 import os
 import sys
 
@@ -422,6 +423,193 @@ class ZstdCompressionObj(object):
         return b''.join(chunks)
 
 
+class CompressionReader(object):
+    def __init__(self, compressor, source, size, read_size):
+        self._compressor = compressor
+        self._source = source
+        self._source_size = size
+        self._read_size = read_size
+        self._entered = False
+        self._closed = False
+        self._bytes_compressed = 0
+        self._finished_input = False
+        self._finished_output = False
+        self._mtcctx = compressor._cctx if compressor._multithreaded else None
+
+        self._in_buffer = ffi.new('ZSTD_inBuffer *')
+        self._out_buffer = ffi.new('ZSTD_outBuffer *')
+
+    def __enter__(self):
+        if self._entered:
+            raise ValueError('cannot __enter__ multiple times')
+
+        if self._mtcctx:
+            self._compressor._init_mtcstream(self._source_size)
+        else:
+            self._compressor._ensure_cstream(self._source_size)
+
+        self._entered = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._entered = False
+        self._closed = True
+        self._source = None
+        self._compressor = None
+
+        return False
+
+    def readable(self):
+        return True
+
+    def writable(self):
+        return False
+
+    def seekable(self):
+        return False
+
+    def readline(self):
+        raise io.UnsupportedOperation()
+
+    def readlines(self):
+        raise io.UnsupportedOperation()
+
+    def write(self, data):
+        raise OSError('stream is not writable')
+
+    def writelines(self, ignored):
+        raise OSError('stream is not writable')
+
+    def isatty(self):
+        return False
+
+    def flush(self):
+        return None
+
+    def close(self):
+        self._closed = True
+        return None
+
+    def closed(self):
+        return self._closed
+
+    def tell(self):
+        return self._bytes_compressed
+
+    def readall(self):
+        raise NotImplementedError()
+
+    def __iter__(self):
+        raise io.UnsupportedOperation()
+
+    def __next__(self):
+        raise io.UnsupportedOperation()
+
+    next = __next__
+
+    def read(self, size=-1):
+        if not self._entered:
+            raise ZstdError('read() must be called from an active context manager')
+
+        if self._closed:
+            raise ValueError('stream is closed')
+
+        if self._finished_output:
+            return b''
+
+        if size < 1:
+            raise ValueError('cannot read negative or size 0 amounts')
+
+        self._out_buffer.dst = ffi.new('char[]', size)
+        self._out_buffer.size = size
+        self._out_buffer.pos = 0
+
+        def compress_input():
+            if self._in_buffer.pos >= self._in_buffer.size:
+                return
+
+            old_pos = self._out_buffer.pos
+
+            if self._mtcctx:
+                zresult = lib.ZSTDMT_compressStream(self._mtcctx,
+                                                    self._out_buffer,
+                                                    self._in_buffer)
+            else:
+                zresult = lib.ZSTD_compressStream(self._compressor._cstream,
+                                                  self._out_buffer,
+                                                  self._in_buffer)
+
+            self._bytes_compressed += self._out_buffer.pos - old_pos
+
+            if self._in_buffer.pos == self._in_buffer.size:
+                self._in_buffer.src = ffi.NULL
+                self._in_buffer.pos = 0
+                self._in_buffer.size = 0
+
+                if not hasattr(self._source, 'read'):
+                    self._finished_input = True
+
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('zstd compress error: %s',
+                                ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+            if self._out_buffer.pos and self._out_buffer.pos == self._out_buffer.size:
+                result = ffi.buffer(self._out_buffer.dst, self._out_buffer.pos)[:]
+                self._out_buffer.dst = ffi.NULL
+                self._out_buffer.pos = 0
+                self._out_buffer.size = 0
+                return result
+
+        def get_input():
+            if self._finished_input:
+                return
+
+            if hasattr(self._source, 'read'):
+                data = self._source.read(self._read_size)
+
+                if not data:
+                    self._finished_input = True
+                    return
+
+                self._in_buffer.src = ffi.from_buffer(data)
+                self._in_buffer.size = len(data)
+                self._in_buffer.pos = 0
+            else:
+                self._in_buffer.src = ffi.from_buffer(self._source)
+                self._in_buffer.size = len(self._source)
+                self._in_buffer.pos = 0
+
+        result = compress_input()
+        if result:
+            return result
+
+        while not self._finished_input:
+            get_input()
+            result = compress_input()
+            if result:
+                return result
+
+        # EOF
+        old_pos = self._out_buffer.pos
+
+        if self._mtcctx:
+            zresult = lib.ZSTDMT_endStream(self._mtcctx, self._out_buffer)
+        else:
+            zresult = lib.ZSTD_endStream(self._compressor._cstream,
+                                         self._out_buffer)
+
+        self._bytes_compressed += self._out_buffer.pos - old_pos
+
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('error ending compression stream: %s',
+                            ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+        if zresult == 0:
+            self._finished_output = True
+
+        return ffi.buffer(self._out_buffer.dst, self._out_buffer.pos)[:]
+
+
 class ZstdCompressor(object):
     def __init__(self, level=3, dict_data=None, compression_params=None,
                  write_checksum=False, write_content_size=False,
@@ -599,6 +787,16 @@ class ZstdCompressor(object):
 
         return total_read, total_write
 
+    def stream_reader(self, source, size=0,
+                      read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE):
+
+        try:
+            size = len(source)
+        except Exception:
+            pass
+
+        return CompressionReader(self, source, size, read_size)
+
     def write_to(self, writer, size=0,
                  write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
 
@@ -702,7 +900,6 @@ class ZstdCompressor(object):
                 break
 
     read_from = read_to_iter
-
 
     def _ensure_cstream(self, size):
         if self._cstream:

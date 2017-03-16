@@ -155,6 +155,28 @@ extern PyTypeObject ZstdCompressorIteratorType;
 typedef struct {
 	PyObject_HEAD
 
+	ZstdCompressor* compressor;
+	PyObject* reader;
+	Py_buffer* buffer;
+	Py_ssize_t sourceSize;
+	size_t readSize;
+
+	int entered;
+	int closed;
+	unsigned long long bytesCompressed;
+
+	ZSTD_inBuffer input;
+	ZSTD_outBuffer output;
+	int finishedInput;
+	int finishedOutput;
+	PyObject* readResult;
+} ZstdCompressionReader;
+
+extern PyTypeObject ZstdCompressionReaderType;
+
+typedef struct {
+	PyObject_HEAD
+
 	ZSTD_DCtx* dctx;
 
 	ZstdCompressionDict* dict;

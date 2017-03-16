@@ -458,6 +458,75 @@ finally:
 	return res;
 }
 
+PyDoc_STRVAR(ZstdCompressor_stream_reader__doc__,
+"stream_reader(source, [size=0])\n"
+"\n"
+"Obtain an object that behaves like an I/O stream.\n"
+"\n"
+"The source object can be any object with a ``read(size)`` method\n"
+"or an object that conforms to the buffer protocol.\n"
+);
+
+static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"source",
+		"size",
+		"read_size",
+		NULL
+	};
+
+	PyObject* source;
+	Py_ssize_t sourceSize = 0;
+	size_t readSize = ZSTD_CStreamInSize();
+	ZstdCompressionReader* result = NULL;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nk:stream_reader", kwlist,
+		&source, &sourceSize, &readSize)) {
+		return NULL;
+	}
+
+	result = (ZstdCompressionReader*)PyObject_CallObject((PyObject*)&ZstdCompressionReaderType, NULL);
+	if (!result) {
+		return NULL;
+	}
+
+	if (PyObject_HasAttrString(source, "read")) {
+		result->reader = source;
+		Py_INCREF(source);
+		result->readSize = readSize;
+	}
+	else if (1 == PyObject_CheckBuffer(source)) {
+		result->buffer = PyMem_Malloc(sizeof(Py_buffer));
+		if (!result->buffer) {
+			goto except;
+		}
+
+		memset(result->buffer, 0, sizeof(Py_buffer));
+
+		if (0 != PyObject_GetBuffer(source, result->buffer, PyBUF_CONTIG_RO)) {
+			goto except;
+		}
+
+		sourceSize = result->buffer->len;
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+			"must pass an object with a read() method or that conforms to the buffer protocol");
+		goto except;
+	}
+
+	result->compressor = self;
+	Py_INCREF(self);
+	result->sourceSize = sourceSize;
+
+	return result;
+
+except:
+	Py_CLEAR(result);
+
+	return NULL;
+}
+
 PyDoc_STRVAR(ZstdCompressor_compress__doc__,
 "compress(data, allow_empty=False)\n"
 "\n"
@@ -1482,6 +1551,8 @@ static PyMethodDef ZstdCompressor_methods[] = {
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressionObj__doc__ },
 	{ "copy_stream", (PyCFunction)ZstdCompressor_copy_stream,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_copy_stream__doc__ },
+	{ "stream_reader", (PyCFunction)ZstdCompressor_stream_reader,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_reader__doc__ },
 	{ "read_to_iter", (PyCFunction)ZstdCompressor_read_to_iter,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_to_iter__doc__ },
 	/* TODO Remove deprecated API */

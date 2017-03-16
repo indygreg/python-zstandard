@@ -302,6 +302,54 @@ to round trip empty inputs when ``write_content_size=True``. Attempting
 this will raise a ``ValueError`` unless ``allow_empty=True`` is passed
 to ``compress()``.
 
+Stream Reader API
+^^^^^^^^^^^^^^^^^
+
+``stream_reader(source)`` can be used to obtain an object conforming to the
+``io.RawIOBase`` interface for reading compressed output as a stream::
+
+   with open(path, 'rb') as fh:
+       cctx = zstd.ZstdCompressor()
+       with cctx.stream_reader(fh) as reader:
+           while True:
+               chunk = reader.read(16384)
+               if not chunk:
+                   break
+
+               # Do something with compressed chunk.
+
+The stream can only be read within a context manager. When the context
+manager exits, the stream is closed and the underlying resource is
+released and future operations against the stream will fail.
+
+The ``source`` argument to ``stream_reader()`` can be any object with a
+``read(size)`` method or any object implementing the *buffer protocol*.
+
+``stream_reader()`` accepts a ``size`` argument specifying how large the input
+stream is. This is used to adjust compression parameters so they are
+tailored to the source size.::
+
+   with open(path, 'rb') as fh:
+       cctx = zstd.ZstdCompressor()
+	   with cctx.stream_reader(fh, size=os.stat(path).st_size) as reader:
+	       ...
+
+If the ``source`` is a stream, you can specify how large ``read()`` requests
+to that stream should be via the ``read_size`` argument. It defaults to
+``zstandard.COMPRESSION_RECOMMENDED_INPUT_SIZE``.::
+
+   with open(path, 'rb') as fh:
+       cctx = zstd.ZstdCompressor()
+	   # Will perform fh.read(8192) when obtaining data for the compressor.
+	   with cctx.stream_reader(fh, read_size=8192) as reader:
+	       ...
+
+The stream returned by ``stream_reader()`` is neither writable nor seekable
+(even if the underlying source is seekable). ``readline()`` and
+``readlines()`` are not implemented because they don't make sense for
+compressed data. ``tell()`` returns the number of compressed bytes
+emitted so far.
+
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 

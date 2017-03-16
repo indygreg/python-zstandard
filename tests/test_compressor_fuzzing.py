@@ -22,6 +22,58 @@ from . common import (
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi
+class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      source_read_size=strategies.integers(1, 16384),
+                      read_sizes=strategies.streaming(
+                          strategies.integers(1, 16384)))
+    def test_stream_source_read_variance(self, original, level, source_read_size,
+                                         read_sizes):
+        read_sizes = iter(read_sizes)
+
+        refctx = zstd.ZstdCompressor(level=level)
+        ref_frame = refctx.compress(original)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        with cctx.stream_reader(io.BytesIO(original), size=len(original),
+                                read_size=source_read_size) as reader:
+            chunks = []
+            while True:
+                chunk = reader.read(next(read_sizes))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+
+        self.assertEqual(b''.join(chunks), ref_frame)
+
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      source_read_size=strategies.integers(1, 16384),
+                      read_sizes=strategies.streaming(
+                          strategies.integers(1, 16384)))
+    def test_buffer_source_read_variance(self, original, level, source_read_size,
+                                         read_sizes):
+        read_sizes = iter(read_sizes)
+
+        refctx = zstd.ZstdCompressor(level=level)
+        ref_frame = refctx.compress(original)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        with cctx.stream_reader(original, size=len(original),
+                                read_size=source_read_size) as reader:
+            chunks = []
+            while True:
+                chunk = reader.read(next(read_sizes))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+
+        self.assertEqual(b''.join(chunks), ref_frame)
+
+
+@unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
+@make_cffi
 class TestCompressor_write_to_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                         level=strategies.integers(min_value=1, max_value=5),
