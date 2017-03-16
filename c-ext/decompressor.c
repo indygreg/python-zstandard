@@ -1099,7 +1099,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	ZstdBufferWithSegmentsCollection* result = NULL;
 	FramePointer* framePointers = frames->frames;
 	unsigned long long workerBytes = 0;
-	int currentThread = 0;
+	size_t currentThread = 0;
 	Py_ssize_t workerStartOffset = 0;
 	POOL_ctx* pool = NULL;
 	WorkerState* workerStates = NULL;
