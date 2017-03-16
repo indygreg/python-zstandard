@@ -437,6 +437,8 @@ class CompressionReader(object):
         self._mtcctx = compressor._cctx if compressor._multithreaded else None
 
         self._in_buffer = ffi.new('ZSTD_inBuffer *')
+        # Holds a ref so backing bytes in self._in_buffer stay alive.
+        self._source_buffer = None
 
     def __enter__(self):
         if self._entered:
@@ -519,8 +521,10 @@ class CompressionReader(object):
         if size < 1:
             raise ValueError('cannot read negative or size 0 amounts')
 
+        # Need a dedicated ref to dest buffer otherwise it gets collected.
+        dst_buffer = ffi.new('char[]', size)
         out_buffer = ffi.new('ZSTD_outBuffer *')
-        out_buffer.dst = ffi.new('char[]', size)
+        out_buffer.dst = dst_buffer
         out_buffer.size = size
         out_buffer.pos = 0
 
@@ -545,6 +549,7 @@ class CompressionReader(object):
                 self._in_buffer.src = ffi.NULL
                 self._in_buffer.pos = 0
                 self._in_buffer.size = 0
+                self._source_buffer = None
 
                 if not hasattr(self._source, 'read'):
                     self._finished_input = True
@@ -567,14 +572,14 @@ class CompressionReader(object):
                     self._finished_input = True
                     return
 
-                data_buffer = ffi.from_buffer(data)
-                self._in_buffer.src = data_buffer
-                self._in_buffer.size = len(data_buffer)
+                self._source_buffer = ffi.from_buffer(data)
+                self._in_buffer.src = self._source_buffer
+                self._in_buffer.size = len(self._source_buffer)
                 self._in_buffer.pos = 0
             else:
-                data_buffer = ffi.from_buffer(self._source)
-                self._in_buffer.src = data_buffer
-                self._in_buffer.size = len(data_buffer)
+                self._source_buffer = ffi.from_buffer(self._source)
+                self._in_buffer.src = self._source_buffer
+                self._in_buffer.size = len(self._source_buffer)
                 self._in_buffer.pos = 0
 
         result = compress_input()
@@ -1157,6 +1162,8 @@ class DecompressionReader(object):
         self._finished_input = False
         self._finished_output = False
         self._in_buffer = ffi.new('ZSTD_inBuffer *')
+        # Holds a ref to self._in_buffer.src.
+        self._source_buffer = None
 
     def __enter__(self):
         if self._entered:
@@ -1234,8 +1241,9 @@ class DecompressionReader(object):
         if size < 1:
             raise ValueError('cannot read negative or size 0 amounts')
 
+        dst_buffer = ffi.new('char[]', size)
         out_buffer = ffi.new('ZSTD_outBuffer *')
-        out_buffer.dst = ffi.new('char[]', size)
+        out_buffer.dst = dst_buffer
         out_buffer.size = size
         out_buffer.pos = 0
 
@@ -1247,6 +1255,7 @@ class DecompressionReader(object):
                 self._in_buffer.src = ffi.NULL
                 self._in_buffer.pos = 0
                 self._in_buffer.size = 0
+                self._source_buffer = None
 
                 if not hasattr(self._source, 'read'):
                     self._finished_input = True
@@ -1272,14 +1281,14 @@ class DecompressionReader(object):
                     self._finished_input = True
                     return
 
-                data_buffer = ffi.from_buffer(data)
-                self._in_buffer.src = data_buffer
-                self._in_buffer.size = len(data_buffer)
+                self._source_buffer = ffi.from_buffer(data)
+                self._in_buffer.src = self._source_buffer
+                self._in_buffer.size = len(self._source_buffer)
                 self._in_buffer.pos = 0
             else:
-                data_buffer = ffi.from_buffer(self._source)
-                self._in_buffer.src = data_buffer
-                self._in_buffer.size = len(data_buffer)
+                self._source_buffer = ffi.from_buffer(self._source)
+                self._in_buffer.src = self._source_buffer
+                self._in_buffer.size = len(self._source_buffer)
                 self._in_buffer.pos = 0
 
         get_input()
