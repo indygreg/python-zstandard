@@ -141,7 +141,6 @@ ffi = cffi.FFI()
 # when cffi uses the function. Since we statically link against zstd, even
 # if we use the deprecated functions it shouldn't be a huge problem.
 ffi.set_source('_zstd_cffi', '''
-#include "mem.h"
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 #define ZDICT_STATIC_LINKING_ONLY
