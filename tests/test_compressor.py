@@ -914,6 +914,13 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         it = cctx.read_to_iter(source.getvalue())
         chunks = list(it)
         self.assertEqual(len(chunks), 2)
+
+        params = zstd.get_frame_parameters(b''.join(chunks))
+        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.window_size, 262144)
+        self.assertEqual(params.dict_id, 0)
+        self.assertFalse(params.has_checksum)
+
         self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
 
     def test_read_write_size(self):
