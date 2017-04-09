@@ -56,8 +56,8 @@ class TestCompressionParameters(unittest.TestCase):
         p = zstd.CompressionParameters(20, 16, 17,  1,  5, 16, zstd.STRATEGY_DFAST)
 
         # 32-bit has slightly different values from 64-bit.
-        self.assertAlmostEqual(p.estimated_compression_context_size(), 1287076,
-                               delta=110)
+        self.assertAlmostEqual(p.estimated_compression_context_size(), 1289132,
+                               delta=130)
 
 
 @make_cffi

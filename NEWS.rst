@@ -17,6 +17,7 @@ Backwards Compatibility Notes
 Changes
 -------
 
+* Updated vendored version of zstd to 1.1.4.
 * Add #includes so compilation on OS X and BSDs works (#20).
 * New ``ZstdDecompressor.stream_reader()`` API to obtain a read-only i/o stream
   of decompressed data for a source.

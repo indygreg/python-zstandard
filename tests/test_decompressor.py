@@ -892,8 +892,8 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Src size incorrect'):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Unknown frame descriptor'):
             dctx.multi_decompress_to_buffer(frames)
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Src size incorrect'):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Unknown frame descriptor'):
             dctx.multi_decompress_to_buffer(frames, threads=2)
