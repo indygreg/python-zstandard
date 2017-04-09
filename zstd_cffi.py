@@ -906,6 +906,8 @@ class ZstdCompressor(object):
 
     def _ensure_cstream(self, size):
         if self._cstream:
+            if not self._fparams.contentSizeFlag:
+                size = 0
             zresult = lib.ZSTD_resetCStream(self._cstream, size)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('could not reset CStream: %s' %

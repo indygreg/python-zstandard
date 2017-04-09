@@ -45,7 +45,9 @@ int init_cstream(ZstdCompressor* compressor, unsigned long long sourceSize) {
 	size_t zresult;
 
 	if (compressor->cstream) {
-		zresult = ZSTD_resetCStream(compressor->cstream, sourceSize);
+		/* Content size is written into frame header if size is !0 */
+		zresult = ZSTD_resetCStream(compressor->cstream,
+			compressor->fparams.contentSizeFlag ? sourceSize : 0);
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "could not reset CStream: %s",
 				ZSTD_getErrorName(zresult));
