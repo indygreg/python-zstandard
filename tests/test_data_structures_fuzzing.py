@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 
 try:
     import unittest2 as unittest
@@ -53,6 +54,16 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
             searchlength += 1
         elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
             searchlength -= 1
+
+        # 32-bit machines may have trouble allocating larger sizes. So cap
+        # them. This reduces test coverage for this machine type. But 64-bit
+        # should still have us covered.
+        maxint = sys.maxint if hasattr(sys, 'maxint') else sys.maxsize
+        if maxint <= 2**32:
+            windowlog = min(windowlog, 25)
+            hashlog = min(hashlog, 25)
+            chainlog = min(chainlog, 26)
+            searchlog = min(searchlog, 24)
 
         p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
                                         searchlog, searchlength,
