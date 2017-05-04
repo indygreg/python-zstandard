@@ -17,6 +17,18 @@ else:
     int_type = long
 
 
+def generate_samples():
+    samples = []
+    for i in range(128):
+        samples.append(b'foo' * 64)
+        samples.append(b'bar' * 64)
+        samples.append(b'foobar' * 64)
+        samples.append(b'baz' * 64)
+        samples.append(b'foobaz' * 64)
+        samples.append(b'bazfoo' * 64)
+    return samples
+
+
 @make_cffi
 class TestTrainDictionary(unittest.TestCase):
     def test_no_args(self):
@@ -31,14 +43,7 @@ class TestTrainDictionary(unittest.TestCase):
             zstd.train_dictionary(8192, [u'foo'])
 
     def test_basic(self):
-        samples = []
-        for i in range(128):
-            samples.append(b'foo' * 64)
-            samples.append(b'bar' * 64)
-            samples.append(b'foobar' * 64)
-            samples.append(b'baz' * 64)
-            samples.append(b'foobaz' * 64)
-            samples.append(b'bazfoo' * 64)
+        samples = generate_samples()
 
         d = zstd.train_dictionary(8192, samples)
         self.assertLessEqual(len(d), 8192)
@@ -50,10 +55,7 @@ class TestTrainDictionary(unittest.TestCase):
         self.assertEqual(data[0:4], b'\x37\xa4\x30\xec')
 
     def test_set_dict_id(self):
-        samples = []
-        for i in range(128):
-            samples.append(b'foo' * 64)
-            samples.append(b'foobar' * 64)
+        samples = generate_samples()
 
         d = zstd.train_dictionary(8192, samples, dict_id=42)
         self.assertEqual(d.dict_id(), 42)
@@ -106,5 +108,5 @@ class TestTrainCoverDictionary(unittest.TestCase):
         d = zstd.train_cover_dictionary(8192, samples, optimize=True,
                                         threads=-1, steps=1, d=16)
 
-        self.assertEqual(d.k, 16)
+        self.assertEqual(d.k, 50)
         self.assertEqual(d.d, 16)

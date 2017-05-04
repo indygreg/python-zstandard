@@ -45,8 +45,9 @@ class TestCompressor_compress(unittest.TestCase):
         for i in range(128):
             samples.append(b'foo' * 64)
             samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
 
-        d = zstd.train_dictionary(8192, samples)
+        d = zstd.train_dictionary(1024, samples)
 
         cctx = zstd.ZstdCompressor(dict_data=d, threads=2)
 
@@ -637,6 +638,9 @@ class TestCompressor_write_to(unittest.TestCase):
             samples.append(b'foobar' * 64)
 
         d = zstd.train_dictionary(8192, samples)
+
+        h = hashlib.sha1(d.as_bytes()).hexdigest()
+        self.assertEqual(h, '66c76a1caa91c47f5b7eb7c6fb8f509640240232')
 
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=9, dict_data=d)

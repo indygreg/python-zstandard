@@ -11,7 +11,7 @@
 
 extern PyObject* ZstdError;
 
-int populate_cdict(ZstdCompressor* compressor, ZSTD_parameters* zparams) {
+int populate_cdict(ZstdCompressor* compressor, ZSTD_compressionParameters* cparams) {
 	ZSTD_customMem zmem;
 
 	if (compressor->cdict || !compressor->dict || !compressor->dict->dictData) {
@@ -21,7 +21,7 @@ int populate_cdict(ZstdCompressor* compressor, ZSTD_parameters* zparams) {
 	Py_BEGIN_ALLOW_THREADS
 	memset(&zmem, 0, sizeof(zmem));
 	compressor->cdict = ZSTD_createCDict_advanced(compressor->dict->dictData,
-		compressor->dict->dictSize, 1, *zparams, zmem);
+		compressor->dict->dictSize, 1, *cparams, zmem);
 	Py_END_ALLOW_THREADS
 
 	if (!compressor->cdict) {
@@ -80,6 +80,10 @@ int init_cstream(ZstdCompressor* compressor, unsigned long long sourceSize) {
 
 	zparams.fParams = compressor->fparams;
 
+	if (sourceSize == 0) {
+		zparams.fParams.contentSizeFlag = 0;
+	}
+
 	zresult = ZSTD_initCStream_advanced(compressor->cstream, dictData, dictSize,
 		zparams, sourceSize);
 
@@ -115,6 +119,10 @@ int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize) {
 	}
 
 	zparams.fParams = compressor->fparams;
+
+	if (sourceSize == 0) {
+		zparams.fParams.contentSizeFlag = 0;
+	}
 
 	zresult = ZSTDMT_initCStream_advanced(compressor->mtcctx, dictData, dictSize,
 		zparams, sourceSize);
@@ -619,7 +627,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	https://github.com/facebook/zstd/issues/358 contains more info. We could
 	potentially add an argument somewhere to control this behavior.
 	*/
-	if (0 != populate_cdict(self, &zparams)) {
+	if (0 != populate_cdict(self, &zparams.cParams)) {
 		Py_DECREF(output);
 		return NULL;
 	}
@@ -634,8 +642,8 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		   size. This means the argument to ZstdCompressor to control frame
 		   parameters is honored. */
 		if (self->cdict) {
-			zresult = ZSTD_compress_usingCDict(self->cctx, dest, destSize,
-				source, sourceSize, self->cdict);
+			zresult = ZSTD_compress_usingCDict_advanced(self->cctx, dest, destSize,
+				source, sourceSize, self->cdict, zparams.fParams);
 		}
 		else {
 			zresult = ZSTD_compress_advanced(self->cctx, dest, destSize,
@@ -942,7 +950,7 @@ static void compress_worker(WorkerState* state) {
 	/*
 	 * The total size of the compressed data is unknown until we actually
 	 * compress data. That means we can't pre-allocate the exact size we need.
-	 * 
+	 *
 	 * There is a cost to every allocation and reallocation. So, it is in our
 	 * interest to minimize the number of allocations.
 	 *
@@ -1087,8 +1095,8 @@ static void compress_worker(WorkerState* state) {
 		dest = (char*)destBuffer->dest + destOffset;
 
 		if (state->cdict) {
-			zresult = ZSTD_compress_usingCDict(state->cctx, dest, destAvailable,
-				source, sourceSize, state->cdict);
+			zresult = ZSTD_compress_usingCDict_advanced(state->cctx, dest, destAvailable,
+				source, sourceSize, state->cdict, zparams.fParams);
 		}
 		else {
 			if (!state->cParams) {
@@ -1171,7 +1179,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 
 	zparams.fParams = compressor->fparams;
 
-	if (0 != populate_cdict(compressor, &zparams)) {
+	if (0 != populate_cdict(compressor, &zparams.cParams)) {
 		return NULL;
 	}
 

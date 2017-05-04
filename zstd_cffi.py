@@ -935,6 +935,9 @@ class ZstdCompressor(object):
                                                   size, dict_size)
         zparams.fParams = self._fparams
 
+        if size == 0:
+            zparams.fParams.contentSizeFlag = 0
+
         zresult = lib.ZSTD_initCStream_advanced(cstream, dict_data, dict_size,
                                                 zparams, size)
         if lib.ZSTD_isError(zresult):
@@ -960,6 +963,9 @@ class ZstdCompressor(object):
                                                   size, dict_size)
 
         zparams.fParams = self._fparams
+
+        if size == 0:
+            zparams.fParams.contentSizeFlag = 0
 
         zresult = lib.ZSTDMT_initCStream_advanced(self._cctx, dict_data, dict_size,
                                                   zparams, size)
