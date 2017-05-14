@@ -13,6 +13,7 @@ Backwards Compatibility Notes
 * ``ZstdCompressor.read_from()`` and ``ZstdDecompressor.read_from()`` have
   been renamed to ``read_to_iter()``. ``read_from()`` is aliased to the new
   name and will be deleted in a future release.
+* Support for Python 2.6 has been removed.
 
 Changes
 -------
