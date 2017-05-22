@@ -142,6 +142,12 @@ void zstd_module_init(PyObject* m) {
 	frameparams_module_init(m);
 }
 
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+#  define PYTHON_ZSTD_VISIBILITY __attribute__ ((visibility ("default")))
+#else
+#  define PYTHON_ZSTD_VISIBILITY
+#endif
+
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef zstd_module = {
 	PyModuleDef_HEAD_INIT,
@@ -151,7 +157,7 @@ static struct PyModuleDef zstd_module = {
 	zstd_methods
 };
 
-PyMODINIT_FUNC PyInit_zstd(void) {
+PYTHON_ZSTD_VISIBILITY PyMODINIT_FUNC PyInit_zstd(void) {
 	PyObject *m = PyModule_Create(&zstd_module);
 	if (m) {
 		zstd_module_init(m);
@@ -163,7 +169,7 @@ PyMODINIT_FUNC PyInit_zstd(void) {
 	return m;
 }
 #else
-PyMODINIT_FUNC initzstd(void) {
+PYTHON_ZSTD_VISIBILITY PyMODINIT_FUNC initzstd(void) {
 	PyObject *m = Py_InitModule3("zstd", zstd_methods, zstd_doc);
 	if (m) {
 		zstd_module_init(m);

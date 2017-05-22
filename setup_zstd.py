@@ -106,6 +106,12 @@ def get_c_extension(support_legacy=False, system_zstd=False, name='zstd'):
 
     extra_args = ['-DZSTD_MULTITHREAD']
 
+    if not system_zstd:
+        extra_args.append('-DZSTDLIB_VISIBILITY=')
+        extra_args.append('-DZDICTLIB_VISIBILITY=')
+        extra_args.append('-DZSTDERRORLIB_VISIBILITY=')
+        extra_args.append('-fvisibility=hidden')
+
     if not system_zstd and support_legacy:
         extra_args.append('-DZSTD_LEGACY_SUPPORT=1')
 
