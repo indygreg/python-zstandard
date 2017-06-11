@@ -190,6 +190,20 @@ class TestCompressor_compressobj(unittest.TestCase):
         self.assertEqual(cobj.flush(),
                          b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
 
+    def test_input_types(self):
+        expected = b'\x28\xb5\x2f\xfd\x00\x48\x19\x00\x00\x66\x6f\x6f'
+        cctx = zstd.ZstdCompressor(level=1)
+
+        sources = [
+            memoryview(b'foo'),
+            bytearray(b'foo'),
+        ]
+
+        for source in sources:
+            cobj = cctx.compressobj()
+            self.assertEqual(cobj.compress(source), b'')
+            self.assertEqual(cobj.flush(), expected)
+
     def test_compressobj_large(self):
         chunks = []
         for i in range(255):

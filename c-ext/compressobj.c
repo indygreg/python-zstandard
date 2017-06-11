@@ -24,8 +24,7 @@ static void ZstdCompressionObj_dealloc(ZstdCompressionObj* self) {
 }
 
 static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+	Py_buffer source;
 	ZSTD_inBuffer input;
 	size_t zresult;
 	PyObject* result = NULL;
@@ -37,18 +36,18 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:compress", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "y*:compress", &source)) {
 #else
-	if (!PyArg_ParseTuple(args, "s#:compress", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "s*:compress", &source)) {
 #endif
 		return NULL;
 	}
 
-	input.src = source;
-	input.size = sourceSize;
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < sourceSize) {
+	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
 		if (self->compressor->mtcctx) {
 			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
@@ -92,6 +91,8 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 	}
 
 finally:
+	PyBuffer_Release(&source);
+
 	return result;
 }
 
