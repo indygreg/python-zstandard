@@ -1337,6 +1337,29 @@ There is potential for long pauses as data is read or written from the
 underlying stream (say from interacting with a filesystem or network). This
 could add considerable overhead.
 
+Thread Safety
+=============
+
+``ZstdCompressor`` and ``ZstdDecompressor`` instances have no guarantees
+about thread safety. Do not operate on the same ``ZstdCompressor`` and
+``ZstdDecompressor`` instance simultaneously from different threads. It is
+fine to have different threads call into a single instance, just not at the
+same time.
+
+The C extension releases the GIL during non-trivial calls into the zstd C
+API. Non-trivial calls are notably compression and decompression. Trivial
+calls are things like parsing frame parameters. Where the GIL is released
+is considered an implementation detail and can change in any release.
+
+APIs that accept bytes-like objects don't enforce that the underlying object
+is read-only. However, it is assumed that the passed object is read-only for
+the duration of the function call. It is possible to pass a mutable object
+(like a ``bytearray``) to e.g. ``ZstdCompressor.compress()``, have the GIL
+released, and mutate the object from another thread. Such a race condition
+is a bug in the consumer of python-zstandard. Most Python data types are
+immutable, so unless you are doing something fancy, you don't need to
+worry about this.
+
 Concepts
 ========
 
