@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 import zstandard as zstd
@@ -63,8 +64,18 @@ class TestFrameParameters(unittest.TestCase):
         with self.assertRaises(TypeError):
             zstd.get_frame_parameters(None)
 
-        with self.assertRaises(TypeError):
-            zstd.get_frame_parameters(u'foobarbaz')
+        # Python 3 doesn't appear to convert unicode to Py_buffer.
+        if sys.version_info[0] >= 3:
+            with self.assertRaises(TypeError):
+                zstd.get_frame_parameters(u'foobarbaz')
+        else:
+            # CPython will convert unicode to Py_buffer. But CFFI won't.
+            if zstd.backend == 'cffi':
+                with self.assertRaises(TypeError):
+                    zstd.get_frame_parameters(u'foobarbaz')
+            else:
+                with self.assertRaises(zstd.ZstdError):
+                    zstd.get_frame_parameters(u'foobarbaz')
 
     def test_invalid_input_sizes(self):
         with self.assertRaisesRegexp(zstd.ZstdError, 'not enough data for frame'):
@@ -118,3 +129,18 @@ class TestFrameParameters(unittest.TestCase):
         self.assertEqual(params.window_size, 262144)
         self.assertEqual(params.dict_id, 15)
         self.assertTrue(params.has_checksum)
+
+    def test_input_types(self):
+        v = zstd.FRAME_HEADER + b'\x00\x00'
+
+        sources = [
+            memoryview(v),
+            bytearray(v),
+        ]
+
+        for source in sources:
+            params = zstd.get_frame_parameters(source)
+            self.assertEqual(params.content_size, 0)
+            self.assertEqual(params.window_size, 1024)
+            self.assertEqual(params.dict_id, 0)
+            self.assertFalse(params.has_checksum)

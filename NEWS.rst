@@ -19,6 +19,8 @@ Backwards Compatibility Notes
 Changes
 -------
 
+* Functions accepting bytes data now use the buffer protocol and can accept
+  more types (like ``memoryview`` and ``bytearray``) (#26).
 * Updated vendored version of zstd to 1.2.0.
 * Add #includes so compilation on OS X and BSDs works (#20).
 * New ``ZstdDecompressor.stream_reader()`` API to obtain a read-only i/o stream

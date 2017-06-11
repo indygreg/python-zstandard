@@ -986,12 +986,10 @@ class FrameParameters(object):
 
 
 def get_frame_parameters(data):
-    if not isinstance(data, bytes_type):
-        raise TypeError('argument must be bytes')
-
     params = ffi.new('ZSTD_frameParams *')
 
-    zresult = lib.ZSTD_getFrameParams(params, data, len(data))
+    data_buffer = ffi.from_buffer(data)
+    zresult = lib.ZSTD_getFrameParams(params, data_buffer, len(data_buffer))
     if lib.ZSTD_isError(zresult):
         raise ZstdError('cannot get frame parameters: %s' %
                         ffi.string(lib.ZSTD_getErrorName(zresult)))

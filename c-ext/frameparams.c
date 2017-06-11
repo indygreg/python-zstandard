@@ -14,28 +14,20 @@ PyDoc_STRVAR(FrameParameters__doc__,
 	"FrameParameters: information about a zstd frame");
 
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+	Py_buffer source;
 	ZSTD_frameParams params;
 	FrameParametersObject* result = NULL;
 	size_t zresult;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:get_frame_parameters",
+	if (!PyArg_ParseTuple(args, "y*:get_frame_parameters", &source)) {
 #else
-	if (!PyArg_ParseTuple(args, "s#:get_frame_parameters",
+	if (!PyArg_ParseTuple(args, "s*:get_frame_parameters", &source)) {
 #endif
-		&source, &sourceSize)) {
 		return NULL;
 	}
 
-	/* Needed for Python 2 to reject unicode */
-	if (!PyBytes_Check(PyTuple_GET_ITEM(args, 0))) {
-		PyErr_SetString(PyExc_TypeError, "argument must be bytes");
-		goto finally;
-	}
-
-	zresult = ZSTD_getFrameParams(&params, (void*)source, sourceSize);
+	zresult = ZSTD_getFrameParams(&params, source.buf, source.len);
 
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "cannot get frame parameters: %s", ZSTD_getErrorName(zresult));
@@ -58,6 +50,7 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
 	result->checksumFlag = params.checksumFlag ? 1 : 0;
 
 finally:
+	PyBuffer_Release(&source);
 	return result;
 }
 
