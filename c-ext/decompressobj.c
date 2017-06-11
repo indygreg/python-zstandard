@@ -54,7 +54,7 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	output.dst = PyMem_Malloc(outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();
-		return NULL;
+		goto except;
 	}
 	output.size = outSize;
 	output.pos = 0;
@@ -68,8 +68,7 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "zstd decompressor error: %s",
 				ZSTD_getErrorName(zresult));
-			result = NULL;
-			goto finally;
+			goto except;
 		}
 
 		if (0 == zresult) {
