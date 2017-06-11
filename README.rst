@@ -331,8 +331,8 @@ tailored to the source size.::
 
    with open(path, 'rb') as fh:
        cctx = zstd.ZstdCompressor()
-	   with cctx.stream_reader(fh, size=os.stat(path).st_size) as reader:
-	       ...
+       with cctx.stream_reader(fh, size=os.stat(path).st_size) as reader:
+           ...
 
 If the ``source`` is a stream, you can specify how large ``read()`` requests
 to that stream should be via the ``read_size`` argument. It defaults to
@@ -340,9 +340,9 @@ to that stream should be via the ``read_size`` argument. It defaults to
 
    with open(path, 'rb') as fh:
        cctx = zstd.ZstdCompressor()
-	   # Will perform fh.read(8192) when obtaining data for the compressor.
-	   with cctx.stream_reader(fh, read_size=8192) as reader:
-	       ...
+       # Will perform fh.read(8192) when obtaining data for the compressor.
+       with cctx.stream_reader(fh, read_size=8192) as reader:
+           ...
 
 The stream returned by ``stream_reader()`` is neither writable nor seekable
 (even if the underlying source is seekable). ``readline()`` and
@@ -646,9 +646,9 @@ to that stream should be via the ``read_size`` argument. It defaults to
 
    with open(path, 'rb') as fh:
        dctx = zstd.ZstdDecompressor()
-	   # Will perform fh.read(8192) when obtaining data for the decompressor.
-	   with dctx.stream_reader(fh, read_size=8192) as reader:
-	       ...
+       # Will perform fh.read(8192) when obtaining data for the decompressor.
+       with dctx.stream_reader(fh, read_size=8192) as reader:
+           ...
 
 The stream returned by ``stream_reader()`` is neither writable nor seekable
 ``tell()`` returns the number of decompressed bytes emitted so far.
