@@ -32,24 +32,24 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
 	/* Needed for Python 2 to reject unicode */
 	if (!PyBytes_Check(PyTuple_GET_ITEM(args, 0))) {
 		PyErr_SetString(PyExc_TypeError, "argument must be bytes");
-		return NULL;
+		goto finally;
 	}
 
 	zresult = ZSTD_getFrameParams(&params, (void*)source, sourceSize);
 
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "cannot get frame parameters: %s", ZSTD_getErrorName(zresult));
-		return NULL;
+		goto finally;
 	}
 
 	if (zresult) {
 		PyErr_Format(ZstdError, "not enough data for frame parameters; need %zu bytes", zresult);
-		return NULL;
+		goto finally;
 	}
 
 	result = PyObject_New(FrameParametersObject, &FrameParametersType);
 	if (!result) {
-		return NULL;
+		goto finally;
 	}
 
 	result->frameContentSize = params.frameContentSize;
@@ -57,6 +57,7 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
 	result->dictID = params.dictID;
 	result->checksumFlag = params.checksumFlag ? 1 : 0;
 
+finally:
 	return result;
 }
 
