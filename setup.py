@@ -40,8 +40,9 @@ if cffi:
     import make_cffi
     extensions.append(make_cffi.ffi.distutils_extension())
 
-    # Need change in 1.8 for ffi.from_buffer() behavior.
-    install_requires.append('cffi>=1.8')
+    # Need change in 1.10 for ffi.from_buffer() to handle all buffer types
+    # (like memoryview).
+    install_requires.append('cffi>=1.10')
 
 version = None
 
