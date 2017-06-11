@@ -263,32 +263,32 @@ PyDoc_STRVAR(ZstdCompressionDict__doc__,
 
 static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {
 	int result = -1;
-	const char* source;
-	Py_ssize_t sourceSize;
+	Py_buffer source;
 
 	self->dictData = NULL;
 	self->dictSize = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:ZstdCompressionDict",
+	if (!PyArg_ParseTuple(args, "y*:ZstdCompressionDict",
 #else
-	if (!PyArg_ParseTuple(args, "s#:ZstdCompressionDict",
+	if (!PyArg_ParseTuple(args, "s*:ZstdCompressionDict",
 #endif
-		&source, &sourceSize)) {
+		&source)) {
 		return -1;
 	}
 
-	self->dictData = PyMem_Malloc(sourceSize);
+	self->dictData = PyMem_Malloc(source.len);
 	if (!self->dictData) {
 		PyErr_NoMemory();
 		goto finally;
 	}
 
-	memcpy(self->dictData, source, sourceSize);
-	self->dictSize = sourceSize;
+	memcpy(self->dictData, source.buf, source.len);
+	self->dictSize = source.len;
 	result = 0;
 
 finally:
+	PyBuffer_Release(&source);
 	return result;
 }
 
