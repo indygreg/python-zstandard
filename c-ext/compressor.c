@@ -553,7 +553,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	Py_ssize_t sourceSize;
 	PyObject* allowEmpty = NULL;
 	size_t destSize;
-	PyObject* output;
+	PyObject* output = NULL;
 	char* dest;
 	void* dictData = NULL;
 	size_t dictSize = 0;
@@ -572,13 +572,13 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	if (self->threads && self->dict) {
 		PyErr_SetString(ZstdError,
 			"compress() cannot be used with both dictionaries and multi-threaded compression");
-		return NULL;
+		goto finally;
 	}
 
 	if (self->threads && self->cparams) {
 		PyErr_SetString(ZstdError,
 			"compress() cannot be used with both compression parameters and multi-threaded compression");
-		return NULL;
+		goto finally;
 	}
 
 	/* Limitation in zstd C API doesn't let decompression side distinguish
@@ -589,13 +589,13 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	if (0 == sourceSize && self->fparams.contentSizeFlag
 		&& (!allowEmpty || PyObject_Not(allowEmpty))) {
 		PyErr_SetString(PyExc_ValueError, "cannot write empty inputs when writing content sizes");
-		return NULL;
+		goto finally;
 	}
 
 	destSize = ZSTD_compressBound(sourceSize);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
 	if (!output) {
-		return NULL;
+		goto finally;
 	}
 
 	dest = PyBytes_AsString(output);
@@ -628,8 +628,8 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	potentially add an argument somewhere to control this behavior.
 	*/
 	if (0 != populate_cdict(self, &zparams.cParams)) {
-		Py_DECREF(output);
-		return NULL;
+		Py_CLEAR(output);
+		goto finally;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
@@ -655,12 +655,13 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "cannot compress: %s", ZSTD_getErrorName(zresult));
 		Py_CLEAR(output);
-		return NULL;
+		goto finally;
 	}
 	else {
 		Py_SIZE(output) = zresult;
 	}
 
+finally:
 	return output;
 }
 
