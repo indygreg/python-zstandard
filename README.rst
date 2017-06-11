@@ -1441,9 +1441,8 @@ Many Python types implement the buffer protocol. These include ``bytes``
 ``mmap.mmap``, and ``memoryview``.
 
 ``python-zstandard`` APIs that accept objects conforming to the buffer
-protocol require that the buffer is *C contiguous* and has a single
-dimension (``ndim==1``). This is usually the case. An example of where it
-is not is a Numpy matrix type.
+protocol require that the buffer is *C contiguous*. This is usually the
+case.
 
 Requiring Output Sizes for Non-Streaming Decompression APIs
 -----------------------------------------------------------
