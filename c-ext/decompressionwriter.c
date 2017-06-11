@@ -55,8 +55,7 @@ static PyObject* ZstdDecompressionWriter_memory_size(ZstdDecompressionWriter* se
 
 static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args) {
 	PyObject* result = NULL;
-	const char* source;
-	Py_ssize_t sourceSize;
+	Py_buffer source;
 	size_t zresult = 0;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
@@ -64,9 +63,9 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	Py_ssize_t totalWrite = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "y*:write", &source)) {
 #else
-	if (!PyArg_ParseTuple(args, "s#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "s*:write", &source)) {
 #endif
 		return NULL;
 	}
@@ -86,11 +85,11 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	output.size = self->outSize;
 	output.pos = 0;
 
-	input.src = source;
-	input.size = sourceSize;
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < sourceSize) {
+	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_decompressStream(self->decompressor->dstream, &output, &input);
 		Py_END_ALLOW_THREADS
@@ -120,6 +119,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	result = PyLong_FromSsize_t(totalWrite);
 
 finally:
+	PyBuffer_Release(&source);
 	return result;
 }
 

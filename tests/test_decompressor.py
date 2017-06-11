@@ -386,6 +386,23 @@ class TestDecompressor_write_to(unittest.TestCase):
         empty = cctx.compress(b'')
         self.assertEqual(decompress_via_writer(empty), b'')
 
+    def test_input_types(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        compressed = cctx.compress(b'foo')
+
+        sources = [
+            memoryview(compressed),
+            bytearray(compressed),
+        ]
+
+        dctx = zstd.ZstdDecompressor()
+        for source in sources:
+            buffer = io.BytesIO()
+            with dctx.write_to(buffer) as decompressor:
+                decompressor.write(source)
+
+            self.assertEqual(buffer.getvalue(), b'foo')
+
     def test_large_roundtrip(self):
         chunks = []
         for i in range(255):
