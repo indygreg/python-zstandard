@@ -262,6 +262,7 @@ PyDoc_STRVAR(ZstdCompressionDict__doc__,
 );
 
 static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {
+	int result = -1;
 	const char* source;
 	Py_ssize_t sourceSize;
 
@@ -280,14 +281,16 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {
 	self->dictData = PyMem_Malloc(sourceSize);
 	if (!self->dictData) {
 		PyErr_NoMemory();
-		return -1;
+		goto finally;
 	}
 
 	memcpy(self->dictData, source, sourceSize);
 	self->dictSize = sourceSize;
+	result = 0;
 
-	return 0;
-	}
+finally:
+	return result;
+}
 
 static void ZstdCompressionDict_dealloc(ZstdCompressionDict* self) {
 	if (self->dictData) {
