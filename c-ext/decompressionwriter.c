@@ -54,6 +54,7 @@ static PyObject* ZstdDecompressionWriter_memory_size(ZstdDecompressionWriter* se
 }
 
 static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args) {
+	PyObject* result = NULL;
 	const char* source;
 	Py_ssize_t sourceSize;
 	size_t zresult = 0;
@@ -72,14 +73,15 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 
 	if (!self->entered) {
 		PyErr_SetString(ZstdError, "write must be called from an active context manager");
-		return NULL;
+		goto finally;
 	}
 
 	assert(self->decompressor->dstream);
 
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
-		return PyErr_NoMemory();
+		PyErr_NoMemory();
+		goto finally;
 	}
 	output.size = self->outSize;
 	output.pos = 0;
@@ -97,7 +99,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 			PyMem_Free(output.dst);
 			PyErr_Format(ZstdError, "zstd decompress error: %s",
 				ZSTD_getErrorName(zresult));
-			return NULL;
+			goto finally;
 		}
 
 		if (output.pos) {
@@ -115,7 +117,10 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 
 	PyMem_Free(output.dst);
 
-	return PyLong_FromSsize_t(totalWrite);
+	result = PyLong_FromSsize_t(totalWrite);
+
+finally:
+	return result;
 }
 
 static PyMethodDef ZstdDecompressionWriter_methods[] = {
