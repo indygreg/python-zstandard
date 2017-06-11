@@ -133,9 +133,13 @@ class TestFrameParameters(unittest.TestCase):
     def test_input_types(self):
         v = zstd.FRAME_HEADER + b'\x00\x00'
 
+        mutable_array = bytearray(len(v))
+        mutable_array[:] = v
+
         sources = [
             memoryview(v),
             bytearray(v),
+            mutable_array,
         ]
 
         for source in sources:

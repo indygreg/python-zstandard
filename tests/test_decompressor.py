@@ -37,9 +37,13 @@ class TestDecompressor_decompress(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
         compressed = cctx.compress(b'foo')
 
+        mutable_array = bytearray(len(compressed))
+        mutable_array[:] = compressed
+
         sources = [
             memoryview(compressed),
             bytearray(compressed),
+            mutable_array,
         ]
 
         dctx = zstd.ZstdDecompressor()
@@ -365,9 +369,13 @@ class TestDecompressor_decompressobj(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
 
+        mutable_array = bytearray(len(compressed))
+        mutable_array[:] = compressed
+
         sources = [
             memoryview(compressed),
             bytearray(compressed),
+            mutable_array,
         ]
 
         for source in sources:
@@ -404,9 +412,13 @@ class TestDecompressor_write_to(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=1)
         compressed = cctx.compress(b'foo')
 
+        mutable_array = bytearray(len(compressed))
+        mutable_array[:] = compressed
+
         sources = [
             memoryview(compressed),
             bytearray(compressed),
+            mutable_array,
         ]
 
         dctx = zstd.ZstdDecompressor()

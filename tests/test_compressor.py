@@ -77,9 +77,13 @@ class TestCompressor_compress(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=1)
         expected = b'\x28\xb5\x2f\xfd\x00\x00\x19\x00\x00\x66\x6f\x6f'
 
+        mutable_array = bytearray(3)
+        mutable_array[:] = b'foo'
+
         sources = [
             memoryview(b'foo'),
             bytearray(b'foo'),
+            mutable_array,
         ]
 
         for source in sources:
@@ -194,9 +198,13 @@ class TestCompressor_compressobj(unittest.TestCase):
         expected = b'\x28\xb5\x2f\xfd\x00\x48\x19\x00\x00\x66\x6f\x6f'
         cctx = zstd.ZstdCompressor(level=1)
 
+        mutable_array = bytearray(3)
+        mutable_array[:] = b'foo'
+
         sources = [
             memoryview(b'foo'),
             bytearray(b'foo'),
+            mutable_array,
         ]
 
         for source in sources:
@@ -643,9 +651,13 @@ class TestCompressor_write_to(unittest.TestCase):
         expected = b'\x28\xb5\x2f\xfd\x00\x48\x19\x00\x00\x66\x6f\x6f'
         cctx = zstd.ZstdCompressor(level=1)
 
+        mutable_array = bytearray(3)
+        mutable_array[:] = b'foo'
+
         sources = [
             memoryview(b'foo'),
             bytearray(b'foo'),
+            mutable_array,
         ]
 
         for source in sources:
