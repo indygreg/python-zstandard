@@ -625,6 +625,22 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
+    def test_input_types(self):
+        expected = b'\x28\xb5\x2f\xfd\x00\x48\x19\x00\x00\x66\x6f\x6f'
+        cctx = zstd.ZstdCompressor(level=1)
+
+        sources = [
+            memoryview(b'foo'),
+            bytearray(b'foo'),
+        ]
+
+        for source in sources:
+            buffer = io.BytesIO()
+            with cctx.write_to(buffer) as compressor:
+                compressor.write(source)
+
+            self.assertEqual(buffer.getvalue(), expected)
+
     def test_multiple_compress(self):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=5)

@@ -117,8 +117,8 @@ static PyObject* ZstdCompressionWriter_memory_size(ZstdCompressionWriter* self) 
 }
 
 static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+	PyObject* result = NULL;
+	Py_buffer source;
 	size_t zresult;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
@@ -126,30 +126,31 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 	Py_ssize_t totalWrite = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "y*:write", &source)) {
 #else
-	if (!PyArg_ParseTuple(args, "s#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTuple(args, "s*:write", &source)) {
 #endif
 		return NULL;
 	}
 
 	if (!self->entered) {
 		PyErr_SetString(ZstdError, "compress must be called from an active context manager");
-		return NULL;
+		goto finally;
 	}
 
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
-		return PyErr_NoMemory();
+		PyErr_NoMemory();
+		goto finally;
 	}
 	output.size = self->outSize;
 	output.pos = 0;
 
-	input.src = source;
-	input.size = sourceSize;
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < sourceSize) {
+	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
 		if (self->compressor->mtcctx) {
 			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
@@ -163,7 +164,7 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 		if (ZSTD_isError(zresult)) {
 			PyMem_Free(output.dst);
 			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
+			goto finally;
 		}
 
 		/* Copy data from output buffer to writer. */
@@ -182,7 +183,11 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 
 	PyMem_Free(output.dst);
 
-	return PyLong_FromSsize_t(totalWrite);
+	result = PyLong_FromSsize_t(totalWrite);
+
+finally:
+	PyBuffer_Release(&source);
+	return result;
 }
 
 static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObject* args) {
