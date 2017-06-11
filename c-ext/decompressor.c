@@ -300,8 +300,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		NULL
 	};
 
-	const char* source;
-	Py_ssize_t sourceSize;
+	Py_buffer source;
 	Py_ssize_t maxOutputSize = 0;
 	unsigned long long decompressedSize;
 	size_t destCapacity;
@@ -311,11 +310,11 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	size_t zresult;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y#|n:decompress",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress",
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|n:decompress",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|n:decompress",
 #endif
-		kwlist, &source, &sourceSize, &maxOutputSize)) {
+		kwlist, &source, &maxOutputSize)) {
 		return NULL;
 	}
 
@@ -335,7 +334,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		}
 	}
 
-	decompressedSize = ZSTD_getDecompressedSize(source, sourceSize);
+	decompressedSize = ZSTD_getDecompressedSize(source.buf, source.len);
 	/* 0 returned if content size not in the zstd frame header */
 	if (0 == decompressedSize) {
 		if (0 == maxOutputSize) {
@@ -361,11 +360,11 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	if (self->ddict) {
 		zresult = ZSTD_decompress_usingDDict(self->dctx,
 			PyBytes_AsString(result), destCapacity,
-			source, sourceSize, self->ddict);
+			source.buf, source.len, self->ddict);
 	}
 	else {
 		zresult = ZSTD_decompressDCtx(self->dctx,
-			PyBytes_AsString(result), destCapacity, source, sourceSize);
+			PyBytes_AsString(result), destCapacity, source.buf, source.len);
 	}
 	Py_END_ALLOW_THREADS
 
@@ -388,6 +387,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	}
 
 finally:
+	PyBuffer_Release(&source);
 	return result;
 }
 

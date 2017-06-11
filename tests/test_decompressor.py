@@ -33,6 +33,19 @@ class TestDecompressor_decompress(unittest.TestCase):
         with self.assertRaisesRegexp(zstd.ZstdError, 'input data invalid'):
             dctx.decompress(b'foobar')
 
+    def test_input_types(self):
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        compressed = cctx.compress(b'foo')
+
+        sources = [
+            memoryview(compressed),
+            bytearray(compressed),
+        ]
+
+        dctx = zstd.ZstdDecompressor()
+        for source in sources:
+            self.assertEqual(dctx.decompress(source), b'foo')
+
     def test_no_content_size_in_frame(self):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         compressed = cctx.compress(b'foobar')
