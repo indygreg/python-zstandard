@@ -73,6 +73,18 @@ class TestCompressor_compress(unittest.TestCase):
 
         cctx.compress(b'', allow_empty=True)
 
+    def test_input_types(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        expected = b'\x28\xb5\x2f\xfd\x00\x00\x19\x00\x00\x66\x6f\x6f'
+
+        sources = [
+            memoryview(b'foo'),
+            bytearray(b'foo'),
+        ]
+
+        for source in sources:
+            self.assertEqual(cctx.compress(source), expected)
+
     def test_compress_large(self):
         chunks = []
         for i in range(255):

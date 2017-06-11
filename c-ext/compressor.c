@@ -549,8 +549,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		NULL
 	};
 
-	const char* source;
-	Py_ssize_t sourceSize;
+	Py_buffer source;
 	PyObject* allowEmpty = NULL;
 	size_t destSize;
 	PyObject* output = NULL;
@@ -561,11 +560,11 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	ZSTD_parameters zparams;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y#|O:compress",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|O:compress",
 #else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|O:compress",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|O:compress",
 #endif
-		kwlist, &source, &sourceSize, &allowEmpty)) {
+		kwlist, &source, &allowEmpty)) {
 		return NULL;
 	}
 
@@ -586,13 +585,13 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	   tripping via Python difficult. Until this is fixed, require a flag
 	   to fire the footgun.
 	   https://github.com/indygreg/python-zstandard/issues/11 */
-	if (0 == sourceSize && self->fparams.contentSizeFlag
+	if (0 == source.len && self->fparams.contentSizeFlag
 		&& (!allowEmpty || PyObject_Not(allowEmpty))) {
 		PyErr_SetString(PyExc_ValueError, "cannot write empty inputs when writing content sizes");
 		goto finally;
 	}
 
-	destSize = ZSTD_compressBound(sourceSize);
+	destSize = ZSTD_compressBound(source.len);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
 	if (!output) {
 		goto finally;
@@ -607,7 +606,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 
 	memset(&zparams, 0, sizeof(zparams));
 	if (!self->cparams) {
-		zparams.cParams = ZSTD_getCParams(self->compressionLevel, sourceSize, dictSize);
+		zparams.cParams = ZSTD_getCParams(self->compressionLevel, source.len, dictSize);
 	}
 	else {
 		ztopy_compression_parameters(self->cparams, &zparams.cParams);
@@ -635,7 +634,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	Py_BEGIN_ALLOW_THREADS
 	if (self->mtcctx) {
 		zresult = ZSTDMT_compressCCtx(self->mtcctx, dest, destSize,
-			source, sourceSize, self->compressionLevel);
+			source.buf, source.len, self->compressionLevel);
 	}
 	else {
 		/* By avoiding ZSTD_compress(), we don't necessarily write out content
@@ -643,11 +642,11 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		   parameters is honored. */
 		if (self->cdict) {
 			zresult = ZSTD_compress_usingCDict_advanced(self->cctx, dest, destSize,
-				source, sourceSize, self->cdict, zparams.fParams);
+				source.buf, source.len, self->cdict, zparams.fParams);
 		}
 		else {
 			zresult = ZSTD_compress_advanced(self->cctx, dest, destSize,
-				source, sourceSize, dictData, dictSize, zparams);
+				source.buf, source.len, dictData, dictSize, zparams);
 		}
 	}
 	Py_END_ALLOW_THREADS
@@ -662,6 +661,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	}
 
 finally:
+	PyBuffer_Release(&source);
 	return output;
 }
 
