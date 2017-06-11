@@ -660,6 +660,8 @@ class ZstdCompressor(object):
         if self._multithreaded and self._cparams:
             raise ZstdError('compress() cannot be used with both compression parameters and multi-threaded compression')
 
+        data_buffer = ffi.from_buffer(data)
+
         # TODO use a CDict for performance.
         dict_data = ffi.NULL
         dict_size = 0
@@ -672,22 +674,22 @@ class ZstdCompressor(object):
         if self._cparams:
             params.cParams = self._cparams.as_compression_parameters()
         else:
-            params.cParams = lib.ZSTD_getCParams(self._compression_level, len(data),
-                                                 dict_size)
+            params.cParams = lib.ZSTD_getCParams(self._compression_level,
+                                                 len(data_buffer), dict_size)
         params.fParams = self._fparams
 
-        dest_size = lib.ZSTD_compressBound(len(data))
+        dest_size = lib.ZSTD_compressBound(len(data_buffer))
         out = new_nonzero('char[]', dest_size)
 
         if self._multithreaded:
             zresult = lib.ZSTDMT_compressCCtx(self._cctx,
                                               ffi.addressof(out), dest_size,
-                                              data, len(data),
+                                              data_buffer, len(data_buffer),
                                               self._compression_level)
         else:
             zresult = lib.ZSTD_compress_advanced(self._cctx,
                                                  ffi.addressof(out), dest_size,
-                                                 data, len(data),
+                                                 data_buffer, len(data_buffer),
                                                  dict_data, dict_size,
                                                  params)
 
