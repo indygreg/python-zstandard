@@ -21,8 +21,7 @@ static void DecompressionObj_dealloc(ZstdDecompressionObj* self) {
 }
 
 static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+	Py_buffer source;
 	size_t zresult;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
@@ -39,16 +38,15 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:decompress",
+	if (!PyArg_ParseTuple(args, "y*:decompress", &source)) {
 #else
-	if (!PyArg_ParseTuple(args, "s#:decompress",
+	if (!PyArg_ParseTuple(args, "s*:decompress", &source)) {
 #endif
-		&source, &sourceSize)) {
 		return NULL;
 	}
 
-	input.src = source;
-	input.size = sourceSize;
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
 	output.dst = PyMem_Malloc(outSize);
@@ -107,6 +105,7 @@ except:
 
 finally:
 	PyMem_Free(output.dst);
+	PyBuffer_Release(&source);
 
 	return result;
 }

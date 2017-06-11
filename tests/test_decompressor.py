@@ -360,6 +360,20 @@ class TestDecompressor_decompressobj(unittest.TestCase):
         dobj = dctx.decompressobj()
         self.assertEqual(dobj.decompress(data), b'foobar')
 
+    def test_input_types(self):
+        compressed = zstd.ZstdCompressor(level=1).compress(b'foo')
+
+        dctx = zstd.ZstdDecompressor()
+
+        sources = [
+            memoryview(compressed),
+            bytearray(compressed),
+        ]
+
+        for source in sources:
+            dobj = dctx.decompressobj()
+            self.assertEqual(dobj.decompress(source), b'foo')
+
     def test_reuse(self):
         data = zstd.ZstdCompressor(level=1).compress(b'foobar')
 
