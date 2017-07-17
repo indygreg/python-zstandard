@@ -624,7 +624,7 @@ Stream Reader API
 ``io.RawIOBase`` interface for reading decompressed output as a stream::
 
    with open(path, 'rb') as fh:
-       dctx = zstd.ZstdDecpmpressor()
+       dctx = zstd.ZstdDecompressor()
        with dctx.stream_reader(fh) as reader:
            while True:
                chunk = reader.read(16384)
