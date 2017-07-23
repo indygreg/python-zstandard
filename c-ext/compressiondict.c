@@ -25,7 +25,7 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	int level = 0;
 	unsigned notifications = 0;
 	unsigned dictID = 0;
-	ZDICT_params_t zparams;
+	ZDICT_legacy_params_t zparams;
 	Py_ssize_t sampleIndex;
 	Py_ssize_t sampleSize;
 	PyObject* sampleItem;
@@ -47,9 +47,9 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 
 	memset(&zparams, 0, sizeof(zparams));
 
-	zparams.compressionLevel = level;
-	zparams.notificationLevel = notifications;
-	zparams.dictID = dictID;
+	zparams.zParams.compressionLevel = level;
+	zparams.zParams.notificationLevel = notifications;
+	zparams.zParams.dictID = dictID;
 
 	/* Figure out the size of the raw samples */
 	samplesLen = PyList_Size(samples);
@@ -93,7 +93,7 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 
 	/* TODO consider using dup2() to redirect zstd's stderr writing to a buffer */
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZDICT_trainFromBuffer_advanced(dict, capacity,
+	zresult = ZDICT_trainFromBuffer_legacy(dict, capacity,
 		sampleBuffer, sampleSizes, (unsigned int)samplesLen,
 		zparams);
 	Py_END_ALLOW_THREADS
@@ -145,7 +145,7 @@ ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyOb
 	PyObject* optimize = NULL;
 	unsigned steps = 0;
 	int threads = 0;
-	COVER_params_t params;
+	ZDICT_cover_params_t params;
 	Py_ssize_t samplesLen;
 	Py_ssize_t i;
 	size_t samplesSize = 0;
@@ -172,9 +172,9 @@ ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyOb
 	params.d = d;
 	params.steps = steps;
 	params.nbThreads = threads;
-	params.notificationLevel = notifications;
-	params.dictID = dictID;
-	params.compressionLevel = level;
+	params.zParams.notificationLevel = notifications;
+	params.zParams.dictID = dictID;
+	params.zParams.compressionLevel = level;
 
 	/* Figure out total size of input samples. */
 	samplesLen = PyList_Size(samples);
@@ -217,11 +217,11 @@ ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyOb
 
 	Py_BEGIN_ALLOW_THREADS
 	if (optimize && PyObject_IsTrue(optimize)) {
-		zresult = COVER_optimizeTrainFromBuffer(dict, capacity,
+		zresult = ZDICT_optimizeTrainFromBuffer_cover(dict, capacity,
 			sampleBuffer, sampleSizes, (unsigned)samplesLen, &params);
 	}
 	else {
-		zresult = COVER_trainFromBuffer(dict, capacity,
+		zresult = ZDICT_trainFromBuffer_cover(dict, capacity,
 			sampleBuffer, sampleSizes, (unsigned)samplesLen, params);
 	}
 	Py_END_ALLOW_THREADS

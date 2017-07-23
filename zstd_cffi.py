@@ -1040,12 +1040,12 @@ def train_dictionary(dict_size, samples, level=0,
 
     dict_data = new_nonzero('char[]', dict_size)
 
-    dparams = ffi.new('ZDICT_params_t *')[0]
-    dparams.compressionLevel = level
-    dparams.notificationLevel = notifications
-    dparams.dictID = dict_id
+    dparams = ffi.new('ZDICT_legacy_params_t *')[0]
+    dparams.zParams.compressionLevel = level
+    dparams.zParams.notificationLevel = notifications
+    dparams.zParams.dictID = dict_id
 
-    zresult = lib.ZDICT_trainFromBuffer_advanced(
+    zresult = lib.ZDICT_trainFromBuffer_legacy(
         ffi.addressof(dict_data), dict_size,
         ffi.addressof(samples_buffer),
         ffi.addressof(sample_sizes, 0), len(samples),
@@ -1084,23 +1084,23 @@ def train_cover_dictionary(dict_size, samples, k=0, d=0,
 
     dict_data = new_nonzero('char[]', dict_size)
 
-    dparams = ffi.new('COVER_params_t *')[0]
+    dparams = ffi.new('ZDICT_cover_params_t *')[0]
     dparams.k = k
     dparams.d = d
     dparams.steps = steps
     dparams.nbThreads = threads
-    dparams.notificationLevel = notifications
-    dparams.dictID = dict_id
-    dparams.compressionLevel = level
+    dparams.zParams.notificationLevel = notifications
+    dparams.zParams.dictID = dict_id
+    dparams.zParams.compressionLevel = level
 
     if optimize:
-        zresult = lib.COVER_optimizeTrainFromBuffer(
+        zresult = lib.ZDICT_optimizeTrainFromBuffer_cover(
             ffi.addressof(dict_data), dict_size,
             ffi.addressof(samples_buffer),
             ffi.addressof(sample_sizes, 0), len(samples),
             ffi.addressof(dparams))
     else:
-        zresult = lib.COVER_trainFromBuffer(
+        zresult = lib.ZDICT_trainFromBuffer_cover(
             ffi.addressof(dict_data), dict_size,
             ffi.addressof(samples_buffer),
             ffi.addressof(sample_sizes, 0), len(samples),
