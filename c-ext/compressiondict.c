@@ -14,7 +14,6 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	static char* kwlist[] = {
 		"dict_size",
 		"samples",
-		"selectivity",
 		"level",
 		"notifications",
 		"dict_id",
@@ -23,7 +22,6 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	size_t capacity;
 	PyObject* samples;
 	Py_ssize_t samplesLen;
-	unsigned  selectivity = 0;
 	int level = 0;
 	unsigned notifications = 0;
 	unsigned dictID = 0;
@@ -39,17 +37,16 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	void* dict = NULL;
 	ZstdCompressionDict* result = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IiII:train_dictionary",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|iII:train_dictionary",
 		kwlist,
 		&capacity,
 		&PyList_Type, &samples,
-		&selectivity, &level, &notifications, &dictID)) {
+		&level, &notifications, &dictID)) {
 		return NULL;
 	}
 
 	memset(&zparams, 0, sizeof(zparams));
 
-	zparams.selectivityLevel = selectivity;
 	zparams.compressionLevel = level;
 	zparams.notificationLevel = notifications;
 	zparams.dictID = dictID;

@@ -1018,7 +1018,7 @@ class ZstdCompressionDict(object):
         return self._data
 
 
-def train_dictionary(dict_size, samples, selectivity=0, level=0,
+def train_dictionary(dict_size, samples, level=0,
                      notifications=0, dict_id=0):
     if not isinstance(samples, list):
         raise TypeError('samples must be a list')
@@ -1041,7 +1041,6 @@ def train_dictionary(dict_size, samples, selectivity=0, level=0,
     dict_data = new_nonzero('char[]', dict_size)
 
     dparams = ffi.new('ZDICT_params_t *')[0]
-    dparams.selectivityLevel = selectivity
     dparams.compressionLevel = level
     dparams.notificationLevel = notifications
     dparams.dictID = dict_id

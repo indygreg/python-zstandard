@@ -961,9 +961,6 @@ a ``ZstdCompressionDict`` later) via ``as_bytes()``::
 The following named arguments to ``train_dictionary`` can also be used
 to further control dictionary generation.
 
-selectivity
-   Integer selectivity level. Default is 9. Larger values yield more data in
-   dictionary.
 level
    Integer compression level. Default is 6.
 dict_id

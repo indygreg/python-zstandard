@@ -16,6 +16,8 @@ Backwards Compatibility Notes
   name and will be deleted in a future release.
 * Support for Python 2.6 has been removed.
 * Support for Python 3.3 has been removed.
+* The ``selectivity`` argument to ``train_dictionary()`` has been removed, as
+  the feature disappeared from zstd 1.3.
 
 Changes
 -------
