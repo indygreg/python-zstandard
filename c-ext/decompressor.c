@@ -636,7 +636,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 	Py_ssize_t chunkSize;
 	ZSTD_DCtx* dctx = NULL;
 	size_t zresult;
-	ZSTD_frameParams frameParams;
+	ZSTD_frameHeader frameHeader;
 	void* buffer1 = NULL;
 	size_t buffer1Size = 0;
 	size_t buffer1ContentSize = 0;
@@ -666,7 +666,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 
 	/* We require that all chunks be zstd frames and that they have content size set. */
 	PyBytes_AsStringAndSize(chunk, &chunkData, &chunkSize);
-	zresult = ZSTD_getFrameParams(&frameParams, (void*)chunkData, chunkSize);
+	zresult = ZSTD_getFrameHeader(&frameHeader, (void*)chunkData, chunkSize);
 	if (ZSTD_isError(zresult)) {
 		PyErr_SetString(PyExc_ValueError, "chunk 0 is not a valid zstd frame");
 		return NULL;
@@ -676,7 +676,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 		return NULL;
 	}
 
-	if (0 == frameParams.frameContentSize) {
+	if (0 == frameHeader.frameContentSize) {
 		PyErr_SetString(PyExc_ValueError, "chunk 0 missing content size in frame");
 		return NULL;
 	}
@@ -687,7 +687,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 		goto finally;
 	}
 
-	buffer1Size = frameParams.frameContentSize;
+	buffer1Size = frameHeader.frameContentSize;
 	buffer1 = PyMem_Malloc(buffer1Size);
 	if (!buffer1) {
 		goto finally;
@@ -710,7 +710,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 	}
 
 	/* This should ideally look at next chunk. But this is slightly simpler. */
-	buffer2Size = frameParams.frameContentSize;
+	buffer2Size = frameHeader.frameContentSize;
 	buffer2 = PyMem_Malloc(buffer2Size);
 	if (!buffer2) {
 		goto finally;
@@ -730,7 +730,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 		}
 
 		PyBytes_AsStringAndSize(chunk, &chunkData, &chunkSize);
-		zresult = ZSTD_getFrameParams(&frameParams, (void*)chunkData, chunkSize);
+		zresult = ZSTD_getFrameHeader(&frameHeader, (void*)chunkData, chunkSize);
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(PyExc_ValueError, "chunk %zd is not a valid zstd frame", chunkIndex);
 			goto finally;
@@ -740,7 +740,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 			goto finally;
 		}
 
-		if (0 == frameParams.frameContentSize) {
+		if (0 == frameHeader.frameContentSize) {
 			PyErr_Format(PyExc_ValueError, "chunk %zd missing content size in frame", chunkIndex);
 			goto finally;
 		}
@@ -750,8 +750,8 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 		/* This could definitely be abstracted to reduce code duplication. */
 		if (parity) {
 			/* Resize destination buffer to hold larger content. */
-			if (buffer2Size < frameParams.frameContentSize) {
-				buffer2Size = frameParams.frameContentSize;
+			if (buffer2Size < frameHeader.frameContentSize) {
+				buffer2Size = frameHeader.frameContentSize;
 				destBuffer = PyMem_Realloc(buffer2, buffer2Size);
 				if (!destBuffer) {
 					goto finally;
@@ -771,8 +771,8 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 			buffer2ContentSize = zresult;
 		}
 		else {
-			if (buffer1Size < frameParams.frameContentSize) {
-				buffer1Size = frameParams.frameContentSize;
+			if (buffer1Size < frameHeader.frameContentSize) {
+				buffer1Size = frameHeader.frameContentSize;
 				destBuffer = PyMem_Realloc(buffer1, buffer1Size);
 				if (!destBuffer) {
 					goto finally;
