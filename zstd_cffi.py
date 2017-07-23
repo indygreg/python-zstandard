@@ -986,10 +986,10 @@ class FrameParameters(object):
 
 
 def get_frame_parameters(data):
-    params = ffi.new('ZSTD_frameParams *')
+    params = ffi.new('ZSTD_frameHeader *')
 
     data_buffer = ffi.from_buffer(data)
-    zresult = lib.ZSTD_getFrameParams(params, data_buffer, len(data_buffer))
+    zresult = lib.ZSTD_getFrameHeader(params, data_buffer, len(data_buffer))
     if lib.ZSTD_isError(zresult):
         raise ZstdError('cannot get frame parameters: %s' %
                         ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -1596,8 +1596,8 @@ class ZstdDecompressor(object):
 
         # All chunks should be zstd frames and should have content size set.
         chunk_buffer = ffi.from_buffer(chunk)
-        params = ffi.new('ZSTD_frameParams *')
-        zresult = lib.ZSTD_getFrameParams(params, chunk_buffer, len(chunk_buffer))
+        params = ffi.new('ZSTD_frameHeader *')
+        zresult = lib.ZSTD_getFrameHeader(params, chunk_buffer, len(chunk_buffer))
         if lib.ZSTD_isError(zresult):
             raise ValueError('chunk 0 is not a valid zstd frame')
         elif zresult:
@@ -1631,7 +1631,7 @@ class ZstdDecompressor(object):
                 raise ValueError('chunk %d must be bytes' % i)
 
             chunk_buffer = ffi.from_buffer(chunk)
-            zresult = lib.ZSTD_getFrameParams(params, chunk_buffer, len(chunk_buffer))
+            zresult = lib.ZSTD_getFrameHeader(params, chunk_buffer, len(chunk_buffer))
             if lib.ZSTD_isError(zresult):
                 raise ValueError('chunk %d is not a valid zstd frame' % i)
             elif zresult:

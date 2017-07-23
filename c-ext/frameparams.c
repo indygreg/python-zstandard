@@ -15,7 +15,7 @@ PyDoc_STRVAR(FrameParameters__doc__,
 
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
 	Py_buffer source;
-	ZSTD_frameParams params;
+	ZSTD_frameHeader header;
 	FrameParametersObject* result = NULL;
 	size_t zresult;
 
@@ -27,7 +27,7 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
 		return NULL;
 	}
 
-	zresult = ZSTD_getFrameParams(&params, source.buf, source.len);
+	zresult = ZSTD_getFrameHeader(&header, source.buf, source.len);
 
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "cannot get frame parameters: %s", ZSTD_getErrorName(zresult));
@@ -44,10 +44,10 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
 		goto finally;
 	}
 
-	result->frameContentSize = params.frameContentSize;
-	result->windowSize = params.windowSize;
-	result->dictID = params.dictID;
-	result->checksumFlag = params.checksumFlag ? 1 : 0;
+	result->frameContentSize = header.frameContentSize;
+	result->windowSize = header.windowSize;
+	result->dictID = header.dictID;
+	result->checksumFlag = header.checksumFlag ? 1 : 0;
 
 finally:
 	PyBuffer_Release(&source);
@@ -62,7 +62,7 @@ static PyMemberDef FrameParameters_members[] = {
 	{ "content_size", T_ULONGLONG,
 	  offsetof(FrameParametersObject, frameContentSize), READONLY,
 	  "frame content size" },
-	{ "window_size", T_UINT,
+	{ "window_size", T_PYSSIZET,
 	  offsetof(FrameParametersObject, windowSize), READONLY,
 	  "window size" },
 	{ "dict_id", T_UINT,
