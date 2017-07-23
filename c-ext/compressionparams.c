@@ -141,7 +141,7 @@ PyObject* CompressionParameters_estimated_compression_context_size(CompressionPa
 
 	ztopy_compression_parameters(self, &params);
 
-	return PyLong_FromSize_t(ZSTD_estimateCCtxSize(params));
+	return PyLong_FromSize_t(ZSTD_estimateCCtxSize_advanced(params));
 }
 
 PyObject* estimate_compression_context_size(PyObject* self, PyObject* args) {
@@ -155,7 +155,7 @@ PyObject* estimate_compression_context_size(PyObject* self, PyObject* args) {
 	}
 
 	ztopy_compression_parameters(params, &zparams);
-	result = PyLong_FromSize_t(ZSTD_estimateCCtxSize(zparams));
+	result = PyLong_FromSize_t(ZSTD_estimateCCtxSize_advanced(zparams));
 	return result;
 }
 
