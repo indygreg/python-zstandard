@@ -765,8 +765,8 @@ can no longer be called.
 
 Here is how this API should be used::
 
-   dctx = zstd.ZstdDeompressor()
-   dobj = cctx.decompressobj()
+   dctx = zstd.ZstdDecompressor()
+   dobj = dctx.decompressobj()
    data = dobj.decompress(compressed_chunk_0)
    data = dobj.decompress(compressed_chunk_1)
 
