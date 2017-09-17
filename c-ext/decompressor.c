@@ -135,6 +135,20 @@ static void Decompressor_dealloc(ZstdDecompressor* self) {
 	PyObject_Del(self);
 }
 
+PyDoc_STRVAR(Decompressor_memory_size__doc__,
+"memory_size() -- Size of decompression context, in bytes\n"
+);
+
+static PyObject* Decompressor_memory_size(ZstdDecompressor* self) {
+	if (self->dctx) {
+		return PyLong_FromSize_t(ZSTD_sizeof_DCtx(self->dctx));
+	}
+	else {
+		PyErr_SetString(ZstdError, "no decompressor context found; this should never happen");
+		return NULL;
+	}
+}
+
 PyDoc_STRVAR(Decompressor_copy_stream__doc__,
 	"copy_stream(ifh, ofh[, read_size=default, write_size=default]) -- decompress data between streams\n"
 	"\n"
@@ -1599,6 +1613,8 @@ static PyMethodDef Decompressor_methods[] = {
 	  METH_VARARGS | METH_KEYWORDS, Decompressor_decompress_content_dict_chain__doc__ },
 	{ "multi_decompress_to_buffer", (PyCFunction)Decompressor_multi_decompress_to_buffer,
 	  METH_VARARGS | METH_KEYWORDS, Decompressor_multi_decompress_to_buffer__doc__ },
+	{ "memory_size", (PyCFunction)Decompressor_memory_size, METH_NOARGS,
+	Decompressor_memory_size__doc__ },
 	{ NULL, NULL }
 };
 

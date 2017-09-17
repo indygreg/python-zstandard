@@ -47,8 +47,9 @@ Changes
   ``ZSTD_getFrameContentSize()`` replacement.
 * ``ZstdCompressor.compress()`` can now compress empty inputs without requiring
   special handling.
-* ``ZstdCompressor`` now has a ``memory_size()`` method for determining the
-  current memory utilization of the underlying zstd primitive.
+* ``ZstdCompressor`` and ``ZstdDecompressor`` now have a ``memory_size()``
+  method for determining the current memory utilization of the underlying zstd
+  primitive.
 
 0.8.1 (released 2017-04-08)
 ---------------------------

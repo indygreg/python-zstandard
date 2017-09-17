@@ -1409,6 +1409,9 @@ class ZstdDecompressor(object):
         self.__dict__['_ddict'] = ddict
         return ddict
 
+    def memory_size(self):
+        return lib.ZSTD_sizeof_DCtx(self._refdctx)
+
     def decompress(self, data, max_output_size=0):
         data_buffer = ffi.from_buffer(data)
 

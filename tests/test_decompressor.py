@@ -20,6 +20,14 @@ else:
 
 
 @make_cffi
+class TestDecompressor(unittest.TestCase):
+    def test_memory_size(self):
+        dctx = zstd.ZstdDecompressor()
+
+        self.assertGreater(dctx.memory_size(), 100)
+
+
+@make_cffi
 class TestDecompressor_decompress(unittest.TestCase):
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()

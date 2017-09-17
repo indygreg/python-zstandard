@@ -588,6 +588,15 @@ Unless specified otherwise, assume that no two methods of ``ZstdDecompressor``
 instances can be called from multiple Python threads simultaneously. In other
 words, assume instances are not thread safe unless stated otherwise.
 
+Utility Methods
+^^^^^^^^^^^^^^^
+
+``memory_size()`` obtains the size of the underlying zstd decompression context,
+in bytes.::
+
+    dctx = zstd.ZstdDecompressor()
+    size = dctx.memory_size()
+
 Simple API
 ^^^^^^^^^^
 
