@@ -33,6 +33,10 @@ class TestCompressor(unittest.TestCase):
         with self.assertRaises(ValueError):
             zstd.ZstdCompressor(level=23)
 
+    def test_memory_size(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        self.assertGreater(cctx.memory_size(), 100)
+
 
 @make_cffi
 class TestCompressor_compress(unittest.TestCase):

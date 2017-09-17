@@ -656,6 +656,12 @@ class ZstdCompressor(object):
 
         self._cstream = None
 
+    def memory_size(self):
+        if self._multithreaded:
+            return lib.ZSTDMT_sizeof_CCtx(self._cctx)
+        else:
+            return lib.ZSTD_sizeof_CCtx(self._cctx)
+
     def compress(self, data):
         if self._multithreaded and self._dict_data:
             raise ZstdError('compress() cannot be used with both dictionaries and multi-threaded compression')

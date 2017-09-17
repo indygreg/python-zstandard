@@ -286,6 +286,25 @@ static void ZstdCompressor_dealloc(ZstdCompressor* self) {
 	PyObject_Del(self);
 }
 
+PyDoc_STRVAR(ZstdCompressor_memory_size__doc__,
+"memory_size()\n"
+"\n"
+"Obtain the memory usage of this compressor, in bytes.\n"
+);
+
+static PyObject* ZstdCompressor_memory_size(ZstdCompressor* self) {
+	if (self->cctx) {
+		return PyLong_FromSize_t(ZSTD_sizeof_CCtx(self->cctx));
+	}
+	else if (self->mtcctx) {
+		return PyLong_FromSize_t(ZSTDMT_sizeof_CCtx(self->mtcctx));
+	}
+	else {
+		PyErr_SetString(ZstdError, "no compressor context found; this should never happen");
+		return NULL;
+	}
+}
+
 PyDoc_STRVAR(ZstdCompressor_copy_stream__doc__,
 "copy_stream(ifh, ofh[, size=0, read_size=default, write_size=default])\n"
 "compress data between streams\n"
@@ -1543,6 +1562,8 @@ static PyMethodDef ZstdCompressor_methods[] = {
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_write_to___doc__ },
 	{ "multi_compress_to_buffer", (PyCFunction)ZstdCompressor_multi_compress_to_buffer,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_multi_compress_to_buffer__doc__ },
+	{ "memory_size", (PyCFunction)ZstdCompressor_memory_size,
+	METH_NOARGS, ZstdCompressor_memory_size__doc__ },
 	{ NULL, NULL }
 };
 

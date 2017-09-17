@@ -278,6 +278,15 @@ Unless specified otherwise, assume that no two methods of ``ZstdCompressor``
 instances can be called from multiple Python threads simultaneously. In other
 words, assume instances are not thread safe unless stated otherwise.
 
+Utility Methods
+^^^^^^^^^^^^^^^
+
+``memory_size()`` obtains the memory utilization of the underlying zstd
+compression context, in bytes.::
+
+    cctx = zstd.ZstdCompressor()
+    memory = cctx.memory_size()
+
 Simple API
 ^^^^^^^^^^
 
