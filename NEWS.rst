@@ -40,6 +40,7 @@ Changes
   usage info.
 * Vendored version of zstd upgraded to 1.3.1.
 * Added module constants ``CONTENTSIZE_UNKNOWN`` and ``CONTENTSIZE_ERROR``.
+* Add ``STRATEGY_BTULTRA`` compression strategy constant.
 
 0.8.1 (released 2017-04-08)
 ---------------------------

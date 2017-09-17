@@ -32,7 +32,7 @@ class TestCompressionParameters(unittest.TestCase):
                                    zstd.SEARCHLOG_MAX,
                                    zstd.SEARCHLENGTH_MAX - 1,
                                    zstd.TARGETLENGTH_MAX,
-                                   zstd.STRATEGY_BTOPT)
+                                   zstd.STRATEGY_BTULTRA)
 
     def test_get_compression_parameters(self):
         p = zstd.get_compression_parameters(1)

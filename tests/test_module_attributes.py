@@ -47,6 +47,7 @@ class TestModuleAttributes(unittest.TestCase):
             'STRATEGY_LAZY2',
             'STRATEGY_BTLAZY2',
             'STRATEGY_BTOPT',
+            'STRATEGY_BTULTRA',
         )
 
         for a in attrs:

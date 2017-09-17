@@ -60,6 +60,7 @@ __all__ = [
     'STRATEGY_LAZY2',
     'STRATEGY_BTLAZY2',
     'STRATEGY_BTOPT',
+    'STRATEGY_BTULTRA',
 ]
 
 import io
@@ -115,6 +116,7 @@ STRATEGY_LAZY = lib.ZSTD_lazy
 STRATEGY_LAZY2 = lib.ZSTD_lazy2
 STRATEGY_BTLAZY2 = lib.ZSTD_btlazy2
 STRATEGY_BTOPT = lib.ZSTD_btopt
+STRATEGY_BTULTRA = lib.ZSTD_btultra
 
 COMPRESSOBJ_FLUSH_FINISH = 0
 COMPRESSOBJ_FLUSH_BLOCK = 1
@@ -165,7 +167,7 @@ class CompressionParameters(object):
         if target_length < TARGETLENGTH_MIN or target_length > TARGETLENGTH_MAX:
             raise ValueError('invalid target length value')
 
-        if strategy < STRATEGY_FAST or strategy > STRATEGY_BTOPT:
+        if strategy < STRATEGY_FAST or strategy > STRATEGY_BTULTRA:
             raise ValueError('invalid strategy value')
 
         self.window_log = window_log

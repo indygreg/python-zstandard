@@ -1196,6 +1196,8 @@ STRATEGY_BTLAZY2
     Compression strategy
 STRATEGY_BTOPT
     Compression strategy
+STRATEGY_BTULTRA
+    Compression strategy
 
 Performance Considerations
 --------------------------
