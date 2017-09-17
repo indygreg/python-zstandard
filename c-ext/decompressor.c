@@ -676,10 +676,12 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 		return NULL;
 	}
 
-	if (0 == frameHeader.frameContentSize) {
+	if (ZSTD_CONTENTSIZE_UNKNOWN == frameHeader.frameContentSize) {
 		PyErr_SetString(PyExc_ValueError, "chunk 0 missing content size in frame");
 		return NULL;
 	}
+
+	assert(ZSTD_CONTENTSIZE_ERROR != frameHeader.frameContentSize);
 
 	dctx = ZSTD_createDCtx();
 	if (!dctx) {
@@ -740,10 +742,12 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 			goto finally;
 		}
 
-		if (0 == frameHeader.frameContentSize) {
+		if (ZSTD_CONTENTSIZE_UNKNOWN == frameHeader.frameContentSize) {
 			PyErr_Format(PyExc_ValueError, "chunk %zd missing content size in frame", chunkIndex);
 			goto finally;
 		}
+
+		assert(ZSTD_CONTENTSIZE_ERROR != frameHeader.frameContentSize);
 
 		parity = chunkIndex % 2;
 

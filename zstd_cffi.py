@@ -1606,7 +1606,7 @@ class ZstdDecompressor(object):
         elif zresult:
             raise ValueError('chunk 0 is too small to contain a zstd frame')
 
-        if not params.frameContentSize:
+        if params.frameContentSize == lib.ZSTD_CONTENTSIZE_UNKNOWN:
             raise ValueError('chunk 0 missing content size in frame')
 
         dctx = lib.ZSTD_createDCtx()
@@ -1640,7 +1640,7 @@ class ZstdDecompressor(object):
             elif zresult:
                 raise ValueError('chunk %d is too small to contain a zstd frame' % i)
 
-            if not params.frameContentSize:
+            if params.frameContentSize == lib.ZSTD_CONTENTSIZE_UNKNOWN:
                 raise ValueError('chunk %d missing content size in frame' % i)
 
             dest_buffer = ffi.new('char[]', params.frameContentSize)

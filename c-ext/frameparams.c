@@ -62,7 +62,7 @@ static PyMemberDef FrameParameters_members[] = {
 	{ "content_size", T_ULONGLONG,
 	  offsetof(FrameParametersObject, frameContentSize), READONLY,
 	  "frame content size" },
-	{ "window_size", T_PYSSIZET,
+	{ "window_size", T_ULONGLONG,
 	  offsetof(FrameParametersObject, windowSize), READONLY,
 	  "window size" },
 	{ "dict_id", T_UINT,

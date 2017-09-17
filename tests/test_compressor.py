@@ -60,7 +60,7 @@ class TestCompressor_compress(unittest.TestCase):
         result = cctx.compress(b'')
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
         params = zstd.get_frame_parameters(result)
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 524288)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum, 0)
@@ -130,7 +130,7 @@ class TestCompressor_compress(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_size)
         with_params = zstd.get_frame_parameters(with_size)
-        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(with_params.content_size, 1536)
 
     def test_no_dict_id(self):
@@ -225,7 +225,7 @@ class TestCompressor_compressobj(unittest.TestCase):
         self.assertEqual(result[0:4], b'\x28\xb5\x2f\xfd')
 
         params = zstd.get_frame_parameters(result)
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 1048576)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
@@ -240,8 +240,8 @@ class TestCompressor_compressobj(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_checksum)
         with_params = zstd.get_frame_parameters(with_checksum)
-        self.assertEqual(no_params.content_size, 0)
-        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
+        self.assertEqual(with_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(no_params.dict_id, 0)
         self.assertEqual(with_params.dict_id, 0)
         self.assertFalse(no_params.has_checksum)
@@ -259,7 +259,7 @@ class TestCompressor_compressobj(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_size)
         with_params = zstd.get_frame_parameters(with_size)
-        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(with_params.content_size, 1536)
         self.assertEqual(no_params.dict_id, 0)
         self.assertEqual(with_params.dict_id, 0)
@@ -376,7 +376,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(w, 999)
 
         params = zstd.get_frame_parameters(dest.getvalue())
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 1048576)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
@@ -398,8 +398,8 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_checksum.getvalue())
         with_params = zstd.get_frame_parameters(with_checksum.getvalue())
-        self.assertEqual(no_params.content_size, 0)
-        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
+        self.assertEqual(with_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(no_params.dict_id, 0)
         self.assertEqual(with_params.dict_id, 0)
         self.assertFalse(no_params.has_checksum)
@@ -431,7 +431,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_size.getvalue())
         with_params = zstd.get_frame_parameters(with_size.getvalue())
-        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(with_params.content_size, 1536)
         self.assertEqual(no_params.dict_id, 0)
         self.assertEqual(with_params.dict_id, 0)
@@ -463,7 +463,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(w, 295)
 
         params = zstd.get_frame_parameters(dest.getvalue())
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
@@ -642,7 +642,7 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
 
         params = zstd.get_frame_parameters(result)
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 524288)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
@@ -702,7 +702,7 @@ class TestCompressor_write_to(unittest.TestCase):
         compressed = buffer.getvalue()
 
         params = zstd.get_frame_parameters(compressed)
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, d.dict_id())
         self.assertFalse(params.has_checksum)
@@ -728,7 +728,7 @@ class TestCompressor_write_to(unittest.TestCase):
         compressed = buffer.getvalue()
 
         params = zstd.get_frame_parameters(compressed)
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 1048576)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
@@ -749,8 +749,8 @@ class TestCompressor_write_to(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_checksum.getvalue())
         with_params = zstd.get_frame_parameters(with_checksum.getvalue())
-        self.assertEqual(no_params.content_size, 0)
-        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
+        self.assertEqual(with_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(no_params.dict_id, 0)
         self.assertEqual(with_params.dict_id, 0)
         self.assertFalse(no_params.has_checksum)
@@ -782,7 +782,7 @@ class TestCompressor_write_to(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_size.getvalue())
         with_params = zstd.get_frame_parameters(with_size.getvalue())
-        self.assertEqual(no_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(with_params.content_size, 1536)
         self.assertEqual(no_params.dict_id, 0)
         self.assertEqual(with_params.dict_id, 0)
@@ -813,8 +813,8 @@ class TestCompressor_write_to(unittest.TestCase):
 
         no_params = zstd.get_frame_parameters(no_dict_id.getvalue())
         with_params = zstd.get_frame_parameters(with_dict_id.getvalue())
-        self.assertEqual(no_params.content_size, 0)
-        self.assertEqual(with_params.content_size, 0)
+        self.assertEqual(no_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
+        self.assertEqual(with_params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(no_params.dict_id, 0)
         self.assertEqual(with_params.dict_id, d.dict_id())
         self.assertFalse(no_params.has_checksum)
@@ -959,7 +959,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         self.assertEqual(b''.join(chunks), cctx.compress(source.getvalue()))
 
         params = zstd.get_frame_parameters(b''.join(chunks))
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 262144)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
@@ -970,7 +970,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         self.assertEqual(len(chunks), 2)
 
         params = zstd.get_frame_parameters(b''.join(chunks))
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 262144)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)

@@ -90,21 +90,21 @@ class TestFrameParameters(unittest.TestCase):
 
     def test_attributes(self):
         params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x00\x00')
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
         # Lowest 2 bits indicate a dictionary and length. Here, the dict id is 1 byte.
         params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x01\x00\xff')
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, 255)
         self.assertFalse(params.has_checksum)
 
         # Lowest 3rd bit indicates if checksum is present.
         params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x04\x00')
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, 0)
         self.assertTrue(params.has_checksum)
@@ -118,7 +118,7 @@ class TestFrameParameters(unittest.TestCase):
 
         # Window descriptor is 2nd byte after frame header.
         params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b'\x00\x40')
-        self.assertEqual(params.content_size, 0)
+        self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
         self.assertEqual(params.window_size, 262144)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
@@ -144,7 +144,7 @@ class TestFrameParameters(unittest.TestCase):
 
         for source in sources:
             params = zstd.get_frame_parameters(source)
-            self.assertEqual(params.content_size, 0)
+            self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
             self.assertEqual(params.window_size, 1024)
             self.assertEqual(params.dict_id, 0)
             self.assertFalse(params.has_checksum)

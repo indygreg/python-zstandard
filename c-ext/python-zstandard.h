@@ -49,7 +49,7 @@ extern PyTypeObject CompressionParametersType;
 typedef struct {
 	PyObject_HEAD
 	unsigned long long frameContentSize;
-	size_t windowSize;
+	unsigned long long windowSize;
 	unsigned dictID;
 	char checksumFlag;
 } FrameParametersObject;
