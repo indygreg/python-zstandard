@@ -1415,17 +1415,22 @@ class ZstdDecompressor(object):
 
         ddict = self._ddict
 
-        output_size = lib.ZSTD_getDecompressedSize(data_buffer, len(data_buffer))
-        if output_size:
-            result_buffer = ffi.new('char[]', output_size)
-            result_size = output_size
-        else:
+        output_size = lib.ZSTD_getFrameContentSize(data_buffer, len(data_buffer))
+
+        if output_size == lib.ZSTD_CONTENTSIZE_ERROR:
+            raise ZstdError('error determining content size from frame header')
+        elif output_size == 0:
+            return b''
+        elif output_size == lib.ZSTD_CONTENTSIZE_UNKNOWN:
             if not max_output_size:
-                raise ZstdError('input data invalid or missing content size '
-                                'in frame header')
+                raise ZstdError('could not determine content size in frame header')
 
             result_buffer = ffi.new('char[]', max_output_size)
             result_size = max_output_size
+            output_size = 0
+        else:
+            result_buffer = ffi.new('char[]', output_size)
+            result_size = output_size
 
         if ddict:
             zresult = lib.ZSTD_decompress_usingDDict(dctx,

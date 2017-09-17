@@ -334,19 +334,29 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		}
 	}
 
-	decompressedSize = ZSTD_getDecompressedSize(source.buf, source.len);
-	/* 0 returned if content size not in the zstd frame header */
-	if (0 == decompressedSize) {
+	decompressedSize = ZSTD_getFrameContentSize(source.buf, source.len);
+
+	if (ZSTD_CONTENTSIZE_ERROR == decompressedSize) {
+		PyErr_SetString(ZstdError, "error determining content size from frame header");
+		goto finally;
+	}
+	/* Special case of empty frame. */
+	else if (0 == decompressedSize) {
+		result = PyBytes_FromStringAndSize("", 0);
+		goto finally;
+	}
+	/* Missing content size in frame header. */
+	if (ZSTD_CONTENTSIZE_UNKNOWN == decompressedSize) {
 		if (0 == maxOutputSize) {
-			PyErr_SetString(ZstdError, "input data invalid or missing content size "
-				"in frame header");
+			PyErr_SetString(ZstdError, "could not determine content size in frame header");
 			goto finally;
 		}
-		else {
-			result = PyBytes_FromStringAndSize(NULL, maxOutputSize);
-			destCapacity = maxOutputSize;
-		}
+
+		result = PyBytes_FromStringAndSize(NULL, maxOutputSize);
+		destCapacity = maxOutputSize;
+		decompressedSize = 0;
 	}
+	/* Size is recorded in frame header. */
 	else {
 		result = PyBytes_FromStringAndSize(NULL, decompressedSize);
 		destCapacity = decompressedSize;
@@ -899,14 +909,28 @@ static void decompress_worker(WorkerState* state) {
 	/* Resolve ouput segments. */
 	for (frameIndex = state->startOffset; frameIndex <= state->endOffset; frameIndex++) {
 		FramePointer* fp = &framePointers[frameIndex];
+		unsigned long long decompressedSize;
 
 		if (0 == fp->destSize) {
-			fp->destSize = ZSTD_getDecompressedSize(fp->sourceData, fp->sourceSize);
-			if (0 == fp->destSize && state->requireOutputSizes) {
+			decompressedSize = ZSTD_getFrameContentSize(fp->sourceData, fp->sourceSize);
+
+			if (ZSTD_CONTENTSIZE_ERROR == decompressedSize) {
 				state->error = WorkerError_unknownSize;
 				state->errorOffset = frameIndex;
 				return;
 			}
+			else if (ZSTD_CONTENTSIZE_UNKNOWN == decompressedSize) {
+				if (state->requireOutputSizes) {
+					state->error = WorkerError_unknownSize;
+					state->errorOffset = frameIndex;
+					return;
+				}
+
+				/* This will fail the assert for .destSize > 0 below. */
+				decompressedSize = 0;
+			}
+
+			fp->destSize = decompressedSize;
 		}
 
 		totalOutputSize += fp->destSize;

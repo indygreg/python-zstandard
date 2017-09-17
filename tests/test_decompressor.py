@@ -24,13 +24,13 @@ class TestDecompressor_decompress(unittest.TestCase):
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'input data invalid'):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'error determining content size from frame header'):
             dctx.decompress(b'')
 
     def test_invalid_input(self):
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'input data invalid'):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'error determining content size from frame header'):
             dctx.decompress(b'foobar')
 
     def test_input_types(self):
@@ -55,7 +55,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         compressed = cctx.compress(b'foobar')
 
         dctx = zstd.ZstdDecompressor()
-        with self.assertRaisesRegexp(zstd.ZstdError, 'input data invalid'):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'could not determine content size in frame header'):
             dctx.decompress(compressed)
 
     def test_content_size_present(self):
