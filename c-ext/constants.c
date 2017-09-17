@@ -52,6 +52,11 @@ void constants_module_init(PyObject* mod) {
 		PyErr_Format(PyExc_ValueError, "could not create frame header object");
 	}
 
+	PyModule_AddObject(mod, "CONTENTSIZE_UNKNOWN",
+		PyLong_FromUnsignedLongLong(ZSTD_CONTENTSIZE_UNKNOWN));
+	PyModule_AddObject(mod, "CONTENTSIZE_ERROR",
+		PyLong_FromUnsignedLongLong(ZSTD_CONTENTSIZE_ERROR));
+
 	PyModule_AddIntConstant(mod, "MAX_COMPRESSION_LEVEL", ZSTD_maxCLevel());
 	PyModule_AddIntConstant(mod, "COMPRESSION_RECOMMENDED_INPUT_SIZE",
 		(long)ZSTD_CStreamInSize());

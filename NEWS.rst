@@ -39,6 +39,7 @@ Changes
   ``PYTHON_ZSTANDARD_IMPORT_POLICY`` environment variable. See README for
   usage info.
 * Vendored version of zstd upgraded to 1.3.1.
+* Added module constants ``CONTENTSIZE_UNKNOWN`` and ``CONTENTSIZE_ERROR``.
 
 0.8.1 (released 2017-04-08)
 ---------------------------

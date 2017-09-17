@@ -20,6 +20,8 @@ class TestModuleAttributes(unittest.TestCase):
 
     def test_hasattr(self):
         attrs = (
+            'CONTENTSIZE_UNKNOWN',
+            'CONTENTSIZE_ERROR',
             'COMPRESSION_RECOMMENDED_INPUT_SIZE',
             'COMPRESSION_RECOMMENDED_OUTPUT_SIZE',
             'DECOMPRESSION_RECOMMENDED_INPUT_SIZE',

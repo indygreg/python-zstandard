@@ -1153,6 +1153,11 @@ FRAME_HEADER
 MAGIC_NUMBER
     Frame header as an integer
 
+CONTENTSIZE_UNKNOWN
+    Value for content size when the content size is unknown.
+CONTENTSIZE_ERROR
+    Value for content size when content size couldn't be determined.
+
 WINDOWLOG_MIN
     Minimum value for compression parameter
 WINDOWLOG_MAX
