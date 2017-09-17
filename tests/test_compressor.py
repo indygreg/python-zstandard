@@ -65,13 +65,11 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum, 0)
 
-        # TODO should be temporary until https://github.com/facebook/zstd/issues/506
-        # is fixed.
         cctx = zstd.ZstdCompressor(write_content_size=True)
-        with self.assertRaises(ValueError):
-            cctx.compress(b'')
-
-        cctx.compress(b'', allow_empty=True)
+        result = cctx.compress(b'')
+        self.assertEqual(result, b'\x28\xb5\x2f\xfd\x20\x00\x01\x00\x00')
+        params = zstd.get_frame_parameters(result)
+        self.assertEqual(params.content_size, 0)
 
     def test_input_types(self):
         cctx = zstd.ZstdCompressor(level=1)

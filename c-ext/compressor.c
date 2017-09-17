@@ -531,7 +531,7 @@ except:
 }
 
 PyDoc_STRVAR(ZstdCompressor_compress__doc__,
-"compress(data, allow_empty=False)\n"
+"compress(data)\n"
 "\n"
 "Compress data in a single operation.\n"
 "\n"
@@ -545,12 +545,10 @@ PyDoc_STRVAR(ZstdCompressor_compress__doc__,
 static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"data",
-		"allow_empty",
 		NULL
 	};
 
 	Py_buffer source;
-	PyObject* allowEmpty = NULL;
 	size_t destSize;
 	PyObject* output = NULL;
 	char* dest;
@@ -564,7 +562,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 #else
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|O:compress",
 #endif
-		kwlist, &source, &allowEmpty)) {
+		kwlist, &source)) {
 		return NULL;
 	}
 
@@ -577,17 +575,6 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	if (self->threads && self->cparams) {
 		PyErr_SetString(ZstdError,
 			"compress() cannot be used with both compression parameters and multi-threaded compression");
-		goto finally;
-	}
-
-	/* Limitation in zstd C API doesn't let decompression side distinguish
-	   between content size of 0 and unknown content size. This can make round
-	   tripping via Python difficult. Until this is fixed, require a flag
-	   to fire the footgun.
-	   https://github.com/indygreg/python-zstandard/issues/11 */
-	if (0 == source.len && self->fparams.contentSizeFlag
-		&& (!allowEmpty || PyObject_Not(allowEmpty))) {
-		PyErr_SetString(PyExc_ValueError, "cannot write empty inputs when writing content sizes");
 		goto finally;
 	}
 

@@ -66,6 +66,15 @@ class TestDecompressor_decompress(unittest.TestCase):
         decompressed = dctx.decompress(compressed)
         self.assertEqual(decompressed, b'foobar')
 
+    def test_empty_roundtrip(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+        compressed = cctx.compress(b'')
+
+        dctx = zstd.ZstdDecompressor()
+        decompressed = dctx.decompress(compressed)
+
+        self.assertEqual(decompressed, b'')
+
     def test_max_output_size(self):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         source = b'foobar' * 256

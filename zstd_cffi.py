@@ -656,10 +656,7 @@ class ZstdCompressor(object):
 
         self._cstream = None
 
-    def compress(self, data, allow_empty=False):
-        if len(data) == 0 and self._fparams.contentSizeFlag and not allow_empty:
-            raise ValueError('cannot write empty inputs when writing content sizes')
-
+    def compress(self, data):
         if self._multithreaded and self._dict_data:
             raise ZstdError('compress() cannot be used with both dictionaries and multi-threaded compression')
 

@@ -18,6 +18,8 @@ Backwards Compatibility Notes
 * Support for Python 3.3 has been removed.
 * The ``selectivity`` argument to ``train_dictionary()`` has been removed, as
   the feature disappeared from zstd 1.3.
+* The ``allow_empty`` argument from ``ZstdCompressor.compress()`` has been
+  deleted and the method now allows empty inputs to be compressed by default.
 
 Changes
 -------
@@ -43,6 +45,8 @@ Changes
 * Add ``STRATEGY_BTULTRA`` compression strategy constant.
 * Switch from deprecated ``ZSTD_getDecompressedSize()`` to
   ``ZSTD_getFrameContentSize()`` replacement.
+* ``ZstdCompressor.compress()`` can now compress empty inputs without requiring
+  special handling.
 
 0.8.1 (released 2017-04-08)
 ---------------------------
