@@ -6,16 +6,19 @@ environment:
   matrix:
     - JOB: "2.7 32-bit"
       TOXENV: "py27"
-      PYTHON: "C:\\Python27.13"
-      PYTHON_VERSION: "2.7.13"
+      PYTHON: "C:\\Python27.14"
+      PYTHON_VERSION: "2.7.14"
       PYTHON_ARCH: "32"
 
     - JOB: "2.7 64-bit"
       TOXENV: "py27"
-      PYTHON: "C:\\Python27.13-x64"
-      PYTHON_VERSION: "2.7.13"
+      PYTHON: "C:\\Python27.14-x64"
+      PYTHON_VERSION: "2.7.14"
       PYTHON_ARCH: "64"
 
+    # Python stopped producing MSIs after 3.4.4
+    # (https://bugs.python.org/issue31148). So we can't upgrade past
+    # that version.
     - JOB: "3.4 32-bit"
       TOXENV: "py34"
       PYTHON: "C:\\Python34.4"
@@ -42,14 +45,14 @@ environment:
 
     - JOB: "3.6 32-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.1"
-      PYTHON_VERSION: "3.6.1"
+      PYTHON: "C:\\Python36.3"
+      PYTHON_VERSION: "3.6.3"
       PYTHON_ARCH: "32"
 
     - JOB: "3.6 64-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.1-x64"
-      PYTHON_VERSION: "3.6.1"
+      PYTHON: "C:\\Python36.3-x64"
+      PYTHON_VERSION: "3.6.3"
       PYTHON_ARCH: "64"
 
     - JOB: "2.7 Conda"
