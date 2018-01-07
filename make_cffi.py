@@ -85,7 +85,9 @@ else:
 def preprocess(path):
     with open(path, 'rb') as fh:
         lines = []
-        for l in fh:
+        it = iter(fh)
+
+        for l in it:
             # zstd.h includes <stddef.h>, which is also included by cffi's
             # boilerplate. This can lead to duplicate declarations. So we strip
             # this include from the preprocessor invocation.
@@ -105,6 +107,22 @@ def preprocess(path):
             # important so just filter it out.
             if l.startswith(b'ZSTDLIB_API'):
                 l = l[len(b'ZSTDLIB_API '):]
+
+            # These private functions should not be used. Why they are in a
+            # public header is anyone's guess.
+            if l == b'size_t ZSTDMT_CCtxParam_setMTCtxParameter(ZSTD_CCtx_params* params, ZSTDMT_parameter parameter, unsigned value);\n':
+                continue
+            if l == b'size_t ZSTDMT_initializeCCtxParameters(ZSTD_CCtx_params* params, unsigned nbThreads);\n':
+                continue
+            if l == b'size_t ZSTDMT_initCStream_internal(ZSTDMT_CCtx* zcs,\n':
+                # Filter out the next lines of the function declaration.
+                l = next(it)
+                assert l.strip() == b'const void* dict, size_t dictSize, ZSTD_dictMode_e dictMode,'
+                l = next(it)
+                assert l.strip() == b'const ZSTD_CDict* cdict,'
+                l = next(it)
+                assert l.strip() == b'ZSTD_CCtx_params params, unsigned long long pledgedSrcSize);'
+                continue
 
             lines.append(l)
 
