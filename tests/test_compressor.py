@@ -697,7 +697,7 @@ class TestCompressor_write_to(unittest.TestCase):
         with cctx.write_to(buffer) as compressor:
             self.assertEqual(compressor.write(b'foo'), 0)
             self.assertEqual(compressor.write(b'bar'), 0)
-            self.assertEqual(compressor.write(b'foo' * 16384), 634)
+            self.assertEqual(compressor.write(b'foo' * 16384), 681)
 
         compressed = buffer.getvalue()
 
@@ -709,11 +709,11 @@ class TestCompressor_write_to(unittest.TestCase):
 
         self.assertEqual(compressed[0:32],
                          b'\x28\xb5\x2f\xfd\x03\x00\x55\x7b\x6b\x5e\x54\x00'
-                         b'\x00\x00\x02\xfc\xf4\xa5\xba\x23\x3f\x85\xb3\x54'
-                         b'\x00\x00\x18\x6f\x6f\x66\x01\x00')
+                         b'\x00\x00\x02\xfc\xf4\xa5\xba\x23\x3f\x85\xb3\x5c'
+                         b'\x00\x00\x18\x6f\x6f\x66\x01\xfc')
 
         h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, '1c5bcd25181bcd8c1a73ea8773323e0056129f92')
+        self.assertEqual(h, '028ea3b350ad82cc8e2abb824b7b57cbfa084721')
 
     def test_compression_params(self):
         params = zstd.CompressionParameters(20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST)
