@@ -49,7 +49,7 @@ Changes
   *backend* as appropriate. Behavior can be controlled via the
   ``PYTHON_ZSTANDARD_IMPORT_POLICY`` environment variable. See README for
   usage info.
-* Vendored version of zstd upgraded to 1.3.1.
+* Vendored version of zstd upgraded to 1.3.2.
 * Added module constants ``CONTENTSIZE_UNKNOWN`` and ``CONTENTSIZE_ERROR``.
 * Add ``STRATEGY_BTULTRA`` compression strategy constant.
 * Switch from deprecated ``ZSTD_getDecompressedSize()`` to
