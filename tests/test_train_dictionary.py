@@ -50,7 +50,7 @@ class TestTrainDictionary(unittest.TestCase):
         self.assertIsInstance(d.dict_id(), int_type)
 
         data = d.as_bytes()
-        self.assertEqual(data[0:8], b'\x37\xa4\x30\xec\x44\x05\x69\x35')
+        self.assertEqual(data[0:8], b'\x37\xa4\x30\xec\x6e\x9a\x80\x25')
 
     def test_basic(self):
         d = zstd.train_dictionary(8192, generate_samples(), k=64, d=16)
@@ -71,5 +71,5 @@ class TestTrainDictionary(unittest.TestCase):
         d = zstd.train_dictionary(8192, generate_samples(), threads=-1, steps=1,
                                   d=16)
 
-        self.assertIn(d.k, (50, 2000))
+        self.assertEqual(d.k, 50)
         self.assertEqual(d.d, 16)

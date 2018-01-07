@@ -489,7 +489,7 @@ class TestDecompressor_write_to(unittest.TestCase):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(dict_data=d)
         with cctx.write_to(buffer) as compressor:
-            self.assertEqual(compressor.write(orig), 114)
+            self.assertEqual(compressor.write(orig), 823)
 
         compressed = buffer.getvalue()
         buffer = io.BytesIO()
