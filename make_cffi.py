@@ -142,10 +142,13 @@ def normalize_output(output):
 
 
 ffi = cffi.FFI()
+# zstd.h uses a possible undefined MIN(). Define it until
+# https://github.com/facebook/zstd/issues/976 is fixed.
 # *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
 # when cffi uses the function. Since we statically link against zstd, even
 # if we use the deprecated functions it shouldn't be a huge problem.
 ffi.set_source('_zstd_cffi', '''
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
 #define ZDICT_STATIC_LINKING_ONLY
