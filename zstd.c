@@ -120,7 +120,7 @@ void zstd_module_init(PyObject* m) {
 	   We detect this mismatch here and refuse to load the module if this
 	   scenario is detected.
 	*/
-	if (ZSTD_VERSION_NUMBER != 10200 || ZSTD_versionNumber() != 10200) {
+	if (ZSTD_VERSION_NUMBER != 10300 || ZSTD_versionNumber() != 10300) {
 		PyErr_SetString(PyExc_ImportError, "zstd C API mismatch; Python bindings not compiled against expected zstd version");
 		return;
 	}
