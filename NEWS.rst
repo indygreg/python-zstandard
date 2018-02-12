@@ -1,6 +1,11 @@
 Version History
 ===============
 
+0.8.2 (released 2018-02-22)
+---------------------------
+
+* Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40).
+
 0.8.1 (released 2017-04-08)
 ---------------------------
 
