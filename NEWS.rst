@@ -5,6 +5,7 @@ Version History
 ---------------------------
 
 * Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40).
+* Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35).
 
 0.8.1 (released 2017-04-08)
 ---------------------------
