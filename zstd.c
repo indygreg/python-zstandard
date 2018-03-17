@@ -62,10 +62,12 @@ PyDoc_STRVAR(train_cover_dictionary__doc__,
 "\n"
 "Train a dictionary from sample data using the COVER algorithm.\n"
 "\n"
-"This behaves like ``train_dictionary()`` except a different algorithm is\n"
-"used to create the dictionary. The algorithm has 2 parameters: ``k`` and\n"
-"``d``. These control the *segment size* and *dmer size*. A reasonable range\n"
-"for ``k`` is ``[16, 2048+]``. A reasonable range for ``d`` is ``[6, 16]``.\n"
+"A compression dictionary of size ``dict_size`` will be created from the\n"
+"iterable of ``samples``. The raw dictionary bytes will be returned.\n"
+"\n"
+"The COVER algorithm has 2 parameters: ``k`` and ``d``. These control the\n"
+"*segment size* and *dmer size*. A reasonable range for ``k`` is\n"
+"``[16, 2048+]``. A reasonable range for ``d`` is ``[6, 16]``.\n"
 "``d`` must be less than or equal to ``k``.\n"
 );
 
