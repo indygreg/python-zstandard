@@ -70,6 +70,19 @@ class TestTrainCoverDictionary(unittest.TestCase):
         with self.assertRaises(ValueError):
             zstd.train_cover_dictionary(8192, [u'foo'])
 
+    def test_no_params(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foobarbaz' * 16)
+            samples.append(b'blehbleh' * 16)
+            samples.append(b'randomtext' * 16)
+
+        d = zstd.train_cover_dictionary(8192, samples)
+        self.assertIsInstance(d.dict_id(), int_type)
+
+        data = d.as_bytes()
+        self.assertEqual(data[0:8], b'\x37\xa4\x30\xec\xe3\x9f\x99\x7a')
+
     def test_basic(self):
         samples = []
         for i in range(128):
@@ -101,7 +114,7 @@ class TestTrainCoverDictionary(unittest.TestCase):
             samples.append(b'foo' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(8192, samples, optimize=True,
+        d = zstd.train_cover_dictionary(8192, samples,
                                         threads=-1, steps=1, d=16)
 
         self.assertEqual(d.k, 50)

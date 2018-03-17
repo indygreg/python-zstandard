@@ -1068,7 +1068,7 @@ def train_dictionary(dict_size, samples, level=0,
 
 
 def train_cover_dictionary(dict_size, samples, k=0, d=0,
-                           notifications=0, dict_id=0, level=0, optimize=False,
+                           notifications=0, dict_id=0, level=0,
                            steps=0, threads=0):
     if not isinstance(samples, list):
         raise TypeError('samples must be a list')
@@ -1102,7 +1102,15 @@ def train_cover_dictionary(dict_size, samples, k=0, d=0,
     dparams.zParams.dictID = dict_id
     dparams.zParams.compressionLevel = level
 
-    if optimize:
+    if (not dparams.k and not dparams.d and not dparams.steps
+        and not dparams.nbThreads and not dparams.zParams.notificationLevel
+        and not dparams.zParams.dictID
+        and not dparams.zParams.compressionLevel):
+        zresult = lib.ZDICT_trainFromBuffer(
+            ffi.addressof(dict_data), dict_size,
+            ffi.addressof(samples_buffer),
+            ffi.addressof(sample_sizes, 0), len(samples))
+    elif dparams.steps or dparams.nbThreads:
         zresult = lib.ZDICT_optimizeTrainFromBuffer_cover(
             ffi.addressof(dict_data), dict_size,
             ffi.addressof(samples_buffer),

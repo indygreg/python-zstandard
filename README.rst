@@ -1012,17 +1012,19 @@ and ``d`` attributes reflecting the parameters to the cover algorithm.
 The segment and dmer size parameters to the cover algorithm can either be
 specified manually or you can ask ``train_cover_dictionary()`` to try
 multiple values and pick the best one, where *best* means the smallest
-compressed data size.
+compressed data size. This later mode is called *optimization* mode.
 
-In manual mode, the ``k`` and ``d`` arguments must be specified or a
-``ZstdError`` will be raised.
+If none of ``k``, ``d``, ``steps``, ``threads``, ``level``, ``notifications``,
+or ``dict_id`` (basically anything from the underlying ``ZDICT_cover_params_t``
+struct) are defined, *optimization* mode is used with default parameter
+values.
 
-In automatic mode (triggered by specifying ``optimize=True``), ``k``
-and ``d`` are optional. If a value isn't specified, then default values for
-both are tested.  The ``steps`` argument can control the number of steps
-through ``k`` values. The ``level`` argument defines the compression level
-that will be used when testing the compressed size. And ``threads`` can
-specify the number of threads to use for concurrent operation.
+If ``steps`` or ``threads`` are defined, then *optimization* mode is engaged
+with explicit control over those parameters. Specifying ``threads=0`` or
+``threads=1`` can be used to engage *optimization* mode if other parameters
+are not defined.
+
+Otherwise, non-*optimization* mode is used with the parameters specified.
 
 This function takes the following arguments:
 
@@ -1039,18 +1041,15 @@ d
 dict_id
    Integer dictionary ID for the produced dictionary. Default is 0, which uses
    a random value.
-optimize
-   When true, test dictionary generation with multiple parameters.
-level
-   Integer target compression level when testing compression with
-   ``optimize=True``. Default is 1.
 steps
-   Number of steps through ``k`` values to perform when ``optimize=True``.
-   Default is 32.
+   Number of steps through ``k`` values to perform when trying parameter
+   variations.
 threads
-   Number of threads to use when ``optimize=True``. Default is 0, which means
-   to use a single thread. A negative value can be specified to use as many
-   threads as there are detected logical CPUs.
+   Number of threads to use when trying parameter variations. Default is 0,
+   which means to use a single thread. A negative value can be specified to
+   use as many threads as there are detected logical CPUs.
+level
+   Integer target compression level when trying parameter variations.
 notifications
    Controls writing of informational messages to ``stderr``. See the
    documentation for ``train_dictionary()`` for more.

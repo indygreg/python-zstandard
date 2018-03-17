@@ -56,6 +56,8 @@ Changes
 * ``ZstdCompressor`` and ``ZstdDecompressor`` now have a ``memory_size()``
   method for determining the current memory utilization of the underlying zstd
   primitive.
+* ``train_cover_dictionary()`` has new arguments and functionality for
+  trying multiple variations of COVER parameters and selecting the best one.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

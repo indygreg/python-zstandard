@@ -58,7 +58,8 @@ PyDoc_STRVAR(train_dictionary__doc__,
 "The raw dictionary content will be returned\n");
 
 PyDoc_STRVAR(train_cover_dictionary__doc__,
-"train_cover_dictionary(dict_size, samples, k=None, d=None, notifications=0, dict_id=0, level=0)\n"
+"train_cover_dictionary(dict_size, samples, k=None, d=None, steps=None,\n"
+"                       threads=None,notifications=0, dict_id=0, level=0)\n"
 "\n"
 "Train a dictionary from sample data using the COVER algorithm.\n"
 "\n"
@@ -69,6 +70,21 @@ PyDoc_STRVAR(train_cover_dictionary__doc__,
 "*segment size* and *dmer size*. A reasonable range for ``k`` is\n"
 "``[16, 2048+]``. A reasonable range for ``d`` is ``[6, 16]``.\n"
 "``d`` must be less than or equal to ``k``.\n"
+"\n"
+"``steps`` can be specified to control the number of steps through potential\n"
+"values of ``k`` and ``d`` to try. ``k`` and ``d`` will only be varied if\n"
+"those arguments are not defined. i.e. if ``d`` is ``8``, then only ``k``\n"
+"will be varied in this mode.\n"
+"\n"
+"``threads`` can specify how many threads to use to test various ``k`` and\n"
+"``d`` values. ``-1`` will use as many threads as available CPUs. By default,\n"
+"a single thread is used.\n"
+"\n"
+"When ``k`` and ``d`` are not defined, default values are used and the\n"
+"algorithm will perform multiple iterations - or steps - to try to find\n"
+"ideal parameters. If both ``k`` and ``d`` are specified, then those values\n"
+"will be used. ``steps`` or ``threads`` triggers optimization mode to test\n"
+"multiple ``k`` and ``d`` variations.\n"
 );
 
 static char zstd_doc[] = "Interface to zstandard";
