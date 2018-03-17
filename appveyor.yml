@@ -45,14 +45,14 @@ environment:
 
     - JOB: "3.6 32-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.3"
-      PYTHON_VERSION: "3.6.3"
+      PYTHON: "C:\\Python36.4"
+      PYTHON_VERSION: "3.6.4"
       PYTHON_ARCH: "32"
 
     - JOB: "3.6 64-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.3-x64"
-      PYTHON_VERSION: "3.6.3"
+      PYTHON: "C:\\Python36.4-x64"
+      PYTHON_VERSION: "3.6.4"
       PYTHON_ARCH: "64"
 
     - JOB: "2.7 Conda"
