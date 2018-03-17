@@ -180,7 +180,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	Py_ssize_t totalWrite = 0;
 	char* readBuffer;
 	Py_ssize_t readSize;
-	PyObject* readResult;
+	PyObject* readResult = NULL;
 	PyObject* res = NULL;
 	size_t zresult = 0;
 	PyObject* writeResult;
@@ -266,6 +266,8 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 				output.pos = 0;
 			}
 		}
+
+		Py_CLEAR(readResult);
 	}
 
 	/* Source stream is exhausted. Finish up. */
@@ -280,6 +282,8 @@ finally:
 	if (output.dst) {
 		PyMem_Free(output.dst);
 	}
+
+	Py_XDECREF(readResult);
 
 	return res;
 }

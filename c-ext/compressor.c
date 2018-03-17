@@ -342,7 +342,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	Py_ssize_t totalWrite = 0;
 	char* readBuffer;
 	Py_ssize_t readSize;
-	PyObject* readResult;
+	PyObject* readResult = NULL;
 	PyObject* res = NULL;
 	size_t zresult;
 	PyObject* writeResult;
@@ -439,6 +439,8 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 				output.pos = 0;
 			}
 		}
+
+		Py_CLEAR(readResult);
 	}
 
 	/* We've finished reading. Now flush the compressor stream. */
@@ -483,6 +485,8 @@ finally:
 	if (output.dst) {
 		PyMem_Free(output.dst);
 	}
+
+	Py_XDECREF(readResult);
 
 	return res;
 }

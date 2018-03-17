@@ -21,6 +21,12 @@ Backwards Compatibility Notes
 * The ``allow_empty`` argument from ``ZstdCompressor.compress()`` has been
   deleted and the method now allows empty inputs to be compressed by default.
 
+Bug Fixes (from 0.8.0)
+----------------------
+
+* Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40).
+* Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35).
+
 Changes
 -------
 
@@ -50,6 +56,12 @@ Changes
 * ``ZstdCompressor`` and ``ZstdDecompressor`` now have a ``memory_size()``
   method for determining the current memory utilization of the underlying zstd
   primitive.
+
+0.8.2 (released 2018-02-22)
+---------------------------
+
+* Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40).
+* Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35).
 
 0.8.1 (released 2017-04-08)
 ---------------------------
