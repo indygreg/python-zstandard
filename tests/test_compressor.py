@@ -715,22 +715,22 @@ class TestCompressor_write_to(unittest.TestCase):
         with cctx.write_to(buffer) as compressor:
             self.assertEqual(compressor.write(b'foo'), 0)
             self.assertEqual(compressor.write(b'bar'), 0)
-            self.assertEqual(compressor.write(b'foo' * 16384), 347)
+            self.assertEqual(compressor.write(b'foo' * 16384), 0)
 
         compressed = buffer.getvalue()
 
         params = zstd.get_frame_parameters(compressed)
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 2048)
+        self.assertEqual(params.window_size, 2097152)
         self.assertEqual(params.dict_id, d.dict_id())
         self.assertFalse(params.has_checksum)
-        self.assertEqual(compressed[0:32],
-                         b'\x28\xb5\x2f\xfd\x03\x08\x06\x59\xb5\x52\x64\x00'
-                         b'\x00\x00\x02\xfc\x37\x03\x85\x61\xa3\x87\x89\x12'
-                         b'\x01\x5c\x00\x00\x18\x6f\x66\x6f')
+        self.assertEqual(compressed,
+                         b'\x28\xb5\x2f\xfd\x03\x58\x06\x59\xb5\x52\x65\x00'
+                         b'\x00\x00\x02\xfc\x3d\x3f\xa0\x36\x6c\xd4\x30\x51'
+                         b'\x22')
 
         h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, '694206bb8744b0ad1afd8685506578339952b9d9')
+        self.assertEqual(h, '2f7207bb3328ce9141478b77aa761814b3aca9b9')
 
     def test_compression_params(self):
         params = zstd.CompressionParameters(
