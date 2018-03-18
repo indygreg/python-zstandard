@@ -43,20 +43,18 @@ static void reader_dealloc(ZstdCompressionReader* self) {
 }
 
 static ZstdCompressionReader* reader_enter(ZstdCompressionReader* self) {
+	size_t zresult;
+
 	if (self->entered) {
 		PyErr_SetString(PyExc_ValueError, "cannot __enter__ multiple times");
 		return NULL;
 	}
 
-	if (self->compressor->mtcctx) {
-		if (init_mtcstream(self->compressor, self->sourceSize)) {
-			return NULL;
-		}
-	}
-	else {
-		if (init_cstream(self->compressor, self->sourceSize)) {
-			return NULL;
-		}
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->compressor->cctx, self->sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
 	}
 
 	self->entered = 1;
@@ -197,14 +195,9 @@ readinput:
 		oldPos = self->output.pos;
 
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
-				&self->output, &self->input);
-		}
-		else {
-			zresult = ZSTD_compressStream(self->compressor->cstream,
-				&self->output, &self->input);
-		}
+		zresult = ZSTD_compress_generic(self->compressor->cctx,
+			&self->output, &self->input, ZSTD_e_continue);
+
 		Py_END_ALLOW_THREADS
 
 		self->bytesCompressed += self->output.pos - oldPos;
@@ -285,12 +278,9 @@ readinput:
 
 	/* Else EOF */
 	oldPos = self->output.pos;
-	if (self->compressor->mtcctx) {
-		zresult = ZSTDMT_endStream(self->compressor->mtcctx, &self->output);
-	}
-	else {
-		zresult = ZSTD_endStream(self->compressor->cstream, &self->output);
-	}
+
+	zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+		&self->input, ZSTD_e_end);
 
 	self->bytesCompressed += self->output.pos - oldPos;
 
@@ -299,6 +289,8 @@ readinput:
 			ZSTD_getErrorName(zresult));
 		return NULL;
 	}
+
+	/* TODO don't we need to try again if zresult > 0? */
 
 	assert(self->output.pos);
 

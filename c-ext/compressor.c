@@ -11,125 +11,12 @@
 
 extern PyObject* ZstdError;
 
-int populate_cdict(ZstdCompressor* compressor, ZSTD_compressionParameters* cparams) {
-	ZSTD_customMem zmem;
-
-	if (compressor->cdict || !compressor->dict || !compressor->dict->dictData) {
-		return 0;
-	}
-
-	Py_BEGIN_ALLOW_THREADS
-	memset(&zmem, 0, sizeof(zmem));
-	compressor->cdict = ZSTD_createCDict_advanced(compressor->dict->dictData,
-		compressor->dict->dictSize, 1, ZSTD_dm_auto, *cparams, zmem);
-	Py_END_ALLOW_THREADS
-
-	if (!compressor->cdict) {
-		PyErr_SetString(ZstdError, "could not create compression dictionary");
+int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value) {
+	size_t zresult = ZSTD_CCtxParam_setParameter(params, param, value);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "unable to set compression context parameter: %s",
+			ZSTD_getErrorName(zresult));
 		return 1;
-	}
-
-	return 0;
-}
-
-/**
- * Ensure the ZSTD_CStream on a ZstdCompressor instance is initialized.
- *
- * Returns 0 on success. Other value on failure. Will set a Python exception
- * on failure.
- */
-int init_cstream(ZstdCompressor* compressor, unsigned long long sourceSize) {
-	ZSTD_parameters zparams;
-	void* dictData = NULL;
-	size_t dictSize = 0;
-	size_t zresult;
-
-	if (compressor->cstream) {
-		/* Content size is written into frame header if size is !0 */
-		zresult = ZSTD_resetCStream(compressor->cstream,
-			compressor->fparams.contentSizeFlag ? sourceSize : 0);
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "could not reset CStream: %s",
-				ZSTD_getErrorName(zresult));
-			return -1;
-		}
-
-		return 0;
-	}
-
-	compressor->cstream = ZSTD_createCStream();
-	if (!compressor->cstream) {
-		PyErr_SetString(ZstdError, "could not create CStream");
-		return -1;
-	}
-
-	if (compressor->dict) {
-		dictData = compressor->dict->dictData;
-		dictSize = compressor->dict->dictSize;
-	}
-
-	memset(&zparams, 0, sizeof(zparams));
-	if (compressor->cparams) {
-		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
-		/* Do NOT call ZSTD_adjustCParams() here because the compression params
-		come from the user. */
-	}
-	else {
-		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, sourceSize, dictSize);
-	}
-
-	zparams.fParams = compressor->fparams;
-
-	if (sourceSize == 0) {
-		zparams.fParams.contentSizeFlag = 0;
-	}
-
-	zresult = ZSTD_initCStream_advanced(compressor->cstream, dictData, dictSize,
-		zparams, sourceSize);
-
-	if (ZSTD_isError(zresult)) {
-		ZSTD_freeCStream(compressor->cstream);
-		compressor->cstream = NULL;
-		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
-		return -1;
-	}
-
-	return 0;;
-}
-
-int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize) {
-	size_t zresult;
-	void* dictData = NULL;
-	size_t dictSize = 0;
-	ZSTD_parameters zparams;
-
-	assert(compressor->mtcctx);
-
-	if (compressor->dict) {
-		dictData = compressor->dict->dictData;
-		dictSize = compressor->dict->dictSize;
-	}
-
-	memset(&zparams, 0, sizeof(zparams));
-	if (compressor->cparams) {
-		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
-	}
-	else {
-		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel, sourceSize, dictSize);
-	}
-
-	zparams.fParams = compressor->fparams;
-
-	if (sourceSize == 0) {
-		zparams.fParams.contentSizeFlag = 0;
-	}
-
-	zresult = ZSTDMT_initCStream_advanced(compressor->mtcctx, dictData, dictSize,
-		zparams, sourceSize);
-
-	if (ZSTD_isError(zresult)) {
-		PyErr_Format(ZstdError, "cannot init CStream: %s", ZSTD_getErrorName(zresult));
-		return -1;
 	}
 
 	return 0;
@@ -190,6 +77,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	PyObject* writeContentSize = NULL;
 	PyObject* writeDictID = NULL;
 	int threads = 0;
+	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!O!OOOi:ZstdCompressor",
 		kwlist,	&level, &ZstdCompressionDictType, &dict,
@@ -213,76 +101,119 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		threads = cpu_count();
 	}
 
-	self->threads = threads;
-
 	/* We create a ZSTD_CCtx for reuse among multiple operations to reduce the
 	   overhead of each compression operation. */
-	if (threads) {
-		self->mtcctx = ZSTDMT_createCCtx(threads);
-		if (!self->mtcctx) {
-			PyErr_NoMemory();
+	self->cctx = ZSTD_createCCtx();
+	if (!self->cctx) {
+		PyErr_NoMemory();
+		return -1;
+	}
+
+	/* TODO stuff the original parameters away somewhere so we can reset later. This
+	   will allow us to do things like automatically adjust cparams based on input
+	   size (assuming zstd isn't doing that internally). */
+
+	self->params = ZSTD_createCCtxParams();
+	if (!self->params) {
+		PyErr_NoMemory();
+		return -1;
+	}
+
+	if (set_parameter(self->params, ZSTD_p_compressionLevel, level)) {
+		return -1;
+	}
+
+	if (params) {
+		if (set_parameter(self->params, ZSTD_p_windowLog, params->windowLog)) {
 			return -1;
 		}
-	}
-	else {
-		self->cctx = ZSTD_createCCtx();
-		if (!self->cctx) {
-			PyErr_NoMemory();
+
+		if (set_parameter(self->params, ZSTD_p_hashLog, params->hashLog)) {
+			return -1;
+		}
+
+		if (set_parameter(self->params, ZSTD_p_chainLog, params->chainLog)) {
+			return -1;
+		}
+
+		if (set_parameter(self->params, ZSTD_p_searchLog, params->searchLog)) {
+			return -1;
+		}
+
+		if (set_parameter(self->params, ZSTD_p_minMatch, params->searchLength)) {
+			return -1;
+		}
+
+		if (set_parameter(self->params, ZSTD_p_targetLength, params->targetLength)) {
+			return -1;
+		}
+
+		if (set_parameter(self->params, ZSTD_p_compressionStrategy, params->strategy)) {
 			return -1;
 		}
 	}
 
-	self->compressionLevel = level;
+	if (set_parameter(self->params, ZSTD_p_contentSizeFlag,
+		writeContentSize ? PyObject_IsTrue(writeContentSize) : 0)) {
+		return -1;
+	}
+
+	if (set_parameter(self->params, ZSTD_p_checksumFlag,
+		writeChecksum ? PyObject_IsTrue(writeChecksum) : 0)) {
+		return -1;
+	}
+
+	if (set_parameter(self->params, ZSTD_p_dictIDFlag,
+		writeDictID ? PyObject_IsTrue(writeDictID) : 1)) {
+		return -1;
+	}
+
+	if (threads) {
+		if (set_parameter(self->params, ZSTD_p_nbThreads, threads)) {
+			return -1;
+		}
+
+		/* TODO support ZSTD_p_jobSize, ZSTD_p_overlapSizeLog */
+	}
+
+	/* TODO support advanced parameters (LDM, etc) */
+
+	zresult = ZSTD_CCtx_setParametersUsingCCtxParams(self->cctx, self->params);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "could not set compression parameters: %s",
+			ZSTD_getErrorName(zresult));
+		return -1;
+	}
 
 	if (dict) {
 		self->dict = dict;
 		Py_INCREF(dict);
-	}
 
-	if (params) {
-		self->cparams = params;
-		Py_INCREF(params);
-	}
-
-	memset(&self->fparams, 0, sizeof(self->fparams));
-
-	if (writeChecksum && PyObject_IsTrue(writeChecksum)) {
-		self->fparams.checksumFlag = 1;
-	}
-	if (writeContentSize && PyObject_IsTrue(writeContentSize)) {
-		self->fparams.contentSizeFlag = 1;
-	}
-	if (writeDictID && PyObject_Not(writeDictID)) {
-		self->fparams.noDictIDFlag = 1;
+		/* TODO we /could/ cache a ZSTD_CDict on the ZstdCompressionDict struct
+		   and use ZSTD_CCtx_refPrefix to avoid computing it here. */
+		zresult = ZSTD_CCtx_loadDictionary_byReference(self->cctx, dict->dictData, dict->dictSize);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "could not load compression dictionary: %s",
+				ZSTD_getErrorString(zresult));
+			return -1;
+		}
 	}
 
 	return 0;
 }
 
 static void ZstdCompressor_dealloc(ZstdCompressor* self) {
-	if (self->cstream) {
-		ZSTD_freeCStream(self->cstream);
-		self->cstream = NULL;
-	}
-
-	Py_XDECREF(self->cparams);
-	Py_XDECREF(self->dict);
-
-	if (self->cdict) {
-		ZSTD_freeCDict(self->cdict);
-		self->cdict = NULL;
-	}
-
 	if (self->cctx) {
 		ZSTD_freeCCtx(self->cctx);
 		self->cctx = NULL;
 	}
 
-	if (self->mtcctx) {
-		ZSTDMT_freeCCtx(self->mtcctx);
-		self->mtcctx = NULL;
+	if (self->params) {
+		ZSTD_freeCCtxParams(self->params);
+		self->params = NULL;
 	}
 
+	Py_XDECREF(self->dict);
 	PyObject_Del(self);
 }
 
@@ -295,9 +226,6 @@ PyDoc_STRVAR(ZstdCompressor_memory_size__doc__,
 static PyObject* ZstdCompressor_memory_size(ZstdCompressor* self) {
 	if (self->cctx) {
 		return PyLong_FromSize_t(ZSTD_sizeof_CCtx(self->cctx));
-	}
-	else if (self->mtcctx) {
-		return PyLong_FromSize_t(ZSTDMT_sizeof_CCtx(self->mtcctx));
 	}
 	else {
 		PyErr_SetString(ZstdError, "no compressor context found; this should never happen");
@@ -333,7 +261,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 	PyObject* source;
 	PyObject* dest;
-	Py_ssize_t sourceSize = 0;
+	Py_ssize_t sourceSize = -1;
 	size_t inSize = ZSTD_CStreamInSize();
 	size_t outSize = ZSTD_CStreamOutSize();
 	ZSTD_inBuffer input;
@@ -364,22 +292,18 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
+	if (sourceSize == -1) {
+		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
+	}
+
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
+	}
+
 	/* Prevent free on uninitialized memory in finally. */
-	output.dst = NULL;
-
-	if (self->mtcctx) {
-		if (init_mtcstream(self, sourceSize)) {
-			res = NULL;
-			goto finally;
-		}
-	}
-	else {
-		if (0 != init_cstream(self, sourceSize)) {
-			res = NULL;
-			goto finally;
-		}
-	}
-
 	output.dst = PyMem_Malloc(outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();
@@ -388,6 +312,10 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	}
 	output.size = outSize;
 	output.pos = 0;
+
+	input.src = NULL;
+	input.size = 0;
+	input.pos = 0;
 
 	while (1) {
 		/* Try to read from source stream. */
@@ -413,12 +341,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
-			if (self->mtcctx) {
-				zresult = ZSTDMT_compressStream(self->mtcctx, &output, &input);
-			}
-			else {
-				zresult = ZSTD_compressStream(self->cstream, &output, &input);
-			}
+			zresult = ZSTD_compress_generic(self->cctx, &output, &input, ZSTD_e_continue);
 			Py_END_ALLOW_THREADS
 
 			if (ZSTD_isError(zresult)) {
@@ -444,13 +367,13 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	}
 
 	/* We've finished reading. Now flush the compressor stream. */
+	assert(input.pos == input.size);
+
 	while (1) {
-		if (self->mtcctx) {
-			zresult = ZSTDMT_endStream(self->mtcctx, &output);
-		}
-		else {
-			zresult = ZSTD_endStream(self->cstream, &output);
-		}
+		Py_BEGIN_ALLOW_THREADS
+		zresult = ZSTD_compress_generic(self->cctx, &output, &input, ZSTD_e_end);
+		Py_END_ALLOW_THREADS
+
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
 				ZSTD_getErrorName(zresult));
@@ -509,7 +432,7 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 	};
 
 	PyObject* source;
-	Py_ssize_t sourceSize = 0;
+	Py_ssize_t sourceSize = -1;
 	size_t readSize = ZSTD_CStreamInSize();
 	ZstdCompressionReader* result = NULL;
 
@@ -539,6 +462,10 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		PyErr_SetString(PyExc_TypeError,
 			"must pass an object with a read() method or that conforms to the buffer protocol");
 		goto except;
+	}
+
+	if (sourceSize == -1) {
+		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	result->compressor = self;
@@ -574,11 +501,9 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	Py_buffer source;
 	size_t destSize;
 	PyObject* output = NULL;
-	char* dest;
-	void* dictData = NULL;
-	size_t dictSize = 0;
 	size_t zresult;
-	ZSTD_parameters zparams;
+	ZSTD_outBuffer outBuffer;
+	ZSTD_inBuffer inBuffer;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|O:compress",
@@ -589,76 +514,33 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		return NULL;
 	}
 
-	if (self->threads && self->dict) {
-		PyErr_SetString(ZstdError,
-			"compress() cannot be used with both dictionaries and multi-threaded compression");
-		goto finally;
-	}
-
-	if (self->threads && self->cparams) {
-		PyErr_SetString(ZstdError,
-			"compress() cannot be used with both compression parameters and multi-threaded compression");
-		goto finally;
-	}
-
 	destSize = ZSTD_compressBound(source.len);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
 	if (!output) {
 		goto finally;
 	}
 
-	dest = PyBytes_AsString(output);
-
-	if (self->dict) {
-		dictData = self->dict->dictData;
-		dictSize = self->dict->dictSize;
-	}
-
-	memset(&zparams, 0, sizeof(zparams));
-	if (!self->cparams) {
-		zparams.cParams = ZSTD_getCParams(self->compressionLevel, source.len, dictSize);
-	}
-	else {
-		ztopy_compression_parameters(self->cparams, &zparams.cParams);
-		/* Do NOT call ZSTD_adjustCParams() here because the compression params
-		come from the user. */
-	}
-
-	zparams.fParams = self->fparams;
-
-	/* The raw dict data has to be processed before it can be used. Since this
-	adds overhead - especially if multiple dictionary compression operations
-	are performed on the same ZstdCompressor instance - we create a
-	ZSTD_CDict once and reuse it for all operations.
-
-	Note: the compression parameters used for the first invocation (possibly
-	derived from the source size) will be reused on all subsequent invocations.
-	https://github.com/facebook/zstd/issues/358 contains more info. We could
-	potentially add an argument somewhere to control this behavior.
-	*/
-	if (0 != populate_cdict(self, &zparams.cParams)) {
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, source.len);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
 		Py_CLEAR(output);
 		goto finally;
 	}
 
+	inBuffer.src = source.buf;
+	inBuffer.size = source.len;
+	inBuffer.pos = 0;
+
+	outBuffer.dst = PyBytes_AsString(output);
+	outBuffer.size = destSize;
+	outBuffer.pos = 0;
+
 	Py_BEGIN_ALLOW_THREADS
-	if (self->mtcctx) {
-		zresult = ZSTDMT_compressCCtx(self->mtcctx, dest, destSize,
-			source.buf, source.len, self->compressionLevel);
-	}
-	else {
-		/* By avoiding ZSTD_compress(), we don't necessarily write out content
-		   size. This means the argument to ZstdCompressor to control frame
-		   parameters is honored. */
-		if (self->cdict) {
-			zresult = ZSTD_compress_usingCDict_advanced(self->cctx, dest, destSize,
-				source.buf, source.len, self->cdict, zparams.fParams);
-		}
-		else {
-			zresult = ZSTD_compress_advanced(self->cctx, dest, destSize,
-				source.buf, source.len, dictData, dictSize, zparams);
-		}
-	}
+	/* By avoiding ZSTD_compress(), we don't necessarily write out content
+		size. This means the argument to ZstdCompressor to control frame
+		parameters is honored. */
+	zresult = ZSTD_compress_generic(self->cctx, &outBuffer, &inBuffer, ZSTD_e_end);
 	Py_END_ALLOW_THREADS
 
 	if (ZSTD_isError(zresult)) {
@@ -666,9 +548,13 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		Py_CLEAR(output);
 		goto finally;
 	}
-	else {
-		Py_SIZE(output) = zresult;
+	else if (zresult) {
+		PyErr_SetString(ZstdError, "unexpected partial frame flush");
+		Py_CLEAR(output);
+		goto finally;
 	}
+
+	Py_SIZE(output) = outBuffer.pos;
 
 finally:
 	PyBuffer_Release(&source);
@@ -691,30 +577,29 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		NULL
 	};
 
-	Py_ssize_t inSize = 0;
+	Py_ssize_t inSize = -1;
 	size_t outSize = ZSTD_CStreamOutSize();
 	ZstdCompressionObj* result = NULL;
+	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|n:compressobj", kwlist, &inSize)) {
+		return NULL;
+	}
+
+	if (inSize == -1) {
+		inSize = ZSTD_CONTENTSIZE_UNKNOWN;
+	}
+
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, inSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
 		return NULL;
 	}
 
 	result = (ZstdCompressionObj*)PyObject_CallObject((PyObject*)&ZstdCompressionObjType, NULL);
 	if (!result) {
 		return NULL;
-	}
-
-	if (self->mtcctx) {
-		if (init_mtcstream(self, inSize)) {
-			Py_DECREF(result);
-			return NULL;
-		}
-	}
-	else {
-		if (0 != init_cstream(self, inSize)) {
-			Py_DECREF(result);
-			return NULL;
-		}
 	}
 
 	result->output.dst = PyMem_Malloc(outSize);
@@ -760,14 +645,19 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 	};
 
 	PyObject* reader;
-	Py_ssize_t sourceSize = 0;
+	Py_ssize_t sourceSize = -1;
 	size_t inSize = ZSTD_CStreamInSize();
 	size_t outSize = ZSTD_CStreamOutSize();
 	ZstdCompressorIterator* result;
+	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nkk:read_to_iter", kwlist,
 		&reader, &sourceSize, &inSize, &outSize)) {
 		return NULL;
+	}
+
+	if (sourceSize == -1) {
+		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	result = (ZstdCompressorIterator*)PyObject_CallObject((PyObject*)&ZstdCompressorIteratorType, NULL);
@@ -791,21 +681,15 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 		goto except;
 	}
 
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
+	}
+
 	result->compressor = self;
 	Py_INCREF(result->compressor);
-
-	result->sourceSize = sourceSize;
-
-	if (self->mtcctx) {
-		if (init_mtcstream(self, sourceSize)) {
-			goto except;
-		}
-	}
-	else {
-		if (0 != init_cstream(self, sourceSize)) {
-			goto except;
-		}
-	}
 
 	result->inSize = inSize;
 	result->outSize = outSize;
@@ -854,7 +738,7 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 
 	PyObject* writer;
 	ZstdCompressionWriter* result;
-	Py_ssize_t sourceSize = 0;
+	Py_ssize_t sourceSize = -1;
 	size_t outSize = ZSTD_CStreamOutSize();
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nk:write_to", kwlist,
@@ -865,6 +749,10 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 	if (!PyObject_HasAttrString(writer, "write")) {
 		PyErr_SetString(PyExc_ValueError, "must pass an object with a write() method");
 		return NULL;
+	}
+
+	if (sourceSize == -1) {
+		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
@@ -906,6 +794,7 @@ typedef enum {
 	WorkerError_none = 0,
 	WorkerError_zstd = 1,
 	WorkerError_no_memory = 2,
+	WorkerError_nospace = 3,
 } WorkerError;
 
 /**
@@ -914,10 +803,6 @@ typedef enum {
 typedef struct {
 	/* Used for compression. */
 	ZSTD_CCtx* cctx;
-	ZSTD_CDict* cdict;
-	int cLevel;
-	CompressionParametersObject* cParams;
-	ZSTD_frameParameters fParams;
 
 	/* What to compress. */
 	DataSource* sources;
@@ -941,7 +826,6 @@ static void compress_worker(WorkerState* state) {
 	Py_ssize_t remainingItems = state->endOffset - state->startOffset + 1;
 	Py_ssize_t currentBufferStartOffset = state->startOffset;
 	size_t zresult;
-	ZSTD_parameters zparams;
 	void* newDest;
 	size_t allocationSize;
 	size_t boundSize;
@@ -951,12 +835,6 @@ static void compress_worker(WorkerState* state) {
 
 	assert(!state->destBuffers);
 	assert(0 == state->destCount);
-
-	if (state->cParams) {
-		ztopy_compression_parameters(state->cParams, &zparams.cParams);
-	}
-
-	zparams.fParams = state->fParams;
 
 	/*
 	 * The total size of the compressed data is unknown until we actually
@@ -1022,6 +900,8 @@ static void compress_worker(WorkerState* state) {
 		size_t sourceSize = sources[inputOffset].sourceSize;
 		size_t destAvailable;
 		void* dest;
+		ZSTD_outBuffer opOutBuffer;
+		ZSTD_inBuffer opInBuffer;
 
 		destAvailable = destBuffer->destSize - destOffset;
 		boundSize = ZSTD_compressBound(sourceSize);
@@ -1105,19 +985,15 @@ static void compress_worker(WorkerState* state) {
 
 		dest = (char*)destBuffer->dest + destOffset;
 
-		if (state->cdict) {
-			zresult = ZSTD_compress_usingCDict_advanced(state->cctx, dest, destAvailable,
-				source, sourceSize, state->cdict, zparams.fParams);
-		}
-		else {
-			if (!state->cParams) {
-				zparams.cParams = ZSTD_getCParams(state->cLevel, sourceSize, 0);
-			}
+		opInBuffer.src = source;
+		opInBuffer.size = sourceSize;
+		opInBuffer.pos = 0;
 
-			zresult = ZSTD_compress_advanced(state->cctx, dest, destAvailable,
-				source, sourceSize, NULL, 0, zparams);
-		}
+		opOutBuffer.dst = dest;
+		opOutBuffer.size = destAvailable;
+		opOutBuffer.pos = 0;
 
+		zresult = ZSTD_CCtx_setPledgedSrcSize(state->cctx, sourceSize);
 		if (ZSTD_isError(zresult)) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;
@@ -1125,10 +1001,23 @@ static void compress_worker(WorkerState* state) {
 			break;
 		}
 
-		destBuffer->segments[inputOffset - currentBufferStartOffset].offset = destOffset;
-		destBuffer->segments[inputOffset - currentBufferStartOffset].length = zresult;
+		zresult = ZSTD_compress_generic(state->cctx, &opOutBuffer, &opInBuffer, ZSTD_e_end);
+		if (ZSTD_isError(zresult)) {
+			state->error = WorkerError_zstd;
+			state->zresult = zresult;
+			state->errorOffset = inputOffset;
+			break;
+		}
+		else if (zresult) {
+			state->error = WorkerError_nospace;
+			state->errorOffset = inputOffset;
+			break;
+		}
 
-		destOffset += zresult;
+		destBuffer->segments[inputOffset - currentBufferStartOffset].offset = destOffset;
+		destBuffer->segments[inputOffset - currentBufferStartOffset].length = opOutBuffer.pos;
+
+		destOffset += opOutBuffer.pos;
 		remainingItems--;
 	}
 
@@ -1146,7 +1035,6 @@ static void compress_worker(WorkerState* state) {
 
 ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* compressor,
 	DataSources* sources, unsigned int threadCount) {
-	ZSTD_parameters zparams;
 	unsigned long long bytesPerWorker;
 	POOL_ctx* pool = NULL;
 	WorkerState* workerStates = NULL;
@@ -1172,28 +1060,6 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	/* TODO lower thread count when input size is too small and threads would add
 	overhead. */
 
-	/*
-	 * When dictionaries are used, parameters are derived from the size of the
-	 * first element.
-	 *
-	 * TODO come up with a better mechanism.
-	 */
-	memset(&zparams, 0, sizeof(zparams));
-	if (compressor->cparams) {
-		ztopy_compression_parameters(compressor->cparams, &zparams.cParams);
-	}
-	else {
-		zparams.cParams = ZSTD_getCParams(compressor->compressionLevel,
-			sources->sources[0].sourceSize,
-			compressor->dict ? compressor->dict->dictSize : 0);
-	}
-
-	zparams.fParams = compressor->fparams;
-
-	if (0 != populate_cdict(compressor, &zparams.cParams)) {
-		return NULL;
-	}
-
 	workerStates = PyMem_Malloc(threadCount * sizeof(WorkerState));
 	if (NULL == workerStates) {
 		PyErr_NoMemory();
@@ -1213,16 +1079,36 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	bytesPerWorker = sources->totalSourceSize / threadCount;
 
 	for (i = 0; i < threadCount; i++) {
+		size_t zresult;
+
 		workerStates[i].cctx = ZSTD_createCCtx();
 		if (!workerStates[i].cctx) {
 			PyErr_NoMemory();
 			goto finally;
 		}
 
-		workerStates[i].cdict = compressor->cdict;
-		workerStates[i].cLevel = compressor->compressionLevel;
-		workerStates[i].cParams = compressor->cparams;
-		workerStates[i].fParams = compressor->fparams;
+		zresult = ZSTD_CCtx_setParametersUsingCCtxParams(workerStates[i].cctx,
+			compressor->params);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "could not set compression parameters: %s",
+				ZSTD_getErrorName(zresult));
+			goto finally;
+		}
+
+		if (compressor->dict) {
+			/* TODO cache computed dictionary on ZstdCompressionDict */
+			zresult = ZSTD_CCtx_loadDictionary_byReference(
+				workerStates[i].cctx,
+				compressor->dict->dictData,
+				compressor->dict->dictSize);
+
+			if (ZSTD_isError(zresult)) {
+				PyErr_Format(ZstdError, "could not load compression dictionary: %s",
+					ZSTD_getErrorString(zresult));
+				goto finally;
+			}
+
+		}
 
 		workerStates[i].sources = sources->sources;
 		workerStates[i].sourcesSize = sources->sourcesSize;
@@ -1294,6 +1180,13 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 				workerStates[i].errorOffset, ZSTD_getErrorName(workerStates[i].zresult));
 			errored = 1;
 			break;
+
+		case WorkerError_nospace:
+			PyErr_Format(ZstdError, "error compressing item %zd: not enough space in output",
+				workerStates[i].errorOffset);
+			errored = 1;
+			break;
+
 		default:
 			;
 		}
@@ -1413,12 +1306,6 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 	Py_ssize_t i;
 	Py_ssize_t sourceCount = 0;
 	ZstdBufferWithSegmentsCollection* result = NULL;
-
-	if (self->mtcctx) {
-		PyErr_SetString(ZstdError,
-			"function cannot be called on ZstdCompressor configured for multi-threaded compression");
-		return NULL;
-	}
 
 	memset(&sources, 0, sizeof(sources));
 

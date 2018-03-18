@@ -85,29 +85,15 @@ extern PyTypeObject ZstdCompressionDictType;
 typedef struct {
 	PyObject_HEAD
 
-	/* Configured compression level. Should be always set. */
-	int compressionLevel;
 	/* Number of threads to use for operations. */
 	unsigned int threads;
 	/* Pointer to compression dictionary to use. NULL if not using dictionary
 	   compression. */
 	ZstdCompressionDict* dict;
-	/* Compression context to use. Populated during object construction. NULL
-	   if using multi-threaded compression. */
+	/* Compression context to use. Populated during object construction. */
 	ZSTD_CCtx* cctx;
-	/* Multi-threaded compression context to use. Populated during object
-	   construction. NULL if not using multi-threaded compression. */
-	ZSTDMT_CCtx* mtcctx;
-	/* Digest compression dictionary. NULL initially. Populated on first use. */
-	ZSTD_CDict* cdict;
-	/* Low-level compression parameter control. NULL unless passed to
-	   constructor. Takes precedence over `compressionLevel` if defined. */
-	CompressionParametersObject* cparams;
-	/* Controls zstd frame options. */
-	ZSTD_frameParameters fparams;
-	/* Holds state for streaming compression. Shared across all invocation.
-	   Populated on first use. */
-	ZSTD_CStream* cstream;
+	/* Compression parameters in use. */
+	ZSTD_CCtx_params* params;
 } ZstdCompressor;
 
 extern PyTypeObject ZstdCompressorType;
@@ -141,7 +127,6 @@ typedef struct {
 	PyObject* reader;
 	Py_buffer buffer;
 	Py_ssize_t bufferOffset;
-	Py_ssize_t sourceSize;
 	size_t inSize;
 	size_t outSize;
 
@@ -332,8 +317,6 @@ void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_comp
 CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject* args);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);
 PyObject* estimate_compression_context_size(PyObject* self, PyObject* args);
-int init_cstream(ZstdCompressor* compressor, unsigned long long sourceSize);
-int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize);
 int init_dstream(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);

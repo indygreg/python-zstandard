@@ -63,6 +63,8 @@ Changes
   variations of COVER parameters and selecting the best one.
 * Added module constants ``LDM_MINMATCH_MIN``, ``LDM_MINMATCH_MAX``, and
   ``LDM_BUCKETSIZELOG_MAX``.
+* Converted all consumers to the zstandard *new advanced API*, which uses
+  ``ZSTD_compress_generic()``
 
 0.8.2 (released 2018-02-22)
 ---------------------------

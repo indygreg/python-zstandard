@@ -49,13 +49,8 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 
 	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
-				&self->output, &input);
-		}
-		else {
-			zresult = ZSTD_compressStream(self->compressor->cstream, &self->output, &input);
-		}
+			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+				&input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -101,6 +96,7 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 	size_t zresult;
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
+	ZSTD_inBuffer input;
 
 	if (!PyArg_ParseTuple(args, "|i:flush", &flushMode)) {
 		return NULL;
@@ -118,16 +114,16 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 
 	assert(self->output.pos == 0);
 
+	input.src = NULL;
+	input.size = 0;
+	input.pos = 0;
+
 	if (flushMode == compressorobj_flush_block) {
 		/* The output buffer is of size ZSTD_CStreamOutSize(), which is 
 		   guaranteed to hold a full block. */
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_flushStream(self->compressor->mtcctx, &self->output);
-		}
-		else {
-			zresult = ZSTD_flushStream(self->compressor->cstream, &self->output);
-		}
+			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+				&input, ZSTD_e_flush);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -159,12 +155,8 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 	self->finished = 1;
 
 	while (1) {
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_endStream(self->compressor->mtcctx, &self->output);
-		}
-		else {
-			zresult = ZSTD_endStream(self->compressor->cstream, &self->output);
-		}
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+			&input, ZSTD_e_end);
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
 				ZSTD_getErrorName(zresult));

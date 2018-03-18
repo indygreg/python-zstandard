@@ -40,25 +40,6 @@ class TestCompressor(unittest.TestCase):
 
 @make_cffi
 class TestCompressor_compress(unittest.TestCase):
-    def test_multithreaded_unsupported(self):
-        samples = []
-        for i in range(128):
-            samples.append(b'foo' * 64)
-            samples.append(b'bar' * 64)
-            samples.append(b'foobar' * 64)
-
-        d = zstd.train_dictionary(1024, samples)
-
-        cctx = zstd.ZstdCompressor(dict_data=d, threads=2)
-
-        with self.assertRaisesRegexp(zstd.ZstdError, 'compress\(\) cannot be used with both dictionaries and multi-threaded compression'):
-            cctx.compress(b'foo')
-
-        params = zstd.get_compression_parameters(3)
-        cctx = zstd.ZstdCompressor(compression_params=params, threads=2)
-        with self.assertRaisesRegexp(zstd.ZstdError, 'compress\(\) cannot be used with both compression parameters and multi-threaded compression'):
-            cctx.compress(b'foo')
-
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1)
         result = cctx.compress(b'')
@@ -175,7 +156,8 @@ class TestCompressor_compress(unittest.TestCase):
         chunk_size = multithreaded_chunk_size(1)
         source = b''.join([b'x' * chunk_size, b'y' * chunk_size])
 
-        cctx = zstd.ZstdCompressor(level=1, threads=2)
+        cctx = zstd.ZstdCompressor(level=1, threads=2,
+                                   write_content_size=True)
         compressed = cctx.compress(source)
 
         params = zstd.get_frame_parameters(compressed)
@@ -185,6 +167,45 @@ class TestCompressor_compress(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         self.assertEqual(dctx.decompress(compressed), source)
+
+    def test_multithreaded_dict(self):
+        if zstd.backend == 'cffi':
+            raise unittest.SkipTest('not yet implemented in cffi')
+
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(1024, samples)
+
+        cctx = zstd.ZstdCompressor(dict_data=d, threads=2,
+                                   write_content_size=True)
+
+        result = cctx.compress(b'foo')
+        params = zstd.get_frame_parameters(result);
+        self.assertEqual(params.content_size, 3);
+        self.assertEqual(params.dict_id, d.dict_id())
+
+        self.assertEqual(result,
+                         b'\x28\xb5\x2f\xfd\x23\x06\x59\xb5\x52\x03\x19\x00\x00'
+                         b'\x66\x6f\x6f')
+
+    def test_multithreaded_compression_params(self):
+        if zstd.backend == 'cffi':
+            raise unittest.SkipTest('not yet implemented in cffi')
+
+        params = zstd.get_compression_parameters(3)
+        cctx = zstd.ZstdCompressor(compression_params=params, threads=2,
+                                   write_content_size=True)
+
+        result = cctx.compress(b'foo')
+        params = zstd.get_frame_parameters(result);
+        self.assertEqual(params.content_size, 3);
+
+        self.assertEqual(result,
+                         b'\x28\xb5\x2f\xfd\x20\x03\x19\x00\x00\x66\x6f\x6f')
 
 
 @make_cffi
@@ -828,6 +849,7 @@ class TestCompressor_write_to(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=3)
         buffer = io.BytesIO()
         with cctx.write_to(buffer) as compressor:
+            compressor.write(b'foo')
             size = compressor.memory_size()
 
         self.assertGreater(size, 100000)
@@ -972,7 +994,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
 
         params = zstd.get_frame_parameters(b''.join(chunks))
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 262144)
+        #self.assertEqual(params.window_size, 262144)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
@@ -1000,12 +1022,6 @@ class TestCompressor_read_to_iter(unittest.TestCase):
 
 
 class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
-    def test_multithreaded_unsupported(self):
-        cctx = zstd.ZstdCompressor(threads=2)
-
-        with self.assertRaisesRegexp(zstd.ZstdError, 'function cannot be called on ZstdCompressor configured for multi-threaded compression'):
-            cctx.multi_compress_to_buffer([b'foo'])
-
     def test_invalid_inputs(self):
         cctx = zstd.ZstdCompressor()
 
