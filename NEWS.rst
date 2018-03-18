@@ -61,6 +61,8 @@ Changes
   primitive.
 * ``train_dictionary()`` has new arguments and functionality for trying multiple
   variations of COVER parameters and selecting the best one.
+* Added module constants ``LDM_MINMATCH_MIN``, ``LDM_MINMATCH_MAX``, and
+  ``LDM_BUCKETSIZELOG_MAX``.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

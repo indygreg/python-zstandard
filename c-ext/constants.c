@@ -81,6 +81,9 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MAX", ZSTD_SEARCHLENGTH_MAX);
 	PyModule_AddIntConstant(mod, "TARGETLENGTH_MIN", ZSTD_TARGETLENGTH_MIN);
 	PyModule_AddIntConstant(mod, "TARGETLENGTH_MAX", ZSTD_TARGETLENGTH_MAX);
+	PyModule_AddIntConstant(mod, "LDM_MINMATCH_MIN", ZSTD_LDM_MINMATCH_MIN);
+	PyModule_AddIntConstant(mod, "LDM_MINMATCH_MAX", ZSTD_LDM_MINMATCH_MAX);
+	PyModule_AddIntConstant(mod, "LDM_BUCKETSIZELOG_MAX", ZSTD_LDM_BUCKETSIZELOG_MAX);
 
 	PyModule_AddIntConstant(mod, "STRATEGY_FAST", ZSTD_fast);
 	PyModule_AddIntConstant(mod, "STRATEGY_DFAST", ZSTD_dfast);
