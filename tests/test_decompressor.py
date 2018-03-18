@@ -122,7 +122,7 @@ class TestDecompressor_decompress(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_dictionary(8192, samples)
+        d = zstd.train_cover_dictionary(8192, samples)
 
         orig = b'foobar' * 16384
         cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_content_size=True)
@@ -140,7 +140,7 @@ class TestDecompressor_decompress(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_dictionary(8192, samples)
+        d = zstd.train_cover_dictionary(8192, samples)
 
         sources = (b'foobar' * 8192, b'foo' * 8192, b'bar' * 8192)
         compressed = []
@@ -483,13 +483,13 @@ class TestDecompressor_write_to(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_dictionary(8192, samples)
+        d = zstd.train_cover_dictionary(8192, samples)
 
         orig = b'foobar' * 16384
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(dict_data=d)
         with cctx.write_to(buffer) as compressor:
-            self.assertEqual(compressor.write(orig), 1639)
+            self.assertEqual(compressor.write(orig), 114)
 
         compressed = buffer.getvalue()
         buffer = io.BytesIO()

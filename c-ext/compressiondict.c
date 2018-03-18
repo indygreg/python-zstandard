@@ -10,116 +10,6 @@
 
 extern PyObject* ZstdError;
 
-ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs) {
-	static char* kwlist[] = {
-		"dict_size",
-		"samples",
-		"level",
-		"notifications",
-		"dict_id",
-		NULL
-	};
-	size_t capacity;
-	PyObject* samples;
-	Py_ssize_t samplesLen;
-	int level = 0;
-	unsigned notifications = 0;
-	unsigned dictID = 0;
-	ZDICT_legacy_params_t zparams;
-	Py_ssize_t sampleIndex;
-	Py_ssize_t sampleSize;
-	PyObject* sampleItem;
-	size_t zresult;
-	void* sampleBuffer = NULL;
-	void* sampleOffset;
-	size_t samplesSize = 0;
-	size_t* sampleSizes = NULL;
-	void* dict = NULL;
-	ZstdCompressionDict* result = NULL;
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|iII:train_dictionary",
-		kwlist,
-		&capacity,
-		&PyList_Type, &samples,
-		&level, &notifications, &dictID)) {
-		return NULL;
-	}
-
-	memset(&zparams, 0, sizeof(zparams));
-
-	zparams.zParams.compressionLevel = level;
-	zparams.zParams.notificationLevel = notifications;
-	zparams.zParams.dictID = dictID;
-
-	/* Figure out the size of the raw samples */
-	samplesLen = PyList_Size(samples);
-	for (sampleIndex = 0; sampleIndex < samplesLen; sampleIndex++) {
-		sampleItem = PyList_GetItem(samples, sampleIndex);
-		if (!PyBytes_Check(sampleItem)) {
-			PyErr_SetString(PyExc_ValueError, "samples must be bytes");
-			return NULL;
-		}
-		samplesSize += PyBytes_GET_SIZE(sampleItem);
-	}
-
-	/* Now that we know the total size of the raw simples, we can allocate
-	a buffer for the raw data */
-	sampleBuffer = PyMem_Malloc(samplesSize);
-	if (!sampleBuffer) {
-		PyErr_NoMemory();
-		goto finally;
-	}
-	sampleSizes = PyMem_Malloc(samplesLen * sizeof(size_t));
-	if (!sampleSizes) {
-		PyErr_NoMemory();
-		goto finally;
-	}
-
-	sampleOffset = sampleBuffer;
-	/* Now iterate again and assemble the samples in the buffer */
-	for (sampleIndex = 0; sampleIndex < samplesLen; sampleIndex++) {
-		sampleItem = PyList_GetItem(samples, sampleIndex);
-		sampleSize = PyBytes_GET_SIZE(sampleItem);
-		sampleSizes[sampleIndex] = sampleSize;
-		memcpy(sampleOffset, PyBytes_AS_STRING(sampleItem), sampleSize);
-		sampleOffset = (char*)sampleOffset + sampleSize;
-	}
-
-	dict = PyMem_Malloc(capacity);
-	if (!dict) {
-		PyErr_NoMemory();
-		goto finally;
-	}
-
-	/* TODO consider using dup2() to redirect zstd's stderr writing to a buffer */
-	Py_BEGIN_ALLOW_THREADS
-	zresult = ZDICT_trainFromBuffer_legacy(dict, capacity,
-		sampleBuffer, sampleSizes, (unsigned int)samplesLen,
-		zparams);
-	Py_END_ALLOW_THREADS
-	if (ZDICT_isError(zresult)) {
-		PyErr_Format(ZstdError, "Cannot train dict: %s", ZDICT_getErrorName(zresult));
-		PyMem_Free(dict);
-		goto finally;
-	}
-
-	result = PyObject_New(ZstdCompressionDict, &ZstdCompressionDictType);
-	if (!result) {
-		goto finally;
-	}
-
-	result->dictData = dict;
-	result->dictSize = zresult;
-	result->d = 0;
-	result->k = 0;
-
-finally:
-	PyMem_Free(sampleBuffer);
-	PyMem_Free(sampleSizes);
-
-	return result;
-}
-
 ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"dict_size",
@@ -261,8 +151,8 @@ PyDoc_STRVAR(ZstdCompressionDict__doc__,
 "ZstdCompressionDict(data) - Represents a computed compression dictionary\n"
 "\n"
 "This type holds the results of a computed Zstandard compression dictionary.\n"
-"Instances are obtained by calling ``train_dictionary()`` or by passing bytes\n"
-"obtained from another source into the constructor.\n"
+"Instances are obtained by calling ``train_cover_dictionary()`` or by passing\n"
+"bytes obtained from another source into the constructor.\n"
 );
 
 static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {

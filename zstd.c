@@ -47,16 +47,6 @@ PyDoc_STRVAR(get_frame_parameters__doc__,
 "\n"
 "Obtains a ``FrameParameters`` instance by parsing data.\n");
 
-PyDoc_STRVAR(train_dictionary__doc__,
-"train_dictionary(dict_size, samples)\n"
-"\n"
-"Train a dictionary from sample data.\n"
-"\n"
-"A compression dictionary of size ``dict_size`` will be created from the\n"
-"iterable of samples provided by ``samples``.\n"
-"\n"
-"The raw dictionary content will be returned\n");
-
 PyDoc_STRVAR(train_cover_dictionary__doc__,
 "train_cover_dictionary(dict_size, samples, k=None, d=None, steps=None,\n"
 "                       threads=None,notifications=0, dict_id=0, level=0)\n"
@@ -99,8 +89,6 @@ static PyMethodDef zstd_methods[] = {
 	METH_VARARGS, get_compression_parameters__doc__ },
 	{ "get_frame_parameters", (PyCFunction)get_frame_parameters,
 	METH_VARARGS, get_frame_parameters__doc__ },
-	{ "train_dictionary", (PyCFunction)train_dictionary,
-	METH_VARARGS | METH_KEYWORDS, train_dictionary__doc__ },
 	{ "train_cover_dictionary", (PyCFunction)train_cover_dictionary,
 	METH_VARARGS | METH_KEYWORDS, train_cover_dictionary__doc__ },
 	{ NULL, NULL }

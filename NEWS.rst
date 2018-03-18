@@ -18,6 +18,7 @@ Backwards Compatibility Notes
 * Support for Python 3.3 has been removed.
 * The ``selectivity`` argument to ``train_dictionary()`` has been removed, as
   the feature disappeared from zstd 1.3.
+* Support for legacy dictionaries has been removed.
 * The ``allow_empty`` argument from ``ZstdCompressor.compress()`` has been
   deleted and the method now allows empty inputs to be compressed by default.
 

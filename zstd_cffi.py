@@ -25,7 +25,6 @@ __all__ = [
     'get_compression_parameters',
     'get_frame_parameters',
     'train_cover_dictionary',
-    'train_dictionary',
 
     # Constants.
     'COMPRESSOBJ_FLUSH_FINISH',
@@ -1025,46 +1024,6 @@ class ZstdCompressionDict(object):
 
     def as_bytes(self):
         return self._data
-
-
-def train_dictionary(dict_size, samples, level=0,
-                     notifications=0, dict_id=0):
-    if not isinstance(samples, list):
-        raise TypeError('samples must be a list')
-
-    total_size = sum(map(len, samples))
-
-    samples_buffer = new_nonzero('char[]', total_size)
-    sample_sizes = new_nonzero('size_t[]', len(samples))
-
-    offset = 0
-    for i, sample in enumerate(samples):
-        if not isinstance(sample, bytes_type):
-            raise ValueError('samples must be bytes')
-
-        l = len(sample)
-        ffi.memmove(samples_buffer + offset, sample, l)
-        offset += l
-        sample_sizes[i] = l
-
-    dict_data = new_nonzero('char[]', dict_size)
-
-    dparams = ffi.new('ZDICT_legacy_params_t *')[0]
-    dparams.zParams.compressionLevel = level
-    dparams.zParams.notificationLevel = notifications
-    dparams.zParams.dictID = dict_id
-
-    zresult = lib.ZDICT_trainFromBuffer_legacy(
-        ffi.addressof(dict_data), dict_size,
-        ffi.addressof(samples_buffer),
-        ffi.addressof(sample_sizes, 0), len(samples),
-        dparams)
-
-    if lib.ZDICT_isError(zresult):
-        raise ZstdError('Cannot train dict: %s' %
-                        ffi.string(lib.ZDICT_getErrorName(zresult)))
-
-    return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:])
 
 
 def train_cover_dictionary(dict_size, samples, k=0, d=0,

@@ -939,20 +939,20 @@ that follow to reference raw data within the content. For one use of
 
 More interestingly, instances can be created by *training* on sample data::
 
-   dict_data = zstd.train_dictionary(size, samples)
+   dict_data = zstd.train_cover_dictionary(size, samples)
 
 This takes a list of bytes instances and creates and returns a
 ``ZstdCompressionDict``.
 
 You can see how many bytes are in the dictionary by calling ``len()``::
 
-   dict_data = zstd.train_dictionary(size, samples)
+   dict_data = zstd.train_cover_dictionary(size, samples)
    dict_size = len(dict_data)  # will not be larger than ``size``
 
 Once you have a dictionary, you can pass it to the objects performing
 compression and decompression::
 
-   dict_data = zstd.train_dictionary(16384, samples)
+   dict_data = zstd.train_cover_dictionary(16384, samples)
 
    cctx = zstd.ZstdCompressor(dict_data=dict_data)
    for source_data in input_data:
@@ -973,46 +973,24 @@ Dictionaries have unique integer IDs. You can retrieve this ID via::
 You can obtain the raw data in the dict (useful for persisting and constructing
 a ``ZstdCompressionDict`` later) via ``as_bytes()``::
 
-   dict_data = zstd.train_dictionary(size, samples)
+   dict_data = zstd.train_cover_dictionary(size, samples)
    raw_data = dict_data.as_bytes()
 
-The following named arguments to ``train_dictionary`` can also be used
-to further control dictionary generation.
+The training mechanism is known as *cover*. More details about it are
+available in the paper *Effective Construction of Relative Lempel-Ziv
+Dictionaries* (authors: Liao, Petri, Moffat, Wirth).
 
-level
-   Integer compression level. Default is 6.
-dict_id
-   Integer dictionary ID for the produced dictionary. Default is 0, which
-   means to use a random value.
-notifications
-   Controls writing of informational messages to ``stderr``. ``0`` (the
-   default) means to write nothing. ``1`` writes errors. ``2`` writes
-   progression info. ``3`` writes more details. And ``4`` writes all info.
-
-Cover Dictionaries
-^^^^^^^^^^^^^^^^^^
-
-An alternate dictionary training mechanism named *cover* is also available.
-More details about this training mechanism are available in the paper
-*Effective Construction of Relative Lempel-Ziv Dictionaries* (authors:
-Liao, Petri, Moffat, Wirth).
-
-To use this mechanism, use ``zstd.train_cover_dictionary()`` instead of
-``zstd.train_dictionary()``. The function behaves nearly the same except
-its arguments are different and the returned dictionary will contain ``k``
-and ``d`` attributes reflecting the parameters to the cover algorithm.
-
-.. note::
-
-   The ``k`` and ``d`` attributes are only populated on dictionary
-   instances created by this function. If a ``ZstdCompressionDict`` is
-   constructed from raw bytes data, the ``k`` and ``d`` attributes will
-   be ``0``.
+The cover algorithm takes parameters ``k` and ``d``. These are the
+*segment size* and *dmer size*, respectively. The returned dictionary
+instance created by this function has ``k`` and ``d`` attributes
+containing the values for these parameters. If a ``ZstdCompressionDict``
+is constructed from raw bytes data (a content-only dictionary), the
+``k`` and ``d`` attributes will be ``0``.
 
 The segment and dmer size parameters to the cover algorithm can either be
-specified manually or you can ask ``train_cover_dictionary()`` to try
-multiple values and pick the best one, where *best* means the smallest
-compressed data size. This later mode is called *optimization* mode.
+specified manually or ``train_cover_dictionary()`` can try multiple values
+and pick the best one, where *best* means the smallest compressed data size.
+This later mode is called *optimization* mode.
 
 If none of ``k``, ``d``, ``steps``, ``threads``, ``level``, ``notifications``,
 or ``dict_id`` (basically anything from the underlying ``ZDICT_cover_params_t``
@@ -1051,8 +1029,9 @@ threads
 level
    Integer target compression level when trying parameter variations.
 notifications
-   Controls writing of informational messages to ``stderr``. See the
-   documentation for ``train_dictionary()`` for more.
+   Controls writing of informational messages to ``stderr``. ``0`` (the
+   default) means to write nothing. ``1`` writes errors. ``2`` writes
+   progression info. ``3`` writes more details. And ``4`` writes all info.
 
 Explicit Compression Parameters
 -------------------------------

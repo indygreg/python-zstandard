@@ -26,38 +26,6 @@ def generate_samples():
 
 
 @make_cffi
-class TestTrainDictionary(unittest.TestCase):
-    def test_no_args(self):
-        with self.assertRaises(TypeError):
-            zstd.train_dictionary()
-
-    def test_bad_args(self):
-        with self.assertRaises(TypeError):
-            zstd.train_dictionary(8192, u'foo')
-
-        with self.assertRaises(ValueError):
-            zstd.train_dictionary(8192, [u'foo'])
-
-    def test_basic(self):
-        samples = generate_samples()
-
-        d = zstd.train_dictionary(8192, samples)
-        self.assertLessEqual(len(d), 8192)
-
-        dict_id = d.dict_id()
-        self.assertIsInstance(dict_id, int_type)
-
-        data = d.as_bytes()
-        self.assertEqual(data[0:4], b'\x37\xa4\x30\xec')
-
-    def test_set_dict_id(self):
-        samples = generate_samples()
-
-        d = zstd.train_dictionary(8192, samples, dict_id=42)
-        self.assertEqual(d.dict_id(), 42)
-
-
-@make_cffi
 class TestTrainCoverDictionary(unittest.TestCase):
     def test_no_args(self):
         with self.assertRaises(TypeError):
