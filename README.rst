@@ -1346,6 +1346,11 @@ about thread safety. Do not operate on the same ``ZstdCompressor`` and
 fine to have different threads call into a single instance, just not at the
 same time.
 
+Some operations require multiple function calls to complete. e.g. streaming
+operations. A single ``ZstdCompressor`` or ``ZstdDecompressor`` cannot be used
+for simultaneously active operations. e.g. you must not start a streaming
+operation when another streaming operation is already active.
+
 The C extension releases the GIL during non-trivial calls into the zstd C
 API. Non-trivial calls are notably compression and decompression. Trivial
 calls are things like parsing frame parameters. Where the GIL is released
