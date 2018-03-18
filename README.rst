@@ -939,20 +939,20 @@ that follow to reference raw data within the content. For one use of
 
 More interestingly, instances can be created by *training* on sample data::
 
-   dict_data = zstd.train_cover_dictionary(size, samples)
+   dict_data = zstd.train_dictionary(size, samples)
 
 This takes a list of bytes instances and creates and returns a
 ``ZstdCompressionDict``.
 
 You can see how many bytes are in the dictionary by calling ``len()``::
 
-   dict_data = zstd.train_cover_dictionary(size, samples)
+   dict_data = zstd.train_dictionary(size, samples)
    dict_size = len(dict_data)  # will not be larger than ``size``
 
 Once you have a dictionary, you can pass it to the objects performing
 compression and decompression::
 
-   dict_data = zstd.train_cover_dictionary(16384, samples)
+   dict_data = zstd.train_dictionary(16384, samples)
 
    cctx = zstd.ZstdCompressor(dict_data=dict_data)
    for source_data in input_data:
@@ -973,7 +973,7 @@ Dictionaries have unique integer IDs. You can retrieve this ID via::
 You can obtain the raw data in the dict (useful for persisting and constructing
 a ``ZstdCompressionDict`` later) via ``as_bytes()``::
 
-   dict_data = zstd.train_cover_dictionary(size, samples)
+   dict_data = zstd.train_dictionary(size, samples)
    raw_data = dict_data.as_bytes()
 
 The training mechanism is known as *cover*. More details about it are
@@ -988,7 +988,7 @@ is constructed from raw bytes data (a content-only dictionary), the
 ``k`` and ``d`` attributes will be ``0``.
 
 The segment and dmer size parameters to the cover algorithm can either be
-specified manually or ``train_cover_dictionary()`` can try multiple values
+specified manually or ``train_dictionary()`` can try multiple values
 and pick the best one, where *best* means the smallest compressed data size.
 This later mode is called *optimization* mode.
 

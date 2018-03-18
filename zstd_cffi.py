@@ -24,7 +24,7 @@ __all__ = [
     'estimate_decompression_context_size',
     'get_compression_parameters',
     'get_frame_parameters',
-    'train_cover_dictionary',
+    'train_dictionary',
 
     # Constants.
     'COMPRESSOBJ_FLUSH_FINISH',
@@ -1026,9 +1026,8 @@ class ZstdCompressionDict(object):
         return self._data
 
 
-def train_cover_dictionary(dict_size, samples, k=0, d=0,
-                           notifications=0, dict_id=0, level=0,
-                           steps=0, threads=0):
+def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
+                     level=0, steps=0, threads=0):
     if not isinstance(samples, list):
         raise TypeError('samples must be a list')
 

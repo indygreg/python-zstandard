@@ -18,7 +18,9 @@ Backwards Compatibility Notes
 * Support for Python 3.3 has been removed.
 * The ``selectivity`` argument to ``train_dictionary()`` has been removed, as
   the feature disappeared from zstd 1.3.
-* Support for legacy dictionaries has been removed.
+* Support for legacy dictionaries has been removed. Cover dictionaries are now
+  the default. ``train_cover_dictionary()`` has effectively been renamed to
+  ``train_dictionary()``.
 * The ``allow_empty`` argument from ``ZstdCompressor.compress()`` has been
   deleted and the method now allows empty inputs to be compressed by default.
 
@@ -57,8 +59,8 @@ Changes
 * ``ZstdCompressor`` and ``ZstdDecompressor`` now have a ``memory_size()``
   method for determining the current memory utilization of the underlying zstd
   primitive.
-* ``train_cover_dictionary()`` has new arguments and functionality for
-  trying multiple variations of COVER parameters and selecting the best one.
+* ``train_dictionary()`` has new arguments and functionality for trying multiple
+  variations of COVER parameters and selecting the best one.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

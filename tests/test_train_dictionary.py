@@ -26,17 +26,17 @@ def generate_samples():
 
 
 @make_cffi
-class TestTrainCoverDictionary(unittest.TestCase):
+class TestTrainDictionary(unittest.TestCase):
     def test_no_args(self):
         with self.assertRaises(TypeError):
-            zstd.train_cover_dictionary()
+            zstd.train_dictionary()
 
     def test_bad_args(self):
         with self.assertRaises(TypeError):
-            zstd.train_cover_dictionary(8192, u'foo')
+            zstd.train_dictionary(8192, u'foo')
 
         with self.assertRaises(ValueError):
-            zstd.train_cover_dictionary(8192, [u'foo'])
+            zstd.train_dictionary(8192, [u'foo'])
 
     def test_no_params(self):
         samples = []
@@ -45,7 +45,7 @@ class TestTrainCoverDictionary(unittest.TestCase):
             samples.append(b'blehbleh' * 16)
             samples.append(b'randomtext' * 16)
 
-        d = zstd.train_cover_dictionary(8192, samples)
+        d = zstd.train_dictionary(8192, samples)
         self.assertIsInstance(d.dict_id(), int_type)
 
         data = d.as_bytes()
@@ -57,7 +57,7 @@ class TestTrainCoverDictionary(unittest.TestCase):
             samples.append(b'foo' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(8192, samples, k=64, d=16)
+        d = zstd.train_dictionary(8192, samples, k=64, d=16)
         self.assertIsInstance(d.dict_id(), int_type)
 
         data = d.as_bytes()
@@ -72,8 +72,7 @@ class TestTrainCoverDictionary(unittest.TestCase):
             samples.append(b'foo' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(8192, samples, k=64, d=16,
-                                        dict_id=42)
+        d = zstd.train_dictionary(8192, samples, k=64, d=16, dict_id=42)
         self.assertEqual(d.dict_id(), 42)
 
     def test_optimize(self):
@@ -82,8 +81,7 @@ class TestTrainCoverDictionary(unittest.TestCase):
             samples.append(b'foo' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(8192, samples,
-                                        threads=-1, steps=1, d=16)
+        d = zstd.train_dictionary(8192, samples, threads=-1, steps=1, d=16)
 
         self.assertEqual(d.k, 50)
         self.assertEqual(d.d, 16)

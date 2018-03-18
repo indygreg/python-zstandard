@@ -773,8 +773,8 @@ if __name__ == '__main__':
         if args.cover_k or args.cover_d:
             train_args['threads'] = -1
 
-        dict_data = zstd.train_cover_dictionary(args.dict_size, training_chunks,
-                                                **train_args)
+        dict_data = zstd.train_dictionary(args.dict_size, training_chunks,
+                                          **train_args)
         print('trained dictionary of size %d (wanted %d) (l=%d)' % (
             len(dict_data), args.dict_size, opts['level']))
 

@@ -10,7 +10,7 @@
 
 extern PyObject* ZstdError;
 
-ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyObject* kwargs) {
+ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"dict_size",
 		"samples",
@@ -45,7 +45,7 @@ ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyOb
 	size_t zresult;
 	ZstdCompressionDict* result = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IIIIiIi:train_cover_dictionary",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IIIIiIi:train_dictionary",
 		kwlist, &capacity, &PyList_Type, &samples,
 		&k, &d, &notifications, &dictID, &level, &steps, &threads)) {
 		return NULL;
@@ -151,7 +151,7 @@ PyDoc_STRVAR(ZstdCompressionDict__doc__,
 "ZstdCompressionDict(data) - Represents a computed compression dictionary\n"
 "\n"
 "This type holds the results of a computed Zstandard compression dictionary.\n"
-"Instances are obtained by calling ``train_cover_dictionary()`` or by passing\n"
+"Instances are obtained by calling ``train_dictionary()`` or by passing\n"
 "bytes obtained from another source into the constructor.\n"
 );
 

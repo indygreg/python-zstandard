@@ -47,7 +47,7 @@ class TestCompressor_compress(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(1024, samples)
+        d = zstd.train_dictionary(1024, samples)
 
         cctx = zstd.ZstdCompressor(dict_data=d, threads=2)
 
@@ -142,7 +142,7 @@ class TestCompressor_compress(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(1024, samples)
+        d = zstd.train_dictionary(1024, samples)
 
         cctx = zstd.ZstdCompressor(level=1, dict_data=d)
         with_dict_id = cctx.compress(b'foobarfoobar')
@@ -164,7 +164,7 @@ class TestCompressor_compress(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(8192, samples)
+        d = zstd.train_dictionary(8192, samples)
 
         cctx = zstd.ZstdCompressor(level=1, dict_data=d)
 
@@ -689,7 +689,7 @@ class TestCompressor_write_to(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(8192, samples)
+        d = zstd.train_dictionary(8192, samples)
 
         h = hashlib.sha1(d.as_bytes()).hexdigest()
         self.assertEqual(h, 'e0289e9f3c57c995c8b210957e55dbdc06943691')
@@ -801,7 +801,7 @@ class TestCompressor_write_to(unittest.TestCase):
             samples.append(b'bar' * 64)
             samples.append(b'foobar' * 64)
 
-        d = zstd.train_cover_dictionary(1024, samples)
+        d = zstd.train_dictionary(1024, samples)
 
         with_dict_id = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1, dict_data=d)
