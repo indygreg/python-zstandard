@@ -770,8 +770,7 @@ if __name__ == '__main__':
             train_args['d'] = args.cover_d
 
         # Always use all available threads in optimize mode.
-        if args.cover_k or args.cover_d:
-            train_args['threads'] = -1
+        train_args['threads'] = -1
 
         dict_data = zstd.train_dictionary(args.dict_size, training_chunks,
                                           **train_args)
