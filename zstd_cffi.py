@@ -183,7 +183,7 @@ class CompressionParameters(object):
                              ffi.string(lib.ZSTD_getErrorName(zresult)))
 
     def estimated_compression_context_size(self):
-        return lib.ZSTD_estimateCCtxSize_advanced(self.as_compression_parameters())
+        return lib.ZSTD_estimateCCtxSize_usingCParams(self.as_compression_parameters())
 
     def as_compression_parameters(self):
         p = ffi.new('ZSTD_compressionParameters *')[0]
@@ -213,7 +213,7 @@ def estimate_compression_context_size(params):
         raise ValueError('argument must be a CompressionParameters')
 
     cparams = params.as_compression_parameters()
-    return lib.ZSTD_estimateCCtxSize_advanced(cparams)
+    return lib.ZSTD_estimateCCtxSize_usingCParams(cparams)
 
 
 def estimate_decompression_context_size():
