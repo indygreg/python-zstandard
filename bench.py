@@ -761,7 +761,7 @@ if __name__ == '__main__':
             training_chunks = chunks
 
         train_args = {
-            'level': opts['leve'],
+            'level': opts['level'],
         }
 
         if args.cover_k:
