@@ -184,7 +184,9 @@ ffi.set_source('_zstd_cffi', '''
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
 #include <zdict.h>
 #include <zstdmt_compress.h>
-''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
+''', sources=SOURCES,
+     include_dirs=INCLUDE_DIRS,
+     extra_compile_args=['-DZSTD_MULTITHREAD'])
 
 DEFINE = re.compile(b'^\\#define ([a-zA-Z0-9_]+) ')
 
