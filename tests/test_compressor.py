@@ -169,9 +169,6 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(dctx.decompress(compressed), source)
 
     def test_multithreaded_dict(self):
-        if zstd.backend == 'cffi':
-            raise unittest.SkipTest('not yet implemented in cffi')
-
         samples = []
         for i in range(128):
             samples.append(b'foo' * 64)
@@ -193,9 +190,6 @@ class TestCompressor_compress(unittest.TestCase):
                          b'\x66\x6f\x6f')
 
     def test_multithreaded_compression_params(self):
-        if zstd.backend == 'cffi':
-            raise unittest.SkipTest('not yet implemented in cffi')
-
         params = zstd.get_compression_parameters(3)
         cctx = zstd.ZstdCompressor(compression_params=params, threads=2,
                                    write_content_size=True)
