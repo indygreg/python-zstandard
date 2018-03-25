@@ -303,7 +303,8 @@ readinput:
 		self->finishedOutput = 1;
 	}
 
-	if (-1 == _PyBytes_Resize(&result, self->output.pos)) {
+	if (safe_pybytes_resize(&result, self->output.pos)) {
+		Py_XDECREF(result);
 		return NULL;
 	}
 

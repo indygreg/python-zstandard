@@ -68,7 +68,8 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 		if (self->output.pos) {
 			if (result) {
 				resultSize = PyBytes_GET_SIZE(result);
-				if (-1 == _PyBytes_Resize(&result, resultSize + self->output.pos)) {
+
+				if (safe_pybytes_resize(&result, resultSize + self->output.pos)) {
 					Py_CLEAR(result);
 					goto finally;
 				}
@@ -177,7 +178,9 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 		if (self->output.pos) {
 			if (result) {
 				resultSize = PyBytes_GET_SIZE(result);
-				if (-1 == _PyBytes_Resize(&result, resultSize + self->output.pos)) {
+
+				if (safe_pybytes_resize(&result, resultSize + self->output.pos)) {
+					Py_XDECREF(result);
 					return NULL;
 				}
 
