@@ -141,12 +141,30 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	result->d = params.d;
 	result->k = params.k;
 	result->cdict = NULL;
+	result->ddict = NULL;
 
 finally:
 	PyMem_Free(sampleBuffer);
 	PyMem_Free(sampleSizes);
 
 	return result;
+}
+
+int ensure_ddict(ZstdCompressionDict* dict) {
+	if (dict->ddict) {
+		return 0;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	dict->ddict = ZSTD_createDDict_advanced(dict->dictData, dict->dictSize,
+		ZSTD_dlm_byRef, ZSTD_defaultCMem);
+	Py_END_ALLOW_THREADS
+	if (!dict->ddict) {
+		PyErr_SetString(ZstdError, "could not create decompression dict");
+		return 1;
+	}
+
+	return 0;
 }
 
 PyDoc_STRVAR(ZstdCompressionDict__doc__,
@@ -171,6 +189,7 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args, P
 	self->dictData = NULL;
 	self->dictSize = 0;
 	self->cdict = NULL;
+	self->ddict = NULL;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|I:ZstdCompressionDict",
@@ -211,6 +230,11 @@ static void ZstdCompressionDict_dealloc(ZstdCompressionDict* self) {
 	if (self->cdict) {
 		ZSTD_freeCDict(self->cdict);
 		self->cdict = NULL;
+	}
+
+	if (self->ddict) {
+		ZSTD_freeDDict(self->ddict);
+		self->ddict = NULL;
 	}
 
 	if (self->dictData) {

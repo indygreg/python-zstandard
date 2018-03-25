@@ -1087,6 +1087,19 @@ class ZstdCompressionDict(object):
 
         self._cdict = ffi.gc(cdict, lib.ZSTD_freeCDict)
 
+    @property
+    def _ddict(self):
+        ddict = lib.ZSTD_createDDict_advanced(self._data, len(self._data),
+                                              lib.ZSTD_dlm_byRef,
+                                              lib.ZSTD_defaultCMem)
+
+        if ddict == ffi.NULL:
+            raise ZstdError('could not create decompression dict')
+
+        ddict = ffi.gc(ddict, lib.ZSTD_freeDDict)
+        self.__dict__['_ddict'] = ddict
+
+        return ddict
 
 def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
                      level=0, steps=0, threads=0):
@@ -1423,21 +1436,6 @@ class ZstdDecompressor(object):
         self._refdctx = ffi.gc(dctx, lib.ZSTD_freeDCtx)
         self._dstream = None
 
-    @property
-    def _ddict(self):
-        if self._dict_data:
-            dict_data = self._dict_data.as_bytes()
-            dict_size = len(self._dict_data)
-
-            ddict = lib.ZSTD_createDDict(dict_data, dict_size)
-            if ddict == ffi.NULL:
-                raise ZstdError('could not create decompression dict')
-        else:
-            ddict = None
-
-        self.__dict__['_ddict'] = ddict
-        return ddict
-
     def memory_size(self):
         return lib.ZSTD_sizeof_DCtx(self._refdctx)
 
@@ -1447,8 +1445,6 @@ class ZstdDecompressor(object):
         orig_dctx = new_nonzero('char[]', lib.ZSTD_sizeof_DCtx(self._refdctx))
         dctx = ffi.cast('ZSTD_DCtx *', orig_dctx)
         lib.ZSTD_copyDCtx(dctx, self._refdctx)
-
-        ddict = self._ddict
 
         output_size = lib.ZSTD_getFrameContentSize(data_buffer, len(data_buffer))
 
@@ -1467,11 +1463,11 @@ class ZstdDecompressor(object):
             result_buffer = ffi.new('char[]', output_size)
             result_size = output_size
 
-        if ddict:
+        if self._dict_data:
             zresult = lib.ZSTD_decompress_usingDDict(dctx,
                                                      result_buffer, result_size,
                                                      data_buffer, len(data_buffer),
-                                                     ddict)
+                                                     self._dict_data._ddict)
         else:
             zresult = lib.ZSTD_decompressDCtx(dctx,
                                               result_buffer, result_size,
@@ -1714,9 +1710,8 @@ class ZstdDecompressor(object):
         self._dstream = ffi.gc(self._dstream, lib.ZSTD_freeDStream)
 
         if self._dict_data:
-            zresult = lib.ZSTD_initDStream_usingDict(self._dstream,
-                                                     self._dict_data.as_bytes(),
-                                                     len(self._dict_data))
+            zresult = lib.ZSTD_initDStream_usingDDict(self._dstream,
+                                                      self._dict_data._ddict)
         else:
             zresult = lib.ZSTD_initDStream(self._dstream)
 
