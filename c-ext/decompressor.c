@@ -18,8 +18,6 @@ extern PyObject* ZstdError;
   * ZSTD_DStream on a ZstdDecompressor.
   */
 int init_dstream(ZstdDecompressor* decompressor) {
-	void* dictData = NULL;
-	size_t dictSize = 0;
 	size_t zresult;
 
 	/* Simple case of dstream already exists. Just reset it. */
@@ -41,12 +39,13 @@ int init_dstream(ZstdDecompressor* decompressor) {
 	}
 
 	if (decompressor->dict) {
-		dictData = decompressor->dict->dictData;
-		dictSize = decompressor->dict->dictSize;
+		if (ensure_ddict(decompressor->dict)) {
+			return -1;
+		}
 	}
 
-	if (dictData) {
-		zresult = ZSTD_initDStream_usingDict(decompressor->dstream, dictData, dictSize);
+	if (decompressor->dict) {
+		zresult = ZSTD_initDStream_usingDDict(decompressor->dstream, decompressor->dict->ddict);
 	}
 	else {
 		zresult = ZSTD_initDStream(decompressor->dstream);
@@ -83,7 +82,6 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 
 	self->dctx = NULL;
 	self->dict = NULL;
-	self->ddict = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!:ZstdDecompressor", kwlist,
 		&ZstdCompressionDictType, &dict)) {
@@ -116,11 +114,6 @@ except:
 
 static void Decompressor_dealloc(ZstdDecompressor* self) {
 	Py_CLEAR(self->dict);
-
-	if (self->ddict) {
-		ZSTD_freeDDict(self->ddict);
-		self->ddict = NULL;
-	}
 
 	if (self->dstream) {
 		ZSTD_freeDStream(self->dstream);
@@ -323,8 +316,6 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	unsigned long long decompressedSize;
 	size_t destCapacity;
 	PyObject* result = NULL;
-	void* dictData = NULL;
-	size_t dictSize = 0;
 	size_t zresult;
 
 #if PY_MAJOR_VERSION >= 3
@@ -337,17 +328,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	}
 
 	if (self->dict) {
-		dictData = self->dict->dictData;
-		dictSize = self->dict->dictSize;
-	}
-
-	if (dictData && !self->ddict) {
-		Py_BEGIN_ALLOW_THREADS
-		self->ddict = ZSTD_createDDict_byReference(dictData, dictSize);
-		Py_END_ALLOW_THREADS
-
-		if (!self->ddict) {
-			PyErr_SetString(ZstdError, "could not create decompression dict");
+		if (ensure_ddict(self->dict)) {
 			goto finally;
 		}
 	}
@@ -385,10 +366,10 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	}
 
 	Py_BEGIN_ALLOW_THREADS
-	if (self->ddict) {
+	if (self->dict) {
 		zresult = ZSTD_decompress_usingDDict(self->dctx,
 			PyBytes_AsString(result), destCapacity,
-			source.buf, source.len, self->ddict);
+			source.buf, source.len, self->dict->ddict);
 	}
 	else {
 		zresult = ZSTD_decompressDCtx(self->dctx,
@@ -880,7 +861,7 @@ typedef struct {
 
 	/* Compression state and settings. */
 	ZSTD_DCtx* dctx;
-	ZSTD_DDict* ddict;
+	ZstdCompressionDict* dict;
 	int requireOutputSizes;
 
 	/* Output storage. */
@@ -1073,9 +1054,9 @@ static void decompress_worker(WorkerState* state) {
 
 		dest = (char*)destBuffer->dest + destOffset;
 
-		if (state->ddict) {
+		if (state->dict) {
 			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, decompressedSize,
-				source, sourceSize, state->ddict);
+				source, sourceSize, state->dict->ddict);
 		}
 		else {
 			zresult = ZSTD_decompressDCtx(state->dctx, dest, decompressedSize,
@@ -1116,8 +1097,6 @@ static void decompress_worker(WorkerState* state) {
 
 ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames,
 	unsigned int threadCount) {
-	void* dictData = NULL;
-	size_t dictSize = 0;
 	Py_ssize_t i = 0;
 	int errored = 0;
 	Py_ssize_t segmentsCount;
@@ -1144,17 +1123,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	   add overhead. */
 
 	if (decompressor->dict) {
-		dictData = decompressor->dict->dictData;
-		dictSize = decompressor->dict->dictSize;
-	}
-
-	if (dictData && !decompressor->ddict) {
-		Py_BEGIN_ALLOW_THREADS
-		decompressor->ddict = ZSTD_createDDict_byReference(dictData, dictSize);
-		Py_END_ALLOW_THREADS
-
-		if (!decompressor->ddict) {
-			PyErr_SetString(ZstdError, "could not create decompression dict");
+		if (ensure_ddict(decompressor->dict)) {
 			return NULL;
 		}
 	}
@@ -1188,7 +1157,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 		ZSTD_copyDCtx(workerStates[i].dctx, decompressor->dctx);
 
-		workerStates[i].ddict = decompressor->ddict;
+		workerStates[i].dict = decompressor->dict;
 		workerStates[i].framePointers = framePointers;
 		workerStates[i].requireOutputSizes = 1;
 	}

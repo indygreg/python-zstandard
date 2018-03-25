@@ -8,8 +8,7 @@ Version History
 Actions Blocking Release
 ------------------------
 
-* Better APIs around dictionary management; proper support for digested
-  dictionaries, prefix dictionaries.
+* Support for prefix dictionaries.
 * Audit compression parameter order semantics (e.g. when to set LDM versus
   window log).
 * Ensure contexts are reset automatically in case of error; implement tests for
@@ -73,11 +72,12 @@ Backwards Compatibility Notes
   arguments. It is recommended to use keyword arguments to construct
   ``CompressionParameters`` instances.
 
-Bug Fixes (from 0.8.0)
-----------------------
+Bug Fixes
+---------
 
-* Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40).
-* Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35).
+* Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40) (from 0.8.2).
+* Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35) (from 0.8.2).
+* Fixed memory leak of ``ZSTD_DDict`` instances in CFFI's ``ZstdDecompressor``.
 
 Changes
 -------
@@ -123,6 +123,9 @@ Changes
 * ``ZstdCompressionDict.precompute_compress()`` can be used to precompute the
   compression dictionary so it can efficiently be used with multiple
   ``ZstdCompressor`` instances.
+* Digested dictionaries are now stored in ``ZstdCompressionDict`` instances,
+  created automatically on first use, and automatically reused by all
+  ``ZstdDecompressor`` instances bound to that dictionary.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

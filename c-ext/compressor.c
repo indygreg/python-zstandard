@@ -184,7 +184,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		}
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "could not load compression dictionary: %s",
-				ZSTD_getErrorString(zresult));
+				ZSTD_getErrorName(zresult));
 			return -1;
 		}
 	}
@@ -1100,7 +1100,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "could not load compression dictionary: %s",
-					ZSTD_getErrorString(zresult));
+					ZSTD_getErrorName(zresult));
 				goto finally;
 			}
 
