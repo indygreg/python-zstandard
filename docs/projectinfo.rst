@@ -24,36 +24,6 @@ The CFFI bindings are mostly feature complete. Where a feature is implemented
 in CFFI, unit tests run against both C extension and CFFI implementation to
 ensure behavior parity.
 
-Expected Changes
-----------------
-
-The author is reasonably confident in the current state of what's
-implemented on the ``ZstdCompressor`` and ``ZstdDecompressor`` types.
-Those APIs likely won't change significantly. Some low-level behavior
-(such as naming and types expected by arguments) may change.
-
-There will likely be arguments added to control the input and output
-buffer sizes (currently, certain operations read and write in chunk
-sizes using zstd's preferred defaults).
-
-There should be an API that accepts an object that conforms to the buffer
-interface and returns an iterator over compressed or decompressed output.
-
-There should be an API that exposes an ``io.RawIOBase`` interface to
-compressor and decompressor streams, like how ``gzip.GzipFile`` from
-the standard library works (issue 13).
-
-The author is on the fence as to whether to support the extremely
-low level compression and decompression APIs. It could be useful to
-support compression without the framing headers. But the author doesn't
-believe it a high priority at this time.
-
-There will likely be a refactoring of the module names. Currently,
-``zstd`` is a C extension and ``zstd_cffi`` is the CFFI interface.
-This means that all code for the C extension must be implemented in
-C. ``zstd`` may be converted to a Python module so code can be reused
-between CFFI and C and so not all code in the C extension has to be C.
-
 Comparison to Other Python Bindings
 ===================================
 

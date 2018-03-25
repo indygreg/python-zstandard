@@ -2,6 +2,47 @@
 Version History
 ===============
 
+1.0.0 (not yet released)
+========================
+
+Actions Blocking Release
+------------------------
+
+* Better APIs around dictionary management; proper support for digested
+  dictionaries, prefix dictionaries.
+* Audit compression parameter order semantics (e.g. when to set LDM versus
+  window log).
+* Ensure contexts are reset automatically in case of error; implement tests for
+  these scenarios.
+* compression and decompression APIs that support ``io.rawIOBase`` interface
+  (#13).
+* Refactor module names so C and CFFI extensions live under ``zstandard``
+  package.
+* Overall API design review.
+* Use Python allocator where possible.
+* Figure out what to do about experimental APIs not implemented by CFFI.
+* APIs for auto adjusting compression parameters based on input size. e.g.
+  clamping the window log so it isn't too large for input.
+* Consider allowing compressor and decompressor instances to be thread safe,
+  support concurrent operations.
+* Support for magic-less frames.
+* Audit for complete flushing when ending compression streams.
+* Deprecate legacy APIs.
+* Audit for positional/keyword argument usage everywhere.
+* Audit for ability to control read/write sizes on all APIs.
+* Switch to new advanced decompression API (blocked on zstd 1.3.4).
+* Detect memory leaks via bench.py.
+* Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
+  require use of ``CompressionParameters``.
+
+Other Actions Not Blocking Release
+---------------------------------------
+
+* Support for block compression APIs.
+* API for ensuring max memory ceiling isn't exceeded.
+* Move off nose for testing.
+* Upgrade to latest hypothesis package and fix warnings.
+
 0.9.0 (not yet released)
 ========================
 
