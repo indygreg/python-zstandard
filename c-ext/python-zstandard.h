@@ -333,7 +333,7 @@ extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
 
 int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value);
 int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj);
-FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);
+FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs);
 int ensure_ddict(ZstdCompressionDict* dict);
 int init_dstream(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);

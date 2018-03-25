@@ -107,7 +107,12 @@ static PyObject* ZstdCompressionWriter_memory_size(ZstdCompressionWriter* self) 
 	return PyLong_FromSize_t(ZSTD_sizeof_CCtx(self->compressor->cctx));
 }
 
-static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObject* args) {
+static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
 	PyObject* result = NULL;
 	Py_buffer source;
 	size_t zresult;
@@ -117,10 +122,11 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 	Py_ssize_t totalWrite = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y*:write", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:write",
 #else
-	if (!PyArg_ParseTuple(args, "s*:write", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:write",
 #endif
+		kwlist, &source)) {
 		return NULL;
 	}
 
@@ -239,7 +245,7 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	PyDoc_STR("Exit a compression context.") },
 	{ "memory_size", (PyCFunction)ZstdCompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size of the underlying compressor") },
-	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS,
+	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Compress data") },
 	{ "flush", (PyCFunction)ZstdCompressionWriter_flush, METH_NOARGS,
 	PyDoc_STR("Flush data and finish a zstd frame") },

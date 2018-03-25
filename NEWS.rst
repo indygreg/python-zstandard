@@ -27,7 +27,6 @@ Actions Blocking Release
 * Support for magic-less frames.
 * Audit for complete flushing when ending compression streams.
 * Deprecate legacy APIs.
-* Audit for positional/keyword argument usage everywhere.
 * Audit for ability to control read/write sizes on all APIs.
 * Switch to new advanced decompression API (blocked on zstd 1.3.4).
 * Detect memory leaks via bench.py.
@@ -126,6 +125,7 @@ Changes
 * Digested dictionaries are now stored in ``ZstdCompressionDict`` instances,
   created automatically on first use, and automatically reused by all
   ``ZstdDecompressor`` instances bound to that dictionary.
+* All meaningful functions now accept keyword arguments.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

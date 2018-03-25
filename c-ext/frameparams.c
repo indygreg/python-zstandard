@@ -13,17 +13,23 @@ extern PyObject* ZstdError;
 PyDoc_STRVAR(FrameParameters__doc__,
 	"FrameParameters: information about a zstd frame");
 
-FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
+FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
 	Py_buffer source;
 	ZSTD_frameHeader header;
 	FrameParametersObject* result = NULL;
 	size_t zresult;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y*:get_frame_parameters", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:get_frame_parameters",
 #else
-	if (!PyArg_ParseTuple(args, "s*:get_frame_parameters", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:get_frame_parameters",
 #endif
+		kwlist, &source)) {
 		return NULL;
 	}
 
