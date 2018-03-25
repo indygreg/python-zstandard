@@ -210,3 +210,33 @@ size_t roundpow2(size_t i) {
 
 	return i;
 }
+
+/* Safer version of _PyBytes_Resize().
+ *
+ * _PyBytes_Resize() only works if the refcount is 1. In some scenarios,
+ * we can get an object with a refcount > 1, even if it was just created
+ * with PyBytes_FromStringAndSize()! That's because (at least) CPython
+ * pre-allocates PyBytes instances of size 1 for every possible byte value.
+ *
+ * If non-0 is returned, obj may or may not be NULL.
+ */
+int safe_pybytes_resize(PyObject** obj, Py_ssize_t size) {
+	PyObject* tmp;
+
+	if ((*obj)->ob_refcnt == 1) {
+		return _PyBytes_Resize(obj, size);
+	}
+
+	tmp = PyBytes_FromStringAndSize(NULL, size);
+	if (!tmp) {
+		return -1;
+	}
+
+	memcpy(PyBytes_AS_STRING(tmp), PyBytes_AS_STRING(*obj),
+		PyBytes_GET_SIZE(*obj));
+
+	Py_DECREF(*obj);
+	*obj = tmp;
+
+	return 0;
+}

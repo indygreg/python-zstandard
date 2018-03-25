@@ -85,7 +85,8 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 	/* If it produced output data, return it. */
 	if (self->output.pos) {
 		if (self->output.pos < self->outSize) {
-			if (_PyBytes_Resize(&chunk, self->output.pos)) {
+			if (safe_pybytes_resize(&chunk, self->output.pos)) {
+				Py_XDECREF(chunk);
 				result.errored = 1;
 				return result;
 			}

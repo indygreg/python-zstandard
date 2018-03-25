@@ -252,7 +252,8 @@ readinput:
 	/* EOF */
 	self->bytesDecompressed += output.pos;
 
-	if (-1 == _PyBytes_Resize(&result, output.pos)) {
+	if (safe_pybytes_resize(&result, output.pos)) {
+		Py_XDECREF(result);
 		return NULL;
 	}
 

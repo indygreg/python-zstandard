@@ -389,7 +389,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		goto finally;
 	}
 	else if (zresult < destCapacity) {
-		if (_PyBytes_Resize(&result, zresult)) {
+		if (safe_pybytes_resize(&result, zresult)) {
 			Py_CLEAR(result);
 			goto finally;
 		}

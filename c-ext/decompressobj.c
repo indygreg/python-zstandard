@@ -81,30 +81,13 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 		if (output.pos) {
 			if (result) {
 				resultSize = PyBytes_GET_SIZE(result);
-
-				/* _PyBytes_Resize doesn't work on PyBytes of size 1 because
-				   CPython stores 1 size bytes wonkily. So handle that case
-				   specially. */
-				if (resultSize == 1) {
-					PyObject* tmp = PyBytes_FromStringAndSize(output.dst, output.pos);
-					if (!tmp) {
-						goto except;
-					}
-
-					/* Always steals reference to original result. */
-					PyBytes_Concat(&result, tmp);
-					if (!result) {
-						goto except;
-					}
+				if (-1 == safe_pybytes_resize(&result, resultSize + output.pos)) {
+					Py_XDECREF(result);
+					goto except;
 				}
-				else {
-					if (-1 == _PyBytes_Resize(&result, resultSize + output.pos)) {
-						goto except;
-					}
 
-					memcpy(PyBytes_AS_STRING(result) + resultSize,
-						output.dst, output.pos);
-				}
+				memcpy(PyBytes_AS_STRING(result) + resultSize,
+					output.dst, output.pos);
 			}
 			else {
 				result = PyBytes_FromStringAndSize(output.dst, output.pos);
