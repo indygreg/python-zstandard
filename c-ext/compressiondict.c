@@ -137,8 +137,10 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 
 	result->dictData = dict;
 	result->dictSize = zresult;
+	result->dictMode = ZSTD_dm_fullDict;
 	result->d = params.d;
 	result->k = params.k;
+	result->cdict = NULL;
 
 finally:
 	PyMem_Free(sampleBuffer);
@@ -155,21 +157,39 @@ PyDoc_STRVAR(ZstdCompressionDict__doc__,
 "bytes obtained from another source into the constructor.\n"
 );
 
-static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {
+static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		"dict_mode",
+		NULL
+	};
+
 	int result = -1;
 	Py_buffer source;
+	unsigned dictMode = ZSTD_dm_auto;
 
 	self->dictData = NULL;
 	self->dictSize = 0;
+	self->cdict = NULL;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y*:ZstdCompressionDict",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|I:ZstdCompressionDict",
 #else
-	if (!PyArg_ParseTuple(args, "s*:ZstdCompressionDict",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|I:ZstdCompressionDict",
 #endif
-		&source)) {
+		kwlist, &source, &dictMode)) {
 		return -1;
 	}
+
+	if (dictMode != ZSTD_dm_auto && dictMode != ZSTD_dm_rawContent
+		&& dictMode != ZSTD_dm_fullDict) {
+		PyErr_Format(PyExc_ValueError,
+			"invalid dictionary load mode: %d; must use DICT_MODE_* constants",
+			dictMode);
+		goto finally;
+	}
+
+	self->dictMode = dictMode;
 
 	self->dictData = PyMem_Malloc(source.len);
 	if (!self->dictData) {
@@ -179,6 +199,7 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args) {
 
 	memcpy(self->dictData, source.buf, source.len);
 	self->dictSize = source.len;
+
 	result = 0;
 
 finally:
@@ -187,12 +208,85 @@ finally:
 }
 
 static void ZstdCompressionDict_dealloc(ZstdCompressionDict* self) {
+	if (self->cdict) {
+		ZSTD_freeCDict(self->cdict);
+		self->cdict = NULL;
+	}
+
 	if (self->dictData) {
 		PyMem_Free(self->dictData);
 		self->dictData = NULL;
 	}
 
 	PyObject_Del(self);
+}
+
+PyDoc_STRVAR(ZstdCompressionDict_precompute_compress__doc__,
+"Precompute a dictionary so it can be used by multiple compressors.\n"
+);
+
+static PyObject* ZstdCompressionDict_precompute_compress(ZstdCompressionDict* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"level",
+		"compression_params",
+		NULL
+	};
+
+	int level = 0;
+	CompressionParametersObject* compressionParams = NULL;
+	ZSTD_compressionParameters cParams;
+	size_t zresult;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!:precompute_compress", kwlist,
+		&level, &CompressionParametersType, &compressionParams)) {
+		return NULL;
+	}
+
+	if (level && compressionParams) {
+		PyErr_SetString(PyExc_ValueError,
+			"must only specify one of level or compression_params");
+		return NULL;
+	}
+
+	if (!level && !compressionParams) {
+		PyErr_SetString(PyExc_ValueError,
+			"must specify one of level or compression_params");
+		return NULL;
+	}
+
+	if (self->cdict) {
+		zresult = ZSTD_freeCDict(self->cdict);
+		self->cdict = NULL;
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "unable to free CDict: %s",
+				ZSTD_getErrorName(zresult));
+			return NULL;
+		}
+	}
+
+	if (level) {
+		cParams = ZSTD_getCParams(level, 0, self->dictSize);
+	}
+	else {
+		cParams.chainLog = compressionParams->chainLog;
+		cParams.hashLog = compressionParams->hashLog;
+		cParams.searchLength = compressionParams->minMatch;
+		cParams.searchLog = compressionParams->searchLog;
+		cParams.strategy = compressionParams->compressionStrategy;
+		cParams.targetLength = compressionParams->targetLength;
+		cParams.windowLog = compressionParams->windowLog;
+	}
+
+	assert(!self->cdict);
+	self->cdict = ZSTD_createCDict_advanced(self->dictData, self->dictSize,
+		ZSTD_dlm_byRef, self->dictMode, cParams, ZSTD_defaultCMem);
+
+	if (!self->cdict) {
+		PyErr_SetString(ZstdError, "unable to precompute dictionary");
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
 }
 
 static PyObject* ZstdCompressionDict_dict_id(ZstdCompressionDict* self) {
@@ -210,6 +304,8 @@ static PyMethodDef ZstdCompressionDict_methods[] = {
 	PyDoc_STR("dict_id() -- obtain the numeric dictionary ID") },
 	{ "as_bytes", (PyCFunction)ZstdCompressionDict_as_bytes, METH_NOARGS,
 	PyDoc_STR("as_bytes() -- obtain the raw bytes constituting the dictionary data") },
+	{ "precompute_compress", (PyCFunction)ZstdCompressionDict_precompute_compress,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressionDict_precompute_compress__doc__ },
 	{ NULL, NULL }
 };
 

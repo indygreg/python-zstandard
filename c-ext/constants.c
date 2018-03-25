@@ -93,4 +93,8 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "STRATEGY_BTLAZY2", ZSTD_btlazy2);
 	PyModule_AddIntConstant(mod, "STRATEGY_BTOPT", ZSTD_btopt);
 	PyModule_AddIntConstant(mod, "STRATEGY_BTULTRA", ZSTD_btultra);
+
+	PyModule_AddIntConstant(mod, "DICT_MODE_AUTO", ZSTD_dm_auto);
+	PyModule_AddIntConstant(mod, "DICT_MODE_RAWCONTENT", ZSTD_dm_rawContent);
+	PyModule_AddIntConstant(mod, "DICT_MODE_FULLDICT", ZSTD_dm_fullDict);
 }

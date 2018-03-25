@@ -175,9 +175,13 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		self->dict = dict;
 		Py_INCREF(dict);
 
-		/* TODO we /could/ cache a ZSTD_CDict on the ZstdCompressionDict struct
-		   and use ZSTD_CCtx_refPrefix to avoid computing it here. */
-		zresult = ZSTD_CCtx_loadDictionary_byReference(self->cctx, dict->dictData, dict->dictSize);
+		if (dict->cdict) {
+			zresult = ZSTD_CCtx_refCDict(self->cctx, dict->cdict);
+		}
+		else {
+			zresult = ZSTD_CCtx_loadDictionary_advanced(self->cctx,
+				dict->dictData, dict->dictSize, ZSTD_dlm_byRef, dict->dictMode);
+		}
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "could not load compression dictionary: %s",
 				ZSTD_getErrorString(zresult));
@@ -1082,11 +1086,17 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 		}
 
 		if (compressor->dict) {
-			/* TODO cache computed dictionary on ZstdCompressionDict */
-			zresult = ZSTD_CCtx_loadDictionary_byReference(
-				workerStates[i].cctx,
-				compressor->dict->dictData,
-				compressor->dict->dictSize);
+			if (compressor->dict->cdict) {
+				zresult = ZSTD_CCtx_refCDict(workerStates[i].cctx, compressor->dict->cdict);
+			}
+			else {
+				zresult = ZSTD_CCtx_loadDictionary_advanced(
+					workerStates[i].cctx,
+					compressor->dict->dictData,
+					compressor->dict->dictSize,
+					ZSTD_dlm_byRef,
+					compressor->dict->dictMode);
+			}
 
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "could not load compression dictionary: %s",

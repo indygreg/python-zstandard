@@ -153,6 +153,21 @@ class TestCompressor_compress(unittest.TestCase):
         for i in range(32):
             cctx.compress(b'foo bar foobar foo bar foobar')
 
+    def test_dict_precompute(self):
+        samples = []
+        for i in range(128):
+            samples.append(b'foo' * 64)
+            samples.append(b'bar' * 64)
+            samples.append(b'foobar' * 64)
+
+        d = zstd.train_dictionary(8192, samples)
+        d.precompute_compress(level=1)
+
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d)
+
+        for i in range(32):
+            cctx.compress(b'foo bar foobar foo bar foobar')
+
     def test_multithreaded(self):
         chunk_size = multithreaded_chunk_size(1)
         source = b''.join([b'x' * chunk_size, b'y' * chunk_size])

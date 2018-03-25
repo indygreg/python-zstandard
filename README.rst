@@ -817,19 +817,26 @@ Instances can be constructed from bytes::
 
    dict_data = zstd.ZstdCompressionDict(data)
 
-It is possible to construct a dictionary from *any* data. Unless the
-data begins with a magic header, the dictionary will be treated as
-*content-only*. *Content-only* dictionaries allow compression operations
-that follow to reference raw data within the content. For one use of
-*content-only* dictionaries, see
-``ZstdDecompressor.decompress_content_dict_chain()``.
+It is possible to construct a dictionary from *any* data. If the data doesn't
+begin with a magic header, it will be treated as a *content-only* dictionary.
+*Content-only* dictionaries allow compression operations to reference raw data
+within the dictionary.
+
+It is possible to force the use of *content-only* dictionaries or to
+require a dictionary header:
+
+   dict_data = zstd.ZstdCompressionDict(data,
+                                        dict_mode=zstd.DICT_MODE_RAWCONTENT)
+
+   dict_data = zstd.ZstdCompressionDict(data,
+                                        dict_mode=zstd.DICT_MODE_FULLDICT)
 
 More interestingly, instances can be created by *training* on sample data::
 
    dict_data = zstd.train_dictionary(size, samples)
 
-This takes a list of bytes instances and creates and returns a
-``ZstdCompressionDict``.
+This takes a target dictionary size and list of bytes instances and creates and
+returns a ``ZstdCompressionDict``.
 
 You can see how many bytes are in the dictionary by calling ``len()``::
 
@@ -863,7 +870,32 @@ a ``ZstdCompressionDict`` later) via ``as_bytes()``::
    dict_data = zstd.train_dictionary(size, samples)
    raw_data = dict_data.as_bytes()
 
-The training mechanism is known as *cover*. More details about it are
+By default, when a ``ZstdCompressionDict`` is *attached* to a
+``ZstdCompressor``, each ``ZstdCompressor`` performs work to prepare the
+dictionary for use. This is fine if only 1 compression operation is being
+performed or if the ``ZstdCompressor`` is being reused for multiple operations.
+But if multiple ``ZstdCompressor`` instances are being used with the dictionary,
+this can add overhead.
+
+It is possible to *precompute* the dictionary so it can readily be consumed
+by multiple ``ZstdCompressor`` instances::
+
+    d = zstd.ZstdCompressionDict(data)
+
+    # Precompute for compression level 3.
+    d.precompute_compress(level=3)
+
+    # Precompute with specific compression parameters.
+    params = zstd.CompressionParameters(...)
+    d.precompute_compress(compression_params=params)
+
+.. note::
+
+   When a dictionary is precomputed, the compression parameters used to
+   precompute the dictionary overwrite some of the compression parameters
+   specified to ``ZstdCompressor.__init__``.
+
+The dictionary training mechanism is known as *cover*. More details about it are
 available in the paper *Effective Construction of Relative Lempel-Ziv
 Dictionaries* (authors: Liao, Petri, Moffat, Wirth).
 

@@ -61,6 +61,9 @@ __all__ = [
     'STRATEGY_BTLAZY2',
     'STRATEGY_BTOPT',
     'STRATEGY_BTULTRA',
+    'DICT_MODE_AUTO',
+    'DICT_MODE_RAWCONTENT',
+    'DICT_MODE_FULLDICT',
 ]
 
 import io
@@ -120,6 +123,10 @@ STRATEGY_LAZY2 = lib.ZSTD_lazy2
 STRATEGY_BTLAZY2 = lib.ZSTD_btlazy2
 STRATEGY_BTOPT = lib.ZSTD_btopt
 STRATEGY_BTULTRA = lib.ZSTD_btultra
+
+DICT_MODE_AUTO = lib.ZSTD_dm_auto
+DICT_MODE_RAWCONTENT = lib.ZSTD_dm_rawContent
+DICT_MODE_FULLDICT = lib.ZSTD_dm_fullDict
 
 COMPRESSOBJ_FLUSH_FINISH = 0
 COMPRESSOBJ_FLUSH_BLOCK = 1
@@ -738,11 +745,13 @@ class ZstdCompressor(object):
 
         if dict_data:
             self._dict_data = dict_data
-            dict_size = len(dict_data)
-            dict_data = dict_data.as_bytes()
 
-            zresult = lib.ZSTD_CCtx_loadDictionary_byReference(
-                self._cctx, dict_data, dict_size)
+            if dict_data._cdict:
+                zresult = lib.ZSTD_CCtx_refCDict(self._cctx, dict_data._cdict)
+            else:
+                zresult = lib.ZSTD_CCtx_loadDictionary_advanced(
+                    self._cctx, dict_data.as_bytes(), len(dict_data),
+                    lib.ZSTD_dlm_byRef, dict_data._dict_mode)
 
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('could not load compression dictionary: %s' %
@@ -1025,11 +1034,19 @@ def get_frame_parameters(data):
 
 
 class ZstdCompressionDict(object):
-    def __init__(self, data, k=0, d=0):
+    def __init__(self, data, dict_mode=DICT_MODE_AUTO, k=0, d=0):
         assert isinstance(data, bytes_type)
         self._data = data
         self.k = k
         self.d = d
+
+        if dict_mode not in (DICT_MODE_AUTO, DICT_MODE_RAWCONTENT,
+                             DICT_MODE_FULLDICT):
+            raise ValueError('invalid dictionary load mode: %d; must use '
+                             'DICT_MODE_* constants')
+
+        self._dict_mode = dict_mode
+        self._cdict = None
 
     def __len__(self):
         return len(self._data)
@@ -1039,6 +1056,36 @@ class ZstdCompressionDict(object):
 
     def as_bytes(self):
         return self._data
+
+    def precompute_compress(self, level=0, compression_params=None):
+        if level and compression_params:
+            raise ValueError('must only specify one of level or '
+                             'compression_params')
+
+        if not level and not compression_params:
+            raise ValueError('must specify one of level or compression_params')
+
+        if level:
+            cparams = lib.ZSTD_getCParams(level, 0, len(self._data))
+        else:
+            cparams = ffi.new('ZSTD_compressionParameters')
+            cparams.chainLog = compression_params.chain_log
+            cparams.hashLog = compression_params.hash_log
+            cparams.searchLength = compression_params.min_match
+            cparams.searchLog = compression_params.search_log
+            cparams.strategy = compression_params.compression_strategy
+            cparams.targetLength = compression_params.target_length
+            cparams.windowLog = compression_params.window_log
+
+        cdict = lib.ZSTD_createCDict_advanced(self._data, len(self._data),
+                                              lib.ZSTD_dlm_byRef,
+                                              self._dict_mode,
+                                              cparams,
+                                              lib.ZSTD_defaultCMem)
+        if cdict == ffi.NULL:
+            raise ZstdError('unable to precompute dictionary')
+
+        self._cdict = ffi.gc(cdict, lib.ZSTD_freeCDict)
 
 
 def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
@@ -1101,6 +1148,7 @@ def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
                         ffi.string(lib.ZDICT_getErrorName(zresult)))
 
     return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:],
+                               dict_mode=DICT_MODE_FULLDICT,
                                k=dparams.k, d=dparams.d)
 
 
