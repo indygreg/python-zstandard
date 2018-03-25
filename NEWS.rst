@@ -23,6 +23,14 @@ Backwards Compatibility Notes
   ``train_dictionary()``.
 * The ``allow_empty`` argument from ``ZstdCompressor.compress()`` has been
   deleted and the method now allows empty inputs to be compressed by default.
+* ``estimate_compression_context_size()`` has been removed. Use
+  ``CompressionParameters.estimated_compression_context_size()`` instead.
+* ``get_compression_parameters()`` has been removed. Use
+  ``CompressionParameters.from_level()`` instead.
+* The arguments to ``CompressionParameters.__init__()`` have changed. If you
+  were using positional arguments before, the positions now map to different
+  arguments. It is recommended to use keyword arguments to construct
+  ``CompressionParameters`` instances.
 
 Bug Fixes (from 0.8.0)
 ----------------------
@@ -65,6 +73,8 @@ Changes
   ``LDM_BUCKETSIZELOG_MAX``.
 * Converted all consumers to the zstandard *new advanced API*, which uses
   ``ZSTD_compress_generic()``
+* ``CompressionParameters.__init__`` now accepts several more arguments,
+  including support for *long distance matching*.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

@@ -20,9 +20,7 @@ __all__ = [
     'ZstdError',
     'ZstdDecompressor',
     'FrameParameters',
-    'estimate_compression_context_size',
     'estimate_decompression_context_size',
-    'get_compression_parameters',
     'get_frame_parameters',
     'train_dictionary',
 
@@ -151,75 +149,107 @@ class ZstdError(Exception):
     pass
 
 
+def _make_cctx_params(params):
+    res = lib.ZSTD_createCCtxParams()
+    if res == ffi.NULL:
+        raise MemoryError()
+
+    res = ffi.gc(res, lib.ZSTD_freeCCtxParams)
+
+    attrs = [
+        (lib.ZSTD_p_format, params.format),
+        (lib.ZSTD_p_compressionLevel, params.compression_level),
+        (lib.ZSTD_p_windowLog, params.window_log),
+        (lib.ZSTD_p_hashLog, params.hash_log),
+        (lib.ZSTD_p_chainLog, params.chain_log),
+        (lib.ZSTD_p_searchLog, params.search_log),
+        (lib.ZSTD_p_minMatch, params.min_match),
+        (lib.ZSTD_p_targetLength, params.target_length),
+        (lib.ZSTD_p_compressionStrategy, params.compression_strategy),
+        (lib.ZSTD_p_contentSizeFlag, params.write_content_size),
+        (lib.ZSTD_p_checksumFlag, params.write_checksum),
+        (lib.ZSTD_p_dictIDFlag, params.write_dict_id),
+        (lib.ZSTD_p_nbThreads, params.threads),
+        (lib.ZSTD_p_forceMaxWindow, params.force_max_window),
+        (lib.ZSTD_p_enableLongDistanceMatching, params.enable_ldm),
+        (lib.ZSTD_p_ldmHashLog, params.ldm_hash_log),
+        (lib.ZSTD_p_ldmMinMatch, params.ldm_min_match),
+        (lib.ZSTD_p_ldmBucketSizeLog, params.ldm_bucket_size_log),
+        (lib.ZSTD_p_ldmHashEveryLog, params.ldm_hash_every_log),
+    ]
+
+    for param, value in attrs:
+        _set_compression_parameter(res, param, value)
+
+    if params.threads or params.job_size:
+        _set_compression_parameter(res,
+                                   lib.ZSTD_p_jobSize,
+                                   params.job_size)
+    if params.threads or params.overlap_size_log:
+        _set_compression_parameter(res,
+                                   lib.ZSTD_p_overlapSizeLog,
+                                   params.overlap_size_log)
+
+    return res
+
 class CompressionParameters(object):
-    def __init__(self, window_log, chain_log, hash_log, search_log,
-                 search_length, target_length, strategy):
-        if window_log < WINDOWLOG_MIN or window_log > WINDOWLOG_MAX:
-            raise ValueError('invalid window log value')
+    @staticmethod
+    def from_level(level, source_size=0, dict_size=0, **kwargs):
+        params = lib.ZSTD_getCParams(level, source_size, dict_size)
 
-        if chain_log < CHAINLOG_MIN or chain_log > CHAINLOG_MAX:
-            raise ValueError('invalid chain log value')
+        args = {
+            'window_log': 'windowLog',
+            'chain_log': 'chainLog',
+            'hash_log': 'hashLog',
+            'search_log': 'searchLog',
+            'min_match': 'searchLength',
+            'target_length': 'targetLength',
+            'compression_strategy': 'strategy',
+        }
 
-        if hash_log < HASHLOG_MIN or hash_log > HASHLOG_MAX:
-            raise ValueError('invalid hash log value')
+        for arg, attr in args.items():
+            if arg not in kwargs:
+                kwargs[arg] = getattr(params, attr)
 
-        if search_log < SEARCHLOG_MIN or search_log > SEARCHLOG_MAX:
-            raise ValueError('invalid search log value')
+        return CompressionParameters(**kwargs)
 
-        if search_length < SEARCHLENGTH_MIN or search_length > SEARCHLENGTH_MAX:
-            raise ValueError('invalid search length value')
+    def __init__(self, format=0, compression_level=0, window_log=0, hash_log=0,
+                 chain_log=0, search_log=0, min_match=0, target_length=0,
+                 compression_strategy=0, write_content_size=0, write_checksum=0,
+                 write_dict_id=0, job_size=0, overlap_size_log=0,
+                 force_max_window=0, enable_ldm=0, ldm_hash_log=0,
+                 ldm_min_match=0, ldm_bucket_size_log=0, ldm_hash_every_log=0,
+                 threads=0):
 
-        if target_length < TARGETLENGTH_MIN or target_length > TARGETLENGTH_MAX:
-            raise ValueError('invalid target length value')
+        if threads < 0:
+            threads = _cpu_count()
 
-        if strategy < STRATEGY_FAST or strategy > STRATEGY_BTULTRA:
-            raise ValueError('invalid strategy value')
-
+        self.format = format
+        self.compression_level = compression_level
         self.window_log = window_log
-        self.chain_log = chain_log
         self.hash_log = hash_log
+        self.chain_log = chain_log
         self.search_log = search_log
-        self.search_length = search_length
+        self.min_match = min_match
         self.target_length = target_length
-        self.strategy = strategy
+        self.compression_strategy = compression_strategy
+        self.write_content_size = write_content_size
+        self.write_checksum = write_checksum
+        self.write_dict_id = write_dict_id
+        self.job_size = job_size
+        self.overlap_size_log = overlap_size_log
+        self.force_max_window = force_max_window
+        self.enable_ldm = enable_ldm
+        self.ldm_hash_log = ldm_hash_log
+        self.ldm_min_match = ldm_min_match
+        self.ldm_bucket_size_log = ldm_bucket_size_log
+        self.ldm_hash_every_log = ldm_hash_every_log
+        self.threads = threads
 
-        zresult = lib.ZSTD_checkCParams(self.as_compression_parameters())
-        if lib.ZSTD_isError(zresult):
-            raise ValueError('invalid compression parameters: %s',
-                             ffi.string(lib.ZSTD_getErrorName(zresult)))
+        self.params = _make_cctx_params(self)
 
     def estimated_compression_context_size(self):
-        return lib.ZSTD_estimateCCtxSize_usingCParams(self.as_compression_parameters())
-
-    def as_compression_parameters(self):
-        p = ffi.new('ZSTD_compressionParameters *')[0]
-        p.windowLog = self.window_log
-        p.chainLog = self.chain_log
-        p.hashLog = self.hash_log
-        p.searchLog = self.search_log
-        p.searchLength = self.search_length
-        p.targetLength = self.target_length
-        p.strategy = self.strategy
-
-        return p
-
-def get_compression_parameters(level, source_size=0, dict_size=0):
-    params = lib.ZSTD_getCParams(level, source_size, dict_size)
-    return CompressionParameters(window_log=params.windowLog,
-                                 chain_log=params.chainLog,
-                                 hash_log=params.hashLog,
-                                 search_log=params.searchLog,
-                                 search_length=params.searchLength,
-                                 target_length=params.targetLength,
-                                 strategy=params.strategy)
-
-
-def estimate_compression_context_size(params):
-    if not isinstance(params, CompressionParameters):
-        raise ValueError('argument must be a CompressionParameters')
-
-    cparams = params.as_compression_parameters()
-    return lib.ZSTD_estimateCCtxSize_usingCParams(cparams)
+        return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self.params)
 
 
 def estimate_decompression_context_size():
@@ -636,8 +666,8 @@ class CompressionReader(object):
 
 class ZstdCompressor(object):
     def __init__(self, level=3, dict_data=None, compression_params=None,
-                 write_checksum=False, write_content_size=False,
-                 write_dict_id=True, threads=0):
+                 write_checksum=None, write_content_size=None,
+                 write_dict_id=None, threads=0):
         if level < 1:
             raise ValueError('level must be greater than 0')
         elif level > lib.ZSTD_maxCLevel():
@@ -646,46 +676,53 @@ class ZstdCompressor(object):
         if threads < 0:
             threads = _cpu_count()
 
-        params = lib.ZSTD_createCCtxParams()
-        if params == ffi.NULL:
-            raise MemoryError()
+        if compression_params and write_checksum is not None:
+            raise ValueError('cannot define compression_params and '
+                             'write_checksum')
 
-        self._params = ffi.gc(params, lib.ZSTD_freeCCtxParams)
+        if compression_params and write_content_size is not None:
+            raise ValueError('cannot define compression_params and '
+                             'write_content_size')
 
-        _set_compression_parameter(self._params,
-                                   lib.ZSTD_p_compressionLevel,
-                                   level)
+        if compression_params and write_dict_id is not None:
+            raise ValueError('cannot define compression_params and '
+                             'write_dict_id')
+
+        if compression_params and threads:
+            raise ValueError('cannot define compression_params and threads')
 
         if compression_params:
-            params = [
-                (lib.ZSTD_p_windowLog, compression_params.window_log),
-                (lib.ZSTD_p_hashLog, compression_params.hash_log),
-                (lib.ZSTD_p_chainLog, compression_params.chain_log),
-                (lib.ZSTD_p_searchLog, compression_params.search_log),
-                (lib.ZSTD_p_minMatch, compression_params.search_length),
-                (lib.ZSTD_p_targetLength, compression_params.target_length),
-                (lib.ZSTD_p_compressionStrategy, compression_params.strategy),
-            ]
+            self._params = _make_cctx_params(compression_params)
+        else:
+            if write_dict_id is None:
+                write_dict_id = True
 
-            for param, value in params:
-                _set_compression_parameter(self._params, param, value)
+            params = lib.ZSTD_createCCtxParams()
+            if params == ffi.NULL:
+                raise MemoryError()
 
-        _set_compression_parameter(self._params,
-                                   lib.ZSTD_p_contentSizeFlag,
-                                   1 if write_content_size else 0)
+            self._params = ffi.gc(params, lib.ZSTD_freeCCtxParams)
 
-        _set_compression_parameter(self._params,
-                                   lib.ZSTD_p_checksumFlag,
-                                   1 if write_checksum else 0)
-
-        _set_compression_parameter(self._params,
-                                   lib.ZSTD_p_dictIDFlag,
-                                   1 if write_dict_id else 0)
-
-        if threads:
             _set_compression_parameter(self._params,
-                                       lib.ZSTD_p_nbThreads,
-                                       threads)
+                                       lib.ZSTD_p_compressionLevel,
+                                       level)
+
+            _set_compression_parameter(self._params,
+                                       lib.ZSTD_p_contentSizeFlag,
+                                       1 if write_content_size else 0)
+
+            _set_compression_parameter(self._params,
+                                       lib.ZSTD_p_checksumFlag,
+                                       1 if write_checksum else 0)
+
+            _set_compression_parameter(self._params,
+                                       lib.ZSTD_p_dictIDFlag,
+                                       1 if write_dict_id else 0)
+
+            if threads:
+                _set_compression_parameter(self._params,
+                                           lib.ZSTD_p_nbThreads,
+                                           threads)
 
         cctx = lib.ZSTD_createCCtx()
         if cctx == ffi.NULL:

@@ -135,7 +135,7 @@ dict_data
    subsequent operations. This may not be desirable if source data size
    varies significantly.
 compression_params
-   A ``CompressionParameters`` instance (overrides the ``level`` value).
+   A ``CompressionParameters`` instance defining compression settings.
 write_checksum
    Whether a 4 byte checksum should be written with the compressed data.
    Defaults to False. If True, the decompressor can verify that decompressed
@@ -157,6 +157,9 @@ threads
    controls thread count for operations that operate on individual pieces of
    data. APIs that spawn multiple threads for working on multiple pieces of
    data have their own ``threads`` argument.
+
+``compression_params`` is mutually exclusive with ``level``, ``write_checksum``,
+``write_content_size``, ``write_dict_id``, and ``threads``.
 
 Unless specified otherwise, assume that no two methods of ``ZstdCompressor``
 instances can be called from multiple Python threads simultaneously. In other
@@ -920,45 +923,73 @@ notifications
 Explicit Compression Parameters
 -------------------------------
 
-Zstandard's integer compression levels along with the input size and dictionary
-size are converted into a data structure defining multiple parameters to tune
-behavior of the compression algorithm. It is possible to use define this
-data structure explicitly to have lower-level control over compression behavior.
+Zstandard offers a high-level *compression level* that maps to lower-level
+compression parameters. For many consumers, this numeric level is the only
+compression setting you'll need to touch.
 
-The ``zstd.CompressionParameters`` type represents this data structure.
-You can see how Zstandard converts compression levels to this data structure
-by calling ``zstd.get_compression_parameters()``. e.g.::
+But for advanced use cases, it might be desirable to tweak these lower-level
+settings.
 
-    params = zstd.get_compression_parameters(5)
+The ``CompressionParameters`` type represents these low-level compression
+settings.
 
-This function also accepts the uncompressed data size and dictionary size
-to adjust parameters::
+Instances of this type can be constructed from a myriad of keyword arguments
+(defined below) for complete low-level control over each adjustable
+compression setting.
 
-    params = zstd.get_compression_parameters(3, source_size=len(data), dict_size=len(dict_data))
+From a higher level, one can construct a ``CompressionParameters`` instance
+given a desired compression level and target input and dictionary size
+using ``CompressionParameters.from_level()``. e.g.::
 
-You can also construct compression parameters from their low-level components::
+    # Derive compression settings for compression level 7.
+    params = zstd.CompressionParameters.from_level(7)
 
-    params = zstd.CompressionParameters(20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST)
+    # With an input size of 1MB
+    params = zstd.CompressionParameters.from_level(7, source_size=1048576)
 
-You can then configure a compressor to use the custom parameters::
+Using ``from_level()``, it is also possible to override individual compression
+parameters or to define additional settings that aren't automatically derived.
+e.g.::
+
+    params = zstd.CompressionParameters.from_level(4, window_log=10)
+    params = zstd.CompressionParameters.from_level(5, threads=4)
+
+Or you can define low-level compression settings directly::
+
+    params = zstd.CompressionParameters(window_log=12, enable_ldm=True)
+
+Once a ``CompressionParameters`` instance is obtained, it can be used to
+configure a compressor::
 
     cctx = zstd.ZstdCompressor(compression_params=params)
 
-The members/attributes of ``CompressionParameters`` instances are as follows::
+The named arguments and attributes of ``CompressionParameters`` are as follows:
 
+* format
+* compression_level
 * window_log
-* chain_log
 * hash_log
+* chain_log
 * search_log
-* search_length
+* min_match
 * target_length
-* strategy
+* compression_strategy
+* write_content_size
+* write_checksum
+* write_dict_id
+* job_size
+* overlap_size_log
+* force_max_window
+* enable_ldm
+* ldm_hash_log
+* ldm_min_match
+* ldm_bucket_size_log
+* ldm_hash_every_log
+* threads
 
-This is the order the arguments are passed to the constructor if not using
-named arguments.
-
-You'll need to read the Zstandard documentation for what these parameters
-do.
+Some of these are very low-level settings. It may help to consult the official
+zstandard documentation for their behavior. Look for the ``ZSTD_p_*`` constants
+in ``zstd.h`` (https://github.com/facebook/zstd/blob/dev/lib/zstd.h).
 
 Frame Inspection
 ----------------
@@ -997,12 +1028,6 @@ has_checksum
 
 Misc Functionality
 ------------------
-
-estimate_compression_context_size(CompressionParameters)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Given a ``CompressionParameters`` struct, estimate the memory size required
-to perform compression.
 
 estimate_decompression_context_size()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

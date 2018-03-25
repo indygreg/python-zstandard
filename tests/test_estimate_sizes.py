@@ -13,7 +13,3 @@ class TestSizes(unittest.TestCase):
         size = zstd.estimate_decompression_context_size()
         self.assertGreater(size, 100000)
 
-    def test_compression_size(self):
-        params = zstd.get_compression_parameters(3)
-        size = zstd.estimate_compression_context_size(params)
-        self.assertGreater(size, 100000)

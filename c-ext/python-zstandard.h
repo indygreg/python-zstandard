@@ -29,17 +29,32 @@ typedef enum {
 /*
    Represents a CompressionParameters type.
 
-   This type is basically a wrapper around ZSTD_compressionParameters.
+   This type holds all the low-level compression parameters that can be set.
 */
 typedef struct {
 	PyObject_HEAD
+	ZSTD_CCtx_params* params;
+	unsigned format;
+	unsigned compressionLevel;
 	unsigned windowLog;
-	unsigned chainLog;
 	unsigned hashLog;
+	unsigned chainLog;
 	unsigned searchLog;
-	unsigned searchLength;
+	unsigned minMatch;
 	unsigned targetLength;
-	ZSTD_strategy strategy;
+	unsigned compressionStrategy;
+	unsigned contentSizeFlag;
+	unsigned checksumFlag;
+	unsigned dictIDFlag;
+	unsigned threads;
+	unsigned jobSize;
+	unsigned overlapSizeLog;
+	unsigned forceMaxWindow;
+	unsigned enableLongDistanceMatching;
+	unsigned ldmHashLog;
+	unsigned ldmMinMatch;
+	unsigned ldmBucketSizeLog;
+	unsigned ldmHashEveryLog;
 } CompressionParametersObject;
 
 extern PyTypeObject CompressionParametersType;
@@ -313,10 +328,9 @@ typedef struct {
 
 extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
 
-void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams);
-CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject* args);
+int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value);
+int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);
-PyObject* estimate_compression_context_size(PyObject* self, PyObject* args);
 int init_dstream(ZstdDecompressor* decompressor);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);

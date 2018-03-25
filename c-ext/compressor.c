@@ -11,17 +11,6 @@
 
 extern PyObject* ZstdError;
 
-int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value) {
-	size_t zresult = ZSTD_CCtxParam_setParameter(params, param, value);
-	if (ZSTD_isError(zresult)) {
-		PyErr_Format(ZstdError, "unable to set compression context parameter: %s",
-			ZSTD_getErrorName(zresult));
-		return 1;
-	}
-
-	return 0;
-}
-
 PyDoc_STRVAR(ZstdCompressor__doc__,
 "ZstdCompressor(level=None, dict_data=None, compression_params=None)\n"
 "\n"
@@ -119,64 +108,61 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
-	if (set_parameter(self->params, ZSTD_p_compressionLevel, level)) {
+	if (params && writeChecksum) {
+		PyErr_SetString(PyExc_ValueError,
+			"cannot define compression_params and write_checksum");
+		return -1;
+	}
+
+	if (params && writeContentSize) {
+		PyErr_SetString(PyExc_ValueError,
+			"cannot define compression_params and write_content_size");
+		return -1;
+	}
+
+	if (params && writeDictID) {
+		PyErr_SetString(PyExc_ValueError,
+			"cannot define compression_params and write_dict_id");
+		return -1;
+	}
+
+	if (params && threads) {
+		PyErr_SetString(PyExc_ValueError,
+			"cannot define compression_params and threads");
 		return -1;
 	}
 
 	if (params) {
-		if (set_parameter(self->params, ZSTD_p_windowLog, params->windowLog)) {
-			return -1;
-		}
-
-		if (set_parameter(self->params, ZSTD_p_hashLog, params->hashLog)) {
-			return -1;
-		}
-
-		if (set_parameter(self->params, ZSTD_p_chainLog, params->chainLog)) {
-			return -1;
-		}
-
-		if (set_parameter(self->params, ZSTD_p_searchLog, params->searchLog)) {
-			return -1;
-		}
-
-		if (set_parameter(self->params, ZSTD_p_minMatch, params->searchLength)) {
-			return -1;
-		}
-
-		if (set_parameter(self->params, ZSTD_p_targetLength, params->targetLength)) {
-			return -1;
-		}
-
-		if (set_parameter(self->params, ZSTD_p_compressionStrategy, params->strategy)) {
+		if (set_parameters(self->params, params)) {
 			return -1;
 		}
 	}
-
-	if (set_parameter(self->params, ZSTD_p_contentSizeFlag,
-		writeContentSize ? PyObject_IsTrue(writeContentSize) : 0)) {
-		return -1;
-	}
-
-	if (set_parameter(self->params, ZSTD_p_checksumFlag,
-		writeChecksum ? PyObject_IsTrue(writeChecksum) : 0)) {
-		return -1;
-	}
-
-	if (set_parameter(self->params, ZSTD_p_dictIDFlag,
-		writeDictID ? PyObject_IsTrue(writeDictID) : 1)) {
-		return -1;
-	}
-
-	if (threads) {
-		if (set_parameter(self->params, ZSTD_p_nbThreads, threads)) {
+	else {
+		if (set_parameter(self->params, ZSTD_p_compressionLevel, level)) {
 			return -1;
 		}
 
-		/* TODO support ZSTD_p_jobSize, ZSTD_p_overlapSizeLog */
-	}
+		if (set_parameter(self->params, ZSTD_p_contentSizeFlag,
+			writeContentSize ? PyObject_IsTrue(writeContentSize) : 0)) {
+			return -1;
+		}
 
-	/* TODO support advanced parameters (LDM, etc) */
+		if (set_parameter(self->params, ZSTD_p_checksumFlag,
+			writeChecksum ? PyObject_IsTrue(writeChecksum) : 0)) {
+			return -1;
+		}
+
+		if (set_parameter(self->params, ZSTD_p_dictIDFlag,
+			writeDictID ? PyObject_IsTrue(writeDictID) : 1)) {
+			return -1;
+		}
+
+		if (threads) {
+			if (set_parameter(self->params, ZSTD_p_nbThreads, threads)) {
+				return -1;
+			}
+		}
+	}
 
 	zresult = ZSTD_CCtx_setParametersUsingCCtxParams(self->cctx, self->params);
 	if (ZSTD_isError(zresult)) {

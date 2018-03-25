@@ -10,48 +10,92 @@ from . common import (
 
 @make_cffi
 class TestCompressionParameters(unittest.TestCase):
-    def test_init_bad_arg_type(self):
-        with self.assertRaises(TypeError):
-            zstd.CompressionParameters()
-
-        with self.assertRaises(TypeError):
-            zstd.CompressionParameters(0, 1)
-
     def test_bounds(self):
-        zstd.CompressionParameters(zstd.WINDOWLOG_MIN,
-                                   zstd.CHAINLOG_MIN,
-                                   zstd.HASHLOG_MIN,
-                                   zstd.SEARCHLOG_MIN,
-                                   zstd.SEARCHLENGTH_MIN + 1,
-                                   zstd.TARGETLENGTH_MIN,
-                                   zstd.STRATEGY_FAST)
+        zstd.CompressionParameters(window_log=zstd.WINDOWLOG_MIN,
+                                   chain_log=zstd.CHAINLOG_MIN,
+                                   hash_log=zstd.HASHLOG_MIN,
+                                   search_log=zstd.SEARCHLOG_MIN,
+                                   min_match=zstd.SEARCHLENGTH_MIN + 1,
+                                   target_length=zstd.TARGETLENGTH_MIN,
+                                   compression_strategy=zstd.STRATEGY_FAST)
 
-        zstd.CompressionParameters(zstd.WINDOWLOG_MAX,
-                                   zstd.CHAINLOG_MAX,
-                                   zstd.HASHLOG_MAX,
-                                   zstd.SEARCHLOG_MAX,
-                                   zstd.SEARCHLENGTH_MAX - 1,
-                                   zstd.TARGETLENGTH_MAX,
-                                   zstd.STRATEGY_BTULTRA)
+        zstd.CompressionParameters(window_log=zstd.WINDOWLOG_MAX,
+                                   chain_log=zstd.CHAINLOG_MAX,
+                                   hash_log=zstd.HASHLOG_MAX,
+                                   search_log=zstd.SEARCHLOG_MAX,
+                                   min_match=zstd.SEARCHLENGTH_MAX - 1,
+                                   target_length=zstd.TARGETLENGTH_MAX,
+                                   compression_strategy=zstd.STRATEGY_BTULTRA)
 
-    def test_get_compression_parameters(self):
-        p = zstd.get_compression_parameters(1)
+    def test_from_level(self):
+        p = zstd.CompressionParameters.from_level(1)
         self.assertIsInstance(p, zstd.CompressionParameters)
 
         self.assertEqual(p.window_log, 19)
 
+    def test_invalid_threading_params(self):
+        with self.assertRaisesRegexp(zstd.ZstdError,
+                                     'unable to set compression context parameter'):
+            zstd.CompressionParameters(job_size=1048576)
+
+        with self.assertRaisesRegexp(zstd.ZstdError,
+                                     'unable to set compression context parameter'):
+            zstd.CompressionParameters(overlap_size_log=6)
+
     def test_members(self):
-        p = zstd.CompressionParameters(10, 6, 7, 4, 5, 8, 1)
+        p = zstd.CompressionParameters(window_log=10,
+                                       chain_log=6,
+                                       hash_log=7,
+                                       search_log=4,
+                                       min_match=5,
+                                       target_length=8,
+                                       compression_strategy=1)
         self.assertEqual(p.window_log, 10)
         self.assertEqual(p.chain_log, 6)
         self.assertEqual(p.hash_log, 7)
         self.assertEqual(p.search_log, 4)
-        self.assertEqual(p.search_length, 5)
+        self.assertEqual(p.min_match, 5)
         self.assertEqual(p.target_length, 8)
-        self.assertEqual(p.strategy, 1)
+        self.assertEqual(p.compression_strategy, 1)
+
+        p = zstd.CompressionParameters(compression_level=2)
+        self.assertEqual(p.compression_level, 2)
+
+        p = zstd.CompressionParameters(threads=4)
+        self.assertEqual(p.threads, 4)
+
+        p = zstd.CompressionParameters(threads=2, job_size=1048576,
+                                       overlap_size_log=6)
+        self.assertEqual(p.threads, 2)
+        self.assertEqual(p.job_size, 1048576)
+        self.assertEqual(p.overlap_size_log, 6)
+
+        p = zstd.CompressionParameters(force_max_window=True)
+        self.assertEqual(p.force_max_window, 1)
+
+        p = zstd.CompressionParameters(enable_ldm=True)
+        self.assertEqual(p.enable_ldm, 1)
+
+        p = zstd.CompressionParameters(ldm_hash_log=7)
+        self.assertEqual(p.ldm_hash_log, 7)
+
+        p = zstd.CompressionParameters(ldm_min_match=6)
+        self.assertEqual(p.ldm_min_match, 6)
+
+        p = zstd.CompressionParameters(ldm_bucket_size_log=7)
+        self.assertEqual(p.ldm_bucket_size_log, 7)
+
+        p = zstd.CompressionParameters(ldm_hash_every_log=8)
+        self.assertEqual(p.ldm_hash_every_log, 8)
 
     def test_estimated_compression_context_size(self):
-        p = zstd.CompressionParameters(20, 16, 17,  1,  5, 16, zstd.STRATEGY_DFAST)
+        p = zstd.CompressionParameters(window_log=20,
+                                       chain_log=16,
+                                       hash_log=17,
+                                       search_log=1,
+                                       min_match=5,
+                                       target_length=16,
+                                       compression_strategy=zstd.STRATEGY_DFAST)
 
         # 32-bit has slightly different values from 64-bit.
         self.assertAlmostEqual(p.estimated_compression_context_size(), 1289500,

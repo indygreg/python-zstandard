@@ -19,7 +19,8 @@ else:
 
 
 def multithreaded_chunk_size(level, source_size=0):
-    params = zstd.get_compression_parameters(level, source_size)
+    params = zstd.CompressionParameters.from_level(level,
+                                                   source_size=source_size)
 
     return 1 << (params.window_log + 2)
 
@@ -190,9 +191,9 @@ class TestCompressor_compress(unittest.TestCase):
                          b'\x66\x6f\x6f')
 
     def test_multithreaded_compression_params(self):
-        params = zstd.get_compression_parameters(3)
-        cctx = zstd.ZstdCompressor(compression_params=params, threads=2,
-                                   write_content_size=True)
+        params = zstd.CompressionParameters.from_level(
+            0, threads=2, write_content_size=True)
+        cctx = zstd.ZstdCompressor(compression_params=params)
 
         result = cctx.compress(b'foo')
         params = zstd.get_frame_parameters(result);
@@ -732,7 +733,14 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertEqual(h, '694206bb8744b0ad1afd8685506578339952b9d9')
 
     def test_compression_params(self):
-        params = zstd.CompressionParameters(20, 6, 12, 5, 4, 10, zstd.STRATEGY_FAST)
+        params = zstd.CompressionParameters(
+            window_log=20,
+            chain_log=6,
+            hash_log=12,
+            min_match=5,
+            search_log=4,
+            target_length=10,
+            compression_strategy=zstd.STRATEGY_FAST)
 
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(compression_params=params)
