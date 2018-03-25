@@ -401,7 +401,7 @@ finally:
 }
 
 PyDoc_STRVAR(Decompressor_decompressobj__doc__,
-"decompressobj()\n"
+"decompressobj([write_size=default])\n"
 "\n"
 "Incrementally feed data into a decompressor.\n"
 "\n"
@@ -410,8 +410,25 @@ PyDoc_STRVAR(Decompressor_decompressobj__doc__,
 "callers can swap in the zstd decompressor while using the same API.\n"
 );
 
-static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) {
-	ZstdDecompressionObj* result = (ZstdDecompressionObj*)PyObject_CallObject((PyObject*)&ZstdDecompressionObjType, NULL);
+static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"write_size",
+		NULL
+	};
+
+	ZstdDecompressionObj* result = NULL;
+	size_t outSize = ZSTD_DStreamOutSize();
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|k:decompressobj", kwlist, &outSize)) {
+		return NULL;
+	}
+
+	if (!outSize) {
+		PyErr_SetString(PyExc_ValueError, "write_size must be positive");
+		return NULL;
+	}
+
+	result = (ZstdDecompressionObj*)PyObject_CallObject((PyObject*)&ZstdDecompressionObjType, NULL);
 	if (!result) {
 		return NULL;
 	}
@@ -423,6 +440,7 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self) 
 
 	result->decompressor = self;
 	Py_INCREF(result->decompressor);
+	result->outSize = outSize;
 
 	return result;
 }
@@ -1571,7 +1589,7 @@ static PyMethodDef Decompressor_methods[] = {
 	Decompressor_copy_stream__doc__ },
 	{ "decompress", (PyCFunction)Decompressor_decompress, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_decompress__doc__ },
-	{ "decompressobj", (PyCFunction)Decompressor_decompressobj, METH_NOARGS,
+	{ "decompressobj", (PyCFunction)Decompressor_decompressobj, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_decompressobj__doc__ },
 	{ "read_to_iter", (PyCFunction)Decompressor_read_to_iter, METH_VARARGS | METH_KEYWORDS,
 	Decompressor_read_to_iter__doc__ },

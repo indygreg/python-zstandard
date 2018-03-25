@@ -1166,8 +1166,9 @@ def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
 
 
 class ZstdDecompressionObj(object):
-    def __init__(self, decompressor):
+    def __init__(self, decompressor, write_size):
         self._decompressor = decompressor
+        self._write_size = write_size
         self._finished = False
 
     def decompress(self, data):
@@ -1184,7 +1185,7 @@ class ZstdDecompressionObj(object):
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
-        dst_buffer = ffi.new('char[]', DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
+        dst_buffer = ffi.new('char[]', self._write_size)
         out_buffer.dst = dst_buffer
         out_buffer.size = len(dst_buffer)
         out_buffer.pos = 0
@@ -1485,9 +1486,12 @@ class ZstdDecompressor(object):
         self._ensure_dstream()
         return DecompressionReader(self, source, read_size)
 
-    def decompressobj(self):
+    def decompressobj(self, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+        if write_size < 1:
+            raise ValueError('write_size must be positive')
+
         self._ensure_dstream()
-        return ZstdDecompressionObj(self)
+        return ZstdDecompressionObj(self, write_size=write_size)
 
     def read_to_iter(self, reader, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
                      write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,

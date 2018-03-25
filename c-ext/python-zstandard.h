@@ -195,6 +195,7 @@ typedef struct {
 	PyObject_HEAD
 
 	ZstdDecompressor* decompressor;
+	size_t outSize;
 	int finished;
 } ZstdDecompressionObj;
 

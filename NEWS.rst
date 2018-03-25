@@ -126,6 +126,8 @@ Changes
   created automatically on first use, and automatically reused by all
   ``ZstdDecompressor`` instances bound to that dictionary.
 * All meaningful functions now accept keyword arguments.
+* ``ZstdDecompressor.decompressobj()`` now accepts a ``write_size`` argument
+  to control how much work to perform on every decompressor invocation.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

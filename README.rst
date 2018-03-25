@@ -656,7 +656,7 @@ Decompressor API
 ^^^^^^^^^^^^^^^^
 
 ``decompressobj()`` returns an object that exposes a ``decompress(data)``
-methods. Compressed data chunks are fed into ``decompress(data)`` and
+method. Compressed data chunks are fed into ``decompress(data)`` and
 uncompressed output (or an empty bytes) is returned. Output from subsequent
 calls needs to be concatenated to reassemble the full decompressed byte
 sequence.
@@ -674,6 +674,20 @@ Here is how this API should be used::
    dobj = dctx.decompressobj()
    data = dobj.decompress(compressed_chunk_0)
    data = dobj.decompress(compressed_chunk_1)
+
+By default, calls to ``decompress()`` write output data in chunks of size
+``DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE``. These chunks are concatenated
+before being returned to the caller. It is possible to define the size of
+these temporary chunks by passing ``write_size`` to ``decompressobj()``::
+
+   dctx = zstd.ZstdDecompressor()
+   dobj = dctx.decompressobj(write_size=1048576)
+
+.. note::
+
+   Because calls to ``decompress()`` may need to perform multiple
+   memory (re)allocations, this streaming decompression API isn't as
+   efficient as other APIs.
 
 Batch Decompression API
 ^^^^^^^^^^^^^^^^^^^^^^^
