@@ -71,7 +71,7 @@ static PyMethodDef zstd_methods[] = {
 	{ "estimate_decompression_context_size", (PyCFunction)estimate_decompression_context_size,
 	METH_NOARGS, estimate_decompression_context_size__doc__ },
 	{ "get_frame_parameters", (PyCFunction)get_frame_parameters,
-	METH_VARARGS, get_frame_parameters__doc__ },
+	METH_VARARGS | METH_KEYWORDS, get_frame_parameters__doc__ },
 	{ "train_dictionary", (PyCFunction)train_dictionary,
 	METH_VARARGS | METH_KEYWORDS, train_dictionary__doc__ },
 	{ NULL, NULL }

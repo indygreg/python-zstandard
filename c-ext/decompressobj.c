@@ -20,7 +20,12 @@ static void DecompressionObj_dealloc(ZstdDecompressionObj* self) {
 	PyObject_Del(self);
 }
 
-static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObject* args) {
+static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
 	Py_buffer source;
 	size_t zresult;
 	ZSTD_inBuffer input;
@@ -38,10 +43,11 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y*:decompress", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:decompress",
 #else
-	if (!PyArg_ParseTuple(args, "s*:decompress", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:decompress",
 #endif
+		kwlist, &source)) {
 		return NULL;
 	}
 
@@ -112,7 +118,7 @@ finally:
 
 static PyMethodDef DecompressionObj_methods[] = {
 	{ "decompress", (PyCFunction)DecompressionObj_decompress,
-	  METH_VARARGS, PyDoc_STR("decompress data") },
+	  METH_VARARGS | METH_KEYWORDS, PyDoc_STR("decompress data") },
 	{ NULL, NULL }
 };
 

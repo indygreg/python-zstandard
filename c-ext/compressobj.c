@@ -23,7 +23,12 @@ static void ZstdCompressionObj_dealloc(ZstdCompressionObj* self) {
 	PyObject_Del(self);
 }
 
-static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject* args) {
+static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
 	Py_buffer source;
 	ZSTD_inBuffer input;
 	size_t zresult;
@@ -36,10 +41,11 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y*:compress", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:compress",
 #else
-	if (!PyArg_ParseTuple(args, "s*:compress", &source)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:compress",
 #endif
+		kwlist, &source)) {
 		return NULL;
 	}
 
@@ -91,14 +97,19 @@ finally:
 	return result;
 }
 
-static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* args) {
+static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"flush_mode",
+		NULL
+	};
+
 	int flushMode = compressorobj_flush_finish;
 	size_t zresult;
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
 	ZSTD_inBuffer input;
 
-	if (!PyArg_ParseTuple(args, "|i:flush", &flushMode)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:flush", kwlist, &flushMode)) {
 		return NULL;
 	}
 
@@ -197,9 +208,9 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 }
 
 static PyMethodDef ZstdCompressionObj_methods[] = {
-	{ "compress", (PyCFunction)ZstdCompressionObj_compress, METH_VARARGS,
+	{ "compress", (PyCFunction)ZstdCompressionObj_compress, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("compress data") },
-	{ "flush", (PyCFunction)ZstdCompressionObj_flush, METH_VARARGS,
+	{ "flush", (PyCFunction)ZstdCompressionObj_flush, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("finish compression operation") },
 	{ NULL, NULL }
 };

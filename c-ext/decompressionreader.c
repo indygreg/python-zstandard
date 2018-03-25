@@ -115,7 +115,12 @@ static PyObject* reader_isatty(PyObject* self) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args) {
+static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"size",
+		NULL
+	};
+
 	Py_ssize_t size = -1;
 	PyObject* result = NULL;
 	char* resultBuffer;
@@ -137,7 +142,7 @@ static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args) {
 		return PyBytes_FromStringAndSize("", 0);
 	}
 
-	if (!PyArg_ParseTuple(args, "n", &size)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n", kwlist, &size)) {
 		return NULL;
 	}
 
@@ -307,7 +312,8 @@ static PyMethodDef reader_methods[] = {
 	{ "isatty", (PyCFunction)reader_isatty, METH_NOARGS, PyDoc_STR("Returns False") },
 	{ "readable", (PyCFunction)reader_readable, METH_NOARGS,
 	PyDoc_STR("Returns True") },
-	{ "read", (PyCFunction)reader_read, METH_VARARGS, PyDoc_STR("read compressed data") },
+	{ "read", (PyCFunction)reader_read, METH_VARARGS | METH_KEYWORDS,
+	PyDoc_STR("read compressed data") },
 	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readline", (PyCFunction)reader_readline, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readlines", (PyCFunction)reader_readlines, METH_NOARGS, PyDoc_STR("Not implemented") },
