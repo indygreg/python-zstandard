@@ -409,6 +409,21 @@ class TestDecompressor_decompressobj(unittest.TestCase):
         with self.assertRaisesRegexp(zstd.ZstdError, 'cannot use a decompressobj'):
             dobj.decompress(data)
 
+    def test_bad_write_size(self):
+        dctx = zstd.ZstdDecompressor()
+
+        with self.assertRaisesRegexp(ValueError, 'write_size must be positive'):
+            dctx.decompressobj(write_size=0)
+
+    def test_write_size(self):
+        source = b'foo' * 64 + b'bar' * 128
+        data = zstd.ZstdCompressor(level=1).compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+
+        for i in range(128):
+            dobj = dctx.decompressobj(write_size=i + 1)
+            self.assertEqual(dobj.decompress(data), source)
 
 def decompress_via_writer(data):
     buffer = io.BytesIO()

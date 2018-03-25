@@ -30,7 +30,6 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	size_t zresult;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
-	size_t outSize = ZSTD_DStreamOutSize();
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
 
@@ -55,12 +54,12 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	input.size = source.len;
 	input.pos = 0;
 
-	output.dst = PyMem_Malloc(outSize);
+	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();
 		goto except;
 	}
-	output.size = outSize;
+	output.size = self->outSize;
 	output.pos = 0;
 
 	/* Read input until exhausted. */
@@ -82,12 +81,30 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 		if (output.pos) {
 			if (result) {
 				resultSize = PyBytes_GET_SIZE(result);
-				if (-1 == _PyBytes_Resize(&result, resultSize + output.pos)) {
-					goto except;
-				}
 
-				memcpy(PyBytes_AS_STRING(result) + resultSize,
-					output.dst, output.pos);
+				/* _PyBytes_Resize doesn't work on PyBytes of size 1 because
+				   CPython stores 1 size bytes wonkily. So handle that case
+				   specially. */
+				if (resultSize == 1) {
+					PyObject* tmp = PyBytes_FromStringAndSize(output.dst, output.pos);
+					if (!tmp) {
+						goto except;
+					}
+
+					/* Always steals reference to original result. */
+					PyBytes_Concat(&result, tmp);
+					if (!result) {
+						goto except;
+					}
+				}
+				else {
+					if (-1 == _PyBytes_Resize(&result, resultSize + output.pos)) {
+						goto except;
+					}
+
+					memcpy(PyBytes_AS_STRING(result) + resultSize,
+						output.dst, output.pos);
+				}
 			}
 			else {
 				result = PyBytes_FromStringAndSize(output.dst, output.pos);
