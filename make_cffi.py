@@ -43,7 +43,6 @@ SOURCES = ['zstd/%s' % p for p in (
 # Headers whose preprocessed output will be fed into cdef().
 HEADERS = [os.path.join(HERE, 'zstd', *p) for p in (
     ('zstd.h',),
-    ('compress', 'zstdmt_compress.h'),
     ('dictBuilder', 'zdict.h'),
 )]
 
@@ -108,22 +107,6 @@ def preprocess(path):
             if l.startswith(b'ZSTDLIB_API'):
                 l = l[len(b'ZSTDLIB_API '):]
 
-            # These private functions should not be used. Why they are in a
-            # public header is anyone's guess.
-            if l == b'size_t ZSTDMT_CCtxParam_setMTCtxParameter(ZSTD_CCtx_params* params, ZSTDMT_parameter parameter, unsigned value);\n':
-                continue
-            if l == b'size_t ZSTDMT_initializeCCtxParameters(ZSTD_CCtx_params* params, unsigned nbThreads);\n':
-                continue
-            if l == b'size_t ZSTDMT_initCStream_internal(ZSTDMT_CCtx* zcs,\n':
-                # Filter out the next lines of the function declaration.
-                l = next(it)
-                assert l.strip() == b'const void* dict, size_t dictSize, ZSTD_dictMode_e dictMode,'
-                l = next(it)
-                assert l.strip() == b'const ZSTD_CDict* cdict,'
-                l = next(it)
-                assert l.strip() == b'ZSTD_CCtx_params params, unsigned long long pledgedSrcSize);'
-                continue
-
             # Some APIs are declared but not implemented. CFFI will generate
             # bindings for them and then complain about a missing symbol at
             # module import time. So we strip out these declarations.
@@ -183,7 +166,6 @@ ffi.set_source('_zstd_cffi', '''
 #define ZDICT_STATIC_LINKING_ONLY
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
 #include <zdict.h>
-#include <zstdmt_compress.h>
 ''', sources=SOURCES,
      include_dirs=INCLUDE_DIRS,
      extra_compile_args=['-DZSTD_MULTITHREAD'])
