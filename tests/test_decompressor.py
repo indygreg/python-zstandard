@@ -261,7 +261,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         with dctx.stream_reader(b'foo') as reader:
             self.assertTrue(reader.readable())
             self.assertFalse(reader.writable())
-            self.assertFalse(reader.seekable())
+            self.assertTrue(reader.seekable())
             self.assertFalse(reader.isatty())
             self.assertIsNone(reader.flush())
 
@@ -370,6 +370,55 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
             reader.read(10)
+
+    def test_illegal_seeks(self):
+        cctx = zstd.ZstdCompressor()
+        frame = cctx.compress(b'foo' * 60)
+
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(frame) as reader:
+            with self.assertRaisesRegexp(ValueError,
+                                         'cannot seek to negative position'):
+                reader.seek(-1, os.SEEK_SET)
+
+            reader.read(1)
+
+            with self.assertRaisesRegexp(
+                ValueError, 'cannot seek zstd decompression stream backwards'):
+                reader.seek(0, os.SEEK_SET)
+
+            with self.assertRaisesRegexp(
+                ValueError, 'cannot seek zstd decompression stream backwards'):
+                reader.seek(-1, os.SEEK_CUR)
+
+            with self.assertRaisesRegexp(
+                ValueError,
+                'zstd decompression streams cannot be seeked with SEEK_END'):
+                reader.seek(0, os.SEEK_END)
+
+            reader.close()
+
+            with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+                reader.seek(4, os.SEEK_SET)
+
+        with self.assertRaisesRegexp(
+            zstd.ZstdError, 'seek\(\) must be called from an active context'):
+            reader.seek(0)
+
+    def test_seek(self):
+        source = b'foobar' * 60
+        cctx = zstd.ZstdCompressor()
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+
+        with dctx.stream_reader(frame) as reader:
+            reader.seek(3)
+            self.assertEqual(reader.read(3), b'bar')
+
+            reader.seek(4, os.SEEK_CUR)
+            self.assertEqual(reader.read(2), b'ar')
 
 
 @make_cffi

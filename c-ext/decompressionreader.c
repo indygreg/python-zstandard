@@ -90,7 +90,7 @@ static PyObject* reader_writable(PyObject* self) {
 }
 
 static PyObject* reader_seekable(PyObject* self) {
-	Py_RETURN_FALSE;
+	Py_RETURN_TRUE;
 }
 
 static PyObject* reader_close(ZstdDecompressionReader* self) {
@@ -275,6 +275,82 @@ static PyObject* reader_readlines(PyObject* self) {
 	return NULL;
 }
 
+static PyObject* reader_seek(ZstdDecompressionReader* self, PyObject* args) {
+	Py_ssize_t pos;
+	int whence = 0;
+	unsigned long long readAmount = 0;
+
+	if (!self->entered) {
+		PyErr_SetString(ZstdError, "seek() must be called from an active context manager");
+		return NULL;
+	}
+
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
+	if (!PyArg_ParseTuple(args, "n|i:seek", &pos, &whence)) {
+		return NULL;
+	}
+
+	if (whence == SEEK_SET) {
+		if (pos < 0) {
+			PyErr_SetString(PyExc_ValueError,
+				"cannot seek to negative position with SEEK_SET");
+			return NULL;
+		}
+
+		if ((unsigned long long)pos < self->bytesDecompressed) {
+			PyErr_SetString(PyExc_ValueError,
+				"cannot seek zstd decompression stream backwards");
+			return NULL;
+		}
+
+		readAmount = pos - self->bytesDecompressed;
+	}
+	else if (whence == SEEK_CUR) {
+		if (pos < 0) {
+			PyErr_SetString(PyExc_ValueError,
+				"cannot seek zstd decompression stream backwards");
+			return NULL;
+		}
+
+		readAmount = pos;
+	}
+	else if (whence == SEEK_END) {
+		/* We /could/ support this with pos==0. But let's not do that until someone
+		   needs it. */
+		PyErr_SetString(PyExc_ValueError,
+			"zstd decompression streams cannot be seeked with SEEK_END");
+		return NULL;
+	}
+
+	/* It is a bit inefficient to do this via the Python API. But since there
+	   is a bit of state tracking involved to read from this type, it is the
+	   easiest to implement. */
+	while (readAmount) {
+		Py_ssize_t readSize;
+		PyObject* readResult = PyObject_CallMethod((PyObject*)self, "read", "K",
+			MIN(readAmount, ZSTD_DStreamOutSize()));
+
+		if (!readResult) {
+			return NULL;
+		}
+
+		readSize = PyBytes_GET_SIZE(readResult);
+
+		/* Empty read means EOF. */
+		if (!readSize) {
+			break;
+		}
+
+		readAmount -= readSize;
+	}
+
+	return PyLong_FromUnsignedLongLong(self->bytesDecompressed);
+}
+
 static PyObject* reader_tell(ZstdDecompressionReader* self) {
 	/* TODO should this raise OSError since stream isn't seekable? */
 	return PyLong_FromUnsignedLongLong(self->bytesDecompressed);
@@ -318,8 +394,9 @@ static PyMethodDef reader_methods[] = {
 	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readline", (PyCFunction)reader_readline, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readlines", (PyCFunction)reader_readlines, METH_NOARGS, PyDoc_STR("Not implemented") },
+	{ "seek", (PyCFunction)reader_seek, METH_VARARGS, PyDoc_STR("Seek the stream") },
 	{ "seekable", (PyCFunction)reader_seekable, METH_NOARGS,
-	PyDoc_STR("Returns False") },
+	PyDoc_STR("Returns True") },
 	{ "tell", (PyCFunction)reader_tell, METH_NOARGS,
 	PyDoc_STR("Returns current number of bytes compressed") },
 	{ "writable", (PyCFunction)reader_writable, METH_NOARGS,

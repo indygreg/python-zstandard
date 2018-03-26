@@ -1252,7 +1252,7 @@ class DecompressionReader(object):
         return False
 
     def seekable(self):
-        return False
+        return True
 
     def readline(self):
         raise NotImplementedError()
@@ -1370,6 +1370,46 @@ class DecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
+    def seek(self, pos, whence=os.SEEK_SET):
+        if not self._entered:
+            raise ZstdError('seek() must be called from an active context '
+                            'manager')
+
+        if self._closed:
+            raise ValueError('stream is closed')
+
+        read_amount = 0
+
+        if whence == os.SEEK_SET:
+            if pos < 0:
+                raise ValueError('cannot seek to negative position with SEEK_SET')
+
+            if pos < self._bytes_decompressed:
+                raise ValueError('cannot seek zstd decompression stream '
+                                 'backwards')
+
+            read_amount = pos - self._bytes_decompressed
+
+        elif whence == os.SEEK_CUR:
+            if pos < 0:
+                raise ValueError('cannot seek zstd decompression stream '
+                                 'backwards')
+
+            read_amount = pos
+        elif whence == os.SEEK_END:
+            raise ValueError('zstd decompression streams cannot be seeked '
+                             'with SEEK_END')
+
+        while read_amount:
+            result = self.read(min(read_amount,
+                                   DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE))
+
+            if not result:
+                break
+
+            read_amount -= len(result)
+
+        return self._bytes_decompressed
 
 class ZstdDecompressionWriter(object):
     def __init__(self, decompressor, writer, write_size):
