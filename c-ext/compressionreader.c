@@ -295,8 +295,6 @@ readinput:
 		return NULL;
 	}
 
-	/* TODO don't we need to try again if zresult > 0? */
-
 	assert(self->output.pos);
 
 	if (0 == zresult) {
