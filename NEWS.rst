@@ -39,7 +39,6 @@ Other Actions Not Blocking Release
 * Support for block compression APIs.
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
-* Upgrade to latest hypothesis package and fix warnings.
 
 0.9.0 (not yet released)
 ========================
