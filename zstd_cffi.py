@@ -276,6 +276,7 @@ class ZstdCompressionWriter(object):
         self._source_size = source_size
         self._write_size = write_size
         self._entered = False
+        self._bytes_compressed = 0
 
     def __enter__(self):
         if self._entered:
@@ -365,6 +366,7 @@ class ZstdCompressionWriter(object):
             if out_buffer.pos:
                 self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
                 total_write += out_buffer.pos
+                self._bytes_compressed += out_buffer.pos
                 out_buffer.pos = 0
 
         return total_write
@@ -399,9 +401,13 @@ class ZstdCompressionWriter(object):
 
             self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
             total_write += out_buffer.pos
+            self._bytes_compressed += out_buffer.pos
             out_buffer.pos = 0
 
         return total_write
+
+    def tell(self):
+        return self._bytes_compressed
 
 
 class ZstdCompressionObj(object):

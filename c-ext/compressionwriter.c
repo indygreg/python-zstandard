@@ -168,6 +168,7 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 				output.dst, output.pos);
 			Py_XDECREF(res);
 			totalWrite += output.pos;
+			self->bytesCompressed += output.pos;
 		}
 		output.pos = 0;
 	}
@@ -229,6 +230,7 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 				output.dst, output.pos);
 			Py_XDECREF(res);
 			totalWrite += output.pos;
+			self->bytesCompressed += output.pos;
 		}
 		output.pos = 0;
 	}
@@ -236,6 +238,10 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 	PyMem_Free(output.dst);
 
 	return PyLong_FromSsize_t(totalWrite);
+}
+
+static PyObject* ZstdCompressionWriter_tell(ZstdCompressionWriter* self) {
+	return PyLong_FromUnsignedLongLong(self->bytesCompressed);
 }
 
 static PyMethodDef ZstdCompressionWriter_methods[] = {
@@ -249,6 +255,8 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	PyDoc_STR("Compress data") },
 	{ "flush", (PyCFunction)ZstdCompressionWriter_flush, METH_NOARGS,
 	PyDoc_STR("Flush data and finish a zstd frame") },
+	{ "tell", (PyCFunction)ZstdCompressionWriter_tell, METH_NOARGS,
+	PyDoc_STR("Returns current number of bytes compressed") },
 	{ NULL, NULL }
 };
 

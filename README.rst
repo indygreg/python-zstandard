@@ -301,6 +301,13 @@ To see how much memory is being used by the streaming compressor::
         ...
         byte_size = compressor.memory_size()
 
+Thte total number of bytes written so far are exposed via ``tell()``::
+
+    cctx = zstd.ZstdCompressor()
+	with cctx.write_to(fh) as compressor:
+	    ...
+		total_written = compressor.tell()
+
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
 
