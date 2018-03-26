@@ -22,12 +22,9 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       source_read_size=strategies.integers(1, 16384),
-                      read_sizes=strategies.streaming(
-                          strategies.integers(1, 16384)))
+                      read_sizes=strategies.data())
     def test_stream_source_read_variance(self, original, level, source_read_size,
                                          read_sizes):
-        read_sizes = iter(read_sizes)
-
         refctx = zstd.ZstdCompressor(level=level)
         ref_frame = refctx.compress(original)
 
@@ -36,7 +33,9 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
                                 read_size=source_read_size) as reader:
             chunks = []
             while True:
-                chunk = reader.read(next(read_sizes))
+                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                chunk = reader.read(read_size)
+
                 if not chunk:
                     break
                 chunks.append(chunk)
@@ -46,11 +45,9 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       source_read_size=strategies.integers(1, 16384),
-                      read_sizes=strategies.streaming(
-                          strategies.integers(1, 16384)))
+                      read_sizes=strategies.data())
     def test_buffer_source_read_variance(self, original, level, source_read_size,
                                          read_sizes):
-        read_sizes = iter(read_sizes)
 
         refctx = zstd.ZstdCompressor(level=level)
         ref_frame = refctx.compress(original)
@@ -60,7 +57,8 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
                                 read_size=source_read_size) as reader:
             chunks = []
             while True:
-                chunk = reader.read(next(read_sizes))
+                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                chunk = reader.read(read_size)
                 if not chunk:
                     break
                 chunks.append(chunk)
@@ -112,11 +110,8 @@ class TestCompressor_copy_stream_fuzzing(unittest.TestCase):
 class TestCompressor_compressobj_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
-                      chunk_sizes=strategies.streaming(
-                          strategies.integers(min_value=1, max_value=4096)))
+                      chunk_sizes=strategies.data())
     def test_random_input_sizes(self, original, level, chunk_sizes):
-        chunk_sizes = iter(chunk_sizes)
-
         refctx = zstd.ZstdCompressor(level=level)
         ref_frame = refctx.compress(original)
 
@@ -126,7 +121,7 @@ class TestCompressor_compressobj_fuzzing(unittest.TestCase):
         chunks = []
         i = 0
         while True:
-            chunk_size = next(chunk_sizes)
+            chunk_size = chunk_sizes.draw(strategies.integers(1, 4096))
             source = original[i:i + chunk_size]
             if not source:
                 break
