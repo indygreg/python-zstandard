@@ -562,8 +562,15 @@ to that stream should be via the ``read_size`` argument. It defaults to
        with dctx.stream_reader(fh, read_size=8192) as reader:
            ...
 
-The stream returned by ``stream_reader()`` is neither writable nor seekable
-``tell()`` returns the number of decompressed bytes emitted so far.
+The stream returned by ``stream_reader()`` is not writable.
+
+The stream returned by ``stream_reader()`` is *partially* seekable.
+Absolute and relative positions (``SEEK_SET`` and ``SEEK_CUR``) forward
+of the current position are allowed. Offsets behind the current read
+position and offsets relative to the end of stream are not allowed and
+will raise ``ValueError`` if attempted.
+
+``tell()`` returns the number of decompressed bytes read so far.
 
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^

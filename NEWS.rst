@@ -130,6 +130,8 @@ Changes
   to control how much work to perform on every decompressor invocation.
 * ``ZstdCompressor.write_to()`` now exposes a ``tell()``, which exposes the
   total number of bytes written so far.
+* ``ZstdDecompressor.stream_reader()`` now supports ``seek()`` when moving
+  forward in the stream.
 
 0.8.2 (released 2018-02-22)
 ---------------------------
