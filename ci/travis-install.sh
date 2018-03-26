@@ -9,9 +9,9 @@
 # If a Conda build, download and install Conda.
 if [ -n "${CONDA}" ]; then
     if [ "${TRAVIS_PYTHON_VERSION}" = "2.7" ]; then
-        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda2-4.1.11-Linux-x86_64.sh
+        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda2-4.4.10-Linux-x86_64.sh
     else
-        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.1.11-Linux-x86_64.sh
+        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.4.10-Linux-x86_64.sh
     fi
 
     bash miniconda.sh -b -p $HOME/miniconda

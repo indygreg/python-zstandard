@@ -175,9 +175,9 @@ function InstallPip ($python_home) {
 
 function DownloadMiniconda ($python_version, $platform_suffix) {
     if ($python_version -eq "3.5") {
-        $filename = "Miniconda3-4.1.11-Windows-" + $platform_suffix + ".exe"
+        $filename = "Miniconda3-4.4.10-Windows-" + $platform_suffix + ".exe"
     } else {
-        $filename = "Miniconda2-4.1.11-Windows-" + $platform_suffix + ".exe"
+        $filename = "Miniconda2-4.4.10-Windows-" + $platform_suffix + ".exe"
     }
     $url = $MINICONDA_URL + $filename
     $filepath = Download $filename $url
