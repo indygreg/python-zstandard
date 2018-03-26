@@ -45,34 +45,13 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
                         s_searchlength, s_targetlength, s_strategy)
     def test_valid_init(self, windowlog, chainlog, hashlog, searchlog,
                         searchlength, targetlength, strategy):
-        # ZSTD_checkCParams moves the goal posts on us from what's advertised
-        # in the constants. So move along with them.
-        if searchlength == zstd.SEARCHLENGTH_MIN and strategy in (zstd.STRATEGY_FAST, zstd.STRATEGY_GREEDY):
-            searchlength += 1
-        elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
-            searchlength -= 1
-
-        # 32-bit machines may have trouble allocating larger sizes. So cap
-        # them. This reduces test coverage for this machine type. But 64-bit
-        # should still have us covered.
-        maxint = sys.maxint if hasattr(sys, 'maxint') else sys.maxsize
-        if maxint <= 2**32:
-            windowlog = min(windowlog, 25)
-            hashlog = min(hashlog, 25)
-            chainlog = min(chainlog, 26)
-            searchlog = min(searchlog, 24)
-
-        p = zstd.CompressionParameters(window_log=windowlog,
-                                       chain_log=chainlog,
-                                       hash_log=hashlog,
-                                       search_log=searchlog,
-                                       min_match=searchlength,
-                                       target_length=targetlength,
-                                       compression_strategy=strategy)
-
-        cctx = zstd.ZstdCompressor(compression_params=p)
-        with cctx.write_to(io.BytesIO()):
-            pass
+        zstd.CompressionParameters(window_log=windowlog,
+                                   chain_log=chainlog,
+                                   hash_log=hashlog,
+                                   search_log=searchlog,
+                                   min_match=searchlength,
+                                   target_length=targetlength,
+                                   compression_strategy=strategy)
 
     @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
                         s_searchlength, s_targetlength, s_strategy)
