@@ -607,7 +607,7 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 
 PyDoc_STRVAR(ZstdCompressor_read_to_iter__doc__,
 "read_to_iter(reader, [size=0, read_size=default, write_size=default])\n"
-"Read uncompress data from a reader and return an iterator\n"
+"Read uncompressed data from a reader and return an iterator.\n"
 "\n"
 "Returns an iterator of compressed data produced from reading from ``reader``.\n"
 "\n"
