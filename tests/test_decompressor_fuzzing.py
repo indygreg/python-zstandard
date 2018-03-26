@@ -22,12 +22,9 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       source_read_size=strategies.integers(1, 16384),
-                      read_sizes=strategies.streaming(
-                          strategies.integers(min_value=1, max_value=16384)))
+                      read_sizes=strategies.data())
     def test_stream_source_read_variance(self, original, level, source_read_size,
                                          read_sizes):
-        read_sizes = iter(read_sizes)
-
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -37,7 +34,8 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         chunks = []
         with dctx.stream_reader(source, read_size=source_read_size) as reader:
             while True:
-                chunk = reader.read(next(read_sizes))
+                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                chunk = reader.read(read_size)
                 if not chunk:
                     break
 
@@ -48,12 +46,9 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       source_read_size=strategies.integers(1, 16384),
-                      read_sizes=strategies.streaming(
-                          strategies.integers(min_value=1, max_value=16384)))
+                      read_sizes=strategies.data())
     def test_buffer_source_read_variance(self, original, level, source_read_size,
                                          read_sizes):
-        read_sizes = iter(read_sizes)
-
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -62,7 +57,8 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         with dctx.stream_reader(frame, read_size=source_read_size) as reader:
             while True:
-                chunk = reader.read(next(read_sizes))
+                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                chunk = reader.read(read_size)
                 if not chunk:
                     break
 
@@ -74,15 +70,10 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        seek_amounts=strategies.streaming(
-            strategies.integers(min_value=0, max_value=16384)),
-        read_sizes=strategies.streaming(
-            strategies.integers(min_value=1, max_value=16384)))
+        seek_amounts=strategies.data(),
+        read_sizes=strategies.data())
     def test_relative_seeks(self, original, level, source_read_size, seek_amounts,
                             read_sizes):
-        seek_amounts = iter(seek_amounts)
-        read_sizes = iter(read_sizes)
-
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -90,11 +81,12 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         with dctx.stream_reader(frame, read_size=source_read_size) as reader:
             while True:
-                amount = next(seek_amounts)
+                amount = seek_amounts.draw(strategies.integers(0, 16384))
                 reader.seek(amount, os.SEEK_CUR)
 
                 offset = reader.tell()
-                chunk = reader.read(next(read_sizes))
+                read_amount = read_sizes.draw(strategies.integers(1, 16384))
+                chunk = reader.read(read_amount)
 
                 if not chunk:
                     break
@@ -108,11 +100,8 @@ class TestDecompressor_write_to_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       write_size=strategies.integers(min_value=1, max_value=8192),
-                      input_sizes=strategies.streaming(
-                          strategies.integers(min_value=1, max_value=4096)))
+                      input_sizes=strategies.data())
     def test_write_size_variance(self, original, level, write_size, input_sizes):
-        input_sizes = iter(input_sizes)
-
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -122,7 +111,8 @@ class TestDecompressor_write_to_fuzzing(unittest.TestCase):
 
         with dctx.write_to(dest, write_size=write_size) as decompressor:
             while True:
-                chunk = source.read(next(input_sizes))
+                input_size = input_sizes.draw(strategies.integers(1, 4096))
+                chunk = source.read(input_size)
                 if not chunk:
                     break
 
@@ -156,11 +146,8 @@ class TestDecompressor_copy_stream_fuzzing(unittest.TestCase):
 class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
-                      chunk_sizes=strategies.streaming(
-                          strategies.integers(min_value=1, max_value=4096)))
+                      chunk_sizes=strategies.data())
     def test_random_input_sizes(self, original, level, chunk_sizes):
-        chunk_sizes = iter(chunk_sizes)
-
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -171,7 +158,8 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
         chunks = []
         while True:
-            chunk = source.read(next(chunk_sizes))
+            chunk_size = chunk_sizes.draw(strategies.integers(1, 4096))
+            chunk = source.read(chunk_size)
             if not chunk:
                 break
 
@@ -183,11 +171,8 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
                       level=strategies.integers(min_value=1, max_value=5),
                       write_size=strategies.integers(min_value=1,
                                                      max_value=4 * zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE),
-                      chunk_sizes=strategies.streaming(
-                          strategies.integers(min_value=1, max_value=4096)))
+                      chunk_sizes=strategies.data())
     def test_random_output_sizes(self, original, level, write_size, chunk_sizes):
-        chunk_sizes = iter(chunk_sizes)
-
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -198,7 +183,8 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
         chunks = []
         while True:
-            chunk = source.read(next(chunk_sizes))
+            chunk_size = chunk_sizes.draw(strategies.integers(1, 4096))
+            chunk = source.read(chunk_size)
             if not chunk:
                 break
 
