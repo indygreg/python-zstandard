@@ -115,7 +115,7 @@ Changes
   ``ZSTD_compress_generic()``
 * ``CompressionParameters.__init__`` now accepts several more arguments,
   including support for *long distance matching*.
-* ``ZstdCompressionDict.__init__`` now accepts a ``dict_mode`` argument that
+* ``ZstdCompressionDict.__init__`` now accepts a ``dict_type`` argument that
   controls how the dictionary should be interpreted. This can be used to
   force the use of *content-only* dictionaries or to require the presence
   of the dictionary magic header.

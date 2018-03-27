@@ -78,7 +78,7 @@ class TestTrainDictionary(unittest.TestCase):
 class TestCompressionDict(unittest.TestCase):
     def test_bad_mode(self):
         with self.assertRaisesRegexp(ValueError, 'invalid dictionary load mode'):
-            zstd.ZstdCompressionDict(b'foo', dict_mode=42)
+            zstd.ZstdCompressionDict(b'foo', dict_type=42)
 
     def test_bad_precompute_compress(self):
         d = zstd.train_dictionary(8192, generate_samples(), k=64, d=16)
@@ -92,10 +92,10 @@ class TestCompressionDict(unittest.TestCase):
 
     def test_precompute_compress_rawcontent(self):
         d = zstd.ZstdCompressionDict(b'dictcontent' * 64,
-                                     dict_mode=zstd.DICT_TYPE_RAWCONTENT)
+                                     dict_type=zstd.DICT_TYPE_RAWCONTENT)
         d.precompute_compress(level=1)
 
         d = zstd.ZstdCompressionDict(b'dictcontent' * 64,
-                                     dict_mode=zstd.DICT_TYPE_FULLDICT)
+                                     dict_type=zstd.DICT_TYPE_FULLDICT)
         with self.assertRaisesRegexp(zstd.ZstdError, 'unable to precompute dictionary'):
             d.precompute_compress(level=1)

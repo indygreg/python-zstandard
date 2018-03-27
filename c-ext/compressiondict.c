@@ -178,7 +178,7 @@ PyDoc_STRVAR(ZstdCompressionDict__doc__,
 static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"data",
-		"dict_mode",
+		"dict_type",
 		NULL
 	};
 

@@ -1031,18 +1031,18 @@ def get_frame_parameters(data):
 
 
 class ZstdCompressionDict(object):
-    def __init__(self, data, dict_mode=DICT_TYPE_AUTO, k=0, d=0):
+    def __init__(self, data, dict_type=DICT_TYPE_AUTO, k=0, d=0):
         assert isinstance(data, bytes_type)
         self._data = data
         self.k = k
         self.d = d
 
-        if dict_mode not in (DICT_TYPE_AUTO, DICT_TYPE_RAWCONTENT,
+        if dict_type not in (DICT_TYPE_AUTO, DICT_TYPE_RAWCONTENT,
                              DICT_TYPE_FULLDICT):
             raise ValueError('invalid dictionary load mode: %d; must use '
                              'DICT_TYPE_* constants')
 
-        self._dict_type = dict_mode
+        self._dict_type = dict_type
         self._cdict = None
 
     def __len__(self):
@@ -1159,7 +1159,7 @@ def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
                         ffi.string(lib.ZDICT_getErrorName(zresult)))
 
     return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:],
-                               dict_mode=DICT_TYPE_FULLDICT,
+                               dict_type=DICT_TYPE_FULLDICT,
                                k=dparams.k, d=dparams.d)
 
 
