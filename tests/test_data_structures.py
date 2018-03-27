@@ -32,15 +32,6 @@ class TestCompressionParameters(unittest.TestCase):
 
         self.assertEqual(p.window_log, 19)
 
-    def test_invalid_threading_params(self):
-        with self.assertRaisesRegexp(zstd.ZstdError,
-                                     'unable to set compression context parameter'):
-            zstd.CompressionParameters(job_size=1048576)
-
-        with self.assertRaisesRegexp(zstd.ZstdError,
-                                     'unable to set compression context parameter'):
-            zstd.CompressionParameters(overlap_size_log=6)
-
     def test_members(self):
         p = zstd.CompressionParameters(window_log=10,
                                        chain_log=6,

@@ -175,6 +175,8 @@ def _make_cctx_params(params):
         (lib.ZSTD_p_checksumFlag, params.write_checksum),
         (lib.ZSTD_p_dictIDFlag, params.write_dict_id),
         (lib.ZSTD_p_nbWorkers, params.threads),
+        (lib.ZSTD_p_jobSize, params.job_size),
+        (lib.ZSTD_p_overlapSizeLog, params.overlap_size_log),
         (lib.ZSTD_p_forceMaxWindow, params.force_max_window),
         (lib.ZSTD_p_enableLongDistanceMatching, params.enable_ldm),
         (lib.ZSTD_p_ldmHashLog, params.ldm_hash_log),
@@ -185,15 +187,6 @@ def _make_cctx_params(params):
 
     for param, value in attrs:
         _set_compression_parameter(res, param, value)
-
-    if params.threads or params.job_size:
-        _set_compression_parameter(res,
-                                   lib.ZSTD_p_jobSize,
-                                   params.job_size)
-    if params.threads or params.overlap_size_log:
-        _set_compression_parameter(res,
-                                   lib.ZSTD_p_overlapSizeLog,
-                                   params.overlap_size_log)
 
     return res
 
