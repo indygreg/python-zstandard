@@ -741,12 +741,8 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertEqual(params.dict_id, d.dict_id())
         self.assertFalse(params.has_checksum)
         self.assertEqual(compressed,
-                         b'\x28\xb5\x2f\xfd\x03\x58\x06\x59\xb5\x52\x65\x00'
-                         b'\x00\x00\x02\xfc\x3d\x3f\xa0\x36\x6c\xd4\x30\x51'
-                         b'\x22')
-
-        h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, '2f7207bb3328ce9141478b77aa761814b3aca9b9')
+                         b'\x28\xb5\x2f\xfd\x03\x58\x06\x59\xb5\x52\x5d\x00'
+                         b'\x00\x00\x02\xfc\x3d\x3f\xd9\xb0\x51\x03\x45\x89')
 
     def test_compression_params(self):
         params = zstd.CompressionParameters(
@@ -774,7 +770,7 @@ class TestCompressor_write_to(unittest.TestCase):
         self.assertFalse(params.has_checksum)
 
         h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, '1ae31f270ed7de14235221a604b31ecd517ebd99')
+        self.assertEqual(h, '2a8111d72eb5004cdcecbdac37da9f26720d30ef')
 
     def test_write_checksum(self):
         no_checksum = io.BytesIO()
