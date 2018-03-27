@@ -84,7 +84,6 @@ Changes
 
 * Functions accepting bytes data now use the buffer protocol and can accept
   more types (like ``memoryview`` and ``bytearray``) (#26).
-* Updated vendored version of zstd to 1.2.0.
 * Add #includes so compilation on OS X and BSDs works (#20).
 * New ``ZstdDecompressor.stream_reader()`` API to obtain a read-only i/o stream
   of decompressed data for a source.
@@ -98,7 +97,7 @@ Changes
   *backend* as appropriate. Behavior can be controlled via the
   ``PYTHON_ZSTANDARD_IMPORT_POLICY`` environment variable. See README for
   usage info.
-* Vendored version of zstd upgraded to 1.3.3.
+* Vendored version of zstd upgraded to 1.3.4.
 * Added module constants ``CONTENTSIZE_UNKNOWN`` and ``CONTENTSIZE_ERROR``.
 * Add ``STRATEGY_BTULTRA`` compression strategy constant.
 * Switch from deprecated ``ZSTD_getDecompressedSize()`` to
