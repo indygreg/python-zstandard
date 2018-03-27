@@ -10,9 +10,6 @@
 #include <Python.h>
 #include "structmember.h"
 
-/* TODO remove MIN() once https://github.com/facebook/zstd/issues/976 is
-   fixed. */
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZDICT_STATIC_LINKING_ONLY
 #include <zstd.h>

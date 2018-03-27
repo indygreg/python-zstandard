@@ -279,6 +279,7 @@ static PyObject* reader_seek(ZstdDecompressionReader* self, PyObject* args) {
 	Py_ssize_t pos;
 	int whence = 0;
 	unsigned long long readAmount = 0;
+	size_t defaultOutSize = ZSTD_DStreamOutSize();
 
 	if (!self->entered) {
 		PyErr_SetString(ZstdError, "seek() must be called from an active context manager");
@@ -332,7 +333,7 @@ static PyObject* reader_seek(ZstdDecompressionReader* self, PyObject* args) {
 	while (readAmount) {
 		Py_ssize_t readSize;
 		PyObject* readResult = PyObject_CallMethod((PyObject*)self, "read", "K",
-			MIN(readAmount, ZSTD_DStreamOutSize()));
+			readAmount < defaultOutSize ? readAmount : defaultOutSize);
 
 		if (!readResult) {
 			return NULL;
