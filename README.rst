@@ -1145,8 +1145,6 @@ SEARCHLENGTH_MAX
     Maximum value for compression parameter
 TARGETLENGTH_MIN
     Minimum value for compression parameter
-TARGETLENGTH_MAX
-    Maximum value for compression parameter
 STRATEGY_FAST
     Compression strategy
 STRATEGY_DFAST

@@ -24,7 +24,6 @@ class TestCompressionParameters(unittest.TestCase):
                                    hash_log=zstd.HASHLOG_MAX,
                                    search_log=zstd.SEARCHLOG_MAX,
                                    min_match=zstd.SEARCHLENGTH_MAX - 1,
-                                   target_length=zstd.TARGETLENGTH_MAX,
                                    compression_strategy=zstd.STRATEGY_BTULTRA)
 
     def test_from_level(self):

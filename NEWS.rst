@@ -69,6 +69,8 @@ Backwards Compatibility Notes
   were using positional arguments before, the positions now map to different
   arguments. It is recommended to use keyword arguments to construct
   ``CompressionParameters`` instances.
+* ``TARGETLENGTH_MAX`` constant has been removed (it disappeared from zstandard
+  1.3.4).
 
 Bug Fixes
 ---------
@@ -131,6 +133,7 @@ Changes
   total number of bytes written so far.
 * ``ZstdDecompressor.stream_reader()`` now supports ``seek()`` when moving
   forward in the stream.
+* Removed ``TARGETLENGTH_MAX`` constant.
 
 0.8.2 (released 2018-02-22)
 ---------------------------
