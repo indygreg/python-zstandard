@@ -32,6 +32,9 @@ Actions Blocking Release
 * Detect memory leaks via bench.py.
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
+* Support negative compression levels.
+* Expose ``ZSTD_getFrameProgression()``.
+* Expose ``ZSTD_p_compressLiterals``.
 
 Other Actions Not Blocking Release
 ---------------------------------------
