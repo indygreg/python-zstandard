@@ -92,10 +92,10 @@ class TestCompressionDict(unittest.TestCase):
 
     def test_precompute_compress_rawcontent(self):
         d = zstd.ZstdCompressionDict(b'dictcontent' * 64,
-                                     dict_mode=zstd.DICT_MODE_RAWCONTENT)
+                                     dict_mode=zstd.DICT_TYPE_RAWCONTENT)
         d.precompute_compress(level=1)
 
         d = zstd.ZstdCompressionDict(b'dictcontent' * 64,
-                                     dict_mode=zstd.DICT_MODE_FULLDICT)
+                                     dict_mode=zstd.DICT_TYPE_FULLDICT)
         with self.assertRaisesRegexp(zstd.ZstdError, 'unable to precompute dictionary'):
             d.precompute_compress(level=1)

@@ -82,7 +82,7 @@ typedef struct {
 	void* dictData;
 	/* Size of dictionary data. */
 	size_t dictSize;
-	ZSTD_dictMode_e dictMode;
+	ZSTD_dictContentType_e dictType;
 	/* k parameter for cover dictionaries. Only populated by train_cover_dict(). */
 	unsigned k;
 	/* d parameter for cover dictionaries. Only populated by train_cover_dict(). */

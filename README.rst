@@ -854,10 +854,10 @@ It is possible to force the use of *content-only* dictionaries or to
 require a dictionary header:
 
    dict_data = zstd.ZstdCompressionDict(data,
-                                        dict_mode=zstd.DICT_MODE_RAWCONTENT)
+                                        dict_mode=zstd.DICT_TYPE_RAWCONTENT)
 
    dict_data = zstd.ZstdCompressionDict(data,
-                                        dict_mode=zstd.DICT_MODE_FULLDICT)
+                                        dict_mode=zstd.DICT_TYPE_FULLDICT)
 
 More interestingly, instances can be created by *training* on sample data::
 

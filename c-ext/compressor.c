@@ -158,7 +158,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		}
 
 		if (threads) {
-			if (set_parameter(self->params, ZSTD_p_nbThreads, threads)) {
+			if (set_parameter(self->params, ZSTD_p_nbWorkers, threads)) {
 				return -1;
 			}
 		}
@@ -180,7 +180,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		}
 		else {
 			zresult = ZSTD_CCtx_loadDictionary_advanced(self->cctx,
-				dict->dictData, dict->dictSize, ZSTD_dlm_byRef, dict->dictMode);
+				dict->dictData, dict->dictSize, ZSTD_dlm_byRef, dict->dictType);
 		}
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "could not load compression dictionary: %s",
@@ -1096,7 +1096,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 					compressor->dict->dictData,
 					compressor->dict->dictSize,
 					ZSTD_dlm_byRef,
-					compressor->dict->dictMode);
+					compressor->dict->dictType);
 			}
 
 			if (ZSTD_isError(zresult)) {

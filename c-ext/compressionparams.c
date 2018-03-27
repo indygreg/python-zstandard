@@ -36,7 +36,7 @@ int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj) {
 	TRY_SET_PARAMETER(params, ZSTD_p_contentSizeFlag, obj->contentSizeFlag);
 	TRY_SET_PARAMETER(params, ZSTD_p_checksumFlag, obj->checksumFlag);
 	TRY_SET_PARAMETER(params, ZSTD_p_dictIDFlag, obj->dictIDFlag);
-	TRY_SET_PARAMETER(params, ZSTD_p_nbThreads, obj->threads);
+	TRY_SET_PARAMETER(params, ZSTD_p_nbWorkers, obj->threads);
 	/* Setting to 0 gets rejected if not using threads. */
 	if (obj->threads || obj->jobSize) {
 		TRY_SET_PARAMETER(params, ZSTD_p_jobSize, obj->jobSize);
@@ -56,7 +56,7 @@ int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj) {
 
 int reset_params(CompressionParametersObject* params) {
 	if (params->params) {
-		ZSTD_resetCCtxParams(params->params);
+		ZSTD_CCtxParams_reset(params->params);
 	}
 	else {
 		params->params = ZSTD_createCCtxParams();

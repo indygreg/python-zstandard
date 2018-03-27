@@ -137,7 +137,7 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 
 	result->dictData = dict;
 	result->dictSize = zresult;
-	result->dictMode = ZSTD_dm_fullDict;
+	result->dictType = ZSTD_dct_fullDict;
 	result->d = params.d;
 	result->k = params.k;
 	result->cdict = NULL;
@@ -157,7 +157,7 @@ int ensure_ddict(ZstdCompressionDict* dict) {
 
 	Py_BEGIN_ALLOW_THREADS
 	dict->ddict = ZSTD_createDDict_advanced(dict->dictData, dict->dictSize,
-		ZSTD_dlm_byRef, ZSTD_defaultCMem);
+		ZSTD_dlm_byRef, dict->dictType, ZSTD_defaultCMem);
 	Py_END_ALLOW_THREADS
 	if (!dict->ddict) {
 		PyErr_SetString(ZstdError, "could not create decompression dict");
@@ -184,7 +184,7 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args, P
 
 	int result = -1;
 	Py_buffer source;
-	unsigned dictMode = ZSTD_dm_auto;
+	unsigned dictType = ZSTD_dct_auto;
 
 	self->dictData = NULL;
 	self->dictSize = 0;
@@ -196,19 +196,19 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args, P
 #else
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|I:ZstdCompressionDict",
 #endif
-		kwlist, &source, &dictMode)) {
+		kwlist, &source, &dictType)) {
 		return -1;
 	}
 
-	if (dictMode != ZSTD_dm_auto && dictMode != ZSTD_dm_rawContent
-		&& dictMode != ZSTD_dm_fullDict) {
+	if (dictType != ZSTD_dct_auto && dictType != ZSTD_dct_rawContent
+		&& dictType != ZSTD_dct_fullDict) {
 		PyErr_Format(PyExc_ValueError,
-			"invalid dictionary load mode: %d; must use DICT_MODE_* constants",
-			dictMode);
+			"invalid dictionary load mode: %d; must use DICT_TYPE_* constants",
+			dictType);
 		goto finally;
 	}
 
-	self->dictMode = dictMode;
+	self->dictType = dictType;
 
 	self->dictData = PyMem_Malloc(source.len);
 	if (!self->dictData) {
@@ -303,7 +303,7 @@ static PyObject* ZstdCompressionDict_precompute_compress(ZstdCompressionDict* se
 
 	assert(!self->cdict);
 	self->cdict = ZSTD_createCDict_advanced(self->dictData, self->dictSize,
-		ZSTD_dlm_byRef, self->dictMode, cParams, ZSTD_defaultCMem);
+		ZSTD_dlm_byRef, self->dictType, cParams, ZSTD_defaultCMem);
 
 	if (!self->cdict) {
 		PyErr_SetString(ZstdError, "unable to precompute dictionary");

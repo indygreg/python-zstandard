@@ -60,9 +60,9 @@ __all__ = [
     'STRATEGY_BTLAZY2',
     'STRATEGY_BTOPT',
     'STRATEGY_BTULTRA',
-    'DICT_MODE_AUTO',
-    'DICT_MODE_RAWCONTENT',
-    'DICT_MODE_FULLDICT',
+    'DICT_TYPE_AUTO',
+    'DICT_TYPE_RAWCONTENT',
+    'DICT_TYPE_FULLDICT',
 ]
 
 import io
@@ -122,9 +122,9 @@ STRATEGY_BTLAZY2 = lib.ZSTD_btlazy2
 STRATEGY_BTOPT = lib.ZSTD_btopt
 STRATEGY_BTULTRA = lib.ZSTD_btultra
 
-DICT_MODE_AUTO = lib.ZSTD_dm_auto
-DICT_MODE_RAWCONTENT = lib.ZSTD_dm_rawContent
-DICT_MODE_FULLDICT = lib.ZSTD_dm_fullDict
+DICT_TYPE_AUTO = lib.ZSTD_dct_auto
+DICT_TYPE_RAWCONTENT = lib.ZSTD_dct_rawContent
+DICT_TYPE_FULLDICT = lib.ZSTD_dct_fullDict
 
 COMPRESSOBJ_FLUSH_FINISH = 0
 COMPRESSOBJ_FLUSH_BLOCK = 1
@@ -174,7 +174,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_p_contentSizeFlag, params.write_content_size),
         (lib.ZSTD_p_checksumFlag, params.write_checksum),
         (lib.ZSTD_p_dictIDFlag, params.write_dict_id),
-        (lib.ZSTD_p_nbThreads, params.threads),
+        (lib.ZSTD_p_nbWorkers, params.threads),
         (lib.ZSTD_p_forceMaxWindow, params.force_max_window),
         (lib.ZSTD_p_enableLongDistanceMatching, params.enable_ldm),
         (lib.ZSTD_p_ldmHashLog, params.ldm_hash_log),
@@ -732,7 +732,7 @@ class ZstdCompressor(object):
 
             if threads:
                 _set_compression_parameter(self._params,
-                                           lib.ZSTD_p_nbThreads,
+                                           lib.ZSTD_p_nbWorkers,
                                            threads)
 
         cctx = lib.ZSTD_createCCtx()
@@ -755,7 +755,7 @@ class ZstdCompressor(object):
             else:
                 zresult = lib.ZSTD_CCtx_loadDictionary_advanced(
                     self._cctx, dict_data.as_bytes(), len(dict_data),
-                    lib.ZSTD_dlm_byRef, dict_data._dict_mode)
+                    lib.ZSTD_dlm_byRef, dict_data._dict_type)
 
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('could not load compression dictionary: %s' %
@@ -1038,18 +1038,18 @@ def get_frame_parameters(data):
 
 
 class ZstdCompressionDict(object):
-    def __init__(self, data, dict_mode=DICT_MODE_AUTO, k=0, d=0):
+    def __init__(self, data, dict_mode=DICT_TYPE_AUTO, k=0, d=0):
         assert isinstance(data, bytes_type)
         self._data = data
         self.k = k
         self.d = d
 
-        if dict_mode not in (DICT_MODE_AUTO, DICT_MODE_RAWCONTENT,
-                             DICT_MODE_FULLDICT):
+        if dict_mode not in (DICT_TYPE_AUTO, DICT_TYPE_RAWCONTENT,
+                             DICT_TYPE_FULLDICT):
             raise ValueError('invalid dictionary load mode: %d; must use '
-                             'DICT_MODE_* constants')
+                             'DICT_TYPE_* constants')
 
-        self._dict_mode = dict_mode
+        self._dict_type = dict_mode
         self._cdict = None
 
     def __len__(self):
@@ -1083,7 +1083,7 @@ class ZstdCompressionDict(object):
 
         cdict = lib.ZSTD_createCDict_advanced(self._data, len(self._data),
                                               lib.ZSTD_dlm_byRef,
-                                              self._dict_mode,
+                                              self._dict_type,
                                               cparams,
                                               lib.ZSTD_defaultCMem)
         if cdict == ffi.NULL:
@@ -1095,6 +1095,7 @@ class ZstdCompressionDict(object):
     def _ddict(self):
         ddict = lib.ZSTD_createDDict_advanced(self._data, len(self._data),
                                               lib.ZSTD_dlm_byRef,
+                                              self._dict_type,
                                               lib.ZSTD_defaultCMem)
 
         if ddict == ffi.NULL:
@@ -1165,7 +1166,7 @@ def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
                         ffi.string(lib.ZDICT_getErrorName(zresult)))
 
     return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:],
-                               dict_mode=DICT_MODE_FULLDICT,
+                               dict_mode=DICT_TYPE_FULLDICT,
                                k=dparams.k, d=dparams.d)
 
 

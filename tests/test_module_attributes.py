@@ -50,9 +50,9 @@ class TestModuleAttributes(unittest.TestCase):
             'STRATEGY_BTLAZY2',
             'STRATEGY_BTOPT',
             'STRATEGY_BTULTRA',
-            'DICT_MODE_AUTO',
-            'DICT_MODE_RAWCONTENT',
-            'DICT_MODE_FULLDICT',
+            'DICT_TYPE_AUTO',
+            'DICT_TYPE_RAWCONTENT',
+            'DICT_TYPE_FULLDICT',
         )
 
         for a in attrs:
