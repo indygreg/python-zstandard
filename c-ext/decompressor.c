@@ -897,7 +897,6 @@ typedef struct {
 
 	/* Compression state and settings. */
 	ZSTD_DCtx* dctx;
-	ZstdCompressionDict* dict;
 	int requireOutputSizes;
 
 	/* Output storage. */
@@ -1007,6 +1006,8 @@ static void decompress_worker(WorkerState* state) {
 	destBuffer->segmentsSize = remainingItems;
 
 	for (frameIndex = state->startOffset; frameIndex <= state->endOffset; frameIndex++) {
+		ZSTD_outBuffer outBuffer;
+		ZSTD_inBuffer inBuffer;
 		const void* source = framePointers[frameIndex].sourceData;
 		const size_t sourceSize = framePointers[frameIndex].sourceSize;
 		void* dest;
@@ -1090,31 +1091,31 @@ static void decompress_worker(WorkerState* state) {
 
 		dest = (char*)destBuffer->dest + destOffset;
 
-		if (state->dict) {
-			zresult = ZSTD_decompress_usingDDict(state->dctx, dest, decompressedSize,
-				source, sourceSize, state->dict->ddict);
-		}
-		else {
-			zresult = ZSTD_decompressDCtx(state->dctx, dest, decompressedSize,
-				source, sourceSize);
-		}
+		outBuffer.dst = dest;
+		outBuffer.size = decompressedSize;
+		outBuffer.pos = 0;
 
+		inBuffer.src = source;
+		inBuffer.size = sourceSize;
+		inBuffer.pos = 0;
+
+		zresult = ZSTD_decompress_generic(state->dctx, &outBuffer, &inBuffer);
 		if (ZSTD_isError(zresult)) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;
 			state->errorOffset = frameIndex;
 			return;
 		}
-		else if (zresult != decompressedSize) {
+		else if (zresult || outBuffer.pos != decompressedSize) {
 			state->error = WorkerError_sizeMismatch;
-			state->zresult = zresult;
+			state->zresult = outBuffer.pos;
 			state->errorOffset = frameIndex;
 			return;
 		}
 
 		destBuffer->segments[localOffset].offset = destOffset;
-		destBuffer->segments[localOffset].length = decompressedSize;
-		destOffset += zresult;
+		destBuffer->segments[localOffset].length = outBuffer.pos;
+		destOffset += outBuffer.pos;
 		localOffset++;
 		remainingItems--;
 	}
@@ -1185,6 +1186,8 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	bytesPerWorker = frames->compressedSize / threadCount;
 
 	for (i = 0; i < threadCount; i++) {
+		size_t zresult;
+
 		workerStates[i].dctx = ZSTD_createDCtx();
 		if (NULL == workerStates[i].dctx) {
 			PyErr_NoMemory();
@@ -1193,7 +1196,15 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 		ZSTD_copyDCtx(workerStates[i].dctx, decompressor->dctx);
 
-		workerStates[i].dict = decompressor->dict;
+		if (decompressor->dict) {
+			zresult = ZSTD_DCtx_refDDict(workerStates[i].dctx, decompressor->dict->ddict);
+			if (zresult) {
+				PyErr_Format(ZstdError, "unable to reference prepared dictionary: %s",
+					ZSTD_getErrorName(zresult));
+				goto finally;
+			}
+		}
+
 		workerStates[i].framePointers = framePointers;
 		workerStates[i].requireOutputSizes = 1;
 	}

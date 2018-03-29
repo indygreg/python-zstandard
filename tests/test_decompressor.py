@@ -1090,12 +1090,14 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         cctx = zstd.ZstdCompressor(write_content_size=True)
         frames = [cctx.compress(b'x' * 128), cctx.compress(b'y' * 128)]
 
-        frames[1] = frames[1] + b'extra'
+        frames[1] = frames[1][0:15] + b'extra' + frames[1][15:]
 
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Unknown frame descriptor'):
+        with self.assertRaisesRegexp(zstd.ZstdError,
+                                     'error decompressing item 1: Corrupted block'):
             dctx.multi_decompress_to_buffer(frames)
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'error decompressing item 1: Unknown frame descriptor'):
+        with self.assertRaisesRegexp(zstd.ZstdError,
+                                     'error decompressing item 1: Corrupted block'):
             dctx.multi_decompress_to_buffer(frames, threads=2)

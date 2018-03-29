@@ -28,7 +28,6 @@ Actions Blocking Release
 * Audit for complete flushing when ending compression streams.
 * Deprecate legacy APIs.
 * Audit for ability to control read/write sizes on all APIs.
-* Switch to new advanced decompression API (blocked on zstd 1.3.4).
 * Detect memory leaks via bench.py.
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
