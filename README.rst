@@ -1089,6 +1089,11 @@ has_checksum
 ``zstd.frame_header_size(data)`` returns the size of the zstandard frame
 header.
 
+``zstd.frame_content_size(data)`` returns the content size as parsed from
+the frame header. ``-1`` means the content size is unknown. ``0`` means
+an empty frame. The content size is usually correct. However, it may not
+be accurate.
+
 Misc Functionality
 ------------------
 

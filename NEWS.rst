@@ -137,6 +137,7 @@ Changes
   forward in the stream.
 * Removed ``TARGETLENGTH_MAX`` constant.
 * Added ``frame_header_size(data)`` function.
+* Added ``frame_content_size(data)`` function.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

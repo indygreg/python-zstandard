@@ -30,6 +30,48 @@ static PyObject* estimate_decompression_context_size(PyObject* self) {
 	return PyLong_FromSize_t(ZSTD_estimateDCtxSize());
 }
 
+PyDoc_STRVAR(frame_content_size__doc__,
+"frame_content_size(data)\n"
+"\n"
+"Obtain the decompressed size of a frame."
+);
+
+static PyObject* frame_content_size(PyObject* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"source",
+		NULL
+	};
+
+	Py_buffer source;
+	PyObject* result = NULL;
+	unsigned long long size;
+
+#if PY_MAJOR_VERSION >= 3
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:frame_content_size",
+#else
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:frame_content_size",
+#endif
+		kwlist, &source)) {
+		return NULL;
+	}
+
+	size = ZSTD_getFrameContentSize(source.buf, source.len);
+
+	if (size == ZSTD_CONTENTSIZE_ERROR) {
+		PyErr_SetString(ZstdError, "error when determining content size");
+	}
+	else if (size == ZSTD_CONTENTSIZE_UNKNOWN) {
+		result = PyLong_FromLong(-1);
+	}
+	else {
+		result = PyLong_FromUnsignedLongLong(size);
+	}
+
+	PyBuffer_Release(&source);
+
+	return result;
+}
+
 PyDoc_STRVAR(frame_header_size__doc__,
 "frame_header_size(data)\n"
 "\n"
@@ -109,6 +151,8 @@ static char zstd_doc[] = "Interface to zstandard";
 static PyMethodDef zstd_methods[] = {
 	{ "estimate_decompression_context_size", (PyCFunction)estimate_decompression_context_size,
 	METH_NOARGS, estimate_decompression_context_size__doc__ },
+	{ "frame_content_size", (PyCFunction)frame_content_size,
+	METH_VARARGS | METH_KEYWORDS, frame_content_size__doc__ },
 	{ "frame_header_size", (PyCFunction)frame_header_size,
 	METH_VARARGS | METH_KEYWORDS, frame_header_size__doc__ },
 	{ "get_frame_parameters", (PyCFunction)get_frame_parameters,

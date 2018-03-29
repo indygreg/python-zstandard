@@ -21,6 +21,7 @@ __all__ = [
     'ZstdDecompressor',
     'FrameParameters',
     'estimate_decompression_context_size',
+    'frame_content_size',
     'frame_header_size',
     'get_frame_parameters',
     'train_dictionary',
@@ -1013,6 +1014,19 @@ class FrameParameters(object):
         self.window_size = fparams.windowSize
         self.dict_id = fparams.dictID
         self.has_checksum = bool(fparams.checksumFlag)
+
+
+def frame_content_size(data):
+    data_buffer = ffi.from_buffer(data)
+
+    size = lib.ZSTD_getFrameContentSize(data_buffer, len(data_buffer))
+
+    if size == lib.ZSTD_CONTENTSIZE_ERROR:
+        raise ZstdError('error when determining content size')
+    elif size == lib.ZSTD_CONTENTSIZE_UNKNOWN:
+        return -1
+    else:
+        return size
 
 
 def frame_header_size(data):
