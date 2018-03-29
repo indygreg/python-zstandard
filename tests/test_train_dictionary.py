@@ -4,6 +4,7 @@ import unittest
 import zstandard as zstd
 
 from . common import (
+    generate_samples,
     make_cffi,
 )
 
@@ -11,25 +12,6 @@ if sys.version_info[0] >= 3:
     int_type = int
 else:
     int_type = long
-
-
-def generate_samples():
-    inputs = [
-        b'foo',
-        b'bar',
-        b'abcdef',
-        b'sometext',
-        b'baz',
-    ]
-
-    samples = []
-
-    for i in range(128):
-        samples.append(inputs[i % 5])
-        samples.append(inputs[i % 5] * (i + 3))
-        samples.append(inputs[-(i % 5)] * (i + 2))
-
-    return samples
 
 
 @make_cffi

@@ -120,6 +120,25 @@ def random_input_data():
     return _source_files
 
 
+def generate_samples():
+    inputs = [
+        b'foo',
+        b'bar',
+        b'abcdef',
+        b'sometext',
+        b'baz',
+    ]
+
+    samples = []
+
+    for i in range(128):
+        samples.append(inputs[i % 5])
+        samples.append(inputs[i % 5] * (i + 3))
+        samples.append(inputs[-(i % 5)] * (i + 2))
+
+    return samples
+
+
 if hypothesis:
     default_settings = hypothesis.settings()
     hypothesis.settings.register_profile('default', default_settings)

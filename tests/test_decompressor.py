@@ -8,6 +8,7 @@ import unittest
 import zstandard as zstd
 
 from .common import (
+    generate_samples,
     make_cffi,
     OpCountingBytesIO,
 )
@@ -1057,6 +1058,17 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         self.assertEqual(len(decompressed), 5)
         for i in range(5):
             self.assertEqual(decompressed[i].tobytes(), original[i])
+
+    def test_dict(self):
+        d = zstd.train_dictionary(16384, generate_samples(), k=64, d=16)
+
+        cctx = zstd.ZstdCompressor(dict_data=d, level=1,
+                                   write_content_size=True)
+        frames = [cctx.compress(s) for s in generate_samples()]
+
+        dctx = zstd.ZstdDecompressor(dict_data=d)
+        result = dctx.multi_decompress_to_buffer(frames)
+        self.assertEqual([o.tobytes() for o in result], generate_samples())
 
     def test_multiple_threads(self):
         cctx = zstd.ZstdCompressor(write_content_size=True)
