@@ -128,6 +128,8 @@ Changes
 * All meaningful functions now accept keyword arguments.
 * ``ZstdDecompressor.decompressobj()`` now accepts a ``write_size`` argument
   to control how much work to perform on every decompressor invocation.
+* ``ZstdCompressor.write_to()`` now exposes a ``tell()``, which exposes the
+  total number of bytes written so far.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

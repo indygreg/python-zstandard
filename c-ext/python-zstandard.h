@@ -134,6 +134,7 @@ typedef struct {
 	Py_ssize_t sourceSize;
 	size_t outSize;
 	int entered;
+	unsigned long long bytesCompressed;
 } ZstdCompressionWriter;
 
 extern PyTypeObject ZstdCompressionWriterType;

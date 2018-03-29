@@ -758,6 +758,7 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 
 	result->sourceSize = sourceSize;
 	result->outSize = outSize;
+	result->bytesCompressed = 0;
 
 	return result;
 }

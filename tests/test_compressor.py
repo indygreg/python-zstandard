@@ -2,6 +2,7 @@ import hashlib
 import io
 import struct
 import sys
+import tarfile
 import unittest
 
 import zstandard as zstd
@@ -932,6 +933,32 @@ class TestCompressor_write_to(unittest.TestCase):
 
         self.assertEqual(len(dest.getvalue()), 295)
 
+    def test_tell(self):
+        dest = io.BytesIO()
+        cctx = zstd.ZstdCompressor()
+        with cctx.write_to(dest) as compressor:
+            self.assertEqual(compressor.tell(), 0)
+
+            for i in range(256):
+                compressor.write(b'foo' * (i + 1))
+                self.assertEqual(compressor.tell(), dest.tell())
+
+    def test_tarfile_compat(self):
+        raise unittest.SkipTest('not yet fully working')
+
+        dest = io.BytesIO()
+        cctx = zstd.ZstdCompressor()
+        with cctx.write_to(dest) as compressor:
+            with tarfile.open('tf', mode='w', fileobj=compressor) as tf:
+                tf.add(__file__, 'test_compressor.py')
+
+        dest.seek(0)
+
+        dctx = zstd.ZstdDecompressor()
+        with dctx.stream_reader(dest) as reader:
+            with tarfile.open(mode='r:', fileobj=reader) as tf:
+                for member in tf:
+                    self.assertEqual(member.name, 'test_compressor.py')
 
 @make_cffi
 class TestCompressor_read_to_iter(unittest.TestCase):
