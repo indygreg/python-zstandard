@@ -867,7 +867,8 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         # Corrupt first frame.
         frame = zstd.ZstdCompressor(write_content_size=True).compress(b'foo' * 64)
         frame = frame[0:12] + frame[15:]
-        with self.assertRaisesRegexp(zstd.ZstdError, 'could not decompress chunk 0'):
+        with self.assertRaisesRegexp(zstd.ZstdError,
+                                     'chunk 0 did not decompress full frame'):
             dctx.decompress_content_dict_chain([frame])
 
     def test_bad_subsequent_input(self):
@@ -897,7 +898,7 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         frame = cctx.compress(b'bar' * 64)
         frame = frame[0:12] + frame[15:]
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'could not decompress chunk 1'):
+        with self.assertRaisesRegexp(zstd.ZstdError, 'chunk 1 did not decompress full frame'):
             dctx.decompress_content_dict_chain([initial, frame])
 
     def test_simple(self):

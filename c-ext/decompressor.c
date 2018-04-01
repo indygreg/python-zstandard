@@ -617,7 +617,7 @@ PyDoc_STRVAR(Decompressor_decompress_content_dict_chain__doc__,
 "Decompress a series of chunks using the content dictionary chaining technique\n"
 );
 
-static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyObject* args, PyObject* kwargs) {
+static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"frames",
 		NULL
@@ -630,7 +630,6 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 	PyObject* chunk;
 	char* chunkData;
 	Py_ssize_t chunkSize;
-	ZSTD_DCtx* dctx = NULL;
 	size_t zresult;
 	ZSTD_frameHeader frameHeader;
 	void* buffer1 = NULL;
@@ -641,6 +640,8 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 	size_t buffer2ContentSize = 0;
 	void* destBuffer = NULL;
 	PyObject* result = NULL;
+	ZSTD_outBuffer outBuffer;
+	ZSTD_inBuffer inBuffer;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!:decompress_content_dict_chain",
 		kwlist, &PyList_Type, &chunks)) {
@@ -679,9 +680,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 
 	assert(ZSTD_CONTENTSIZE_ERROR != frameHeader.frameContentSize);
 
-	dctx = ZSTD_createDCtx();
-	if (!dctx) {
-		PyErr_NoMemory();
+	if (ensure_dctx(self, 0)) {
 		goto finally;
 	}
 
@@ -691,15 +690,27 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 		goto finally;
 	}
 
+	outBuffer.dst = buffer1;
+	outBuffer.size = buffer1Size;
+	outBuffer.pos = 0;
+
+	inBuffer.src = chunkData;
+	inBuffer.size = chunkSize;
+	inBuffer.pos = 0;
+
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_decompressDCtx(dctx, buffer1, buffer1Size, chunkData, chunkSize);
+	zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
 	Py_END_ALLOW_THREADS
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "could not decompress chunk 0: %s", ZSTD_getErrorName(zresult));
 		goto finally;
 	}
+	else if (zresult) {
+		PyErr_Format(ZstdError, "chunk 0 did not decompress full frame");
+		goto finally;
+	}
 
-	buffer1ContentSize = zresult;
+	buffer1ContentSize = outBuffer.pos;
 
 	/* Special case of a simple chain. */
 	if (1 == chunksLen) {
@@ -745,6 +756,10 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 
 		assert(ZSTD_CONTENTSIZE_ERROR != frameHeader.frameContentSize);
 
+		inBuffer.src = chunkData;
+		inBuffer.size = chunkSize;
+		inBuffer.pos = 0;
+
 		parity = chunkIndex % 2;
 
 		/* This could definitely be abstracted to reduce code duplication. */
@@ -760,15 +775,34 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 			}
 
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_decompress_usingDict(dctx, buffer2, buffer2Size,
-				chunkData, chunkSize, buffer1, buffer1ContentSize);
+			zresult = ZSTD_DCtx_refPrefix_advanced(self->dctx,
+				buffer1, buffer1ContentSize, ZSTD_dct_rawContent);
+			Py_END_ALLOW_THREADS
+			if (ZSTD_isError(zresult)) {
+				PyErr_Format(ZstdError,
+					"failed to load prefix dictionary at chunk %zd", chunkIndex);
+				goto finally;
+			}
+
+			outBuffer.dst = buffer2;
+			outBuffer.size = buffer2Size;
+			outBuffer.pos = 0;
+
+			Py_BEGIN_ALLOW_THREADS
+			zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
 			Py_END_ALLOW_THREADS
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "could not decompress chunk %zd: %s",
 					chunkIndex, ZSTD_getErrorName(zresult));
 				goto finally;
 			}
-			buffer2ContentSize = zresult;
+			else if (zresult) {
+				PyErr_Format(ZstdError, "chunk %zd did not decompress full frame",
+					chunkIndex);
+				goto finally;
+			}
+
+			buffer2ContentSize = outBuffer.pos;
 		}
 		else {
 			if (buffer1Size < frameHeader.frameContentSize) {
@@ -781,15 +815,34 @@ static PyObject* Decompressor_decompress_content_dict_chain(PyObject* self, PyOb
 			}
 
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_decompress_usingDict(dctx, buffer1, buffer1Size,
-				chunkData, chunkSize, buffer2, buffer2ContentSize);
+			zresult = ZSTD_DCtx_refPrefix_advanced(self->dctx,
+				buffer2, buffer2ContentSize, ZSTD_dct_rawContent);
+			Py_END_ALLOW_THREADS
+			if (ZSTD_isError(zresult)) {
+				PyErr_Format(ZstdError,
+					"failed to load prefix dictionary at chunk %zd", chunkIndex);
+				goto finally;
+			}
+
+			outBuffer.dst = buffer1;
+			outBuffer.size = buffer1Size;
+			outBuffer.pos = 0;
+
+			Py_BEGIN_ALLOW_THREADS
+			zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
 			Py_END_ALLOW_THREADS
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "could not decompress chunk %zd: %s",
 					chunkIndex, ZSTD_getErrorName(zresult));
 				goto finally;
 			}
-			buffer1ContentSize = zresult;
+			else if (zresult) {
+				PyErr_Format(ZstdError, "chunk %zd did not decompress full frame",
+					chunkIndex);
+				goto finally;
+			}
+
+			buffer1ContentSize = outBuffer.pos;
 		}
 	}
 
@@ -802,10 +855,6 @@ finally:
 	}
 	if (buffer1) {
 		PyMem_Free(buffer1);
-	}
-
-	if (dctx) {
-		ZSTD_freeDCtx(dctx);
 	}
 
 	return result;

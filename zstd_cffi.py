@@ -1717,19 +1717,26 @@ class ZstdDecompressor(object):
         if params.frameContentSize == lib.ZSTD_CONTENTSIZE_UNKNOWN:
             raise ValueError('chunk 0 missing content size in frame')
 
-        dctx = lib.ZSTD_createDCtx()
-        if dctx == ffi.NULL:
-            raise MemoryError()
-
-        dctx = ffi.gc(dctx, lib.ZSTD_freeDCtx)
+        self._ensure_dctx(load_dict=False)
 
         last_buffer = ffi.new('char[]', params.frameContentSize)
 
-        zresult = lib.ZSTD_decompressDCtx(dctx, last_buffer, len(last_buffer),
-                                          chunk_buffer, len(chunk_buffer))
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = last_buffer
+        out_buffer.size = len(last_buffer)
+        out_buffer.pos = 0
+
+        in_buffer = ffi.new('ZSTD_inBuffer *')
+        in_buffer.src = chunk_buffer
+        in_buffer.size = len(chunk_buffer)
+        in_buffer.pos = 0
+
+        zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
         if lib.ZSTD_isError(zresult):
             raise ZstdError('could not decompress chunk 0: %s' %
                             ffi.string(lib.ZSTD_getErrorName(zresult)))
+        elif zresult:
+            raise ZstdError('chunk 0 did not decompress full frame')
 
         # Special case of chain length of 1
         if len(frames) == 1:
@@ -1753,11 +1760,20 @@ class ZstdDecompressor(object):
 
             dest_buffer = ffi.new('char[]', params.frameContentSize)
 
-            zresult = lib.ZSTD_decompress_usingDict(dctx, dest_buffer, len(dest_buffer),
-                                                    chunk_buffer, len(chunk_buffer),
-                                                    last_buffer, len(last_buffer))
+            out_buffer.dst = dest_buffer
+            out_buffer.size = len(dest_buffer)
+            out_buffer.pos = 0
+
+            in_buffer.src = chunk_buffer
+            in_buffer.size = len(chunk_buffer)
+            in_buffer.pos = 0
+
+            zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('could not decompress chunk %d' % i)
+                raise ZstdError('could not decompress chunk %d: %s' % (
+                    i, ffi.string(lib.ZSTD_getErrorName(zresult))))
+            elif zresult:
+                raise ZstdError('chunk %d did not decompress full frame' % i)
 
             last_buffer = dest_buffer
             i += 1
