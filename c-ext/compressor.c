@@ -11,6 +11,45 @@
 
 extern PyObject* ZstdError;
 
+static PyObject* frame_progression(ZSTD_CCtx* cctx) {
+	PyObject* result = NULL;
+	PyObject* value;
+	ZSTD_frameProgression progression;
+
+	result = PyTuple_New(3);
+	if (!result) {
+		return NULL;
+	}
+
+	progression = ZSTD_getFrameProgression(cctx);
+
+	value = PyLong_FromUnsignedLongLong(progression.ingested);
+	if (!value) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	PyTuple_SET_ITEM(result, 0, value);
+
+	value = PyLong_FromUnsignedLongLong(progression.consumed);
+	if (!value) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	PyTuple_SET_ITEM(result, 1, value);
+
+	value = PyLong_FromUnsignedLongLong(progression.produced);
+	if (!value) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	PyTuple_SET_ITEM(result, 2, value);
+
+	return result;
+}
+
 PyDoc_STRVAR(ZstdCompressor__doc__,
 "ZstdCompressor(level=None, dict_data=None, compression_params=None)\n"
 "\n"
@@ -216,6 +255,18 @@ static PyObject* ZstdCompressor_memory_size(ZstdCompressor* self) {
 		PyErr_SetString(ZstdError, "no compressor context found; this should never happen");
 		return NULL;
 	}
+}
+
+PyDoc_STRVAR(ZstdCompressor_frame_progression__doc__,
+"frame_progression()\n"
+"\n"
+"Return information on how much work the compressor has done.\n"
+"\n"
+"Returns a 3-tuple of (ingested, consumed, produced).\n"
+);
+
+static PyObject* ZstdCompressor_frame_progression(ZstdCompressor* self) {
+	return frame_progression(self->cctx);
 }
 
 PyDoc_STRVAR(ZstdCompressor_copy_stream__doc__,
@@ -1447,6 +1498,8 @@ static PyMethodDef ZstdCompressor_methods[] = {
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_multi_compress_to_buffer__doc__ },
 	{ "memory_size", (PyCFunction)ZstdCompressor_memory_size,
 	METH_NOARGS, ZstdCompressor_memory_size__doc__ },
+	{ "frame_progression", (PyCFunction)ZstdCompressor_frame_progression,
+	METH_NOARGS, ZstdCompressor_frame_progression__doc__ },
 	{ NULL, NULL }
 };
 

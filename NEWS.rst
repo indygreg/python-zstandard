@@ -33,7 +33,7 @@ Actions Blocking Release
 * Detect memory leaks via bench.py.
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
-* Expose ``ZSTD_getFrameProgression()``.
+* Expose ``ZSTD_getFrameProgression()`` from more compressor types.
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -148,6 +148,8 @@ Changes
   header is written.
 * ``ZstdDecompressor`` now accepts a ``format`` argument to control the
   expected frame format.
+* ``ZstdCompressor`` now has a ``frame_progression()`` method to return
+  information about the current compression operation.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

@@ -168,6 +168,9 @@ words, assume instances are not thread safe unless stated otherwise.
 Utility Methods
 ^^^^^^^^^^^^^^^
 
+``frame_progression()`` returns a 3-tuple containing the number of bytes
+ingested, consumed, and produced by the current compression operation.
+
 ``memory_size()`` obtains the memory utilization of the underlying zstd
 compression context, in bytes.::
 

@@ -380,6 +380,19 @@ class TestCompressor_compressobj(unittest.TestCase):
 
         self.assertEqual(len(compressed), 295)
 
+    def test_frame_progression(self):
+        cctx = zstd.ZstdCompressor()
+
+        self.assertEqual(cctx.frame_progression(), (0, 0, 0))
+
+        cobj = cctx.compressobj()
+
+        cobj.compress(b'foobar')
+        self.assertEqual(cctx.frame_progression(), (6, 0, 0))
+
+        cobj.flush()
+        self.assertEqual(cctx.frame_progression(), (6, 6, 15))
+
 
 @make_cffi
 class TestCompressor_copy_stream(unittest.TestCase):

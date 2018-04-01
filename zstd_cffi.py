@@ -1019,6 +1019,11 @@ class ZstdCompressor(object):
 
     read_from = read_to_iter
 
+    def frame_progression(self):
+        progression = lib.ZSTD_getFrameProgression(self._cctx)
+
+        return progression.ingested, progression.consumed, progression.produced
+
 
 class FrameParameters(object):
     def __init__(self, fparams):
