@@ -27,7 +27,7 @@ Actions Blocking Release
   refuse to let concurrent operations use the same instance.
 * Support for magic-less frames for all decompression operations (``decompress()``
   doesn't work due to sniffing the content size and the lack of a ZSTD API to
-  sniff magic-less frames).
+  sniff magic-less frames - this should be fixed in 1.3.5.).
 * Audit for complete flushing when ending compression streams.
 * Deprecate legacy APIs.
 * Audit for ability to control read/write sizes on all APIs.
