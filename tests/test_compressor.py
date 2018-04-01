@@ -556,6 +556,25 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertEqual(params.dict_id, 0)
         self.assertTrue(params.has_checksum)
 
+    def test_bad_size(self):
+        source = io.BytesIO()
+        source.write(b'a' * 32768)
+        source.write(b'b' * 32768)
+        source.seek(0)
+
+        dest = io.BytesIO()
+
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
+            cctx.copy_stream(source, dest, size=42)
+
+        # Try another operation on this compressor.
+        source.seek(0)
+        dest = io.BytesIO()
+        with self.assertRaisesRegexp(zstd.ZstdError, 'error setting source size'):
+            cctx.copy_stream(source, dest)
+
 
 def compress(data, level):
     buffer = io.BytesIO()
