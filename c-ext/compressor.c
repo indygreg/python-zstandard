@@ -751,6 +751,10 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 		goto except;
 	}
 
+	if (ensure_cctx(self)) {
+		return NULL;
+	}
+
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "error setting source size: %s",

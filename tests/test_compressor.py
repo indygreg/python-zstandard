@@ -1161,8 +1161,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
             b''.join(cctx.read_to_iter(source, size=2))
 
         # Test another operation on errored compressor.
-        with self.assertRaises(zstd.ZstdError):
-            b''.join(cctx.read_to_iter(source))
+        b''.join(cctx.read_to_iter(source))
 
 
 class TestCompressor_multi_compress_to_buffer(unittest.TestCase):

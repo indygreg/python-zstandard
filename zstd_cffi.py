@@ -956,6 +956,8 @@ class ZstdCompressor(object):
             raise ValueError('must pass an object with a read() method or '
                              'conforms to buffer protocol')
 
+        self._ensure_cctx()
+
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 

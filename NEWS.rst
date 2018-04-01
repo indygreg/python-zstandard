@@ -11,8 +11,6 @@ Actions Blocking Release
 * Support for prefix dictionaries.
 * Audit compression parameter order semantics (e.g. when to set LDM versus
   window log).
-* Ensure contexts are reset automatically in case of error; implement tests for
-  these scenarios.
 * compression and decompression APIs that support ``io.rawIOBase`` interface
   (#13).
 * Refactor module names so C and CFFI extensions live under ``zstandard``
