@@ -23,7 +23,8 @@ Actions Blocking Release
 * APIs for auto adjusting compression parameters based on input size. e.g.
   clamping the window log so it isn't too large for input.
 * Consider allowing compressor and decompressor instances to be thread safe,
-  support concurrent operations.
+  support concurrent operations. Or track when an operation is in progress and
+  refuse to let concurrent operations use the same instance.
 * Support for magic-less frames for all decompression operations (``decompress()``
   doesn't work due to sniffing the content size and the lack of a ZSTD API to
   sniff magic-less frames).
