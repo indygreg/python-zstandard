@@ -24,13 +24,13 @@ else:
 class TestFrameHeaderSize(unittest.TestCase):
     def test_empty(self):
         with self.assertRaisesRegexp(
-            zstd.ZstdError, 'could not determine frame header size.*Src size '
+            zstd.ZstdError, 'could not determine frame header size: Src size '
                             'is incorrect'):
             zstd.frame_header_size(b'')
 
     def test_too_small(self):
         with self.assertRaisesRegexp(
-            zstd.ZstdError, 'could not determine frame header size.*Src size '
+            zstd.ZstdError, 'could not determine frame header size: Src size '
                             'is incorrect'):
             zstd.frame_header_size(b'foob')
 
@@ -222,7 +222,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         dctx = zstd.ZstdDecompressor(max_window_size=1)
 
         with self.assertRaisesRegexp(
-            zstd.ZstdError, 'decompression error:.*Frame requires too much memory'):
+            zstd.ZstdError, 'decompression error: Frame requires too much memory'):
             dctx.decompress(frame, max_output_size=len(source))
 
 
