@@ -572,8 +572,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         # Try another operation on this compressor.
         source.seek(0)
         dest = io.BytesIO()
-        with self.assertRaisesRegexp(zstd.ZstdError, 'error setting source size'):
-            cctx.copy_stream(source, dest)
+        cctx.copy_stream(source, dest)
 
 
 def compress(data, level):

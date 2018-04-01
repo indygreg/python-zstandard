@@ -346,6 +346,10 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
+	if (ensure_cctx(self)) {
+		return NULL;
+	}
+
 	if (sourceSize == -1) {
 		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
