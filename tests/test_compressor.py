@@ -730,6 +730,21 @@ class TestCompressor_stream_reader(unittest.TestCase):
         with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
             reader.read(10)
 
+    def test_bad_size(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        source = io.BytesIO(b'foobar')
+
+        with cctx.stream_reader(source, size=2) as reader:
+            with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
+                reader.read(10)
+
+        # Try another compression operation.
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Operation not authorized'):
+            with cctx.stream_reader(source, size=42):
+                pass
+
+
 @make_cffi
 class TestCompressor_write_to(unittest.TestCase):
     def test_empty(self):
