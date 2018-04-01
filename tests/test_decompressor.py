@@ -847,6 +847,23 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
 
         self.assertEqual(source._read_count, len(source.getvalue()))
 
+    def test_magic_less(self):
+        params = zstd.CompressionParameters.from_level(
+            1, format=zstd.FORMAT_ZSTD1_MAGICLESS, write_content_size=True)
+        cctx = zstd.ZstdCompressor(compression_params=params)
+        frame = cctx.compress(b'foobar')
+
+        self.assertNotEqual(frame[0:4], b'\x28\xb5\x2f\xfd')
+
+        dctx = zstd.ZstdDecompressor()
+        with self.assertRaisesRegexp(
+            zstd.ZstdError, 'error determining content size from frame header'):
+            dctx.decompress(frame)
+
+        dctx = zstd.ZstdDecompressor(format=zstd.FORMAT_ZSTD1_MAGICLESS)
+        res = b''.join(dctx.read_to_iter(frame))
+        self.assertEqual(res, b'foobar')
+
 
 @make_cffi
 class TestDecompressor_content_dict_chain(unittest.TestCase):

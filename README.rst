@@ -479,6 +479,11 @@ max_window_size
    Sets an uppet limit on the window size for decompression operations in
    kibibytes. This setting can be used to prevent large memory allocations
    for inputs using large compression windows.
+format
+   Set the format of data for the decoder. By default, this is
+   ``zstd.FORMAT_ZSTD1``. It can be set to ``zstd.FORMAT_ZSTD1_MAGICLESS`` to
+   allow decoding frames without the 4 byte magic header. Not all decompression
+   APIs support this mode.
 
 The interface of this class is very similar to ``ZstdCompressor`` (by design).
 

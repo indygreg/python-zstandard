@@ -1503,9 +1503,10 @@ class ZstdDecompressionWriter(object):
 
 
 class ZstdDecompressor(object):
-    def __init__(self, dict_data=None, max_window_size=0):
+    def __init__(self, dict_data=None, max_window_size=0, format=FORMAT_ZSTD1):
         self._dict_data = dict_data
         self._max_window_size = max_window_size
+        self._format = format
 
         dctx = lib.ZSTD_createDCtx()
         if dctx == ffi.NULL:
@@ -1802,6 +1803,11 @@ class ZstdDecompressor(object):
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('unable to set max window size: %s' %
                                 ffi.string(lib.ZSTD_getErrorName(zresult)))
+
+        zresult = lib.ZSTD_DCtx_setFormat(self._dctx, self._format)
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('unable to set decoding format: %s' %
+                            ffi.string(lib.ZSTD_getErrorName(zresult)))
 
         if self._dict_data and load_dict:
             zresult = lib.ZSTD_DCtx_refDDict(self._dctx, self._dict_data._ddict)

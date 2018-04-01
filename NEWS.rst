@@ -24,7 +24,9 @@ Actions Blocking Release
   clamping the window log so it isn't too large for input.
 * Consider allowing compressor and decompressor instances to be thread safe,
   support concurrent operations.
-* Support for magic-less frames.
+* Support for magic-less frames for all decompression operations (``decompress()``
+  doesn't work due to sniffing the content size and the lack of a ZSTD API to
+  sniff magic-less frames).
 * Audit for complete flushing when ending compression streams.
 * Deprecate legacy APIs.
 * Audit for ability to control read/write sizes on all APIs.
@@ -144,6 +146,8 @@ Changes
 * ``FORMAT_ZSTD1`` and ``FORMAT_ZSTD1_MAGICLESS`` constants to be used with
   the ``format`` compression parameter to control whether the frame magic
   header is written.
+* ``ZstdDecompressor`` now accepts a ``format`` argument to control the
+  expected frame format.
 
 0.8.2 (released 2018-02-22)
 ---------------------------
