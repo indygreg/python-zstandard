@@ -136,6 +136,7 @@ Changes
 * ``ZstdDecompressor.stream_reader()`` now supports ``seek()`` when moving
   forward in the stream.
 * Removed ``TARGETLENGTH_MAX`` constant.
+* Added ``frame_header_size(data)`` function.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

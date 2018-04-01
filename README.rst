@@ -1086,6 +1086,9 @@ has_checksum
    Bool indicating whether a 4 byte content checksum is stored at the end
    of the frame.
 
+``zstd.frame_header_size(data)`` returns the size of the zstandard frame
+header.
+
 Misc Functionality
 ------------------
 

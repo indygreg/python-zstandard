@@ -20,6 +20,24 @@ else:
 
 
 @make_cffi
+class TestFrameHeaderSize(unittest.TestCase):
+    def test_empty(self):
+        with self.assertRaisesRegexp(
+            zstd.ZstdError, 'could not determine frame header size.*Src size '
+                            'is incorrect'):
+            zstd.frame_header_size(b'')
+
+    def test_too_small(self):
+        with self.assertRaisesRegexp(
+            zstd.ZstdError, 'could not determine frame header size.*Src size '
+                            'is incorrect'):
+            zstd.frame_header_size(b'foob')
+
+    def test_basic(self):
+        # It doesn't matter that it isn't a valid frame.
+        self.assertEqual(zstd.frame_header_size(b'long enough but no magic'), 6)
+
+@make_cffi
 class TestDecompressor(unittest.TestCase):
     def test_memory_size(self):
         dctx = zstd.ZstdDecompressor()
