@@ -522,6 +522,10 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		goto except;
 	}
 
+	if (ensure_cctx(self)) {
+		goto except;
+	}
+
 	if (sourceSize == -1) {
 		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}

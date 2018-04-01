@@ -918,6 +918,7 @@ class ZstdCompressor(object):
 
     def stream_reader(self, source, size=-1,
                       read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE):
+        self._ensure_cctx()
 
         try:
             size = len(source)

@@ -740,9 +740,8 @@ class TestCompressor_stream_reader(unittest.TestCase):
                 reader.read(10)
 
         # Try another compression operation.
-        with self.assertRaisesRegexp(zstd.ZstdError, 'Operation not authorized'):
-            with cctx.stream_reader(source, size=42):
-                pass
+        with cctx.stream_reader(source, size=42):
+            pass
 
 
 @make_cffi
