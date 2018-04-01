@@ -35,6 +35,7 @@ Actions Blocking Release
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
 * Expose ``ZSTD_getFrameProgression()`` from more compressor types.
+* Write content size in frame header by default when possible.
 
 Other Actions Not Blocking Release
 ---------------------------------------
