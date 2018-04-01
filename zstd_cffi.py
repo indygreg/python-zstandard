@@ -1764,10 +1764,10 @@ class ZstdDecompressor(object):
 
         return ffi.buffer(last_buffer, len(last_buffer))[:]
 
-    def _ensure_dctx(self):
+    def _ensure_dctx(self, load_dict=True):
         lib.ZSTD_DCtx_reset(self._dctx)
 
-        if self._dict_data:
+        if self._dict_data and load_dict:
             zresult = lib.ZSTD_DCtx_refDDict(self._dctx, self._dict_data._ddict)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('unable to reference prepared dictionary: %s' %

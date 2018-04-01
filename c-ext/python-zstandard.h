@@ -332,7 +332,7 @@ int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned valu
 int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs);
 int ensure_ddict(ZstdCompressionDict* dict);
-int ensure_dctx(ZstdDecompressor* decompressor);
+int ensure_dctx(ZstdDecompressor* decompressor, int loadDict);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);
 Py_ssize_t BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection*);

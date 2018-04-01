@@ -14,12 +14,12 @@ extern PyObject* ZstdError;
 /**
  * Ensure the ZSTD_DCtx on a decompressor is initiated and ready for a new operation.
  */
-int ensure_dctx(ZstdDecompressor* decompressor) {
+int ensure_dctx(ZstdDecompressor* decompressor, int loadDict) {
 	size_t zresult;
 
 	ZSTD_DCtx_reset(decompressor->dctx);
 
-	if (decompressor->dict) {
+	if (loadDict && decompressor->dict) {
 		if (ensure_ddict(decompressor->dict)) {
 			return 1;
 		}
@@ -162,7 +162,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	/* Prevent free on uninitialized memory in finally. */
 	output.dst = NULL;
 
-	if (ensure_dctx(self)) {
+	if (ensure_dctx(self, 1)) {
 		res = NULL;
 		goto finally;
 	}
@@ -293,7 +293,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		return NULL;
 	}
 
-	if (ensure_dctx(self)) {
+	if (ensure_dctx(self, 1)) {
 		goto finally;
 	}
 
@@ -402,7 +402,7 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self, 
 		return NULL;
 	}
 
-	if (ensure_dctx(self)) {
+	if (ensure_dctx(self, 1)) {
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -488,7 +488,7 @@ static ZstdDecompressorIterator* Decompressor_read_to_iter(ZstdDecompressor* sel
 	result->outSize = outSize;
 	result->skipBytes = skipBytes;
 
-	if (ensure_dctx(self)) {
+	if (ensure_dctx(self, 1)) {
 		goto except;
 	}
 
