@@ -27,7 +27,7 @@ static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
 		return NULL;
 	}
 
-	if (0 != init_dstream(self->decompressor)) {
+	if (ensure_dctx(self->decompressor)) {
 		return NULL;
 	}
 
@@ -44,13 +44,7 @@ static PyObject* ZstdDecompressionWriter_exit(ZstdDecompressionWriter* self, PyO
 }
 
 static PyObject* ZstdDecompressionWriter_memory_size(ZstdDecompressionWriter* self) {
-	if (!self->decompressor->dstream) {
-		PyErr_SetString(ZstdError, "cannot determine size of inactive decompressor; "
-			"call when context manager is active");
-		return NULL;
-	}
-
-	return PyLong_FromSize_t(ZSTD_sizeof_DStream(self->decompressor->dstream));
+	return PyLong_FromSize_t(ZSTD_sizeof_DCtx(self->decompressor->dctx));
 }
 
 static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args, PyObject* kwargs) {
@@ -81,8 +75,6 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 		goto finally;
 	}
 
-	assert(self->decompressor->dstream);
-
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();
@@ -97,7 +89,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 
 	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompressStream(self->decompressor->dstream, &output, &input);
+		zresult = ZSTD_decompress_generic(self->decompressor->dctx, &output, &input);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {

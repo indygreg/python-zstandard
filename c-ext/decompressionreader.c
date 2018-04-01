@@ -47,7 +47,7 @@ static ZstdDecompressionReader* reader_enter(ZstdDecompressionReader* self) {
 		return NULL;
 	}
 
-	if (0 != init_dstream(self->decompressor)) {
+	if (ensure_dctx(self->decompressor)) {
 		return NULL;
 	}
 
@@ -167,7 +167,7 @@ readinput:
 	/* Consume input data left over from last time. */
 	if (self->input.pos < self->input.size) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompressStream(self->decompressor->dstream,
+		zresult = ZSTD_decompress_generic(self->decompressor->dctx,
 			&output, &self->input);
 		Py_END_ALLOW_THREADS
 

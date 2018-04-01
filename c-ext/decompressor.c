@@ -12,53 +12,24 @@
 extern PyObject* ZstdError;
 
 /**
-  * Ensure the ZSTD_DStream on a ZstdDecompressor is initialized and reset.
-  *
-  * This should be called before starting a decompression operation with a
-  * ZSTD_DStream on a ZstdDecompressor.
-  */
-int init_dstream(ZstdDecompressor* decompressor) {
+ * Ensure the ZSTD_DCtx on a decompressor is initiated and ready for a new operation.
+ */
+int ensure_dctx(ZstdDecompressor* decompressor) {
 	size_t zresult;
 
-	/* Simple case of dstream already exists. Just reset it. */
-	if (decompressor->dstream) {
-		zresult = ZSTD_resetDStream(decompressor->dstream);
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "could not reset DStream: %s",
-				ZSTD_getErrorName(zresult));
-			return -1;
-		}
-
-		return 0;
-	}
-
-	decompressor->dstream = ZSTD_createDStream();
-	if (!decompressor->dstream) {
-		PyErr_SetString(ZstdError, "could not create DStream");
-		return -1;
-	}
+	ZSTD_DCtx_reset(decompressor->dctx);
 
 	if (decompressor->dict) {
 		if (ensure_ddict(decompressor->dict)) {
-			return -1;
+			return 1;
 		}
-	}
 
-	if (decompressor->dict) {
-		zresult = ZSTD_initDStream_usingDDict(decompressor->dstream, decompressor->dict->ddict);
-	}
-	else {
-		zresult = ZSTD_initDStream(decompressor->dstream);
-	}
-
-	if (ZSTD_isError(zresult)) {
-		/* Don't leave a reference to an invalid object. */
-		ZSTD_freeDStream(decompressor->dstream);
-		decompressor->dstream = NULL;
-
-		PyErr_Format(ZstdError, "could not initialize DStream: %s",
-			ZSTD_getErrorName(zresult));
-		return -1;
+		zresult = ZSTD_DCtx_refDDict(decompressor->dctx, decompressor->dict->ddict);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "unable to reference prepared dictionary: %s",
+				ZSTD_getErrorName(zresult));
+			return 1;
+		}
 	}
 
 	return 0;
@@ -88,8 +59,6 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
-	/* TODO lazily initialize the reference ZSTD_DCtx on first use since
-	   not instances of ZstdDecompressor will use a ZSTD_DCtx. */
 	self->dctx = ZSTD_createDCtx();
 	if (!self->dctx) {
 		PyErr_NoMemory();
@@ -114,11 +83,6 @@ except:
 
 static void Decompressor_dealloc(ZstdDecompressor* self) {
 	Py_CLEAR(self->dict);
-
-	if (self->dstream) {
-		ZSTD_freeDStream(self->dstream);
-		self->dstream = NULL;
-	}
 
 	if (self->dctx) {
 		ZSTD_freeDCtx(self->dctx);
@@ -198,7 +162,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 	/* Prevent free on uninitialized memory in finally. */
 	output.dst = NULL;
 
-	if (0 != init_dstream(self)) {
+	if (ensure_dctx(self)) {
 		res = NULL;
 		goto finally;
 	}
@@ -236,7 +200,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 
 		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_decompressStream(self->dstream, &output, &input);
+			zresult = ZSTD_decompress_generic(self->dctx, &output, &input);
 			Py_END_ALLOW_THREADS
 
 			if (ZSTD_isError(zresult)) {
@@ -433,7 +397,7 @@ static ZstdDecompressionObj* Decompressor_decompressobj(ZstdDecompressor* self, 
 		return NULL;
 	}
 
-	if (0 != init_dstream(self)) {
+	if (ensure_dctx(self)) {
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -519,7 +483,7 @@ static ZstdDecompressorIterator* Decompressor_read_to_iter(ZstdDecompressor* sel
 	result->outSize = outSize;
 	result->skipBytes = skipBytes;
 
-	if (0 != init_dstream(self)) {
+	if (ensure_dctx(self)) {
 		goto except;
 	}
 
