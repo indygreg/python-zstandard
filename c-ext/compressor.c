@@ -568,6 +568,10 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		return NULL;
 	}
 
+	if (ensure_cctx(self)) {
+		goto finally;
+	}
+
 	destSize = ZSTD_compressBound(source.len);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
 	if (!output) {

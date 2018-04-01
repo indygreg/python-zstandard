@@ -784,6 +784,8 @@ class ZstdCompressor(object):
         return lib.ZSTD_sizeof_CCtx(self._cctx)
 
     def compress(self, data):
+        self._ensure_cctx()
+
         data_buffer = ffi.from_buffer(data)
 
         dest_size = lib.ZSTD_compressBound(len(data_buffer))

@@ -410,10 +410,7 @@ class TestCompressor_compressobj(unittest.TestCase):
                             'authorized at current processing stage'):
             cctx.compressobj(size=4)
 
-        with self.assertRaisesRegexp(
-            zstd.ZstdError, 'error setting source size: Operation not '
-                            'authorized at current processing stage'):
-            cctx.compress(b'foobar')
+        cctx.compress(b'foobar')
 
 
 @make_cffi
