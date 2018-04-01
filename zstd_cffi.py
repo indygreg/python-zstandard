@@ -821,6 +821,8 @@ class ZstdCompressor(object):
         return ffi.buffer(out, out_buffer.pos)[:]
 
     def compressobj(self, size=-1):
+        self._ensure_cctx()
+
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 

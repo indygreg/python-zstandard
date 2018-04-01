@@ -405,11 +405,7 @@ class TestCompressor_compressobj(unittest.TestCase):
             cobj.compress(b'aa')
 
         # Try another operation on the compressor.
-        with self.assertRaisesRegexp(
-            zstd.ZstdError, 'error setting source size: Operation not '
-                            'authorized at current processing stage'):
-            cctx.compressobj(size=4)
-
+        cctx.compressobj(size=4)
         cctx.compress(b'foobar')
 
 

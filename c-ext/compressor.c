@@ -644,6 +644,10 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
+	if (ensure_cctx(self)) {
+		return NULL;
+	}
+
 	if (inSize == -1) {
 		inSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
