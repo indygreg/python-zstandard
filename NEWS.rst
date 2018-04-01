@@ -31,7 +31,6 @@ Actions Blocking Release
 * Detect memory leaks via bench.py.
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
-* Support negative compression levels.
 * Expose ``ZSTD_getFrameProgression()``.
 
 Other Actions Not Blocking Release
@@ -138,6 +137,8 @@ Changes
 * Added ``frame_content_size(data)`` function.
 * Consumers of ``ZSTD_decompress*`` have been switched to the new *advanced
   decompression* API.
+* ``ZstdCompressor`` and ``ZstdCompressionParams`` can now be constructed with
+  negative compression levels.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

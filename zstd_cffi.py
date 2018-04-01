@@ -212,6 +212,9 @@ class CompressionParameters(object):
             if arg not in kwargs:
                 kwargs[arg] = getattr(params, attr)
 
+        if 'compress_literals' not in kwargs:
+            kwargs['compress_literals'] = 1 if level >= 0 else 0
+
         return CompressionParameters(**kwargs)
 
     def __init__(self, format=0, compression_level=0, window_log=0, hash_log=0,
@@ -262,7 +265,8 @@ def estimate_decompression_context_size():
 
 
 def _set_compression_parameter(params, param, value):
-    zresult = lib.ZSTD_CCtxParam_setParameter(params, param, value)
+    zresult = lib.ZSTD_CCtxParam_setParameter(params, param,
+                                              ffi.cast('unsigned', value))
     if lib.ZSTD_isError(zresult):
         raise ZstdError('unable to set compression context parameter: %s' %
                         ffi.string(lib.ZSTD_getErrorName(zresult)))
@@ -679,9 +683,7 @@ class ZstdCompressor(object):
     def __init__(self, level=3, dict_data=None, compression_params=None,
                  write_checksum=None, write_content_size=None,
                  write_dict_id=None, threads=0):
-        if level < 1:
-            raise ValueError('level must be greater than 0')
-        elif level > lib.ZSTD_maxCLevel():
+        if level > lib.ZSTD_maxCLevel():
             raise ValueError('level must be less than %d' % lib.ZSTD_maxCLevel())
 
         if threads < 0:

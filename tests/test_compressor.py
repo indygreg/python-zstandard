@@ -30,9 +30,6 @@ def multithreaded_chunk_size(level, source_size=0):
 class TestCompressor(unittest.TestCase):
     def test_level_bounds(self):
         with self.assertRaises(ValueError):
-            zstd.ZstdCompressor(level=0)
-
-        with self.assertRaises(ValueError):
             zstd.ZstdCompressor(level=23)
 
     def test_memory_size(self):
@@ -90,6 +87,10 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x40\x54\x00\x00'
                                  b'\x10\x66\x66\x01\x00\xfb\xff\x39\xc0'
                                  b'\x02\x09\x00\x00\x6f')
+
+    def test_negative_level(self):
+        cctx = zstd.ZstdCompressor(level=-4)
+        result = cctx.compress(b'foo' * 256)
 
     def test_write_checksum(self):
         cctx = zstd.ZstdCompressor(level=1)

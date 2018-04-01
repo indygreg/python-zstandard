@@ -31,7 +31,7 @@ typedef struct {
 	PyObject_HEAD
 	ZSTD_CCtx_params* params;
 	unsigned format;
-	unsigned compressionLevel;
+	int compressionLevel;
 	unsigned windowLog;
 	unsigned hashLog;
 	unsigned chainLog;

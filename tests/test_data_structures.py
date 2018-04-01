@@ -32,6 +32,10 @@ class TestCompressionParameters(unittest.TestCase):
 
         self.assertEqual(p.window_log, 19)
 
+        p = zstd.CompressionParameters.from_level(-4)
+        self.assertEqual(p.window_log, 19)
+        self.assertEqual(p.compress_literals, 0)
+
     def test_members(self):
         p = zstd.CompressionParameters(window_log=10,
                                        chain_log=6,
@@ -65,6 +69,14 @@ class TestCompressionParameters(unittest.TestCase):
 
         p = zstd.CompressionParameters(compress_literals=False)
         self.assertEqual(p.compress_literals, 0)
+
+        p = zstd.CompressionParameters(compression_level=-1)
+        self.assertEqual(p.compression_level, -1)
+        self.assertEqual(p.compress_literals, 0)
+
+        p = zstd.CompressionParameters(compression_level=-2, compress_literals=True)
+        self.assertEqual(p.compression_level, -2)
+        self.assertEqual(p.compress_literals, 1)
 
         p = zstd.CompressionParameters(force_max_window=True)
         self.assertEqual(p.force_max_window, 1)

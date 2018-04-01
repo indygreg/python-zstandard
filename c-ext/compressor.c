@@ -75,11 +75,6 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		return -1;
 	}
 
-	if (level < 1) {
-		PyErr_SetString(PyExc_ValueError, "level must be greater than 0");
-		return -1;
-	}
-
 	if (level > ZSTD_maxCLevel()) {
 		PyErr_Format(PyExc_ValueError, "level must be less than %d",
 			ZSTD_maxCLevel() + 1);

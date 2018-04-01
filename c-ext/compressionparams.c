@@ -25,7 +25,7 @@ int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned valu
 
 int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj) {
 	TRY_SET_PARAMETER(params, ZSTD_p_format, obj->format);
-	TRY_SET_PARAMETER(params, ZSTD_p_compressionLevel, obj->compressionLevel);
+	TRY_SET_PARAMETER(params, ZSTD_p_compressionLevel, (unsigned)obj->compressionLevel);
 	TRY_SET_PARAMETER(params, ZSTD_p_windowLog, obj->windowLog);
 	TRY_SET_PARAMETER(params, ZSTD_p_hashLog, obj->hashLog);
 	TRY_SET_PARAMETER(params, ZSTD_p_chainLog, obj->chainLog);
@@ -93,7 +93,7 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	};
 
 	unsigned format = 0;
-	unsigned compressionLevel = 0;
+	int compressionLevel = 0;
 	unsigned windowLog = 0;
 	unsigned hashLog = 0;
 	unsigned chainLog = 0;
@@ -116,7 +116,7 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	int compressLiterals = -1;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-		"|IIIIIIIIIIIIIIIIIIIIii:CompressionParameters",
+		"|IiIIIIIIIIIIIIIIIIIIii:CompressionParameters",
 		kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
 		&searchLog, &minMatch, &targetLength, &compressionStrategy,
 		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,
@@ -295,6 +295,16 @@ CompressionParametersObject* CompressionParameters_from_level(PyObject* undef, P
 		Py_DECREF(val);
 	}
 
+	val = PyDict_GetItemString(kwargs, "compress_literals");
+	if (!val) {
+		val = PyLong_FromLong(level >= 0 ? 1 : 0);
+		if (!val) {
+			goto cleanup;
+		}
+		PyDict_SetItemString(kwargs, "compress_literals", val);
+		Py_DECREF(val);
+	}
+
 	result = PyObject_New(CompressionParametersObject, &CompressionParametersType);
 	if (!result) {
 		goto cleanup;
@@ -364,7 +374,7 @@ static PyMemberDef CompressionParameters_members[] = {
 	{ "format", T_UINT,
 	  offsetof(CompressionParametersObject, format), READONLY,
 	  "compression format" },
-	{ "compression_level", T_UINT,
+	{ "compression_level", T_INT,
 	  offsetof(CompressionParametersObject, compressionLevel), READONLY,
 	  "compression level" },
 	{ "window_log", T_UINT,
