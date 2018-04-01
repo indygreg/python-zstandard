@@ -18,6 +18,8 @@ int ensure_cctx(ZstdCompressor* compressor) {
 	assert(compressor->cctx);
 	assert(compressor->params);
 
+	ZSTD_CCtx_reset(compressor->cctx);
+
 	zresult = ZSTD_CCtx_setParametersUsingCCtxParams(compressor->cctx, compressor->params);
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "could not set compression parameters: %s",

@@ -758,6 +758,8 @@ class ZstdCompressor(object):
         self._ensure_cctx()
 
     def _ensure_cctx(self):
+        lib.ZSTD_CCtx_reset(self._cctx)
+
         zresult = lib.ZSTD_CCtx_setParametersUsingCCtxParams(self._cctx,
                                                              self._params)
         if lib.ZSTD_isError(zresult):
