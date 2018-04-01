@@ -107,17 +107,6 @@ def preprocess(path):
             if l.startswith(b'ZSTDLIB_API'):
                 l = l[len(b'ZSTDLIB_API '):]
 
-            # Some APIs are declared but not implemented. CFFI will generate
-            # bindings for them and then complain about a missing symbol at
-            # module import time. So we strip out these declarations.
-            if l.startswith((b'size_t ZSTD_DCtx_loadDictionary(',
-                             b'size_t ZSTD_DCtx_loadDictionary_byReference(',
-                             b'size_t ZSTD_DCtx_loadDictionary_advanced(',
-                             b'size_t ZSTD_DCtx_refDDict(',
-                             b'size_t ZSTD_DCtx_refPrefix(',
-                             b'size_t ZSTD_DCtx_refPrefix_advanced(')):
-                continue
-
             lines.append(l)
 
     fd, input_file = tempfile.mkstemp(suffix='.h')
