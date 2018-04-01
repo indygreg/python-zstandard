@@ -12,6 +12,7 @@ Like most benchmarks, results should be treated with skepticism.
 
 import io
 import os
+import random
 import struct
 import sys
 import time
@@ -672,6 +673,8 @@ def bench_content_dict_decompression(chunks, total_size, opts):
 if __name__ == '__main__':
     import argparse
 
+    random.seed(42)
+
     parser = argparse.ArgumentParser()
 
     group = parser.add_argument_group('Compression Modes')
@@ -756,7 +759,7 @@ if __name__ == '__main__':
 
     if args.discrete_dict:
         if args.dict_sample_limit:
-            training_chunks = chunks[0:args.dict_sample_limit]
+            training_chunks = random.sample(chunks, args.dict_sample_limit)
         else:
             training_chunks = chunks
 
