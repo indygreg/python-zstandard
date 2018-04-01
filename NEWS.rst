@@ -33,7 +33,6 @@ Actions Blocking Release
   require use of ``CompressionParameters``.
 * Support negative compression levels.
 * Expose ``ZSTD_getFrameProgression()``.
-* Expose ``ZSTD_p_compressLiterals``.
 
 Other Actions Not Blocking Release
 ---------------------------------------

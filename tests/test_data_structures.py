@@ -60,6 +60,12 @@ class TestCompressionParameters(unittest.TestCase):
         self.assertEqual(p.job_size, 1048576)
         self.assertEqual(p.overlap_size_log, 6)
 
+        p = zstd.CompressionParameters(compression_level=2)
+        self.assertEqual(p.compress_literals, 1)
+
+        p = zstd.CompressionParameters(compress_literals=False)
+        self.assertEqual(p.compress_literals, 0)
+
         p = zstd.CompressionParameters(force_max_window=True)
         self.assertEqual(p.force_max_window, 1)
 

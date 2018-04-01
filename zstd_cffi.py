@@ -179,6 +179,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_p_nbWorkers, params.threads),
         (lib.ZSTD_p_jobSize, params.job_size),
         (lib.ZSTD_p_overlapSizeLog, params.overlap_size_log),
+        (lib.ZSTD_p_compressLiterals, params.compress_literals),
         (lib.ZSTD_p_forceMaxWindow, params.force_max_window),
         (lib.ZSTD_p_enableLongDistanceMatching, params.enable_ldm),
         (lib.ZSTD_p_ldmHashLog, params.ldm_hash_log),
@@ -219,10 +220,13 @@ class CompressionParameters(object):
                  write_dict_id=0, job_size=0, overlap_size_log=0,
                  force_max_window=0, enable_ldm=0, ldm_hash_log=0,
                  ldm_min_match=0, ldm_bucket_size_log=0, ldm_hash_every_log=0,
-                 threads=0):
+                 threads=0, compress_literals=None):
 
         if threads < 0:
             threads = _cpu_count()
+
+        if compress_literals is None:
+            compress_literals = compression_level >= 0
 
         self.format = format
         self.compression_level = compression_level
@@ -238,6 +242,7 @@ class CompressionParameters(object):
         self.write_dict_id = write_dict_id
         self.job_size = job_size
         self.overlap_size_log = overlap_size_log
+        self.compress_literals = compress_literals
         self.force_max_window = force_max_window
         self.enable_ldm = enable_ldm
         self.ldm_hash_log = ldm_hash_log

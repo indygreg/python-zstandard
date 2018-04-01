@@ -39,6 +39,7 @@ int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj) {
 	TRY_SET_PARAMETER(params, ZSTD_p_nbWorkers, obj->threads);
 	TRY_SET_PARAMETER(params, ZSTD_p_jobSize, obj->jobSize);
 	TRY_SET_PARAMETER(params, ZSTD_p_overlapSizeLog, obj->overlapSizeLog);
+	TRY_SET_PARAMETER(params, ZSTD_p_compressLiterals, obj->compressLiterals);
 	TRY_SET_PARAMETER(params, ZSTD_p_forceMaxWindow, obj->forceMaxWindow);
 	TRY_SET_PARAMETER(params, ZSTD_p_enableLongDistanceMatching, obj->enableLongDistanceMatching);
 	TRY_SET_PARAMETER(params, ZSTD_p_ldmHashLog, obj->ldmHashLog);
@@ -87,6 +88,7 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 		"ldm_bucket_size_log",
 		"ldm_hash_every_log",
 		"threads",
+		"compress_literals",
 		NULL
 	};
 
@@ -111,19 +113,24 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	unsigned ldmBucketSizeLog = 0;
 	unsigned ldmHashEveryLog = 0;
 	int threads = 0;
+	int compressLiterals = -1;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-		"|IIIIIIIIIIIIIIIIIIIIi:CompressionParameters",
+		"|IIIIIIIIIIIIIIIIIIIIii:CompressionParameters",
 		kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
 		&searchLog, &minMatch, &targetLength, &compressionStrategy,
 		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,
 		&forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog,
-		&ldmHashEveryLog, &threads)) {
+		&ldmHashEveryLog, &threads, &compressLiterals)) {
 		return -1;
 	}
 
 	if (threads < 0) {
 		threads = cpu_count();
+	}
+
+	if (compressLiterals < 0) {
+		compressLiterals = compressionLevel >= 0;
 	}
 
 	self->format = format;
@@ -141,6 +148,7 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	self->threads = threads;
 	self->jobSize = jobSize;
 	self->overlapSizeLog = overlapSizeLog;
+	self->compressLiterals = compressLiterals;
 	self->forceMaxWindow = forceMaxWindow;
 	self->enableLongDistanceMatching = enableLDM;
 	self->ldmHashLog = ldmHashLog;
@@ -398,6 +406,9 @@ static PyMemberDef CompressionParameters_members[] = {
 	{ "overlap_size_log", T_UINT,
 	  offsetof(CompressionParametersObject, overlapSizeLog), READONLY,
 	  "Size of previous input reloaded at the beginning of each job" },
+	{ "compress_literals", T_UINT,
+	  offsetof(CompressionParametersObject, compressLiterals), READONLY,
+	  "whether Huffman compression of literals is in use" },
 	{ "force_max_window", T_UINT,
 	  offsetof(CompressionParametersObject, forceMaxWindow), READONLY,
 	  "force back references to remain smaller than window size" },

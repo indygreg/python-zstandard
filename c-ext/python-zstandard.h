@@ -45,6 +45,7 @@ typedef struct {
 	unsigned threads;
 	unsigned jobSize;
 	unsigned overlapSizeLog;
+	unsigned compressLiterals;
 	unsigned forceMaxWindow;
 	unsigned enableLongDistanceMatching;
 	unsigned ldmHashLog;
