@@ -1152,6 +1152,18 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         compressed = b''.join(cctx.read_to_iter(source))
         self.assertEqual(len(compressed), 295)
 
+    def test_bad_size(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        source = io.BytesIO(b'a' * 42)
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
+            b''.join(cctx.read_to_iter(source, size=2))
+
+        # Test another operation on errored compressor.
+        with self.assertRaises(zstd.ZstdError):
+            b''.join(cctx.read_to_iter(source))
+
 
 class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
     def test_invalid_inputs(self):
