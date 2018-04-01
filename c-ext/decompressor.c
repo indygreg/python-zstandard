@@ -70,7 +70,6 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 	ZstdCompressionDict* dict = NULL;
 	size_t maxWindowSize = 0;
 	ZSTD_format_e format = ZSTD_f_zstd1;
-	size_t zresult;
 
 	self->dctx = NULL;
 	self->dict = NULL;
@@ -86,24 +85,7 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 		goto except;
 	}
 
-	if (maxWindowSize) {
-		zresult = ZSTD_DCtx_setMaxWindowSize(self->dctx, maxWindowSize);
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "unable to set max window size: %s",
-				ZSTD_getErrorName(zresult));
-			goto except;
-		}
-	}
-
 	self->maxWindowSize = maxWindowSize;
-
-	zresult = ZSTD_DCtx_setFormat(self->dctx, format);
-	if (ZSTD_isError(zresult)) {
-		PyErr_Format(ZstdError, "unable to decoding format: %s",
-			ZSTD_getErrorName(zresult));
-		goto except;
-	}
-
 	self->format = format;
 
 	if (dict) {
@@ -111,9 +93,15 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 		Py_INCREF(dict);
 	}
 
+	if (ensure_dctx(self, 1)) {
+		goto except;
+	}
+
 	return 0;
 
 except:
+	Py_CLEAR(self->dict);
+
 	if (self->dctx) {
 		ZSTD_freeDCtx(self->dctx);
 		self->dctx = NULL;
