@@ -149,7 +149,8 @@ class TestDecompressor_decompress(unittest.TestCase):
         self.assertEqual(decompressed, source)
 
         # Input size - 1 fails
-        with self.assertRaisesRegexp(zstd.ZstdError, 'Destination buffer is too small'):
+        with self.assertRaisesRegexp(zstd.ZstdError,
+                'decompression error: did not decompress full frame'):
             dctx.decompress(compressed, max_output_size=len(source) - 1)
 
         # Input size + 1 works

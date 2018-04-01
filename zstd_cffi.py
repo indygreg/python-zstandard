@@ -1505,11 +1505,9 @@ class ZstdDecompressor(object):
         return lib.ZSTD_sizeof_DCtx(self._dctx)
 
     def decompress(self, data, max_output_size=0):
-        data_buffer = ffi.from_buffer(data)
+        self._ensure_dctx()
 
-        orig_dctx = new_nonzero('char[]', lib.ZSTD_sizeof_DCtx(self._dctx))
-        dctx = ffi.cast('ZSTD_DCtx *', orig_dctx)
-        lib.ZSTD_copyDCtx(dctx, self._dctx)
+        data_buffer = ffi.from_buffer(data)
 
         output_size = lib.ZSTD_getFrameContentSize(data_buffer, len(data_buffer))
 
@@ -1528,23 +1526,27 @@ class ZstdDecompressor(object):
             result_buffer = ffi.new('char[]', output_size)
             result_size = output_size
 
-        if self._dict_data:
-            zresult = lib.ZSTD_decompress_usingDDict(dctx,
-                                                     result_buffer, result_size,
-                                                     data_buffer, len(data_buffer),
-                                                     self._dict_data._ddict)
-        else:
-            zresult = lib.ZSTD_decompressDCtx(dctx,
-                                              result_buffer, result_size,
-                                              data_buffer, len(data_buffer))
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = result_buffer
+        out_buffer.size = result_size
+        out_buffer.pos = 0
+
+        in_buffer = ffi.new('ZSTD_inBuffer *')
+        in_buffer.src = data_buffer
+        in_buffer.size = len(data_buffer)
+        in_buffer.pos = 0
+
+        zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
         if lib.ZSTD_isError(zresult):
             raise ZstdError('decompression error: %s' %
                             ffi.string(lib.ZSTD_getErrorName(zresult)))
-        elif output_size and zresult != output_size:
+        elif zresult:
+            raise ZstdError('decompression error: did not decompress full frame')
+        elif output_size and out_buffer.pos != output_size:
             raise ZstdError('decompression error: decompressed %d bytes; expected %d' %
                             (zresult, output_size))
 
-        return ffi.buffer(result_buffer, zresult)[:]
+        return ffi.buffer(result_buffer, out_buffer.pos)[:]
 
     def stream_reader(self, source, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE):
         self._ensure_dctx()

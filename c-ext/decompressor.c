@@ -281,6 +281,8 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	size_t destCapacity;
 	PyObject* result = NULL;
 	size_t zresult;
+	ZSTD_outBuffer outBuffer;
+	ZSTD_inBuffer inBuffer;
 
 #if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress",
@@ -291,10 +293,8 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		return NULL;
 	}
 
-	if (self->dict) {
-		if (ensure_ddict(self->dict)) {
-			goto finally;
-		}
+	if (ensure_dctx(self)) {
+		goto finally;
 	}
 
 	decompressedSize = ZSTD_getFrameContentSize(source.buf, source.len);
@@ -329,16 +329,16 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		goto finally;
 	}
 
+	outBuffer.dst = PyBytes_AsString(result);
+	outBuffer.size = destCapacity;
+	outBuffer.pos = 0;
+
+	inBuffer.src = source.buf;
+	inBuffer.size = source.len;
+	inBuffer.pos = 0;
+
 	Py_BEGIN_ALLOW_THREADS
-	if (self->dict) {
-		zresult = ZSTD_decompress_usingDDict(self->dctx,
-			PyBytes_AsString(result), destCapacity,
-			source.buf, source.len, self->dict->ddict);
-	}
-	else {
-		zresult = ZSTD_decompressDCtx(self->dctx,
-			PyBytes_AsString(result), destCapacity, source.buf, source.len);
-	}
+	zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
 	Py_END_ALLOW_THREADS
 
 	if (ZSTD_isError(zresult)) {
@@ -346,14 +346,19 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		Py_CLEAR(result);
 		goto finally;
 	}
-	else if (decompressedSize && zresult != decompressedSize) {
+	else if (zresult) {
+		PyErr_Format(ZstdError, "decompression error: did not decompress full frame");
+		Py_CLEAR(result);
+		goto finally;
+	}
+	else if (decompressedSize && outBuffer.pos != decompressedSize) {
 		PyErr_Format(ZstdError, "decompression error: decompressed %zu bytes; expected %llu",
 			zresult, decompressedSize);
 		Py_CLEAR(result);
 		goto finally;
 	}
-	else if (zresult < destCapacity) {
-		if (safe_pybytes_resize(&result, zresult)) {
+	else if (outBuffer.pos < destCapacity) {
+		if (safe_pybytes_resize(&result, outBuffer.pos)) {
 			Py_CLEAR(result);
 			goto finally;
 		}

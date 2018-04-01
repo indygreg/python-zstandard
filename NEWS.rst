@@ -138,6 +138,8 @@ Changes
 * Removed ``TARGETLENGTH_MAX`` constant.
 * Added ``frame_header_size(data)`` function.
 * Added ``frame_content_size(data)`` function.
+* Consumers of ``ZSTD_decompress*`` have been switched to the new *advanced
+  decompression* API.
 
 0.8.2 (released 2018-02-22)
 ---------------------------
