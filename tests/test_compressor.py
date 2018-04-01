@@ -1024,9 +1024,8 @@ class TestCompressor_write_to(unittest.TestCase):
                 compressor.write(b'foo')
 
         # Test another operation.
-        with self.assertRaises(zstd.ZstdError):
-            with cctx.write_to(dest, size=42):
-                pass
+        with cctx.write_to(dest, size=42):
+            pass
 
     def test_tarfile_compat(self):
         raise unittest.SkipTest('not yet fully working')

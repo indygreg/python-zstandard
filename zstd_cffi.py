@@ -936,6 +936,8 @@ class ZstdCompressor(object):
         if not hasattr(writer, 'write'):
             raise ValueError('must pass an object with a write() method')
 
+        self._ensure_cctx()
+
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 

@@ -821,6 +821,10 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
+	if (ensure_cctx(self)) {
+		return NULL;
+	}
+
 	if (sourceSize == -1) {
 		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
