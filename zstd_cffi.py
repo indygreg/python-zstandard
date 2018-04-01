@@ -753,16 +753,20 @@ class ZstdCompressor(object):
             raise MemoryError()
 
         self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx)
+        self._dict_data = dict_data
 
+        self._ensure_cctx()
+
+    def _ensure_cctx(self):
         zresult = lib.ZSTD_CCtx_setParametersUsingCCtxParams(self._cctx,
                                                              self._params)
         if lib.ZSTD_isError(zresult):
             raise ZstdError('could not set compression parameters: %s' %
                             _zstd_error(zresult))
 
-        if dict_data:
-            self._dict_data = dict_data
+        dict_data = self._dict_data
 
+        if dict_data:
             if dict_data._cdict:
                 zresult = lib.ZSTD_CCtx_refCDict(self._cctx, dict_data._cdict)
             else:

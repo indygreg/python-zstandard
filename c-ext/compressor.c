@@ -11,6 +11,39 @@
 
 extern PyObject* ZstdError;
 
+int ensure_cctx(ZstdCompressor* compressor) {
+	size_t zresult;
+
+	assert(compressor);
+	assert(compressor->cctx);
+	assert(compressor->params);
+
+	zresult = ZSTD_CCtx_setParametersUsingCCtxParams(compressor->cctx, compressor->params);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "could not set compression parameters: %s",
+			ZSTD_getErrorName(zresult));
+		return 1;
+	}
+
+	if (compressor->dict) {
+		if (compressor->dict->cdict) {
+			zresult = ZSTD_CCtx_refCDict(compressor->cctx, compressor->dict->cdict);
+		}
+		else {
+			zresult = ZSTD_CCtx_loadDictionary_advanced(compressor->cctx,
+				compressor->dict->dictData, compressor->dict->dictSize,
+				ZSTD_dlm_byRef, compressor->dict->dictType);
+		}
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "could not load compression dictionary: %s",
+				ZSTD_getErrorName(zresult));
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static PyObject* frame_progression(ZSTD_CCtx* cctx) {
 	PyObject* result = NULL;
 	PyObject* value;
@@ -105,7 +138,6 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 	PyObject* writeContentSize = NULL;
 	PyObject* writeDictID = NULL;
 	int threads = 0;
-	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!O!OOOi:ZstdCompressor",
 		kwlist,	&level, &ZstdCompressionDictType, &dict,
@@ -198,29 +230,13 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		}
 	}
 
-	zresult = ZSTD_CCtx_setParametersUsingCCtxParams(self->cctx, self->params);
-	if (ZSTD_isError(zresult)) {
-		PyErr_Format(ZstdError, "could not set compression parameters: %s",
-			ZSTD_getErrorName(zresult));
-		return -1;
-	}
-
 	if (dict) {
 		self->dict = dict;
 		Py_INCREF(dict);
+	}
 
-		if (dict->cdict) {
-			zresult = ZSTD_CCtx_refCDict(self->cctx, dict->cdict);
-		}
-		else {
-			zresult = ZSTD_CCtx_loadDictionary_advanced(self->cctx,
-				dict->dictData, dict->dictSize, ZSTD_dlm_byRef, dict->dictType);
-		}
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "could not load compression dictionary: %s",
-				ZSTD_getErrorName(zresult));
-			return -1;
-		}
+	if (ensure_cctx(self)) {
+		return -1;
 	}
 
 	return 0;
