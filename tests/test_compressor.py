@@ -1014,6 +1014,20 @@ class TestCompressor_write_to(unittest.TestCase):
                 compressor.write(b'foo' * (i + 1))
                 self.assertEqual(compressor.tell(), dest.tell())
 
+    def test_bad_size(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        dest = io.BytesIO()
+
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
+            with cctx.write_to(dest, size=2) as compressor:
+                compressor.write(b'foo')
+
+        # Test another operation.
+        with self.assertRaises(zstd.ZstdError):
+            with cctx.write_to(dest, size=42):
+                pass
+
     def test_tarfile_compat(self):
         raise unittest.SkipTest('not yet fully working')
 
