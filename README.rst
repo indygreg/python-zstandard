@@ -475,6 +475,10 @@ come from the following named arguments (all optional):
 
 dict_data
    Compression dictionary to use.
+max_window_size
+   Sets an uppet limit on the window size for decompression operations in
+   kibibytes. This setting can be used to prevent large memory allocations
+   for inputs using large compression windows.
 
 The interface of this class is very similar to ``ZstdCompressor`` (by design).
 

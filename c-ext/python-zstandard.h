@@ -182,8 +182,8 @@ typedef struct {
 	PyObject_HEAD
 
 	ZSTD_DCtx* dctx;
-
 	ZstdCompressionDict* dict;
+	size_t maxWindowSize;
 } ZstdDecompressor;
 
 extern PyTypeObject ZstdDecompressorType;

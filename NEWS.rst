@@ -139,6 +139,8 @@ Changes
   decompression* API.
 * ``ZstdCompressor`` and ``ZstdCompressionParams`` can now be constructed with
   negative compression levels.
+* ``ZstdDecompressor`` now accepts a ``max_window_size`` argument to limit the
+  amount of memory required for decompression operations.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

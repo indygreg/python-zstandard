@@ -210,6 +210,21 @@ class TestDecompressor_decompress(unittest.TestCase):
             decompressed = dctx.decompress(compressed[i])
             self.assertEqual(decompressed, sources[i])
 
+    def test_max_window_size(self):
+        with open(__file__, 'rb') as fh:
+            source = fh.read()
+
+        # If we write a content size, the decompressor engages single pass
+        # mode and the window size doesn't come into play.
+        cctx = zstd.ZstdCompressor(write_content_size=False)
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor(max_window_size=1)
+
+        with self.assertRaisesRegexp(
+            zstd.ZstdError, 'decompression error:.*Frame requires too much memory'):
+            dctx.decompress(frame, max_output_size=len(source))
+
 
 @make_cffi
 class TestDecompressor_copy_stream(unittest.TestCase):

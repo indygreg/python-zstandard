@@ -19,6 +19,15 @@ int ensure_dctx(ZstdDecompressor* decompressor, int loadDict) {
 
 	ZSTD_DCtx_reset(decompressor->dctx);
 
+	if (decompressor->maxWindowSize) {
+		zresult = ZSTD_DCtx_setMaxWindowSize(decompressor->dctx, decompressor->maxWindowSize);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "unable to set max window size: %s",
+				ZSTD_getErrorName(zresult));
+			return 1;
+		}
+	}
+
 	if (loadDict && decompressor->dict) {
 		if (ensure_ddict(decompressor->dict)) {
 			return 1;
@@ -46,16 +55,19 @@ PyDoc_STRVAR(Decompressor__doc__,
 static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"dict_data",
+		"max_window_size",
 		NULL
 	};
 
 	ZstdCompressionDict* dict = NULL;
+	size_t maxWindowSize = 0;
+	size_t zresult;
 
 	self->dctx = NULL;
 	self->dict = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!:ZstdDecompressor", kwlist,
-		&ZstdCompressionDictType, &dict)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!I:ZstdDecompressor", kwlist,
+		&ZstdCompressionDictType, &dict, &maxWindowSize)) {
 		return -1;
 	}
 
@@ -64,6 +76,17 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 		PyErr_NoMemory();
 		goto except;
 	}
+
+	if (maxWindowSize) {
+		zresult = ZSTD_DCtx_setMaxWindowSize(self->dctx, maxWindowSize);
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "unable to set max window size: %s",
+				ZSTD_getErrorName(zresult));
+			goto except;
+		}
+	}
+
+	self->maxWindowSize = maxWindowSize;
 
 	if (dict) {
 		self->dict = dict;
