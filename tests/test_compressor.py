@@ -393,6 +393,28 @@ class TestCompressor_compressobj(unittest.TestCase):
         cobj.flush()
         self.assertEqual(cctx.frame_progression(), (6, 6, 15))
 
+    def test_bad_size(self):
+        cctx = zstd.ZstdCompressor(write_content_size=True)
+
+        cobj = cctx.compressobj(size=2)
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
+            cobj.compress(b'foo')
+
+        # Try another operation on this instance.
+        with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
+            cobj.compress(b'aa')
+
+        # Try another operation on the compressor.
+        with self.assertRaisesRegexp(
+            zstd.ZstdError, 'error setting source size: Operation not '
+                            'authorized at current processing stage'):
+            cctx.compressobj(size=4)
+
+        with self.assertRaisesRegexp(
+            zstd.ZstdError, 'error setting source size: Operation not '
+                            'authorized at current processing stage'):
+            cctx.compress(b'foobar')
+
 
 @make_cffi
 class TestCompressor_copy_stream(unittest.TestCase):
