@@ -92,6 +92,20 @@ class TestCompressor_compress(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=-4)
         result = cctx.compress(b'foo' * 256)
 
+    def test_no_magic(self):
+        params = zstd.CompressionParameters.from_level(
+            1, format=zstd.FORMAT_ZSTD1)
+        cctx = zstd.ZstdCompressor(compression_params=params)
+        magic = cctx.compress(b'foobar')
+
+        params = zstd.CompressionParameters.from_level(
+            1, format=zstd.FORMAT_ZSTD1_MAGICLESS)
+        cctx = zstd.ZstdCompressor(compression_params=params)
+        no_magic = cctx.compress(b'foobar')
+
+        self.assertEqual(magic[0:4], b'\x28\xb5\x2f\xfd')
+        self.assertEqual(magic[4:], no_magic)
+
     def test_write_checksum(self):
         cctx = zstd.ZstdCompressor(level=1)
         no_checksum = cctx.compress(b'foobar')

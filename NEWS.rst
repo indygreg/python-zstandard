@@ -141,6 +141,9 @@ Changes
   negative compression levels.
 * ``ZstdDecompressor`` now accepts a ``max_window_size`` argument to limit the
   amount of memory required for decompression operations.
+* ``FORMAT_ZSTD1`` and ``FORMAT_ZSTD1_MAGICLESS`` constants to be used with
+  the ``format`` compression parameter to control whether the frame magic
+  header is written.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

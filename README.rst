@@ -1175,6 +1175,11 @@ STRATEGY_BTOPT
 STRATEGY_BTULTRA
     Compression strategy
 
+FORMAT_ZSTD1
+    Zstandard frame format
+FORMAT_ZSTD1_MAGICLESS
+    Zstandard frame format without magic header
+
 Performance Considerations
 --------------------------
 

@@ -96,4 +96,7 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "DICT_TYPE_AUTO", ZSTD_dct_auto);
 	PyModule_AddIntConstant(mod, "DICT_TYPE_RAWCONTENT", ZSTD_dct_rawContent);
 	PyModule_AddIntConstant(mod, "DICT_TYPE_FULLDICT", ZSTD_dct_fullDict);
+
+	PyModule_AddIntConstant(mod, "FORMAT_ZSTD1", ZSTD_f_zstd1);
+	PyModule_AddIntConstant(mod, "FORMAT_ZSTD1_MAGICLESS", ZSTD_f_zstd1_magicless);
 }
