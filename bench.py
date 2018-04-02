@@ -76,7 +76,8 @@ BENCHES = []
 
 def bench(mode, title, require_content_size=False,
           simple=False, zlib=False, threads_arg=False,
-          chunks_as_buffer=False, decompressed_sizes_arg=False):
+          chunks_as_buffer=False, decompressed_sizes_arg=False,
+          cffi=True):
     def wrapper(fn):
         if not fn.__name__.startswith(('compress_', 'decompress_')):
             raise ValueError('benchmark function must begin with '
@@ -90,6 +91,7 @@ def bench(mode, title, require_content_size=False,
         fn.threads_arg = threads_arg
         fn.chunks_as_buffer = chunks_as_buffer
         fn.decompressed_sizes_arg = decompressed_sizes_arg
+        fn.cffi = cffi
 
         BENCHES.append(fn)
 
@@ -113,14 +115,14 @@ def compress_reuse(chunks, opts):
 
 
 @bench('discrete', 'multi_compress_to_buffer() w/ buffer input',
-       simple=True, threads_arg=True, chunks_as_buffer=True)
+       simple=True, threads_arg=True, chunks_as_buffer=True, cffi=False)
 def compress_multi_compress_to_buffer_buffer(chunks, opts, threads):
     zctx= zstd.ZstdCompressor(**opts)
     zctx.multi_compress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'multi_compress_to_buffer() w/ list input',
-       threads_arg=True)
+       threads_arg=True, cffi=False)
 def compress_multi_compress_to_buffer_list(chunks, opts, threads):
     zctx = zstd.ZstdCompressor(**opts)
     zctx.multi_compress_to_buffer(chunks, threads=threads)
@@ -317,7 +319,7 @@ def decompress_zlib_decompress(chunks):
 
 @bench('discrete', 'multi_decompress_to_buffer() w/ buffer input + sizes',
        simple=True, threads_arg=True, decompressed_sizes_arg=True,
-       chunks_as_buffer=True)
+       chunks_as_buffer=True, cffi=False)
 def decompress_multi_decompress_to_buffer_buffer_and_size(chunks, opts, threads,
                                             decompressed_sizes):
     zctx = zstd.ZstdDecompressor(**opts)
@@ -327,14 +329,15 @@ def decompress_multi_decompress_to_buffer_buffer_and_size(chunks, opts, threads,
 
 
 @bench('discrete', 'multi_decompress_to_buffer() w/ buffer input',
-       require_content_size=True, threads_arg=True, chunks_as_buffer=True)
+       require_content_size=True, threads_arg=True, chunks_as_buffer=True,
+       cffi=False)
 def decompress_multi_decompress_to_buffer_buffer(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.multi_decompress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'multi_decompress_to_buffer() w/ list of bytes input + sizes',
-       threads_arg=True, decompressed_sizes_arg=True)
+       threads_arg=True, decompressed_sizes_arg=True, cffi=False)
 def decompress_multi_decompress_to_buffer_list_and_sizes(chunks, opts, threads,
                                             decompressed_sizes):
     zctx = zstd.ZstdDecompressor(**opts)
@@ -344,7 +347,7 @@ def decompress_multi_decompress_to_buffer_list_and_sizes(chunks, opts, threads,
 
 
 @bench('discrete', 'multi_decompress_to_buffer() w/ list of bytes input',
-       require_content_size=True, threads_arg=True)
+       require_content_size=True, threads_arg=True, cffi=False)
 def decompress_multi_decompress_to_buffer_list(chunks, opts, threads):
     zctx = zstd.ZstdDecompressor(**opts)
     zctx.multi_decompress_to_buffer(chunks, threads=threads)
@@ -515,6 +518,9 @@ def get_benches(mode, direction, zlib=False):
             continue
 
         if fn.zlib != zlib:
+            continue
+
+        if zstd.backend == 'cffi' and not fn.cffi:
             continue
 
         fns.append(fn)
@@ -802,9 +808,15 @@ if __name__ == '__main__':
         compressed_discrete = []
         ratios = []
         # Always use multiple threads here so we complete faster.
-        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
-            compressed_discrete.append(c.tobytes())
-            ratios.append(float(len(c)) / float(len(chunks[i])))
+        if hasattr(zctx, 'multi_compress_to_buffer'):
+            for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
+                compressed_discrete.append(c.tobytes())
+                ratios.append(float(len(c)) / float(len(chunks[i])))
+        else:
+            for chunk in chunks:
+                compressed = zctx.compress(chunk)
+                compressed_discrete.append(chunk)
+                ratios.append(float(len(compressed)) / float (len(chunk)))
 
         compressed_size = sum(map(len, compressed_discrete))
         ratio = float(compressed_size) / float(orig_size) * 100.0
@@ -820,9 +832,16 @@ if __name__ == '__main__':
         zctx = zstd.ZstdCompressor(**dict_opts)
         compressed_discrete_dict = []
         ratios = []
-        for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
-            compressed_discrete_dict.append(c.tobytes())
-            ratios.append(float(len(c)) / float(len(chunks[i])))
+
+        if hasattr(zctx, 'multi_compress_to_buffer'):
+            for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
+                compressed_discrete_dict.append(c.tobytes())
+                ratios.append(float(len(c)) / float(len(chunks[i])))
+        else:
+            for chunk in chunks:
+                compressed = zctx.compress(chunk)
+                compressed_discrete_dict.append(compressed)
+                ratios.append(float(len(compressed)) / float(len(chunk)))
 
         compressed_size = sum(map(len, compressed_discrete_dict))
         ratio = float(compressed_size) / float(orig_size) * 100.0
