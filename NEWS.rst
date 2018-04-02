@@ -48,7 +48,7 @@ Other Actions Not Blocking Release
 Backwards Compatibility Notes
 -----------------------------
 
-* CFFI 1.10 or newer is now required (previous requirement was 1.8).
+* CFFI 1.11 or newer is now required (previous requirement was 1.8).
 * The primary module is now ``zstandard``. Please change imports of ``zstd``
   and ``zstd_cffi`` to ``import zstandard``. See the README for more.
 * ``ZstdCompressor.read_from()`` and ``ZstdDecompressor.read_from()`` have

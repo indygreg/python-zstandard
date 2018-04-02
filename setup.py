@@ -42,7 +42,9 @@ if cffi:
 
     # Need change in 1.10 for ffi.from_buffer() to handle all buffer types
     # (like memoryview).
-    install_requires.append('cffi>=1.10')
+    # Need feature in 1.11 for ffi.gc() to declare size of objects so we avoid
+    # garbage collection pitfalls.
+    install_requires.append('cffi>=1.11')
 
 version = None
 
