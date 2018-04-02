@@ -752,10 +752,16 @@ class ZstdCompressor(object):
         if cctx == ffi.NULL:
             raise MemoryError()
 
-        self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx)
+        self._cctx = cctx
         self._dict_data = dict_data
 
-        self._ensure_cctx()
+        # We defer setting up garbage collection until after calling
+        # _ensure_cctx() to ensure the memory size estimate is more accurate.
+        try:
+            self._ensure_cctx()
+        finally:
+            self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx,
+                                size=lib.ZSTD_sizeof_CCtx(cctx))
 
     def _ensure_cctx(self):
         lib.ZSTD_CCtx_reset(self._cctx)
@@ -1148,7 +1154,8 @@ class ZstdCompressionDict(object):
         if cdict == ffi.NULL:
             raise ZstdError('unable to precompute dictionary')
 
-        self._cdict = ffi.gc(cdict, lib.ZSTD_freeCDict)
+        self._cdict = ffi.gc(cdict, lib.ZSTD_freeCDict,
+                             size=lib.ZSTD_sizeof_CDict(cdict))
 
     @property
     def _ddict(self):
@@ -1160,7 +1167,8 @@ class ZstdCompressionDict(object):
         if ddict == ffi.NULL:
             raise ZstdError('could not create decompression dict')
 
-        ddict = ffi.gc(ddict, lib.ZSTD_freeDDict)
+        ddict = ffi.gc(ddict, lib.ZSTD_freeDDict,
+                       size=lib.ZSTD_sizeof_DDict(ddict))
         self.__dict__['_ddict'] = ddict
 
         return ddict
@@ -1540,8 +1548,15 @@ class ZstdDecompressor(object):
         if dctx == ffi.NULL:
             raise MemoryError()
 
-        self._dctx = ffi.gc(dctx, lib.ZSTD_freeDCtx)
-        self._ensure_dctx()
+        self._dctx = dctx
+
+        # Defer setting up garbage collection until full state is loaded so
+        # the memory size is more accurate.
+        try:
+            self._ensure_dctx()
+        finally:
+            self._dctx = ffi.gc(dctx, lib.ZSTD_freeDCtx,
+                                size=lib.ZSTD_sizeof_DCtx(dctx))
 
     def memory_size(self):
         return lib.ZSTD_sizeof_DCtx(self._dctx)
