@@ -13,10 +13,17 @@ matrix:
     # Add builds for Conda.
     - python: 2.7
       env: CONDA=1
+      env: PIP=pip
+      sudo: required
+      services:
+        - docker
     - python: 3.5
       env: CONDA=1
     - python: 3.6
       env: CONDA=1
+    - os: osx
+      language: generic
+      env: PIP=pip2
 
 env:
   global:

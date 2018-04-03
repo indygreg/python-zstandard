@@ -24,6 +24,10 @@ if [ -n "${CONDA}" ]; then
     conda create -n test-environment python=$TRAVIS_PYTHON_VERSION
     source activate test-environment
 
+# Building wheels with cibuildwheel
+elif [ -n "${PIP}" ]; then
+  $PIP install cibuildwheel==0.7.1
+
 # Normal, non-Conda build.
 else
     pip install tox-travis
