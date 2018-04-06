@@ -12,8 +12,6 @@ elif [ "${BUILDMODE}" = "CIBUILDWHEEL" ]; then
       export PIP=pip2
     fi
     cibuildwheel --output-dir dist
-    tar -zcvf dist.tar.gz dist/
-    curl -F file="@dist.tar.gz" https://file.io
 else
     tox
 fi
