@@ -10,20 +10,20 @@ python:
 
 matrix:
   include:
-    # Add builds for Conda.
     - python: 2.7
-      env: CONDA=1
-      env: PIP=pip
+      env: BUILDMODE=CONDA
+    - python: 2.7
+      env: BUILDMODE=CIBUILDWHEEL
       sudo: required
       services:
         - docker
     - python: 3.5
-      env: CONDA=1
+      env: BUILDMODE=CONDA
     - python: 3.6
-      env: CONDA=1
+      env: BUILDMODE=CONDA
     - os: osx
       language: generic
-      env: PIP=pip2
+      env: BUILDMODE=CIBUILDWHEEL
 
 env:
   global:

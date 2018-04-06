@@ -7,7 +7,7 @@
 # This shell scripts sets up the Travis CI build environment.
 
 # If a Conda build, download and install Conda.
-if [ -n "${CONDA}" ]; then
+if [ "${BUILDMODE}" = "CONDA" ]; then
     if [ "${TRAVIS_PYTHON_VERSION}" = "2.7" ]; then
         wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda2-4.4.10-Linux-x86_64.sh
     else
@@ -25,10 +25,14 @@ if [ -n "${CONDA}" ]; then
     source activate test-environment
 
 # Building wheels with cibuildwheel
-elif [ -n "${PIP}" ]; then
+elif [ "${BUILDMODE}" = "CIBUILDWHEEL" ]; then
+  export PIP=pip
+  if [ $(uname) = "Darwin" ]; then
+    export PIP=pip2
+  fi
   $PIP install cibuildwheel==0.7.1
 
-# Normal, non-Conda build.
+# Normal build.
 else
     pip install tox-travis
 fi
