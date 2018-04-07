@@ -1,6 +1,10 @@
+stages:
+  - build
+
 matrix:
   include:
-    - language: generic
+    - stage: build
+      language: generic
       os: linux
       env:
         - BUILDMODE=manylinuxwheels
@@ -8,67 +12,78 @@ matrix:
       services:
         - docker
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 2.7
       env:
         - BUILDMODE=tox
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 3.4
       env:
         - BUILDMODE=tox
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 3.5
       env:
         - BUILDMODE=tox
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 3.6
       env:
         - BUILDMODE=tox
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 3.6-dev
       env:
         - BUILDMODE=tox
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 3.7-dev
       env:
         - BUILDMODE=tox
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: nightly
       env:
         - BUILDMODE=tox
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 2.7
       env:
         - BUILDMODE=conda
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 3.5
       env:
         - BUILDMODE=conda
 
-    - language: python
+    - stage: build
+      language: python
       os: linux
       python: 3.6
       env:
         - BUILDMODE=conda
 
-    - language: generic
+    - stage: build
+      language: generic
       os: osx
       env:
         - BUILDMODE=cibuildwheel
