@@ -27,10 +27,25 @@ matrix:
 
 env:
   global:
+    # This tells Hypothesis to work harder than it does by default.
     - HYPOTHESIS_PROFILE=ci
+
+    - ARTIFACTS_BUCKET=python-zstandard
+
+    # ARTIFACTS_KEY
+    - secure: zurnx3XPgR806GeUIpDdds3YoUGADDvui50UCDHUCAJjMeGA+IBj3jI348EaS3RyRfZUdJr9D5TFd8VM3k3PSAjYw3WFNfJ7a+KIgYjUxmp1Bl3bt+bPr5wfKeIW8a+g5jo7hZQ+fDLF2Oyz4cMd6R78/h03s5LL6c9myVoGAnWkR+rmamJtSM3d4aB4tuOm87AJBFG1vD5I1sepyKiJpNNz2MuFjwmZoPu85ktt5KyBOw8UxM0+H+YCQY414malnwS4BLI0XLQ9Wp5dm2tAkuzU5BK5V1CL9oynuJ3RZH93Z7AeujsZYRRaOwwPd78FDpr3v6+lPeUP6/ztI02GXgUm8M9o4/cW0u0klNswuzbtumnpgx1DTyFAd6WcoK8Ba0PpO+KAEEkViCGcDHWpB5zXuGhcYpMMechLk3cOUBwaxmmHNw/Klb+mHEhgWWbi9+vg0FzJ7+FL+kFSiks3S8Jah1okm8RXPhlVbF3Jc0Ej7XdqpIShE9y/22qeO33Gige6K6hjzIaYXnlJYhYuTXQy4FUcyEnxQsCmRfb6QplWnScPsEEhJ0PFiAI3U6t1mnYcaGT2cvhEKz+p9AGVGn8pUMtOrdOI1dwNmcwH/ufR6hNsvvjLzveoFdrOXhxAt6krIzWbe3CihC0Pnih//zG9Px0jnCcvJKVVxespkxM=
+    # ARTIFACTS_SECRET
+    - secure: BKQokAeGOn4aRvLfqnX/Z2528wdlGb8ZG7NapPLDifTfeZNLzJwHRr7X41DOEjEaIzVJQEo2NhZWYKK+B+45chJ+z9Ul2kR9rZPzsdbMhgpZKHxpbTLVlTqeOVyNeciadt21Ov5JyaUP7L/tZP6b8PB5yNwi/NqUZluy8WxjD4g20wfwoJHdblvBXb1doqFqTE+Rs06S4T6adzgZI8ZBMQsSpO98WC8O9z2W68OQbkJ+0I5hZoF9yPFYhloF3C103G61jR2P0ppLyi3eeo3zUnLi9wN9irJOGU3dC4y11kMMTCrCmATfxwsOXXew9pH6SKYQHpW+VT8sbR3A1EnHNTip9rGJ6Lvu9n6nMu1mLnEFJuPbUr4fTnEKTKXlwcnhhEM9E4j13xpEMzbeJcwOuexl8GnA35/VQ7RKQPgOEgRxLKh0/FbbOVQ63RGnLggu8hh7+LNkkHF7Ff1Qnsr39Q2xlsWdaI3/vjbs3Dnfoigsjh7nLdDIdQcXKQV/D5L11MUeKmivUYBGgNlroTjkpivDtCcepRoyDD86CfUijeQ9CGsoMbvGjPweEBTEdHItYD9zeT5kvfJ3FHVpzdHVxajsoXZlLa+u8QECQkJ7rvRJ+zpgRngln5XX8rztO9NKoUWaEz9U1QJzZVZRGLCIXrT6VaZiObLmP1dhnsyA8Ss=
 
 install:
   - source ci/travis-install.sh
 
 script:
   - source ci/travis-build.sh
+
+addons:
+  artifacts:
+    s3_region: "us-west-2"
+    target_paths: "/travis/${TRAVIS_BUILD_NUMBER}/${TRAVIS_JOB_NUMBER}"
+    paths:
+      - $(ls dist/* | tr "\n" ":")
