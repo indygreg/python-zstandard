@@ -3,18 +3,26 @@ matrix:
     - language: python
       os: linux
       python: 2.7
+      env:
+        - "CIBW_SKIP=cp34-* cp35-* cp36-*"
 
     - language: python
       os: linux
       python: 3.4
+      env:
+        - "CIBW_SKIP=cp27-* cp35-* cp36-*"
 
     - language: python
       os: linux
       python: 3.5
+      env:
+        - "CIBW_SKIP=cp27-* cp34-* cp36-*"
 
     - language: python
       os: linux
       python: 3.6
+      env:
+        - "CIBW_SKIP=cp27-* cp34-* cp35-*"
 
     - language: python
       os: linux

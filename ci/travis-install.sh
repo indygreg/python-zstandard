@@ -34,5 +34,5 @@ elif [ "${BUILDMODE}" = "CIBUILDWHEEL" ]; then
 
 # Normal build.
 else
-    pip install tox-travis
+    pip install tox-travis cibuildwheel==0.7.1
 fi
