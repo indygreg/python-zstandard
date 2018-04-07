@@ -26,13 +26,9 @@ if [ "${BUILDMODE}" = "CONDA" ]; then
 
 # Building wheels with cibuildwheel
 elif [ "${BUILDMODE}" = "CIBUILDWHEEL" ]; then
-  export PIP=pip
-  if [ $(uname) = "Darwin" ]; then
-    export PIP=pip2
-  fi
-  $PIP install cibuildwheel==0.7.1
+  ${PIP} install cibuildwheel==0.7.1
 
 # Normal build.
 else
-    pip install tox-travis cibuildwheel==0.7.1
+    ${PIP} install tox-travis cibuildwheel==0.7.1
 fi

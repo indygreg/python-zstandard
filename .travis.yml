@@ -39,34 +39,42 @@ matrix:
     - language: python
       os: linux
       python: 2.7
-      env: BUILDMODE=CONDA
+      env:
+        - BUILDMODE=CONDA
 
     - language: python
       os: linux
       python: 3.5
-      env: BUILDMODE=CONDA
+      env:
+        - BUILDMODE=CONDA
 
     - language: python
       os: linux
       python: 3.6
-      env: BUILDMODE=CONDA
+      env:
+        - BUILDMODE=CONDA
 
     - language: python
       os: linux
       python: 2.7
-      env: BUILDMODE=CIBUILDWHEEL
+      env:
+        - BUILDMODE=CIBUILDWHEEL
       sudo: required
       services:
         - docker
 
     - language: generic
       os: osx
-      env: BUILDMODE=CIBUILDWHEEL
+      env:
+        - BUILDMODE=CIBUILDWHEEL
+        - PIP=pip2
 
 env:
   global:
     # This tells Hypothesis to work harder than it does by default.
     - HYPOTHESIS_PROFILE=ci
+
+    - PIP=pip
 
     - ARTIFACTS_BUCKET=python-zstandard
 
