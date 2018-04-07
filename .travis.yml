@@ -1,32 +1,36 @@
 matrix:
   include:
+    - language: generic
+      os: linux
+      env:
+        - BUILDMODE=manylinuxwheels
+      sudo: required
+      services:
+        - docker
+
     - language: python
       os: linux
       python: 2.7
       env:
         - BUILDMODE=tox
-        - "CIBW_SKIP=cp34-* cp35-* cp36-*"
 
     - language: python
       os: linux
       python: 3.4
       env:
         - BUILDMODE=tox
-        - "CIBW_SKIP=cp27-* cp35-* cp36-*"
 
     - language: python
       os: linux
       python: 3.5
       env:
         - BUILDMODE=tox
-        - "CIBW_SKIP=cp27-* cp34-* cp36-*"
 
     - language: python
       os: linux
       python: 3.6
       env:
         - BUILDMODE=tox
-        - "CIBW_SKIP=cp27-* cp34-* cp35-*"
 
     - language: python
       os: linux
@@ -63,15 +67,6 @@ matrix:
       python: 3.6
       env:
         - BUILDMODE=conda
-
-    - language: python
-      os: linux
-      python: 2.7
-      env:
-        - BUILDMODE=cibuildwheel
-      sudo: required
-      services:
-        - docker
 
     - language: generic
       os: osx

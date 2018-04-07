@@ -23,6 +23,8 @@ if [ "${BUILDMODE}" = "conda" ]; then
 
     conda create -n test-environment python=$TRAVIS_PYTHON_VERSION
     source activate test-environment
+elif [ "${BUILDMODE}" = "manylinuxwheels" ]; then
+    echo "no installation necessary when generating manylinux wheels"
 else
     ${PIP} install --require-hashes -r ci/requirements.txt
 fi
