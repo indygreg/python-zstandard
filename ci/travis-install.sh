@@ -7,7 +7,7 @@
 # This shell scripts sets up the Travis CI build environment.
 
 # If a Conda build, download and install Conda.
-if [ "${BUILDMODE}" = "CONDA" ]; then
+if [ "${BUILDMODE}" = "conda" ]; then
     if [ "${TRAVIS_PYTHON_VERSION}" = "2.7" ]; then
         wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda2-4.4.10-Linux-x86_64.sh
     else

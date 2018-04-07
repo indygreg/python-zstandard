@@ -2,12 +2,18 @@
 
 set -ex
 
-if [ "${BUILDMODE}" = "CONDA" ]; then
+if [ "${BUILDMODE}" = "conda" ]; then
     conda build ci/conda
     mkdir -p dist
     cp -av /home/travis/miniconda/conda-bld/*/*.tar.bz2 dist/
-elif [ "${BUILDMODE}" = "CIBUILDWHEEL" ]; then
+elif [ "${BUILDMODE}" = "cibuildwheel" ]; then
     cibuildwheel --output-dir dist
-else
+elif [ "${BUILDMODE}" = "tox" ]; then
     tox
+elif [ -n "${BUILDMODE}" ]; then
+    echo "unknown BUILDMODE: ${BUILDMODE}"
+    exit 1
+else
+    echo "BUILDMODE must be defined"
+    exit 1
 fi
