@@ -81,6 +81,9 @@ matrix:
 
 env:
   global:
+    # Enable fuzzing tests, other expensive tests.
+    - ZSTD_SLOW_TESTS=1
+
     # This tells Hypothesis to work harder than it does by default.
     - HYPOTHESIS_PROFILE=ci
 
