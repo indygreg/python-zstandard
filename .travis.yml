@@ -8,6 +8,7 @@ matrix:
       os: linux
       env:
         - BUILDMODE=manylinuxwheels
+        - ARTIFACT_PATH=manylinuxwheels
       sudo: required
       services:
         - docker
@@ -18,6 +19,7 @@ matrix:
       python: 2.7
       env:
         - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/2.7
 
     - stage: build
       language: python
@@ -25,6 +27,7 @@ matrix:
       python: 3.4
       env:
         - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/3.4
 
     - stage: build
       language: python
@@ -32,6 +35,7 @@ matrix:
       python: 3.5
       env:
         - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/3.5
 
     - stage: build
       language: python
@@ -39,6 +43,7 @@ matrix:
       python: 3.6
       env:
         - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/3.6
 
     - stage: build
       language: python
@@ -46,6 +51,7 @@ matrix:
       python: 3.6-dev
       env:
         - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/3.6-dev
 
     - stage: build
       language: python
@@ -53,6 +59,7 @@ matrix:
       python: 3.7-dev
       env:
         - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/3.7-dev
 
     - stage: build
       language: python
@@ -60,6 +67,7 @@ matrix:
       python: nightly
       env:
         - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/nightly
 
     - stage: build
       language: python
@@ -67,6 +75,7 @@ matrix:
       python: 2.7
       env:
         - BUILDMODE=conda
+        - ARTIFACT_PATH=conda/2.7
 
     - stage: build
       language: python
@@ -74,6 +83,7 @@ matrix:
       python: 3.5
       env:
         - BUILDMODE=conda
+        - ARTIFACT_PATH=conda/3.5
 
     - stage: build
       language: python
@@ -81,12 +91,14 @@ matrix:
       python: 3.6
       env:
         - BUILDMODE=conda
+        - ARTIFACT_PATH=conda/3.6
 
     - stage: build
       language: generic
       os: osx
       env:
         - BUILDMODE=cibuildwheel
+        - ARTIFACT_PATH=macos
         - PIP=pip2
 
 env:
@@ -102,9 +114,9 @@ env:
     - ARTIFACTS_BUCKET=python-zstandard
 
     # ARTIFACTS_KEY
-    - secure: zurnx3XPgR806GeUIpDdds3YoUGADDvui50UCDHUCAJjMeGA+IBj3jI348EaS3RyRfZUdJr9D5TFd8VM3k3PSAjYw3WFNfJ7a+KIgYjUxmp1Bl3bt+bPr5wfKeIW8a+g5jo7hZQ+fDLF2Oyz4cMd6R78/h03s5LL6c9myVoGAnWkR+rmamJtSM3d4aB4tuOm87AJBFG1vD5I1sepyKiJpNNz2MuFjwmZoPu85ktt5KyBOw8UxM0+H+YCQY414malnwS4BLI0XLQ9Wp5dm2tAkuzU5BK5V1CL9oynuJ3RZH93Z7AeujsZYRRaOwwPd78FDpr3v6+lPeUP6/ztI02GXgUm8M9o4/cW0u0klNswuzbtumnpgx1DTyFAd6WcoK8Ba0PpO+KAEEkViCGcDHWpB5zXuGhcYpMMechLk3cOUBwaxmmHNw/Klb+mHEhgWWbi9+vg0FzJ7+FL+kFSiks3S8Jah1okm8RXPhlVbF3Jc0Ej7XdqpIShE9y/22qeO33Gige6K6hjzIaYXnlJYhYuTXQy4FUcyEnxQsCmRfb6QplWnScPsEEhJ0PFiAI3U6t1mnYcaGT2cvhEKz+p9AGVGn8pUMtOrdOI1dwNmcwH/ufR6hNsvvjLzveoFdrOXhxAt6krIzWbe3CihC0Pnih//zG9Px0jnCcvJKVVxespkxM=
+    - secure: nB7QXvYTQ+60WW8sh+JQSmBGI9EvXEigbhpmyjqCM5MZhnIQlWDXU/Ts2GbBZ75vTfYvOsDeVnOgL4yNbw3QiGAfntXHXSRLVPVWMg8hNLSO2FgQh/Ytw5XkYbVGnQve8giK5ZWgO877qMGepYrvtpIjIZbZ0fLfyVCMIKTJzYqewnH5EMzvsMxbxWe2Ojxd47DSmQkPlk6qHXupZ1t2FrCxcioXnWvwwVOAZWTvqMmgOtT3S/xRbZ1+US69LFebHcsusIOL7VzYunaTAgtOJUrS/QbW0ddbctM4qHSYIpwe/iQiGsWNsyJrViGAWg0r3SJr24bqjAzRSvNEwDvs9FhbQVcdZOKrH1KB/h34FkyQFQl+GuG7D4gZY8Eth8zW8p+Cz+SJHoiXjsCGdsmm+bPlKoZC4tJTzUtUmbpDt22BEbKqRObWIYQWLDQ6Keh7B4/tuGvl1r3cvsf/p66V8jwtpYP8papinjKYEwWCvPWBungpRcZ54ohPEmGOBer/nVTteZ9Q4rHBOlNu6Q1s2MooRHo+2K3u3aa43tFVgEi5XViC56g+KfQgB9Q2w6E8Vvj/enmDHKAhWlyFp7aliOXqzJBfFZluKwaccRsr/yaskNlSXdnRZS8/+m/oA7CnubpCh+fRPk6jf4g/l8fqw5spxx2f0lHEzfG243Vo4Q8=
     # ARTIFACTS_SECRET
-    - secure: BKQokAeGOn4aRvLfqnX/Z2528wdlGb8ZG7NapPLDifTfeZNLzJwHRr7X41DOEjEaIzVJQEo2NhZWYKK+B+45chJ+z9Ul2kR9rZPzsdbMhgpZKHxpbTLVlTqeOVyNeciadt21Ov5JyaUP7L/tZP6b8PB5yNwi/NqUZluy8WxjD4g20wfwoJHdblvBXb1doqFqTE+Rs06S4T6adzgZI8ZBMQsSpO98WC8O9z2W68OQbkJ+0I5hZoF9yPFYhloF3C103G61jR2P0ppLyi3eeo3zUnLi9wN9irJOGU3dC4y11kMMTCrCmATfxwsOXXew9pH6SKYQHpW+VT8sbR3A1EnHNTip9rGJ6Lvu9n6nMu1mLnEFJuPbUr4fTnEKTKXlwcnhhEM9E4j13xpEMzbeJcwOuexl8GnA35/VQ7RKQPgOEgRxLKh0/FbbOVQ63RGnLggu8hh7+LNkkHF7Ff1Qnsr39Q2xlsWdaI3/vjbs3Dnfoigsjh7nLdDIdQcXKQV/D5L11MUeKmivUYBGgNlroTjkpivDtCcepRoyDD86CfUijeQ9CGsoMbvGjPweEBTEdHItYD9zeT5kvfJ3FHVpzdHVxajsoXZlLa+u8QECQkJ7rvRJ+zpgRngln5XX8rztO9NKoUWaEz9U1QJzZVZRGLCIXrT6VaZiObLmP1dhnsyA8Ss=
+    - secure: swX8M1dhvPirn69pSNzbmfuVi6asetIq49amJyGsIX0HyRHeUxS+ZOZrWTPXQhKWJJvKe+utToe7FFZH8xl7g8GtcQS0ufM41ScXCIMXDKsqtaBR2ISqKpHt7uHuO5J10DdDvdVekjUQRYkGDq6yIPheOudMgIAZzlTOVUUTfk/NWmmClW0VOI8yeusxNpVE2mNUXQ3ZElticVaHmmPrxqh9e3MXrhA7oe6j+IGtO18Cer5K97hQMRA8O5Sc6WAkYjcP757gZYWYiTLkC2Ifnud4PVJkkqH7vekDr97GnxFrt4u5ysZW3Aw124CYuc5fFtjWJsg/tV2/2qvwnqAtPVC0RGl98ztpEEldL2fyVc3EfQ47n4qvBnPNF2zo+To3eTIzEEZiPBrlrxhpq1GxVgo9ui8VsawPGEPtKu+qQ17JqIry5r4Wmk88mnIMblMxPGJ9+IQHvfJRMxNhREQXW8bBKHcIqJe1qZqidLdGGm7KhUUlIPRP28gqVL7U7s6RM2bGjBnRah8xixrM28K49Wrh5Ys+zYaqEI+zf6vQFapwgRAacoFvDrIjiTBzu8thJYhmhKbraTCkA8Ramaq0vhZK625ORjG9L8HR8jH05nqeGHgFi4H/VuR4nTRiRgO9ar9Ersp74zKh5rZqG7o0J/OSRHbqnABfLBzBGMP60wc=
 
 install:
   - source ci/travis-install.sh
@@ -115,6 +127,6 @@ script:
 addons:
   artifacts:
     s3_region: "us-west-2"
-    target_paths: "/travis/${TRAVIS_BUILD_NUMBER}/${TRAVIS_JOB_NUMBER}"
+    target_paths: "/travis/${TRAVIS_BUILD_NUMBER}/${ARTIFACT_PATH}"
     paths:
       - $(ls dist/* | tr "\n" ":")
