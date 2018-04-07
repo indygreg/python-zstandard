@@ -23,12 +23,6 @@ if [ "${BUILDMODE}" = "CONDA" ]; then
 
     conda create -n test-environment python=$TRAVIS_PYTHON_VERSION
     source activate test-environment
-
-# Building wheels with cibuildwheel
-elif [ "${BUILDMODE}" = "CIBUILDWHEEL" ]; then
-  ${PIP} install cibuildwheel==0.7.1
-
-# Normal build.
 else
-    ${PIP} install tox-travis cibuildwheel==0.7.1
+    ${PIP} install --require-hashes -r ci/requirements.txt
 fi
