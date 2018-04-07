@@ -1,28 +1,58 @@
-language: python
-
 matrix:
   include:
-    - python: 2.7
-    - python: 3.4
-    - python: 3.5
-    - python: 3.6
-    - python: 3.6-dev
-    - python: 3.7-dev
-    - python: nightly
+    - language: python
+      os: linux
+      python: 2.7
 
-    - python: 2.7
+    - language: python
+      os: linux
+      python: 3.4
+
+    - language: python
+      os: linux
+      python: 3.5
+
+    - language: python
+      os: linux
+      python: 3.6
+
+    - language: python
+      os: linux
+      python: 3.6-dev
+
+    - language: python
+      os: linux
+      python: 3.7-dev
+
+    - language: python
+      os: linux
+      python: nightly
+
+    - language: python
+      os: linux
+      python: 2.7
       env: BUILDMODE=CONDA
-    - python: 2.7
+
+    - language: python
+      os: linux
+      python: 3.5
+      env: BUILDMODE=CONDA
+
+    - language: python
+      os: linux
+      python: 3.6
+      env: BUILDMODE=CONDA
+
+    - language: python
+      os: linux
+      python: 2.7
       env: BUILDMODE=CIBUILDWHEEL
       sudo: required
       services:
         - docker
-    - python: 3.5
-      env: BUILDMODE=CONDA
-    - python: 3.6
-      env: BUILDMODE=CONDA
-    - os: osx
-      language: generic
+
+    - language: generic
+      os: osx
       env: BUILDMODE=CIBUILDWHEEL
 
 env:
