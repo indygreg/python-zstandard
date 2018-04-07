@@ -15,6 +15,13 @@ matrix:
         - docker
 
     - stage: build
+      language: generic
+      os: osx
+      env:
+        - BUILDMODE=macoswheels
+        - ARTIFACT_PATH=macos
+
+    - stage: build
       language: python
       os: linux
       python: 2.7
@@ -94,14 +101,6 @@ matrix:
         - BUILDMODE=conda
         - ARTIFACT_PATH=conda/3.6
 
-    - stage: build
-      language: generic
-      os: osx
-      env:
-        - BUILDMODE=cibuildwheel
-        - ARTIFACT_PATH=macos
-        - PIP=pip2
-
     - stage: test
       language: python
       os: linux
@@ -137,8 +136,6 @@ env:
 
     # This tells Hypothesis to work harder than it does by default.
     - HYPOTHESIS_PROFILE=ci
-
-    - PIP=pip
 
     - ARTIFACTS_BUCKET=python-zstandard
     - ARTIFACTS_PERMISSIONS=public-read

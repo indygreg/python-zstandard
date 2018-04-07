@@ -55,7 +55,7 @@ elif [ "${BUILDMODE}" = "manylinuxwheels" ]; then
     make_manylinux_wheels quay.io/pypa/manylinux1_x86_64
     make_manylinux_wheels quay.io/pypa/manylinux1_i686 linux32
 
-elif [ "${BUILDMODE}" = "cibuildwheel" ]; then
+elif [ "${BUILDMODE}" = "macoswheels" ]; then
     cibuildwheel --output-dir dist
 
 elif [ "${BUILDMODE}" = "tox" ]; then
