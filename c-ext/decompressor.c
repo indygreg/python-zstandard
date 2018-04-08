@@ -721,11 +721,23 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 
 	assert(ZSTD_CONTENTSIZE_ERROR != frameHeader.frameContentSize);
 
+	/* We check against PY_SSIZE_T_MAX here because we ultimately cast the
+	 * result to a Python object and it's length can be no greater than
+	 * Py_ssize_t. In theory, we could have an intermediate frame that is 
+	 * larger. But a) why would this API be used for frames that large b)
+	 * it isn't worth the complexity to support. */
+	assert(SIZE_MAX >= PY_SSIZE_T_MAX);
+	if (frameHeader.frameContentSize > PY_SSIZE_T_MAX) {
+		PyErr_SetString(PyExc_ValueError,
+			"chunk 0 is too large to decompress on this platform");
+		return NULL;
+	}
+
 	if (ensure_dctx(self, 0)) {
 		goto finally;
 	}
 
-	buffer1Size = frameHeader.frameContentSize;
+	buffer1Size = (size_t)frameHeader.frameContentSize;
 	buffer1 = PyMem_Malloc(buffer1Size);
 	if (!buffer1) {
 		goto finally;
@@ -760,7 +772,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 	}
 
 	/* This should ideally look at next chunk. But this is slightly simpler. */
-	buffer2Size = frameHeader.frameContentSize;
+	buffer2Size = (size_t)frameHeader.frameContentSize;
 	buffer2 = PyMem_Malloc(buffer2Size);
 	if (!buffer2) {
 		goto finally;
@@ -797,6 +809,12 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 
 		assert(ZSTD_CONTENTSIZE_ERROR != frameHeader.frameContentSize);
 
+		if (frameHeader.frameContentSize > PY_SSIZE_T_MAX) {
+			PyErr_Format(PyExc_ValueError,
+				"chunk %zd is too large to decompress on this platform", chunkIndex);
+			goto finally;
+		}
+
 		inBuffer.src = chunkData;
 		inBuffer.size = chunkSize;
 		inBuffer.pos = 0;
@@ -807,7 +825,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 		if (parity) {
 			/* Resize destination buffer to hold larger content. */
 			if (buffer2Size < frameHeader.frameContentSize) {
-				buffer2Size = frameHeader.frameContentSize;
+				buffer2Size = (size_t)frameHeader.frameContentSize;
 				destBuffer = PyMem_Realloc(buffer2, buffer2Size);
 				if (!destBuffer) {
 					goto finally;
@@ -847,7 +865,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 		}
 		else {
 			if (buffer1Size < frameHeader.frameContentSize) {
-				buffer1Size = frameHeader.frameContentSize;
+				buffer1Size = (size_t)frameHeader.frameContentSize;
 				destBuffer = PyMem_Realloc(buffer1, buffer1Size);
 				if (!destBuffer) {
 					goto finally;
