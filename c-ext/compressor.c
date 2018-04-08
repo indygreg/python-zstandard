@@ -315,7 +315,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 	PyObject* source;
 	PyObject* dest;
-	Py_ssize_t sourceSize = -1;
+	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t inSize = ZSTD_CStreamInSize();
 	size_t outSize = ZSTD_CStreamOutSize();
 	ZSTD_inBuffer input;
@@ -331,7 +331,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 	PyObject* totalReadPy;
 	PyObject* totalWritePy;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|nkk:copy_stream", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|Kkk:copy_stream", kwlist,
 		&source, &dest, &sourceSize, &inSize, &outSize)) {
 		return NULL;
 	}
@@ -348,10 +348,6 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 	if (ensure_cctx(self)) {
 		return NULL;
-	}
-
-	if (sourceSize == -1) {
-		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
@@ -490,11 +486,11 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 	};
 
 	PyObject* source;
-	Py_ssize_t sourceSize = -1;
+	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t readSize = ZSTD_CStreamInSize();
 	ZstdCompressionReader* result = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nk:stream_reader", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:stream_reader", kwlist,
 		&source, &sourceSize, &readSize)) {
 		return NULL;
 	}
@@ -524,10 +520,6 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 
 	if (ensure_cctx(self)) {
 		goto except;
-	}
-
-	if (sourceSize == -1) {
-		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	result->compressor = self;
@@ -649,21 +641,17 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		NULL
 	};
 
-	Py_ssize_t inSize = -1;
+	unsigned long long inSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t outSize = ZSTD_CStreamOutSize();
 	ZstdCompressionObj* result = NULL;
 	size_t zresult;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|n:compressobj", kwlist, &inSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|K:compressobj", kwlist, &inSize)) {
 		return NULL;
 	}
 
 	if (ensure_cctx(self)) {
 		return NULL;
-	}
-
-	if (inSize == -1) {
-		inSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, inSize);
@@ -721,19 +709,15 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 	};
 
 	PyObject* reader;
-	Py_ssize_t sourceSize = -1;
+	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t inSize = ZSTD_CStreamInSize();
 	size_t outSize = ZSTD_CStreamOutSize();
 	ZstdCompressorIterator* result;
 	size_t zresult;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nkk:read_to_iter", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kkk:read_to_iter", kwlist,
 		&reader, &sourceSize, &inSize, &outSize)) {
 		return NULL;
-	}
-
-	if (sourceSize == -1) {
-		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	result = (ZstdCompressorIterator*)PyObject_CallObject((PyObject*)&ZstdCompressorIteratorType, NULL);
@@ -818,10 +802,10 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 
 	PyObject* writer;
 	ZstdCompressionWriter* result;
-	Py_ssize_t sourceSize = -1;
+	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t outSize = ZSTD_CStreamOutSize();
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nk:write_to", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:write_to", kwlist,
 		&writer, &sourceSize, &outSize)) {
 		return NULL;
 	}
@@ -833,10 +817,6 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 
 	if (ensure_cctx(self)) {
 		return NULL;
-	}
-
-	if (sourceSize == -1) {
-		sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	}
 
 	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
