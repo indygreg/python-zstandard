@@ -1,3 +1,4 @@
+import struct
 import sys
 import unittest
 
@@ -31,8 +32,11 @@ class TestTrainDictionary(unittest.TestCase):
         d = zstd.train_dictionary(8192, generate_samples())
         self.assertIsInstance(d.dict_id(), int_type)
 
+        # The dictionary ID may be different across platforms.
+        expected = b'\x37\xa4\x30\xec' + struct.pack('<I', d.dict_id())
+
         data = d.as_bytes()
-        self.assertEqual(data[0:8], b'\x37\xa4\x30\xec\x6e\x9a\x80\x25')
+        self.assertEqual(data[0:8], expected)
 
     def test_basic(self):
         d = zstd.train_dictionary(8192, generate_samples(), k=64, d=16)
