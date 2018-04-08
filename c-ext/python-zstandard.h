@@ -269,6 +269,9 @@ typedef struct {
 } DecompressorIteratorResult;
 
 typedef struct {
+	/* The public API is that these are 64-bit unsigned integers. So these can't
+	 * be size_t, even though values larger than SIZE_MAX or PY_SSIZE_T_MAX may 
+	 * be nonsensical for this platform. */
 	unsigned long long offset;
 	unsigned long long length;
 } BufferSegment;
