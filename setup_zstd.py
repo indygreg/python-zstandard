@@ -144,9 +144,7 @@ def get_c_extension(support_legacy=False, system_zstd=False, name='zstd',
         if compiler_type == 'unix':
             extra_args.append('-Werror')
         elif compiler_type == 'msvc':
-            # But only on 64-bit because we still have warnings on 32-bit.
-            if sys.maxsize > 2 ** 32:
-                extra_args.append('/WX')
+            extra_args.append('/WX')
         else:
             assert False
 

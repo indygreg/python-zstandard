@@ -152,6 +152,10 @@ Changes
 * ``ZstdCompressor`` now has a ``frame_progression()`` method to return
   information about the current compression operation.
 * Error messages in CFFI no longer have ``b''`` literals.
+* Compiler warnings and underlying overflow issues on 32-bit platforms have been
+  fixed.
+* Builds in CI now build with compiler warnings as errors. This should hopefully
+  fix new compiler warnings from being introduced.
 
 0.8.2 (released 2018-02-22)
 ---------------------------
