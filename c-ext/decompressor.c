@@ -987,6 +987,14 @@ static void decompress_worker(WorkerState* state) {
 	assert(0 == state->destCount);
 	assert(state->endOffset - state->startOffset >= 0);
 
+	/* We could get here due to the way work is allocated. Ideally we wouldn't
+	   get here. But that would require a bit of a refactor in the caller. */
+	if (state->totalSourceSize > SIZE_MAX) {
+		state->error = WorkerError_memory;
+		state->errorOffset = 0;
+		return;
+	}
+
 	/*
 	 * We need to allocate a buffer to hold decompressed data. How we do this
 	 * depends on what we know about the output. The following scenarios are
@@ -1047,7 +1055,7 @@ static void decompress_worker(WorkerState* state) {
 
 	assert(framePointers[state->startOffset].destSize > 0); /* For now. */
 
-	allocationSize = roundpow2(state->totalSourceSize);
+	allocationSize = roundpow2((size_t)state->totalSourceSize);
 
 	if (framePointers[state->startOffset].destSize > allocationSize) {
 		allocationSize = roundpow2(framePointers[state->startOffset].destSize);
@@ -1127,7 +1135,7 @@ static void decompress_worker(WorkerState* state) {
 			/* Don't take any chances will non-NULL pointers. */
 			memset(destBuffer, 0, sizeof(DestBuffer));
 
-			allocationSize = roundpow2(state->totalSourceSize);
+			allocationSize = roundpow2((size_t)state->totalSourceSize);
 
 			if (decompressedSize > allocationSize) {
 				allocationSize = roundpow2(decompressedSize);
@@ -1249,6 +1257,11 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	}
 
 	bytesPerWorker = frames->compressedSize / threadCount;
+
+	if (bytesPerWorker > SIZE_MAX) {
+		PyErr_SetString(ZstdError, "too much data per worker for this platform");
+		goto finally;
+	}
 
 	for (i = 0; i < threadCount; i++) {
 		size_t zresult;
