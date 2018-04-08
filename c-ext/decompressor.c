@@ -922,7 +922,7 @@ finally:
 typedef struct {
 	void* sourceData;
 	size_t sourceSize;
-	unsigned long long destSize;
+	size_t destSize;
 } FramePointer;
 
 typedef struct {
@@ -1023,7 +1023,13 @@ static void decompress_worker(WorkerState* state) {
 				decompressedSize = 0;
 			}
 
-			fp->destSize = decompressedSize;
+			if (decompressedSize > SIZE_MAX) {
+				state->error = WorkerError_memory;
+				state->errorOffset = frameIndex;
+				return;
+			}
+
+			fp->destSize = (size_t)decompressedSize;
 		}
 
 		totalOutputSize += fp->destSize;
@@ -1341,7 +1347,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 			break;
 
 		case WorkerError_sizeMismatch:
-			PyErr_Format(ZstdError, "error decompressing item %zd: decompressed %zu bytes; expected %llu",
+			PyErr_Format(ZstdError, "error decompressing item %zd: decompressed %zu bytes; expected %zu",
 				workerStates[i].errorOffset, workerStates[i].zresult,
 				framePointers[workerStates[i].errorOffset].destSize);
 			errored = 1;
@@ -1551,9 +1557,21 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 				decompressedSize = frameSizesP[i];
 			}
 
+			if (sourceSize > SIZE_MAX) {
+				PyErr_Format(PyExc_ValueError,
+					"item %zd is too large for this platform", i);
+				goto finally;
+			}
+
+			if (decompressedSize > SIZE_MAX) {
+				PyErr_Format(PyExc_ValueError,
+					"decompressed size of item %zd is too large for this platform", i);
+				goto finally;
+			}
+
 			framePointers[i].sourceData = sourceData;
-			framePointers[i].sourceSize = sourceSize;
-			framePointers[i].destSize = decompressedSize;
+			framePointers[i].sourceSize = (size_t)sourceSize;
+			framePointers[i].destSize = (size_t)decompressedSize;
 		}
 	}
 	else if (PyObject_TypeCheck(frames, &ZstdBufferWithSegmentsCollectionType)) {
@@ -1582,17 +1600,33 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 			buffer = collection->buffers[i];
 
 			for (segmentIndex = 0; segmentIndex < buffer->segmentCount; segmentIndex++) {
+				unsigned long long decompressedSize = frameSizesP ? frameSizesP[offset] : 0;
+
 				if (buffer->segments[segmentIndex].offset + buffer->segments[segmentIndex].length > buffer->dataSize) {
 					PyErr_Format(PyExc_ValueError, "item %zd has offset outside memory area",
 						offset);
 					goto finally;
 				}
 
+				if (buffer->segments[segmentIndex].length > SIZE_MAX) {
+					PyErr_Format(PyExc_ValueError,
+						"item %zd in buffer %zd is too large for this platform",
+						segmentIndex, i);
+					goto finally;
+				}
+
+				if (decompressedSize > SIZE_MAX) {
+					PyErr_Format(PyExc_ValueError,
+						"decompressed size of item %zd in buffer %zd is too large for this platform",
+						segmentIndex, i);
+					goto finally;
+				}
+
 				totalInputSize += buffer->segments[segmentIndex].length;
 
 				framePointers[offset].sourceData = (char*)buffer->data + buffer->segments[segmentIndex].offset;
-				framePointers[offset].sourceSize = buffer->segments[segmentIndex].length;
-				framePointers[offset].destSize = frameSizesP ? frameSizesP[offset] : 0;
+				framePointers[offset].sourceSize = (size_t)buffer->segments[segmentIndex].length;
+				framePointers[offset].destSize = (size_t)decompressedSize;
 
 				offset++;
 			}
@@ -1623,6 +1657,8 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 
 		/* Do a pass to assemble info about our input buffers and output sizes. */
 		for (i = 0; i < frameCount; i++) {
+			unsigned long long decompressedSize = frameSizesP ? frameSizesP[i] : 0;
+
 			if (0 != PyObject_GetBuffer(PyList_GET_ITEM(frames, i),
 				&frameBuffers[i], PyBUF_CONTIG_RO)) {
 				PyErr_Clear();
@@ -1630,11 +1666,17 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 				goto finally;
 			}
 
+			if (decompressedSize > SIZE_MAX) {
+				PyErr_Format(PyExc_ValueError,
+					"decompressed size of item %zd is too large for this platform", i);
+				goto finally;
+			}
+
 			totalInputSize += frameBuffers[i].len;
 
 			framePointers[i].sourceData = frameBuffers[i].buf;
 			framePointers[i].sourceSize = frameBuffers[i].len;
-			framePointers[i].destSize = frameSizesP ? frameSizesP[i] : 0;
+			framePointers[i].destSize = (size_t)decompressedSize;
 		}
 	}
 	else {
