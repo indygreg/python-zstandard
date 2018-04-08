@@ -8,8 +8,6 @@ Version History
 Actions Blocking Release
 ------------------------
 
-* Audit compression parameter order semantics (e.g. when to set LDM versus
-  window log).
 * compression and decompression APIs that support ``io.rawIOBase`` interface
   (#13).
 * Refactor module names so C and CFFI extensions live under ``zstandard``
