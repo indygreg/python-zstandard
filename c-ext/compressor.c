@@ -576,6 +576,12 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		return NULL;
 	}
 
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
 	if (ensure_cctx(self)) {
 		goto finally;
 	}

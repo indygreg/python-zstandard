@@ -47,6 +47,12 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 		return NULL;
 	}
 
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
 	input.src = source.buf;
 	input.size = source.len;
 	input.pos = 0;

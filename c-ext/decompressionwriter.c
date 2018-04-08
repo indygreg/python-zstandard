@@ -70,6 +70,12 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 		return NULL;
 	}
 
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
 	if (!self->entered) {
 		PyErr_SetString(ZstdError, "write must be called from an active context manager");
 		goto finally;

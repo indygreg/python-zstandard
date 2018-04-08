@@ -33,6 +33,12 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyOb
 		return NULL;
 	}
 
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
 	zresult = ZSTD_getFrameHeader(&header, source.buf, source.len);
 
 	if (ZSTD_isError(zresult)) {

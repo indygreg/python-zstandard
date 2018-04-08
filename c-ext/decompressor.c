@@ -322,6 +322,12 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		return NULL;
 	}
 
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
 	if (ensure_dctx(self, 1)) {
 		goto finally;
 	}

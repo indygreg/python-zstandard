@@ -135,6 +135,12 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 		goto finally;
 	}
 
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();
