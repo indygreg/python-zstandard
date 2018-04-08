@@ -1467,11 +1467,6 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 			goto finally;
 		}
 
-		/*
-		 * It isn't clear whether the address referred to by Py_buffer.buf
-		 * is still valid after PyBuffer_Release. We we hold a reference to all
-		 * Py_buffer instances for the duration of the operation.
-		 */
 		dataBuffers = PyMem_Malloc(sourceCount * sizeof(Py_buffer));
 		if (NULL == dataBuffers) {
 			PyErr_NoMemory();

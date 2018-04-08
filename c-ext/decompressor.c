@@ -1589,11 +1589,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 			goto finally;
 		}
 
-		/*
-		 * It is not clear whether Py_buffer.buf is still valid after
-		 * PyBuffer_Release. So, we hold a reference to all Py_buffer instances
-		 * for the duration of the operation.
-		 */
 		frameBuffers = PyMem_Malloc(frameCount * sizeof(Py_buffer));
 		if (NULL == frameBuffers) {
 			PyErr_NoMemory();
