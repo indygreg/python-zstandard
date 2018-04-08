@@ -102,7 +102,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi
-class TestDecompressor_write_to_fuzzing(unittest.TestCase):
+class TestDecompressor_stream_writer_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       write_size=strategies.integers(min_value=1, max_value=8192),
@@ -115,7 +115,7 @@ class TestDecompressor_write_to_fuzzing(unittest.TestCase):
         source = io.BytesIO(frame)
         dest = io.BytesIO()
 
-        with dctx.write_to(dest, write_size=write_size) as decompressor:
+        with dctx.stream_writer(dest, write_size=write_size) as decompressor:
             while True:
                 input_size = input_sizes.draw(strategies.integers(1, 4096))
                 chunk = source.read(input_size)

@@ -604,7 +604,7 @@ static ZstdDecompressionReader* Decompressor_stream_reader(ZstdDecompressor* sel
 	return result;
 }
 
-PyDoc_STRVAR(Decompressor_write_to__doc__,
+PyDoc_STRVAR(Decompressor_stream_writer__doc__,
 "Create a context manager to write decompressed data to an object.\n"
 "\n"
 "The passed object must have a ``write()`` method.\n"
@@ -617,7 +617,7 @@ PyDoc_STRVAR(Decompressor_write_to__doc__,
 "streaming decompressor.\n"
 );
 
-static ZstdDecompressionWriter* Decompressor_write_to(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdDecompressionWriter* Decompressor_stream_writer(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"writer",
 		"write_size",
@@ -628,7 +628,7 @@ static ZstdDecompressionWriter* Decompressor_write_to(ZstdDecompressor* self, Py
 	size_t outSize = ZSTD_DStreamOutSize();
 	ZstdDecompressionWriter* result;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k:write_to", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k:stream_writer", kwlist,
 		&writer, &outSize)) {
 		return NULL;
 	}
@@ -1736,8 +1736,11 @@ static PyMethodDef Decompressor_methods[] = {
 	Decompressor_read_to_iter__doc__ },
 	{ "stream_reader", (PyCFunction)Decompressor_stream_reader,
 	METH_VARARGS | METH_KEYWORDS, Decompressor_stream_reader__doc__ },
-	{ "write_to", (PyCFunction)Decompressor_write_to, METH_VARARGS | METH_KEYWORDS,
-	Decompressor_write_to__doc__ },
+	{ "stream_writer", (PyCFunction)Decompressor_stream_writer, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_stream_writer__doc__ },
+	/* TODO remove deprecated API */
+	{ "write_to", (PyCFunction)Decompressor_stream_writer, METH_VARARGS | METH_KEYWORDS,
+	Decompressor_stream_writer__doc__ },
 	{ "decompress_content_dict_chain", (PyCFunction)Decompressor_decompress_content_dict_chain,
 	  METH_VARARGS | METH_KEYWORDS, Decompressor_decompress_content_dict_chain__doc__ },
 	{ "multi_decompress_to_buffer", (PyCFunction)Decompressor_multi_decompress_to_buffer,

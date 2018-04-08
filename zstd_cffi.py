@@ -1698,11 +1698,13 @@ class ZstdDecompressor(object):
 
     read_from = read_to_iter
 
-    def write_to(self, writer, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+    def stream_writer(self, writer, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
         if not hasattr(writer, 'write'):
             raise ValueError('must pass an object with a write() method')
 
         return ZstdDecompressionWriter(self, writer, write_size)
+
+    write_to = stream_writer
 
     def copy_stream(self, ifh, ofh,
                     read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,

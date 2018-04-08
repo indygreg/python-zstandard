@@ -362,11 +362,11 @@ def decompress_stream_reader(chunks, opts):
                 pass
 
 
-@bench('discrete', 'write_to()')
-def decompress_write_to(chunks, opts):
+@bench('discrete', 'stream_writer()')
+def decompress_stream_writer(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
-        with zctx.write_to(bio()) as decompressor:
+        with zctx.stream_writer(bio()) as decompressor:
             decompressor.write(chunk)
 
 
@@ -394,10 +394,10 @@ def decompress_zlib_stream(chunks):
     dobj.flush()
 
 
-@bench('stream', 'write_to()')
-def decompress_stream_write_to(chunks, opts):
+@bench('stream', 'stream_writer()')
+def decompress_stream_stream_writer(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
-    with zctx.write_to(bio()) as decompressor:
+    with zctx.stream_writer(bio()) as decompressor:
         for chunk in chunks:
             decompressor.write(chunk)
 
@@ -421,11 +421,11 @@ def decompress_content_dict_decompress(chunks, opts):
         last = zctx.decompress(chunk)
 
 
-@bench('content-dict', 'write_to()')
-def decompress_content_dict_write_to(chunks, opts):
+@bench('content-dict', 'stream_writer()')
+def decompress_content_dict_stream_writer(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     b = bio()
-    with zctx.write_to(b) as decompressor:
+    with zctx.stream_writer(b) as decompressor:
         decompressor.write(chunks[0])
 
     last = b.getvalue()
@@ -433,7 +433,7 @@ def decompress_content_dict_write_to(chunks, opts):
         d = zstd.ZstdCompressionDict(last)
         zctx = zstd.ZstdDecompressor(dict_data=d, **opts)
         b = bio()
-        with zctx.write_to(b) as decompressor:
+        with zctx.stream_writer(b) as decompressor:
             decompressor.write(chunk)
             last = b.getvalue()
 

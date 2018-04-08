@@ -71,9 +71,10 @@ Backwards Compatibility Notes
   ``CompressionParameters`` instances.
 * ``TARGETLENGTH_MAX`` constant has been removed (it disappeared from zstandard
   1.3.4).
-* ``ZstdCompressor.write_to()`` has been renamed to
-  ``ZstdCompressor.stream_writer()``. The old name is still aliased, but will be
-  removed in the next major release.
+* ``ZstdCompressor.write_to()`` and ``ZstdDecompressor.write_to()`` have been
+  renamed to ``ZstdCompressor.stream_writer()`` and
+  ``ZstdDecompressor.stream_writer()``, respectively. The old names are still
+  aliased, but will be removed in the next major release.
 
 Bug Fixes
 ---------

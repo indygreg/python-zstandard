@@ -579,11 +579,11 @@ will raise ``ValueError`` if attempted.
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
-``write_to(fh)`` can be used to incrementally send compressed data to a
+``stream_writer(fh)`` can be used to incrementally send compressed data to a
 decompressor.::
 
     dctx = zstd.ZstdDecompressor()
-    with dctx.write_to(fh) as decompressor:
+    with dctx.stream_writer(fh) as decompressor:
         decompressor.write(compressed_data)
 
 This behaves similarly to ``zstd.ZstdCompressor``: compressed data is written to
@@ -597,13 +597,13 @@ of ``0`` are possible.
 The size of chunks being ``write()`` to the destination can be specified::
 
     dctx = zstd.ZstdDecompressor()
-    with dctx.write_to(fh, write_size=16384) as decompressor:
+    with dctx.stream_writer(fh, write_size=16384) as decompressor:
         pass
 
 You can see how much memory is being used by the decompressor::
 
     dctx = zstd.ZstdDecompressor()
-    with dctx.write_to(fh) as decompressor:
+    with dctx.stream_writer(fh) as decompressor:
         byte_size = decompressor.memory_size()
 
 Streaming Output API
@@ -906,7 +906,7 @@ compression and decompression::
    dctx = zstd.ZstdDecompressor(dict_data=dict_data)
    for compressed_data in input_data:
        buffer = io.BytesIO()
-       with dctx.write_to(buffer) as decompressor:
+       with dctx.stream_writer(buffer) as decompressor:
            decompressor.write(compressed_data)
        # Do something with raw data in ``buffer``.
 
