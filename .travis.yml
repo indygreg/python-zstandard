@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
 
 matrix:
   include:
@@ -101,6 +102,34 @@ matrix:
         - ARTIFACT_PATH=macos
         - PIP=pip2
 
+    - stage: test
+      language: python
+      os: linux
+      python: 2.7
+      env:
+        - BUILDMODE=manylinuxtest
+
+    - stage: test
+      language: python
+      os: linux
+      python: 3.4
+      env:
+        - BUILDMODE=manylinuxtest
+
+    - stage: test
+      language: python
+      os: linux
+      python: 3.5
+      env:
+        - BUILDMODE=manylinuxtest
+
+    - stage: test
+      language: python
+      os: linux
+      python: 3.6
+      env:
+        - BUILDMODE=manylinuxtest
+
 env:
   global:
     # Enable fuzzing tests, other expensive tests.
@@ -112,6 +141,7 @@ env:
     - PIP=pip
 
     - ARTIFACTS_BUCKET=python-zstandard
+    - ARTIFACTS_PERMISSIONS=public-read
 
     # ARTIFACTS_KEY
     - secure: nB7QXvYTQ+60WW8sh+JQSmBGI9EvXEigbhpmyjqCM5MZhnIQlWDXU/Ts2GbBZ75vTfYvOsDeVnOgL4yNbw3QiGAfntXHXSRLVPVWMg8hNLSO2FgQh/Ytw5XkYbVGnQve8giK5ZWgO877qMGepYrvtpIjIZbZ0fLfyVCMIKTJzYqewnH5EMzvsMxbxWe2Ojxd47DSmQkPlk6qHXupZ1t2FrCxcioXnWvwwVOAZWTvqMmgOtT3S/xRbZ1+US69LFebHcsusIOL7VzYunaTAgtOJUrS/QbW0ddbctM4qHSYIpwe/iQiGsWNsyJrViGAWg0r3SJr24bqjAzRSvNEwDvs9FhbQVcdZOKrH1KB/h34FkyQFQl+GuG7D4gZY8Eth8zW8p+Cz+SJHoiXjsCGdsmm+bPlKoZC4tJTzUtUmbpDt22BEbKqRObWIYQWLDQ6Keh7B4/tuGvl1r3cvsf/p66V8jwtpYP8papinjKYEwWCvPWBungpRcZ54ohPEmGOBer/nVTteZ9Q4rHBOlNu6Q1s2MooRHo+2K3u3aa43tFVgEi5XViC56g+KfQgB9Q2w6E8Vvj/enmDHKAhWlyFp7aliOXqzJBfFZluKwaccRsr/yaskNlSXdnRZS8/+m/oA7CnubpCh+fRPk6jf4g/l8fqw5spxx2f0lHEzfG243Vo4Q8=
