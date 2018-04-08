@@ -230,7 +230,7 @@ class CompressionParameters(object):
 
     def __init__(self, format=0, compression_level=0, window_log=0, hash_log=0,
                  chain_log=0, search_log=0, min_match=0, target_length=0,
-                 compression_strategy=0, write_content_size=0, write_checksum=0,
+                 compression_strategy=0, write_content_size=1, write_checksum=0,
                  write_dict_id=0, job_size=0, overlap_size_log=0,
                  force_max_window=0, enable_ldm=0, ldm_hash_log=0,
                  ldm_min_match=0, ldm_bucket_size_log=0, ldm_hash_every_log=0,
@@ -731,9 +731,10 @@ class ZstdCompressor(object):
                                        lib.ZSTD_p_compressionLevel,
                                        level)
 
-            _set_compression_parameter(self._params,
-                                       lib.ZSTD_p_contentSizeFlag,
-                                       1 if write_content_size else 0)
+            _set_compression_parameter(
+                self._params,
+                lib.ZSTD_p_contentSizeFlag,
+                write_content_size if write_content_size is not None else 1)
 
             _set_compression_parameter(self._params,
                                        lib.ZSTD_p_checksumFlag,

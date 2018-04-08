@@ -30,7 +30,6 @@ Actions Blocking Release
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
 * Expose ``ZSTD_getFrameProgression()`` from more compressor types.
-* Write content size in frame header by default when possible.
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -75,6 +74,8 @@ Backwards Compatibility Notes
   renamed to ``ZstdCompressor.stream_writer()`` and
   ``ZstdDecompressor.stream_writer()``, respectively. The old names are still
   aliased, but will be removed in the next major release.
+* Content sizes are written into frame headers by default
+  (``ZstdCompressor(write_content_size=True)`` is now the default).
 
 Bug Fixes
 ---------
@@ -92,7 +93,8 @@ New Features
 * Support for negative compression levels.
 * Support for *long distance matching* (facilitates compression ratios that approach
   LZMA).
-* Supporting for reading empty zstandard frames (with an embedded content size of 0).
+* Supporting for reading empty zstandard frames (with an embedded content size
+  of 0).
 * Support for writing and partial support for reading zstandard frames without a
   magic header.
 * New ``stream_reader()`` API that exposes the ``io.RawIOBase`` interface (allows
@@ -174,6 +176,8 @@ Changes
   fixed.
 * Builds in CI now build with compiler warnings as errors. This should hopefully
   fix new compiler warnings from being introduced.
+* Make ``ZstdCompressor(write_content_size=True)`` and
+  ``CompressionParameters(write_content_size=True)`` the default.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

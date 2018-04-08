@@ -107,9 +107,9 @@ PyDoc_STRVAR(ZstdCompressor__doc__,
 "   If True, a 4 byte content checksum will be written with the compressed\n"
 "   data, allowing the decompressor to perform content verification.\n"
 "write_content_size\n"
-"   If True, the decompressed content size will be included in the header of\n"
-"   the compressed data. This data will only be written if the compressor\n"
-"   knows the size of the input data.\n"
+"   If True (the default), the decompressed content size will be included in\n"
+"   the header of the compressed data. This data will only be written if the\n"
+"   compressor knows the size of the input data.\n"
 "write_dict_id\n"
 "   Determines whether the dictionary ID will be written into the compressed\n"
 "   data. Defaults to True. Only adds content to the compressed data if\n"
@@ -211,7 +211,7 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		}
 
 		if (set_parameter(self->params, ZSTD_p_contentSizeFlag,
-			writeContentSize ? PyObject_IsTrue(writeContentSize) : 0)) {
+			writeContentSize ? PyObject_IsTrue(writeContentSize) : 1)) {
 			return -1;
 		}
 

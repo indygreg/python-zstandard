@@ -40,7 +40,7 @@ class TestCompressor(unittest.TestCase):
 @make_cffi
 class TestCompressor_compress(unittest.TestCase):
     def test_compress_empty(self):
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         result = cctx.compress(b'')
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
         params = zstd.get_frame_parameters(result)
@@ -49,14 +49,14 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum, 0)
 
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
         result = cctx.compress(b'')
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x20\x00\x01\x00\x00')
         params = zstd.get_frame_parameters(result)
         self.assertEqual(params.content_size, 0)
 
     def test_input_types(self):
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         expected = b'\x28\xb5\x2f\xfd\x00\x00\x19\x00\x00\x66\x6f\x6f'
 
         mutable_array = bytearray(3)
@@ -76,13 +76,13 @@ class TestCompressor_compress(unittest.TestCase):
         for i in range(255):
             chunks.append(struct.Struct('>B').pack(i) * 16384)
 
-        cctx = zstd.ZstdCompressor(level=3)
+        cctx = zstd.ZstdCompressor(level=3, write_content_size=False)
         result = cctx.compress(b''.join(chunks))
         self.assertEqual(len(result), 999)
         self.assertEqual(result[0:4], b'\x28\xb5\x2f\xfd')
 
         # This matches the test for read_to_iter() below.
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         result = cctx.compress(b'f' * zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE + b'o')
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x40\x54\x00\x00'
                                  b'\x10\x66\x66\x01\x00\xfb\xff\x39\xc0'
@@ -122,9 +122,9 @@ class TestCompressor_compress(unittest.TestCase):
 
     def test_write_content_size(self):
         cctx = zstd.ZstdCompressor(level=1)
-        no_size = cctx.compress(b'foobar' * 256)
-        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
         with_size = cctx.compress(b'foobar' * 256)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
+        no_size = cctx.compress(b'foobar' * 256)
 
         self.assertEqual(len(with_size), len(no_size) + 1)
 
@@ -188,8 +188,7 @@ class TestCompressor_compress(unittest.TestCase):
         chunk_size = multithreaded_chunk_size(1)
         source = b''.join([b'x' * chunk_size, b'y' * chunk_size])
 
-        cctx = zstd.ZstdCompressor(level=1, threads=2,
-                                   write_content_size=True)
+        cctx = zstd.ZstdCompressor(level=1, threads=2)
         compressed = cctx.compress(source)
 
         params = zstd.get_frame_parameters(compressed)
@@ -209,8 +208,7 @@ class TestCompressor_compress(unittest.TestCase):
 
         d = zstd.train_dictionary(1024, samples)
 
-        cctx = zstd.ZstdCompressor(dict_data=d, threads=2,
-                                   write_content_size=True)
+        cctx = zstd.ZstdCompressor(dict_data=d, threads=2)
 
         result = cctx.compress(b'foo')
         params = zstd.get_frame_parameters(result);
@@ -222,8 +220,7 @@ class TestCompressor_compress(unittest.TestCase):
                          b'\x66\x6f\x6f')
 
     def test_multithreaded_compression_params(self):
-        params = zstd.CompressionParameters.from_level(
-            0, threads=2, write_content_size=True)
+        params = zstd.CompressionParameters.from_level(0, threads=2)
         cctx = zstd.ZstdCompressor(compression_params=params)
 
         result = cctx.compress(b'foo')
@@ -237,7 +234,7 @@ class TestCompressor_compress(unittest.TestCase):
 @make_cffi
 class TestCompressor_compressobj(unittest.TestCase):
     def test_compressobj_empty(self):
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         cobj = cctx.compressobj()
         self.assertEqual(cobj.compress(b''), b'')
         self.assertEqual(cobj.flush(),
@@ -245,7 +242,7 @@ class TestCompressor_compressobj(unittest.TestCase):
 
     def test_input_types(self):
         expected = b'\x28\xb5\x2f\xfd\x00\x48\x19\x00\x00\x66\x6f\x6f'
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
 
         mutable_array = bytearray(3)
         mutable_array[:] = b'foo'
@@ -301,10 +298,10 @@ class TestCompressor_compressobj(unittest.TestCase):
     def test_write_content_size(self):
         cctx = zstd.ZstdCompressor(level=1)
         cobj = cctx.compressobj(size=len(b'foobar' * 256))
-        no_size = cobj.compress(b'foobar' * 256) + cobj.flush()
-        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
-        cobj = cctx.compressobj(size=len(b'foobar' * 256))
         with_size = cobj.compress(b'foobar' * 256) + cobj.flush()
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
+        cobj = cctx.compressobj(size=len(b'foobar' * 256))
+        no_size = cobj.compress(b'foobar' * 256) + cobj.flush()
 
         no_params = zstd.get_frame_parameters(no_size)
         with_params = zstd.get_frame_parameters(with_size)
@@ -394,7 +391,7 @@ class TestCompressor_compressobj(unittest.TestCase):
         self.assertEqual(cctx.frame_progression(), (6, 6, 15))
 
     def test_bad_size(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         cobj = cctx.compressobj(size=2)
         with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
@@ -431,7 +428,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         source = io.BytesIO()
         dest = io.BytesIO()
 
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         r, w = cctx.copy_stream(source, dest)
         self.assertEqual(int(r), 0)
         self.assertEqual(w, 9)
@@ -486,12 +483,12 @@ class TestCompressor_copy_stream(unittest.TestCase):
         source = io.BytesIO(b'foobar' * 256)
         no_size = io.BytesIO()
 
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         cctx.copy_stream(source, no_size)
 
         source.seek(0)
         with_size = io.BytesIO()
-        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        cctx = zstd.ZstdCompressor(level=1)
         cctx.copy_stream(source, with_size)
 
         # Source content size is unknown, so no content size written.
@@ -534,7 +531,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         source.seek(0)
 
         dest = io.BytesIO()
-        cctx = zstd.ZstdCompressor(threads=2)
+        cctx = zstd.ZstdCompressor(threads=2, write_content_size=False)
         r, w = cctx.copy_stream(source, dest)
         self.assertEqual(r, 3145728)
         self.assertEqual(w, 295)
@@ -545,8 +542,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertFalse(params.has_checksum)
 
         # Writing content size and checksum works.
-        cctx = zstd.ZstdCompressor(threads=2, write_content_size=True,
-                                   write_checksum=True)
+        cctx = zstd.ZstdCompressor(threads=2, write_checksum=True)
         dest = io.BytesIO()
         source.seek(0)
         cctx.copy_stream(source, dest, size=len(source.getvalue()))
@@ -564,7 +560,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
         dest = io.BytesIO()
 
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         with self.assertRaisesRegexp(zstd.ZstdError, 'Src size is incorrect'):
             cctx.copy_stream(source, dest, size=42)
@@ -573,14 +569,6 @@ class TestCompressor_copy_stream(unittest.TestCase):
         source.seek(0)
         dest = io.BytesIO()
         cctx.copy_stream(source, dest)
-
-
-def compress(data, level):
-    buffer = io.BytesIO()
-    cctx = zstd.ZstdCompressor(level=level)
-    with cctx.stream_writer(buffer) as compressor:
-        compressor.write(data)
-    return buffer.getvalue()
 
 
 @make_cffi
@@ -731,7 +719,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
             reader.read(10)
 
     def test_bad_size(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         source = io.BytesIO(b'foobar')
 
@@ -747,7 +735,12 @@ class TestCompressor_stream_reader(unittest.TestCase):
 @make_cffi
 class TestCompressor_stream_writer(unittest.TestCase):
     def test_empty(self):
-        result = compress(b'', 1)
+        buffer = io.BytesIO()
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
+        with cctx.stream_writer(buffer) as compressor:
+            compressor.write(b'')
+
+        result = buffer.getvalue()
         self.assertEqual(result, b'\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00')
 
         params = zstd.get_frame_parameters(result)
@@ -872,12 +865,12 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
     def test_write_content_size(self):
         no_size = io.BytesIO()
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         with cctx.stream_writer(no_size) as compressor:
             self.assertEqual(compressor.write(b'foobar' * 256), 0)
 
         with_size = io.BytesIO()
-        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        cctx = zstd.ZstdCompressor(level=1)
         with cctx.stream_writer(with_size) as compressor:
             self.assertEqual(compressor.write(b'foobar' * 256), 0)
 
@@ -1015,7 +1008,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
                 self.assertEqual(compressor.tell(), dest.tell())
 
     def test_bad_size(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         dest = io.BytesIO()
 
@@ -1062,7 +1055,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
                 pass
 
     def test_read_empty(self):
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
 
         source = io.BytesIO()
         it = cctx.read_to_iter(source)
@@ -1079,7 +1072,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         self.assertEqual(compressed2, compressed)
 
     def test_read_large(self):
-        cctx = zstd.ZstdCompressor(level=1)
+        cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
 
         source = io.BytesIO()
         source.write(b'f' * zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE)
@@ -1153,7 +1146,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         self.assertEqual(len(compressed), 295)
 
     def test_bad_size(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         source = io.BytesIO(b'a' * 42)
 
@@ -1187,7 +1180,7 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
             cctx.multi_compress_to_buffer([b'', b'', b''])
 
     def test_list_input(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+        cctx = zstd.ZstdCompressor(write_checksum=True)
 
         original = [b'foo' * 12, b'bar' * 6]
         frames = [cctx.compress(c) for c in original]
@@ -1202,7 +1195,7 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         self.assertEqual(b[1].tobytes(), frames[1])
 
     def test_buffer_with_segments_input(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+        cctx = zstd.ZstdCompressor(write_checksum=True)
 
         original = [b'foo' * 4, b'bar' * 6]
         frames = [cctx.compress(c) for c in original]
@@ -1220,7 +1213,7 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         self.assertEqual(result[1].tobytes(), frames[1])
 
     def test_buffer_with_segments_collection_input(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+        cctx = zstd.ZstdCompressor(write_checksum=True)
 
         original = [
             b'foo1',
@@ -1254,10 +1247,10 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
     def test_multiple_threads(self):
         # threads argument will cause multi-threaded ZSTD APIs to be used, which will
         # make output different.
-        refcctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+        refcctx = zstd.ZstdCompressor(write_checksum=True)
         reference = [refcctx.compress(b'x' * 64), refcctx.compress(b'y' * 64)]
 
-        cctx = zstd.ZstdCompressor(write_content_size=True, write_checksum=True)
+        cctx = zstd.ZstdCompressor(write_checksum=True)
 
         frames = []
         frames.extend(b'x' * 64 for i in range(256))

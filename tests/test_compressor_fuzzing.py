@@ -171,7 +171,6 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
             kwargs['dict_data'] = zstd.ZstdCompressionDict(original[0])
 
         cctx = zstd.ZstdCompressor(level=1,
-                                   write_content_size=True,
                                    write_checksum=True,
                                    **kwargs)
 

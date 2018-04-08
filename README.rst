@@ -143,9 +143,9 @@ write_checksum
    data matches the original input data.
 write_content_size
    Whether the size of the uncompressed data will be written into the
-   header of compressed data. Defaults to False. The data will only be
+   header of compressed data. Defaults to True. The data will only be
    written if the compressor knows the size of the input data. This is
-   likely not true for streaming compression.
+   often not true for streaming compression.
 write_dict_id
    Whether to write the dictionary ID into the compressed data.
    Defaults to True. The dictionary ID is only written if a dictionary
@@ -502,9 +502,10 @@ frame in a single operation.::
     decompressed = dctx.decompress(data)
 
 By default, ``decompress(data)`` will only work on data written with the content
-size encoded in its header. This can be achieved by creating a
-``ZstdCompressor`` with ``write_content_size=True``. If compressed data without
-an embedded content size is seen, ``zstd.ZstdError`` will be raised.
+size encoded in its header (this is the default behavior of
+``ZstdCompressor().compress()`` but may not be true for streaming compression). If
+compressed data without an embedded content size is seen, ``zstd.ZstdError`` will
+be raised.
 
 If the compressed data doesn't have its content size embedded within it,
 decompression can be attempted by specifying the ``max_output_size``
@@ -801,15 +802,14 @@ The following Python code can be used to produce a *prefix dictionary chain*::
         frames = []
 
         # First frame is compressed in standalone/discrete mode.
-        zctx = zstd.ZstdCompressor(write_content_size=True)
+        zctx = zstd.ZstdCompressor()
         frames.append(zctx.compress(inputs[0]))
 
         # Subsequent frames use the previous fulltext as a prefix dictionary
         for i, raw in enumerate(inputs[1:]):
             dict_data = zstd.ZstdCompressionDict(
                 inputs[i], dict_type=zstd.DICT_TYPE_RAWCONTENT)
-            zctx = zstd.ZstdCompressor(write_content_size=True,
-                                       dict_data=dict_data)
+            zctx = zstd.ZstdCompressor(dict_data=dict_data)
             frames.append(zctx.compress(raw))
 
         return frames

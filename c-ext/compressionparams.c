@@ -101,7 +101,7 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	unsigned minMatch = 0;
 	unsigned targetLength = 0;
 	unsigned compressionStrategy = 0;
-	unsigned contentSizeFlag = 0;
+	unsigned contentSizeFlag = 1;
 	unsigned checksumFlag = 0;
 	unsigned dictIDFlag = 0;
 	unsigned jobSize = 0;

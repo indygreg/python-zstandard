@@ -63,13 +63,13 @@ class TestFrameContentSize(unittest.TestCase):
         self.assertEqual(zstd.frame_content_size(frame), -1)
 
     def test_empty(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
         frame = cctx.compress(b'')
 
         self.assertEqual(zstd.frame_content_size(frame), 0)
 
     def test_basic(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
         frame = cctx.compress(b'foobar')
 
         self.assertEqual(zstd.frame_content_size(frame), 6)
@@ -98,7 +98,7 @@ class TestDecompressor_decompress(unittest.TestCase):
             dctx.decompress(b'foobar')
 
     def test_input_types(self):
-        cctx = zstd.ZstdCompressor(level=1, write_content_size=True)
+        cctx = zstd.ZstdCompressor(level=1)
         compressed = cctx.compress(b'foo')
 
         mutable_array = bytearray(len(compressed))
@@ -123,7 +123,7 @@ class TestDecompressor_decompress(unittest.TestCase):
             dctx.decompress(compressed)
 
     def test_content_size_present(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
         compressed = cctx.compress(b'foobar')
 
         dctx = zstd.ZstdDecompressor()
@@ -131,7 +131,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         self.assertEqual(decompressed, b'foobar')
 
     def test_empty_roundtrip(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
         compressed = cctx.compress(b'')
 
         dctx = zstd.ZstdDecompressor()
@@ -182,7 +182,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         d = zstd.train_dictionary(8192, samples)
 
         orig = b'foobar' * 16384
-        cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_content_size=True)
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d)
         compressed = cctx.compress(orig)
 
         dctx = zstd.ZstdDecompressor(dict_data=d)
@@ -201,7 +201,7 @@ class TestDecompressor_decompress(unittest.TestCase):
 
         sources = (b'foobar' * 8192, b'foo' * 8192, b'bar' * 8192)
         compressed = []
-        cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_content_size=True)
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d)
         for source in sources:
             compressed.append(cctx.compress(source))
 
@@ -849,7 +849,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
 
     def test_magic_less(self):
         params = zstd.CompressionParameters.from_level(
-            1, format=zstd.FORMAT_ZSTD1_MAGICLESS, write_content_size=True)
+            1, format=zstd.FORMAT_ZSTD1_MAGICLESS)
         cctx = zstd.ZstdCompressor(compression_params=params)
         frame = cctx.compress(b'foobar')
 
@@ -891,20 +891,20 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, 'chunk 0 is not a valid zstd frame'):
             dctx.decompress_content_dict_chain([b'foo' * 8])
 
-        no_size = zstd.ZstdCompressor().compress(b'foo' * 64)
+        no_size = zstd.ZstdCompressor(write_content_size=False).compress(b'foo' * 64)
 
         with self.assertRaisesRegexp(ValueError, 'chunk 0 missing content size in frame'):
             dctx.decompress_content_dict_chain([no_size])
 
         # Corrupt first frame.
-        frame = zstd.ZstdCompressor(write_content_size=True).compress(b'foo' * 64)
+        frame = zstd.ZstdCompressor().compress(b'foo' * 64)
         frame = frame[0:12] + frame[15:]
         with self.assertRaisesRegexp(zstd.ZstdError,
                                      'chunk 0 did not decompress full frame'):
             dctx.decompress_content_dict_chain([frame])
 
     def test_bad_subsequent_input(self):
-        initial = zstd.ZstdCompressor(write_content_size=True).compress(b'foo' * 64)
+        initial = zstd.ZstdCompressor().compress(b'foo' * 64)
 
         dctx = zstd.ZstdDecompressor()
 
@@ -920,13 +920,13 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, 'chunk 1 is not a valid zstd frame'):
             dctx.decompress_content_dict_chain([initial, b'foo' * 8])
 
-        no_size = zstd.ZstdCompressor().compress(b'foo' * 64)
+        no_size = zstd.ZstdCompressor(write_content_size=False).compress(b'foo' * 64)
 
         with self.assertRaisesRegexp(ValueError, 'chunk 1 missing content size in frame'):
             dctx.decompress_content_dict_chain([initial, no_size])
 
         # Corrupt second frame.
-        cctx = zstd.ZstdCompressor(write_content_size=True, dict_data=zstd.ZstdCompressionDict(b'foo' * 64))
+        cctx = zstd.ZstdCompressor(dict_data=zstd.ZstdCompressionDict(b'foo' * 64))
         frame = cctx.compress(b'bar' * 64)
         frame = frame[0:12] + frame[15:]
 
@@ -943,10 +943,10 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         ]
 
         chunks = []
-        chunks.append(zstd.ZstdCompressor(write_content_size=True).compress(original[0]))
+        chunks.append(zstd.ZstdCompressor().compress(original[0]))
         for i, chunk in enumerate(original[1:]):
             d = zstd.ZstdCompressionDict(original[i])
-            cctx = zstd.ZstdCompressor(dict_data=d, write_content_size=True)
+            cctx = zstd.ZstdCompressor(dict_data=d)
             chunks.append(cctx.compress(chunk))
 
         for i in range(1, len(original)):
@@ -975,7 +975,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
             dctx.multi_decompress_to_buffer([b'foobarbaz'])
 
     def test_list_input(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         original = [b'foo' * 4, b'bar' * 6]
         frames = [cctx.compress(d) for d in original]
@@ -995,7 +995,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         self.assertEqual(len(result[1]), 18)
 
     def test_list_input_frame_sizes(self):
-        cctx = zstd.ZstdCompressor(write_content_size=False)
+        cctx = zstd.ZstdCompressor()
 
         original = [b'foo' * 4, b'bar' * 6, b'baz' * 8]
         frames = [cctx.compress(d) for d in original]
@@ -1011,7 +1011,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
             self.assertEqual(result[i].tobytes(), data)
 
     def test_buffer_with_segments_input(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         original = [b'foo' * 4, b'bar' * 6]
         frames = [cctx.compress(d) for d in original]
@@ -1050,7 +1050,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
             self.assertEqual(result[i].tobytes(), data)
 
     def test_buffer_with_segments_collection_input(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         original = [
             b'foo0' * 2,
@@ -1095,8 +1095,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
     def test_dict(self):
         d = zstd.train_dictionary(16384, generate_samples(), k=64, d=16)
 
-        cctx = zstd.ZstdCompressor(dict_data=d, level=1,
-                                   write_content_size=True)
+        cctx = zstd.ZstdCompressor(dict_data=d, level=1)
         frames = [cctx.compress(s) for s in generate_samples()]
 
         dctx = zstd.ZstdDecompressor(dict_data=d)
@@ -1104,7 +1103,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         self.assertEqual([o.tobytes() for o in result], generate_samples())
 
     def test_multiple_threads(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
 
         frames = []
         frames.extend(cctx.compress(b'x' * 64) for i in range(256))
@@ -1119,7 +1118,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         self.assertEqual(result[256].tobytes(), b'y' * 64)
 
     def test_item_failure(self):
-        cctx = zstd.ZstdCompressor(write_content_size=True)
+        cctx = zstd.ZstdCompressor()
         frames = [cctx.compress(b'x' * 128), cctx.compress(b'y' * 128)]
 
         frames[1] = frames[1][0:15] + b'extra' + frames[1][15:]
