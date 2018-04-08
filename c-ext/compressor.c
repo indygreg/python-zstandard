@@ -776,7 +776,7 @@ finally:
 	return result;
 }
 
-PyDoc_STRVAR(ZstdCompressor_write_to___doc__,
+PyDoc_STRVAR(ZstdCompressor_stream_writer___doc__,
 "Create a context manager to write compressed data to an object.\n"
 "\n"
 "The passed object must have a ``write()`` method.\n"
@@ -794,7 +794,7 @@ PyDoc_STRVAR(ZstdCompressor_write_to___doc__,
 "for a compressor output stream.\n"
 );
 
-static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"writer",
 		"size",
@@ -807,7 +807,7 @@ static ZstdCompressionWriter* ZstdCompressor_write_to(ZstdCompressor* self, PyOb
 	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t outSize = ZSTD_CStreamOutSize();
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:write_to", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:stream_writer", kwlist,
 		&writer, &sourceSize, &outSize)) {
 		return NULL;
 	}
@@ -1532,13 +1532,16 @@ static PyMethodDef ZstdCompressor_methods[] = {
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_copy_stream__doc__ },
 	{ "stream_reader", (PyCFunction)ZstdCompressor_stream_reader,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_reader__doc__ },
+	{ "stream_writer", (PyCFunction)ZstdCompressor_stream_writer,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_writer___doc__ },
 	{ "read_to_iter", (PyCFunction)ZstdCompressor_read_to_iter,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_to_iter__doc__ },
 	/* TODO Remove deprecated API */
 	{ "read_from", (PyCFunction)ZstdCompressor_read_to_iter,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_to_iter__doc__ },
-	{ "write_to", (PyCFunction)ZstdCompressor_write_to,
-	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_write_to___doc__ },
+	/* TODO remove deprecated API */
+	{ "write_to", (PyCFunction)ZstdCompressor_stream_writer,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_writer___doc__ },
 	{ "multi_compress_to_buffer", (PyCFunction)ZstdCompressor_multi_compress_to_buffer,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_multi_compress_to_buffer__doc__ },
 	{ "memory_size", (PyCFunction)ZstdCompressor_memory_size,

@@ -240,23 +240,23 @@ emitted so far.
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
-``write_to(fh)`` (which behaves as a context manager) allows you to *stream*
+``stream_writer(fh)`` (which behaves as a context manager) allows you to *stream*
 data into a compressor.::
 
    cctx = zstd.ZstdCompressor(level=10)
-   with cctx.write_to(fh) as compressor:
+   with cctx.stream_writer(fh) as compressor:
        compressor.write(b'chunk 0')
        compressor.write(b'chunk 1')
        ...
 
-The argument to ``write_to()`` must have a ``write(data)`` method. As
+The argument to ``stream_writer()`` must have a ``write(data)`` method. As
 compressed data is available, ``write()`` will be called with the compressed
 data as its argument. Many common Python types implement ``write()``, including
 open file handles and ``io.BytesIO``.
 
-``write_to()`` returns an object representing a streaming compressor instance.
-It **must** be used as a context manager. That object's ``write(data)`` method
-is used to feed data into the compressor.
+``stream_writer()`` returns an object representing a streaming compressor
+instance. It **must** be used as a context manager. That object's
+``write(data)`` method is used to feed data into the compressor.
 
 A ``flush()`` method can be called to evict whatever data remains within the
 compressor's internal state into the output object. This may result in 0 or
@@ -270,7 +270,7 @@ If the size of the data being fed to this streaming compressor is known,
 you can declare it before compression begins::
 
    cctx = zstd.ZstdCompressor()
-   with cctx.write_to(fh, size=data_len) as compressor:
+   with cctx.stream_writer(fh, size=data_len) as compressor:
        compressor.write(chunk0)
        compressor.write(chunk1)
        ...
@@ -282,20 +282,20 @@ content size being written into the frame header of the output data.
 The size of chunks being ``write()`` to the destination can be specified::
 
     cctx = zstd.ZstdCompressor()
-    with cctx.write_to(fh, write_size=32768) as compressor:
+    with cctx.stream_writer(fh, write_size=32768) as compressor:
         ...
 
 To see how much memory is being used by the streaming compressor::
 
     cctx = zstd.ZstdCompressor()
-    with cctx.write_to(fh) as compressor:
+    with cctx.stream_writer(fh) as compressor:
         ...
         byte_size = compressor.memory_size()
 
 Thte total number of bytes written so far are exposed via ``tell()``::
 
     cctx = zstd.ZstdCompressor()
-    with cctx.write_to(fh) as compressor:
+    with cctx.stream_writer(fh) as compressor:
         ...
         total_written = compressor.tell()
 
@@ -321,7 +321,7 @@ If reading from the source via ``read()``, ``read()`` will be called until
 it raises or returns an empty bytes (``b''``). It is perfectly valid for
 the source to deliver fewer bytes than were what requested by ``read(size)``.
 
-Like ``write_to()``, ``read_to_iter()`` also accepts a ``size`` argument
+Like ``stream_writer()``, ``read_to_iter()`` also accepts a ``size`` argument
 declaring the size of the input stream::
 
     cctx = zstd.ZstdCompressor()
@@ -335,7 +335,7 @@ the ideal size of output chunks::
     for chunk in cctx.read_to_iter(fh, read_size=16384, write_size=8192):
         pass
 
-Unlike ``write_to()``, ``read_to_iter()`` does not give direct control
+Unlike ``stream_writer()``, ``read_to_iter()`` does not give direct control
 over the sizes of chunks fed into the compressor. Instead, chunk sizes will
 be whatever the object being read from delivers. These will often be of a
 uniform size.

@@ -936,7 +936,7 @@ class ZstdCompressor(object):
 
         return CompressionReader(self, source, size, read_size)
 
-    def write_to(self, writer, size=-1,
+    def stream_writer(self, writer, size=-1,
                  write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
 
         if not hasattr(writer, 'write'):
@@ -948,6 +948,8 @@ class ZstdCompressor(object):
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 
         return ZstdCompressionWriter(self, writer, size, write_size)
+
+    write_to = stream_writer
 
     def read_to_iter(self, reader, size=-1,
                      read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,

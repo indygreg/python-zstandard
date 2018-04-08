@@ -137,21 +137,21 @@ def compress_stream_reader(chunks, opts):
                 pass
 
 
-@bench('discrete', 'write_to()')
-def compress_write_to(chunks, opts):
+@bench('discrete', 'stream_writer()')
+def compress_stream_writer(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
         b = bio()
-        with zctx.write_to(b) as compressor:
+        with zctx.stream_writer(b) as compressor:
             compressor.write(chunk)
 
 
-@bench('discrete', 'write_to() w/ input size')
-def compress_write_to_size(chunks, opts):
+@bench('discrete', 'stream_writer() w/ input size')
+def compress_stream_writer_size(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     for chunk in chunks:
         b = bio()
-        with zctx.write_to(b, size=len(chunk)) as compressor:
+        with zctx.stream_writer(b, size=len(chunk)) as compressor:
             compressor.write(chunk)
 
 
@@ -207,11 +207,11 @@ def compress_zlib_compressobj(chunks, opts):
     compressor.flush()
 
 
-@bench('stream', 'write_to()')
-def compress_stream_write_to(chunks, opts):
+@bench('stream', 'stream_writer()')
+def compress_stream_stream_writer(chunks, opts):
     zctx = zstd.ZstdCompressor(**opts)
     b = bio()
-    with zctx.write_to(b) as compressor:
+    with zctx.stream_writer(b) as compressor:
         for chunk in chunks:
             compressor.write(chunk)
             compressor.flush()
@@ -235,24 +235,24 @@ def compress_content_dict_compress(chunks, opts):
         zstd.ZstdCompressor(dict_data=d, **opts).compress(chunk)
 
 
-@bench('content-dict', 'write_to()')
-def compress_content_dict_write_to(chunks, opts, use_size=False):
+@bench('content-dict', 'stream_writer()')
+def compress_content_dict_stream_writer(chunks, opts, use_size=False):
     zctx = zstd.ZstdCompressor(**opts)
     b = bio()
-    with zctx.write_to(b, size=len(chunks[0]) if use_size else 0) as compressor:
+    with zctx.stream_writer(b, size=len(chunks[0]) if use_size else 0) as compressor:
         compressor.write(chunks[0])
 
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
         b = bio()
         zctx = zstd.ZstdCompressor(dict_data=d, **opts)
-        with zctx.write_to(b, size=len(chunk) if use_size else 0) as compressor:
+        with zctx.stream_writer(b, size=len(chunk) if use_size else 0) as compressor:
             compressor.write(chunk)
 
 
-@bench('content-dict', 'write_to() w/ input size')
-def compress_content_dict_write_to_size(chunks, opts):
-    compress_content_dict_write_to(chunks, opts, use_size=True)
+@bench('content-dict', 'stream_writer() w/ input size')
+def compress_content_dict_stream_writer_size(chunks, opts):
+    compress_content_dict_stream_writer(chunks, opts, use_size=True)
 
 
 @bench('content-dict', 'read_to_iter()')

@@ -68,7 +68,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi
-class TestCompressor_write_to_fuzzing(unittest.TestCase):
+class TestCompressor_stream_writer_fuzzing(unittest.TestCase):
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                         level=strategies.integers(min_value=1, max_value=5),
                         write_size=strategies.integers(min_value=1, max_value=1048576))
@@ -78,7 +78,7 @@ class TestCompressor_write_to_fuzzing(unittest.TestCase):
 
         cctx = zstd.ZstdCompressor(level=level)
         b = io.BytesIO()
-        with cctx.write_to(b, size=len(original), write_size=write_size) as compressor:
+        with cctx.stream_writer(b, size=len(original), write_size=write_size) as compressor:
             compressor.write(original)
 
         self.assertEqual(b.getvalue(), ref_frame)
