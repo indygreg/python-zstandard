@@ -577,6 +577,10 @@ will raise ``ValueError`` if attempted.
 
 ``tell()`` returns the number of decompressed bytes read so far.
 
+Not all I/O methods are implemented. Notably missing is support for
+``readline()``, ``readlines()``, and linewise iteration support. Support for
+these is planned for a future release.
+
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
