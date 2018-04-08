@@ -510,6 +510,8 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 			goto except;
 		}
 
+		assert(result->buffer.len >= 0);
+
 		sourceSize = result->buffer.len;
 	}
 	else {
