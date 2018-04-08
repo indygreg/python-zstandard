@@ -50,7 +50,8 @@ Backwards Compatibility Notes
 
 * CFFI 1.11 or newer is now required (previous requirement was 1.8).
 * The primary module is now ``zstandard``. Please change imports of ``zstd``
-  and ``zstd_cffi`` to ``import zstandard``. See the README for more.
+  and ``zstd_cffi`` to ``import zstandard``. See the README for more. Support
+  for importing the old names will be dropped in the next release.
 * ``ZstdCompressor.read_from()`` and ``ZstdDecompressor.read_from()`` have
   been renamed to ``read_to_iter()``. ``read_from()`` is aliased to the new
   name and will be deleted in a future release.
