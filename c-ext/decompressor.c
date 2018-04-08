@@ -356,8 +356,14 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	}
 	/* Size is recorded in frame header. */
 	else {
-		result = PyBytes_FromStringAndSize(NULL, decompressedSize);
-		destCapacity = decompressedSize;
+		assert(SIZE_MAX >= PY_SSIZE_T_MAX);
+		if (decompressedSize > PY_SSIZE_T_MAX) {
+			PyErr_SetString(ZstdError, "frame is too large to decompress on this platform");
+			goto finally;
+		}
+
+		result = PyBytes_FromStringAndSize(NULL, (Py_ssize_t)decompressedSize);
+		destCapacity = (size_t)decompressedSize;
 	}
 
 	if (!result) {
