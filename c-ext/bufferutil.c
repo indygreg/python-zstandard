@@ -83,7 +83,7 @@ static int BufferWithSegments_init(ZstdBufferWithSegments* self, PyObject* args,
 	}
 
 	if (segments.len % sizeof(BufferSegment)) {
-		PyErr_Format(PyExc_ValueError, "segments array size is not a multiple of %lu",
+		PyErr_Format(PyExc_ValueError, "segments array size is not a multiple of %zu",
 			sizeof(BufferSegment));
 		goto except;
 	}
