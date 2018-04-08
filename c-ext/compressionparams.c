@@ -113,6 +113,10 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	unsigned ldmBucketSizeLog = 0;
 	unsigned ldmHashEveryLog = 0;
 	int threads = 0;
+
+	/* Setting value 0 has the effect of disabling. So we use -1 as a default
+	 * to detect whether to set. Then we automatically derive the expected value
+	 * based on the level, just like zstandard does itself. */
 	int compressLiterals = -1;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
