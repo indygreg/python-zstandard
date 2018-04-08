@@ -2,6 +2,7 @@ version: '{branch}-{build}'
 environment:
   global:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\ci\\run-with-env.cmd"
+    ZSTD_WARNINGS_AS_ERRORS: "1"
 
   matrix:
     - JOB: "2.7 32-bit"

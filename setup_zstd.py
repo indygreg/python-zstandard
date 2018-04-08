@@ -4,7 +4,10 @@
 # This software may be modified and distributed under the terms
 # of the BSD license. See the LICENSE file for details.
 
+import distutils.ccompiler
 import os
+import sys
+
 from distutils.extension import Extension
 
 
@@ -89,7 +92,8 @@ zstd_depends = [
 ]
 
 
-def get_c_extension(support_legacy=False, system_zstd=False, name='zstd'):
+def get_c_extension(support_legacy=False, system_zstd=False, name='zstd',
+                    warnings_as_errors=False):
     """Obtain a distutils.extension.Extension for the C extension."""
     root = os.path.abspath(os.path.dirname(__file__))
 
@@ -109,6 +113,20 @@ def get_c_extension(support_legacy=False, system_zstd=False, name='zstd'):
 
     depends = [os.path.join(root, p) for p in zstd_depends]
 
+    compiler = distutils.ccompiler.new_compiler()
+
+    # Needed for MSVC.
+    if hasattr(compiler, 'initialize'):
+        compiler.initialize()
+
+    if compiler.compiler_type == 'unix':
+        compiler_type = 'unix'
+    elif compiler.compiler_type == 'msvc':
+        compiler_type = 'msvc'
+    else:
+        raise Exception('unhandled compiler type: %s' %
+                        compiler.compiler_type)
+
     extra_args = ['-DZSTD_MULTITHREAD']
 
     if not system_zstd:
@@ -119,6 +137,16 @@ def get_c_extension(support_legacy=False, system_zstd=False, name='zstd'):
 
     if not system_zstd and support_legacy:
         extra_args.append('-DZSTD_LEGACY_SUPPORT=1')
+
+    if warnings_as_errors:
+        if compiler_type == 'unix':
+            extra_args.append('-Werror')
+        elif compiler_type == 'msvc':
+            # But only on 64-bit because we still have warnings on 32-bit.
+            if sys.maxsize > 2 ** 32:
+                extra_args.append('/WX')
+        else:
+            assert False
 
     libraries = ['zstd'] if system_zstd else []
 

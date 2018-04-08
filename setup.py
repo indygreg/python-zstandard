@@ -5,6 +5,7 @@
 # This software may be modified and distributed under the terms
 # of the BSD license. See the LICENSE file for details.
 
+import os
 import sys
 from setuptools import setup
 
@@ -17,6 +18,10 @@ import setup_zstd
 
 SUPPORT_LEGACY = False
 SYSTEM_ZSTD = False
+WARNINGS_AS_ERRORS = False
+
+if os.environ.get('ZSTD_WARNINGS_AS_ERRORS', ''):
+    WARNINGS_AS_ERRORS = True
 
 if '--legacy' in sys.argv:
     SUPPORT_LEGACY = True
@@ -26,12 +31,17 @@ if '--system-zstd' in sys.argv:
     SYSTEM_ZSTD = True
     sys.argv.remove('--system-zstd')
 
+if '--warnings-as-errors' in sys.argv:
+    WARNINGS_AS_ERRORS = True
+    sys.argv.remote('--warning-as-errors')
+
 # Code for obtaining the Extension instance is in its own module to
 # facilitate reuse in other projects.
 extensions = [
     setup_zstd.get_c_extension(name='zstd',
                                support_legacy=SUPPORT_LEGACY,
-                               system_zstd=SYSTEM_ZSTD),
+                               system_zstd=SYSTEM_ZSTD,
+                               warnings_as_errors=WARNINGS_AS_ERRORS),
 ]
 
 install_requires = []
