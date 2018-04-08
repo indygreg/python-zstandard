@@ -945,7 +945,8 @@ static void compress_worker(WorkerState* state) {
 
 	destBuffer->segmentsSize = remainingItems;
 
-	allocationSize = roundpow2(state->totalSourceSize >> 4);
+	assert(state->totalSourceSize <= SIZE_MAX);
+	allocationSize = roundpow2((size_t)state->totalSourceSize >> 4);
 
 	/* If the maximum size of the output is larger than that, round up. */
 	boundSize = ZSTD_compressBound(sources[inputOffset].sourceSize);
@@ -1024,7 +1025,8 @@ static void compress_worker(WorkerState* state) {
 			 * We could dynamically update allocation size based on work done so far.
 			 * For now, keep is simple.
 			 */
-			allocationSize = roundpow2(state->totalSourceSize >> 4);
+			assert(state->totalSourceSize <= SIZE_MAX);
+			allocationSize = roundpow2((size_t)state->totalSourceSize >> 4);
 
 			if (boundSize > allocationSize) {
 				allocationSize = roundpow2(boundSize);
@@ -1484,6 +1486,11 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 
 	if (0 == sources.totalSourceSize) {
 		PyErr_SetString(PyExc_ValueError, "source elements are empty");
+		goto finally;
+	}
+
+	if (sources.totalSourceSize > SIZE_MAX) {
+		PyErr_SetString(PyExc_ValueError, "sources are too large for this platform");
 		goto finally;
 	}
 
