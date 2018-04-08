@@ -22,6 +22,7 @@ function make_manylinux_wheels {
             -it \
             --rm \
             -e "PYPATH=${pypath}" \
+            -e "ZSTD_WARNINGS_AS_ERRORS=${ZSTD_WARNINGS_AS_ERRORS}" \
             -v `pwd`:/project \
             -v `pwd`/dist:/output \
             ${image} \
