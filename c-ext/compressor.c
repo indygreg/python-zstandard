@@ -1407,8 +1407,14 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 		}
 
 		for (i = 0; i < buffer->segmentCount; i++) {
+			if (buffer->segments[i].length > SIZE_MAX) {
+				PyErr_Format(PyExc_ValueError,
+					"buffer segment %zd is too large for this platform", i);
+				goto finally;
+			}
+
 			sources.sources[i].sourceData = (char*)buffer->data + buffer->segments[i].offset;
-			sources.sources[i].sourceSize = buffer->segments[i].length;
+			sources.sources[i].sourceSize = (size_t)buffer->segments[i].length;
 			sources.totalSourceSize += buffer->segments[i].length;
 		}
 
@@ -1432,8 +1438,15 @@ static ZstdBufferWithSegmentsCollection* ZstdCompressor_multi_compress_to_buffer
 			buffer = collection->buffers[i];
 
 			for (j = 0; j < buffer->segmentCount; j++) {
+				if (buffer->segments[j].length > SIZE_MAX) {
+					PyErr_Format(PyExc_ValueError,
+						"buffer segment %zd in buffer %zd is too large for this platform",
+						j, i);
+					goto finally;
+				}
+
 				sources.sources[offset].sourceData = (char*)buffer->data + buffer->segments[j].offset;
-				sources.sources[offset].sourceSize = buffer->segments[j].length;
+				sources.sources[offset].sourceSize = (size_t)buffer->segments[j].length;
 				sources.totalSourceSize += buffer->segments[j].length;
 
 				offset++;
