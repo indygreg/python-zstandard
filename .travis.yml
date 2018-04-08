@@ -5,6 +5,14 @@ stages:
 matrix:
   include:
     - stage: build
+      language: python
+      os: linux
+      python: 3.6
+      env:
+        - BUILDMODE=sdist
+        - ARTIFACT_PATH=sdist
+
+    - stage: build
       language: generic
       os: linux
       env:
