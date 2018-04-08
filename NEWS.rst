@@ -79,6 +79,23 @@ Bug Fixes
 * Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35) (from 0.8.2).
 * Fixed memory leak of ``ZSTD_DDict`` instances in CFFI's ``ZstdDecompressor``.
 
+New Features
+------------
+
+* Bundlded zstandard library upgraded from 1.1.3 to 1.3.4. This delivers various
+  bug fixes and performance improvements. It also gives us access to newer
+  features.
+* Support for negative compression levels.
+* Support for *long distance matching* (facilitates compression ratios that approach
+  LZMA).
+* Supporting for reading empty zstandard frames (with an embedded content size of 0).
+* Support for writing and partial support for reading zstandard frames without a
+  magic header.
+* New ``stream_reader()`` API that exposes the ``io.RawIOBase`` interface (allows
+  you to ``.read()`` from a file-like object).
+* Several minor features, bug fixes, and performance enhancements.
+* Wheels for Linux and macOS are now provided with releases.
+
 Changes
 -------
 
