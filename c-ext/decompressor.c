@@ -1168,7 +1168,7 @@ static void decompress_worker(WorkerState* state) {
 }
 
 ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor* decompressor, FrameSources* frames,
-	unsigned int threadCount) {
+	Py_ssize_t threadCount) {
 	Py_ssize_t i = 0;
 	int errored = 0;
 	Py_ssize_t segmentsCount;
@@ -1178,7 +1178,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	ZstdBufferWithSegmentsCollection* result = NULL;
 	FramePointer* framePointers = frames->frames;
 	unsigned long long workerBytes = 0;
-	size_t currentThread = 0;
+	Py_ssize_t currentThread = 0;
 	Py_ssize_t workerStartOffset = 0;
 	POOL_ctx* pool = NULL;
 	WorkerState* workerStates = NULL;
@@ -1188,7 +1188,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	assert(threadCount >= 1);
 
 	/* More threads than inputs makes no sense under any conditions. */
-	threadCount = frames->framesSize < threadCount ? (unsigned int)frames->framesSize
+	threadCount = frames->framesSize < threadCount ? frames->framesSize
 												   : threadCount;
 
 	/* TODO lower thread count if input size is too small and threads would just

@@ -1119,14 +1119,14 @@ static void compress_worker(WorkerState* state) {
 }
 
 ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* compressor,
-	DataSources* sources, unsigned int threadCount) {
+	DataSources* sources, Py_ssize_t threadCount) {
 	unsigned long long bytesPerWorker;
 	POOL_ctx* pool = NULL;
 	WorkerState* workerStates = NULL;
 	Py_ssize_t i;
 	unsigned long long workerBytes = 0;
 	Py_ssize_t workerStartOffset = 0;
-	size_t currentThread = 0;
+	Py_ssize_t currentThread = 0;
 	int errored = 0;
 	Py_ssize_t segmentsCount = 0;
 	Py_ssize_t segmentIndex;
@@ -1139,7 +1139,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	assert(threadCount >= 1);
 
 	/* More threads than inputs makes no sense. */
-	threadCount = sources->sourcesSize < threadCount ? (unsigned int)sources->sourcesSize
+	threadCount = sources->sourcesSize < threadCount ? sources->sourcesSize
 													 : threadCount;
 
 	/* TODO lower thread count when input size is too small and threads would add
