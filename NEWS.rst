@@ -76,6 +76,9 @@ Backwards Compatibility Notes
   aliased, but will be removed in the next major release.
 * Content sizes are written into frame headers by default
   (``ZstdCompressor(write_content_size=True)`` is now the default).
+* ``CompressionParameters`` has been renamed to ``ZstdCompressionParameters``
+  for consistency with other types. The old name is an alias and will be removed
+  in the next major release.
 
 Bug Fixes
 ---------
@@ -178,6 +181,7 @@ Changes
   fix new compiler warnings from being introduced.
 * Make ``ZstdCompressor(write_content_size=True)`` and
   ``CompressionParameters(write_content_size=True)`` the default.
+* ``CompressionParameters`` has been renamed to ``ZstdCompressionParameters``.
 
 0.8.2 (released 2018-02-22)
 ---------------------------

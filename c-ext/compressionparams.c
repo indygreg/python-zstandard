@@ -23,7 +23,7 @@ int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned valu
 
 #define TRY_SET_PARAMETER(params, param, value) if (set_parameter(params, param, value)) return -1;
 
-int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj) {
+int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj) {
 	TRY_SET_PARAMETER(params, ZSTD_p_format, obj->format);
 	TRY_SET_PARAMETER(params, ZSTD_p_compressionLevel, (unsigned)obj->compressionLevel);
 	TRY_SET_PARAMETER(params, ZSTD_p_windowLog, obj->windowLog);
@@ -50,7 +50,7 @@ int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj) {
 	return 0;
 }
 
-int reset_params(CompressionParametersObject* params) {
+int reset_params(ZstdCompressionParametersObject* params) {
 	if (params->params) {
 		ZSTD_CCtxParams_reset(params->params);
 	}
@@ -65,7 +65,7 @@ int reset_params(CompressionParametersObject* params) {
 	return set_parameters(params->params, params);
 }
 
-static int CompressionParameters_init(CompressionParametersObject* self, PyObject* args, PyObject* kwargs) {
+static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"format",
 		"compression_level",
@@ -167,11 +167,11 @@ static int CompressionParameters_init(CompressionParametersObject* self, PyObjec
 	return 0;
 }
 
-PyDoc_STRVAR(CompressionParameters_from_level__doc__,
+PyDoc_STRVAR(ZstdCompressionParameters_from_level__doc__,
 "Create a CompressionParameters from a compression level and target sizes\n"
 );
 
-CompressionParametersObject* CompressionParameters_from_level(PyObject* undef, PyObject* args, PyObject* kwargs) {
+ZstdCompressionParametersObject* CompressionParameters_from_level(PyObject* undef, PyObject* args, PyObject* kwargs) {
 	int managedKwargs = 0;
 	int level;
 	PyObject* sourceSize = NULL;
@@ -180,7 +180,7 @@ CompressionParametersObject* CompressionParameters_from_level(PyObject* undef, P
 	Py_ssize_t iDictSize = 0;
 	PyObject* val;
 	ZSTD_compressionParameters params;
-	CompressionParametersObject* result = NULL;
+	ZstdCompressionParametersObject* result = NULL;
 	int res;
 
 	if (!PyArg_ParseTuple(args, "i:from_level",
@@ -309,7 +309,7 @@ CompressionParametersObject* CompressionParameters_from_level(PyObject* undef, P
 		Py_DECREF(val);
 	}
 
-	result = PyObject_New(CompressionParametersObject, &CompressionParametersType);
+	result = PyObject_New(ZstdCompressionParametersObject, &ZstdCompressionParametersType);
 	if (!result) {
 		goto cleanup;
 	}
@@ -322,7 +322,7 @@ CompressionParametersObject* CompressionParameters_from_level(PyObject* undef, P
 		goto cleanup;
 	}
 
-	res = CompressionParameters_init(result, val, kwargs);
+	res = ZstdCompressionParameters_init(result, val, kwargs);
 	Py_DECREF(val);
 
 	if (res) {
@@ -338,18 +338,18 @@ cleanup:
 	return result;
 }
 
-PyDoc_STRVAR(CompressionParameters_estimated_compression_context_size__doc__,
+PyDoc_STRVAR(ZstdCompressionParameters_estimated_compression_context_size__doc__,
 "Estimate the size in bytes of a compression context for compression parameters\n"
 );
 
-PyObject* CompressionParameters_estimated_compression_context_size(CompressionParametersObject* self) {
+PyObject* ZstdCompressionParameters_estimated_compression_context_size(ZstdCompressionParametersObject* self) {
 	return PyLong_FromSize_t(ZSTD_estimateCCtxSize_usingCCtxParams(self->params));
 }
 
-PyDoc_STRVAR(CompressionParameters__doc__,
-"CompressionParameters: low-level control over zstd compression");
+PyDoc_STRVAR(ZstdCompressionParameters__doc__,
+"ZstdCompressionParameters: low-level control over zstd compression");
 
-static void CompressionParameters_dealloc(CompressionParametersObject* self) {
+static void ZstdCompressionParameters_dealloc(ZstdCompressionParametersObject* self) {
 	if (self->params) {
 		ZSTD_freeCCtxParams(self->params);
 		self->params = NULL;
@@ -358,98 +358,98 @@ static void CompressionParameters_dealloc(CompressionParametersObject* self) {
 	PyObject_Del(self);
 }
 
-static PyMethodDef CompressionParameters_methods[] = {
+static PyMethodDef ZstdCompressionParameters_methods[] = {
 	{
 		"from_level",
 		(PyCFunction)CompressionParameters_from_level,
 		METH_VARARGS | METH_KEYWORDS | METH_STATIC,
-		CompressionParameters_from_level__doc__
+		ZstdCompressionParameters_from_level__doc__
 	},
 	{
 		"estimated_compression_context_size",
-		(PyCFunction)CompressionParameters_estimated_compression_context_size,
+		(PyCFunction)ZstdCompressionParameters_estimated_compression_context_size,
 		METH_NOARGS,
-		CompressionParameters_estimated_compression_context_size__doc__
+		ZstdCompressionParameters_estimated_compression_context_size__doc__
 	},
 	{ NULL, NULL }
 };
 
-static PyMemberDef CompressionParameters_members[] = {
+static PyMemberDef ZstdCompressionParameters_members[] = {
 	{ "format", T_UINT,
-	  offsetof(CompressionParametersObject, format), READONLY,
+	  offsetof(ZstdCompressionParametersObject, format), READONLY,
 	  "compression format" },
 	{ "compression_level", T_INT,
-	  offsetof(CompressionParametersObject, compressionLevel), READONLY,
+	  offsetof(ZstdCompressionParametersObject, compressionLevel), READONLY,
 	  "compression level" },
 	{ "window_log", T_UINT,
-	  offsetof(CompressionParametersObject, windowLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, windowLog), READONLY,
 	  "window log" },
 	{ "hash_log", T_UINT,
-	  offsetof(CompressionParametersObject, hashLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, hashLog), READONLY,
 	  "hash log" },
 	{ "chain_log", T_UINT,
-	  offsetof(CompressionParametersObject, chainLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, chainLog), READONLY,
 	  "chain log" },
 	{ "search_log", T_UINT,
-	  offsetof(CompressionParametersObject, searchLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, searchLog), READONLY,
 	  "search log" },
 	{ "min_match", T_UINT,
-	  offsetof(CompressionParametersObject, minMatch), READONLY,
+	  offsetof(ZstdCompressionParametersObject, minMatch), READONLY,
 	  "search length" },
 	{ "target_length", T_UINT,
-	  offsetof(CompressionParametersObject, targetLength), READONLY,
+	  offsetof(ZstdCompressionParametersObject, targetLength), READONLY,
 	  "target length" },
 	{ "compression_strategy", T_UINT,
-	  offsetof(CompressionParametersObject, compressionStrategy), READONLY,
+	  offsetof(ZstdCompressionParametersObject, compressionStrategy), READONLY,
 	  "compression strategy" },
 	{ "write_content_size", T_UINT,
-	  offsetof(CompressionParametersObject, contentSizeFlag), READONLY,
+	  offsetof(ZstdCompressionParametersObject, contentSizeFlag), READONLY,
 	  "whether to write content size in frames" },
 	{ "write_checksum", T_UINT,
-	  offsetof(CompressionParametersObject, checksumFlag), READONLY,
+	  offsetof(ZstdCompressionParametersObject, checksumFlag), READONLY,
 	  "whether to write checksum in frames" },
 	{ "write_dict_id", T_UINT,
-	  offsetof(CompressionParametersObject, dictIDFlag), READONLY,
+	  offsetof(ZstdCompressionParametersObject, dictIDFlag), READONLY,
 	  "whether to write dictionary ID in frames" },
 	{ "threads", T_UINT,
-	  offsetof(CompressionParametersObject, threads), READONLY,
+	  offsetof(ZstdCompressionParametersObject, threads), READONLY,
 	  "number of threads to use" },
 	{ "job_size", T_UINT,
-	  offsetof(CompressionParametersObject, jobSize), READONLY,
+	  offsetof(ZstdCompressionParametersObject, jobSize), READONLY,
 	  "size of compression job when using multiple threads" },
 	{ "overlap_size_log", T_UINT,
-	  offsetof(CompressionParametersObject, overlapSizeLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, overlapSizeLog), READONLY,
 	  "Size of previous input reloaded at the beginning of each job" },
 	{ "compress_literals", T_UINT,
-	  offsetof(CompressionParametersObject, compressLiterals), READONLY,
+	  offsetof(ZstdCompressionParametersObject, compressLiterals), READONLY,
 	  "whether Huffman compression of literals is in use" },
 	{ "force_max_window", T_UINT,
-	  offsetof(CompressionParametersObject, forceMaxWindow), READONLY,
+	  offsetof(ZstdCompressionParametersObject, forceMaxWindow), READONLY,
 	  "force back references to remain smaller than window size" },
 	{ "enable_ldm", T_UINT,
-	  offsetof(CompressionParametersObject, enableLongDistanceMatching), READONLY,
+	  offsetof(ZstdCompressionParametersObject, enableLongDistanceMatching), READONLY,
 	  "whether to enable long distance matching" },
 	{ "ldm_hash_log", T_UINT,
-	  offsetof(CompressionParametersObject, ldmHashLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, ldmHashLog), READONLY,
 	  "Size of the table for long distance matching, as a power of 2" },
 	{ "ldm_min_match", T_UINT,
-	  offsetof(CompressionParametersObject, ldmMinMatch), READONLY,
+	  offsetof(ZstdCompressionParametersObject, ldmMinMatch), READONLY,
 	  "minimum size of searched matches for long distance matcher" },
 	{ "ldm_bucket_size_log", T_UINT,
-	  offsetof(CompressionParametersObject, ldmBucketSizeLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, ldmBucketSizeLog), READONLY,
 	  "log size of each bucket in the LDM hash table for collision resolution" },
 	{ "ldm_hash_every_log", T_UINT,
-	  offsetof(CompressionParametersObject, ldmHashEveryLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, ldmHashEveryLog), READONLY,
 	  "frequency of inserting/looking up entries in the LDM hash table" },
 	{ NULL }
 };
 
-PyTypeObject CompressionParametersType = {
+PyTypeObject ZstdCompressionParametersType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"CompressionParameters", /* tp_name */
-	sizeof(CompressionParametersObject), /* tp_basicsize */
+	"ZstdCompressionParameters", /* tp_name */
+	sizeof(ZstdCompressionParametersObject), /* tp_basicsize */
 	0,                         /* tp_itemsize */
-	(destructor)CompressionParameters_dealloc, /* tp_dealloc */
+	(destructor)ZstdCompressionParameters_dealloc, /* tp_dealloc */
 	0,                         /* tp_print */
 	0,                         /* tp_getattr */
 	0,                         /* tp_setattr */
@@ -465,33 +465,38 @@ PyTypeObject CompressionParametersType = {
 	0,                         /* tp_setattro */
 	0,                         /* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	CompressionParameters__doc__, /* tp_doc */
+	ZstdCompressionParameters__doc__, /* tp_doc */
 	0,                         /* tp_traverse */
 	0,                         /* tp_clear */
 	0,                         /* tp_richcompare */
 	0,                         /* tp_weaklistoffset */
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
-	CompressionParameters_methods, /* tp_methods */
-	CompressionParameters_members, /* tp_members */
+	ZstdCompressionParameters_methods, /* tp_methods */
+	ZstdCompressionParameters_members, /* tp_members */
 	0,                         /* tp_getset */
 	0,                         /* tp_base */
 	0,                         /* tp_dict */
 	0,                         /* tp_descr_get */
 	0,                         /* tp_descr_set */
 	0,                         /* tp_dictoffset */
-	(initproc)CompressionParameters_init, /* tp_init */
+	(initproc)ZstdCompressionParameters_init, /* tp_init */
 	0,                         /* tp_alloc */
 	PyType_GenericNew,         /* tp_new */
 };
 
 void compressionparams_module_init(PyObject* mod) {
-	Py_TYPE(&CompressionParametersType) = &PyType_Type;
-	if (PyType_Ready(&CompressionParametersType) < 0) {
+	Py_TYPE(&ZstdCompressionParametersType) = &PyType_Type;
+	if (PyType_Ready(&ZstdCompressionParametersType) < 0) {
 		return;
 	}
 
-	Py_INCREF(&CompressionParametersType);
+	Py_INCREF(&ZstdCompressionParametersType);
+	PyModule_AddObject(mod, "ZstdCompressionParameters",
+		(PyObject*)&ZstdCompressionParametersType);
+
+	/* TODO remove deprecated alias. */
+	Py_INCREF(&ZstdCompressionParametersType);
 	PyModule_AddObject(mod, "CompressionParameters",
-		(PyObject*)&CompressionParametersType);
+		(PyObject*)&ZstdCompressionParametersType);
 }

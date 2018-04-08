@@ -16,6 +16,7 @@ __all__ = [
     #'BufferWithSegmentsCollection',
     'CompressionParameters',
     'ZstdCompressionDict',
+    'ZstdCompressionParameters',
     'ZstdCompressor',
     'ZstdError',
     'ZstdDecompressor',
@@ -204,7 +205,7 @@ def _make_cctx_params(params):
 
     return res
 
-class CompressionParameters(object):
+class ZstdCompressionParameters(object):
     @staticmethod
     def from_level(level, source_size=0, dict_size=0, **kwargs):
         params = lib.ZSTD_getCParams(level, source_size, dict_size)
@@ -226,7 +227,7 @@ class CompressionParameters(object):
         if 'compress_literals' not in kwargs:
             kwargs['compress_literals'] = 1 if level >= 0 else 0
 
-        return CompressionParameters(**kwargs)
+        return ZstdCompressionParameters(**kwargs)
 
     def __init__(self, format=0, compression_level=0, window_log=0, hash_log=0,
                  chain_log=0, search_log=0, min_match=0, target_length=0,
@@ -270,6 +271,7 @@ class CompressionParameters(object):
     def estimated_compression_context_size(self):
         return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self.params)
 
+CompressionParameters = ZstdCompressionParameters
 
 def estimate_decompression_context_size():
     return lib.ZSTD_estimateDCtxSize()

@@ -131,12 +131,12 @@ dict_data
    Compression dictionary to use.
 
    Note: When using dictionary data and ``compress()`` is called multiple
-   times, the ``CompressionParameters`` derived from an integer compression
-   ``level`` and the first compressed data's size will be reused for all
-   subsequent operations. This may not be desirable if source data size
-   varies significantly.
+   times, the ``ZstdCompressionParameters`` derived from an integer
+   compression ``level`` and the first compressed data's size will be reused
+   for all subsequent operations. This may not be desirable if source data
+   size varies significantly.
 compression_params
-   A ``CompressionParameters`` instance defining compression settings.
+   A ``ZstdCompressionParameters`` instance defining compression settings.
 write_checksum
    Whether a 4 byte checksum should be written with the compressed data.
    Defaults to False. If True, the decompressor can verify that decompressed
@@ -841,7 +841,7 @@ a segment is compressed, it is flushed/appended to the output.
 
 The segment size for multi-threaded compression is chosen from the window size
 of the compressor. This is derived from the ``window_log`` attribute of a
-``CompressionParameters`` instance. By default, segment sizes are in the 1+MB
+``ZstdCompressionParameters`` instance. By default, segment sizes are in the 1+MB
 range.
 
 If multi-threaded compression is requested and the input is smaller than the
@@ -936,7 +936,7 @@ by multiple ``ZstdCompressor`` instances::
     d.precompute_compress(level=3)
 
     # Precompute with specific compression parameters.
-    params = zstd.CompressionParameters(...)
+    params = zstd.ZstdCompressionParameters(...)
     d.precompute_compress(compression_params=params)
 
 .. note::
@@ -1023,40 +1023,41 @@ compression setting you'll need to touch.
 But for advanced use cases, it might be desirable to tweak these lower-level
 settings.
 
-The ``CompressionParameters`` type represents these low-level compression
+The ``ZstdCompressionParameters`` type represents these low-level compression
 settings.
 
 Instances of this type can be constructed from a myriad of keyword arguments
 (defined below) for complete low-level control over each adjustable
 compression setting.
 
-From a higher level, one can construct a ``CompressionParameters`` instance
+From a higher level, one can construct a ``ZstdCompressionParameters`` instance
 given a desired compression level and target input and dictionary size
-using ``CompressionParameters.from_level()``. e.g.::
+using ``ZstdCompressionParameters.from_level()``. e.g.::
 
     # Derive compression settings for compression level 7.
-    params = zstd.CompressionParameters.from_level(7)
+    params = zstd.ZstdCompressionParameters.from_level(7)
 
     # With an input size of 1MB
-    params = zstd.CompressionParameters.from_level(7, source_size=1048576)
+    params = zstd.ZstdCompressionParameters.from_level(7, source_size=1048576)
 
 Using ``from_level()``, it is also possible to override individual compression
 parameters or to define additional settings that aren't automatically derived.
 e.g.::
 
-    params = zstd.CompressionParameters.from_level(4, window_log=10)
-    params = zstd.CompressionParameters.from_level(5, threads=4)
+    params = zstd.ZstdCompressionParameters.from_level(4, window_log=10)
+    params = zstd.ZstdCompressionParameters.from_level(5, threads=4)
 
 Or you can define low-level compression settings directly::
 
-    params = zstd.CompressionParameters(window_log=12, enable_ldm=True)
+    params = zstd.ZstdCompressionParameters(window_log=12, enable_ldm=True)
 
-Once a ``CompressionParameters`` instance is obtained, it can be used to
+Once a ``ZstdCompressionParameters`` instance is obtained, it can be used to
 configure a compressor::
 
     cctx = zstd.ZstdCompressor(compression_params=params)
 
-The named arguments and attributes of ``CompressionParameters`` are as follows:
+The named arguments and attributes of ``ZstdCompressionParameters`` are as
+follows:
 
 * format
 * compression_level

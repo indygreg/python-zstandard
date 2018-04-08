@@ -23,7 +23,7 @@ typedef enum {
 } CompressorObj_Flush;
 
 /*
-   Represents a CompressionParameters type.
+   Represents a ZstdCompressionParameters type.
 
    This type holds all the low-level compression parameters that can be set.
 */
@@ -52,9 +52,9 @@ typedef struct {
 	unsigned ldmMinMatch;
 	unsigned ldmBucketSizeLog;
 	unsigned ldmHashEveryLog;
-} CompressionParametersObject;
+} ZstdCompressionParametersObject;
 
-extern PyTypeObject CompressionParametersType;
+extern PyTypeObject ZstdCompressionParametersType;
 
 /*
    Represents a FrameParameters type.
@@ -334,7 +334,7 @@ typedef struct {
 extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
 
 int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value);
-int set_parameters(ZSTD_CCtx_params* params, CompressionParametersObject* obj);
+int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs);
 int ensure_ddict(ZstdCompressionDict* dict);
 int ensure_dctx(ZstdDecompressor* decompressor, int loadDict);

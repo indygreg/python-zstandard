@@ -263,12 +263,12 @@ static PyObject* ZstdCompressionDict_precompute_compress(ZstdCompressionDict* se
 	};
 
 	int level = 0;
-	CompressionParametersObject* compressionParams = NULL;
+	ZstdCompressionParametersObject* compressionParams = NULL;
 	ZSTD_compressionParameters cParams;
 	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!:precompute_compress", kwlist,
-		&level, &CompressionParametersType, &compressionParams)) {
+		&level, &ZstdCompressionParametersType, &compressionParams)) {
 		return NULL;
 	}
 

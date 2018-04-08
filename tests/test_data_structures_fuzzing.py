@@ -45,13 +45,13 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
                         s_searchlength, s_targetlength, s_strategy)
     def test_valid_init(self, windowlog, chainlog, hashlog, searchlog,
                         searchlength, targetlength, strategy):
-        zstd.CompressionParameters(window_log=windowlog,
-                                   chain_log=chainlog,
-                                   hash_log=hashlog,
-                                   search_log=searchlog,
-                                   min_match=searchlength,
-                                   target_length=targetlength,
-                                   compression_strategy=strategy)
+        zstd.ZstdCompressionParameters(window_log=windowlog,
+                                       chain_log=chainlog,
+                                       hash_log=hashlog,
+                                       search_log=searchlog,
+                                       min_match=searchlength,
+                                       target_length=targetlength,
+                                       compression_strategy=strategy)
 
     @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
                         s_searchlength, s_targetlength, s_strategy)
@@ -64,12 +64,12 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
         elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
             searchlength -= 1
 
-        p = zstd.CompressionParameters(window_log=windowlog,
-                                       chain_log=chainlog,
-                                       hash_log=hashlog,
-                                       search_log=searchlog,
-                                       min_match=searchlength,
-                                       target_length=targetlength,
-                                       compression_strategy=strategy)
+        p = zstd.ZstdCompressionParameters(window_log=windowlog,
+                                           chain_log=chainlog,
+                                           hash_log=hashlog,
+                                           search_log=searchlog,
+                                           min_match=searchlength,
+                                           target_length=targetlength,
+                                           compression_strategy=strategy)
         size = p.estimated_compression_context_size()
 

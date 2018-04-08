@@ -20,8 +20,8 @@ else:
 
 
 def multithreaded_chunk_size(level, source_size=0):
-    params = zstd.CompressionParameters.from_level(level,
-                                                   source_size=source_size)
+    params = zstd.ZstdCompressionParameters.from_level(level,
+                                                       source_size=source_size)
 
     return 1 << (params.window_log + 2)
 
@@ -93,12 +93,12 @@ class TestCompressor_compress(unittest.TestCase):
         result = cctx.compress(b'foo' * 256)
 
     def test_no_magic(self):
-        params = zstd.CompressionParameters.from_level(
+        params = zstd.ZstdCompressionParameters.from_level(
             1, format=zstd.FORMAT_ZSTD1)
         cctx = zstd.ZstdCompressor(compression_params=params)
         magic = cctx.compress(b'foobar')
 
-        params = zstd.CompressionParameters.from_level(
+        params = zstd.ZstdCompressionParameters.from_level(
             1, format=zstd.FORMAT_ZSTD1_MAGICLESS)
         cctx = zstd.ZstdCompressor(compression_params=params)
         no_magic = cctx.compress(b'foobar')
@@ -220,7 +220,7 @@ class TestCompressor_compress(unittest.TestCase):
                          b'\x66\x6f\x6f')
 
     def test_multithreaded_compression_params(self):
-        params = zstd.CompressionParameters.from_level(0, threads=2)
+        params = zstd.ZstdCompressionParameters.from_level(0, threads=2)
         cctx = zstd.ZstdCompressor(compression_params=params)
 
         result = cctx.compress(b'foo')
@@ -813,7 +813,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
                          b'\x00\x00\x02\xfc\x3d\x3f\xd9\xb0\x51\x03\x45\x89')
 
     def test_compression_params(self):
-        params = zstd.CompressionParameters(
+        params = zstd.ZstdCompressionParameters(
             window_log=20,
             chain_log=6,
             hash_log=12,
