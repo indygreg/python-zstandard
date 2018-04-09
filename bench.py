@@ -101,36 +101,36 @@ def bench(mode, title, require_content_size=False,
 
 
 @bench('discrete', 'compress() single use zctx')
-def compress_one_use(chunks, opts):
+def compress_one_use(chunks, zparams):
     for chunk in chunks:
-        zctx = zstd.ZstdCompressor(**opts)
+        zctx = zstd.ZstdCompressor(compression_params=zparams)
         zctx.compress(chunk)
 
 
 @bench('discrete', 'compress() reuse zctx', simple=True)
-def compress_reuse(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_reuse(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         zctx.compress(chunk)
 
 
 @bench('discrete', 'multi_compress_to_buffer() w/ buffer input',
        simple=True, threads_arg=True, chunks_as_buffer=True, cffi=False)
-def compress_multi_compress_to_buffer_buffer(chunks, opts, threads):
-    zctx= zstd.ZstdCompressor(**opts)
+def compress_multi_compress_to_buffer_buffer(chunks, zparams, threads):
+    zctx= zstd.ZstdCompressor(compression_params=zparams)
     zctx.multi_compress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'multi_compress_to_buffer() w/ list input',
        threads_arg=True, cffi=False)
-def compress_multi_compress_to_buffer_list(chunks, opts, threads):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_multi_compress_to_buffer_list(chunks, zparams, threads):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     zctx.multi_compress_to_buffer(chunks, threads=threads)
 
 
 @bench('discrete', 'stream_reader()')
-def compress_stream_reader(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_stream_reader(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         with zctx.stream_reader(chunk) as reader:
             while reader.read(16384):
@@ -138,8 +138,8 @@ def compress_stream_reader(chunks, opts):
 
 
 @bench('discrete', 'stream_writer()')
-def compress_stream_writer(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_stream_writer(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         b = bio()
         with zctx.stream_writer(b) as compressor:
@@ -147,8 +147,8 @@ def compress_stream_writer(chunks, opts):
 
 
 @bench('discrete', 'stream_writer() w/ input size')
-def compress_stream_writer_size(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_stream_writer_size(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         b = bio()
         with zctx.stream_writer(b, size=len(chunk)) as compressor:
@@ -156,24 +156,24 @@ def compress_stream_writer_size(chunks, opts):
 
 
 @bench('discrete', 'read_to_iter()')
-def compress_read_to_iter(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_read_to_iter(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         for d in zctx.read_to_iter(chunk):
             pass
 
 
 @bench('discrete', 'read_to_iter() w/ input size')
-def compress_read_to_iter_size(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_read_to_iter_size(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         for d in zctx.read_to_iter(chunk, size=len(chunk)):
             pass
 
 
 @bench('discrete', 'compressobj()')
-def compress_compressobj(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_compressobj(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         cobj = zctx.compressobj()
         cobj.compress(chunk)
@@ -181,8 +181,8 @@ def compress_compressobj(chunks, opts):
 
 
 @bench('discrete', 'compressobj() w/ input size')
-def compress_compressobj_size(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_compressobj_size(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     for chunk in chunks:
         cobj = zctx.compressobj(size=len(chunk))
         cobj.compress(chunk)
@@ -208,8 +208,8 @@ def compress_zlib_compressobj(chunks, opts):
 
 
 @bench('stream', 'stream_writer()')
-def compress_stream_stream_writer(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_stream_stream_writer(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     b = bio()
     with zctx.stream_writer(b) as compressor:
         for chunk in chunks:
@@ -218,8 +218,8 @@ def compress_stream_stream_writer(chunks, opts):
 
 
 @bench('stream', 'compressobj()', simple=True)
-def compress_stream_compressobj(chunks, opts):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_stream_compressobj(chunks, zparams):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     compressor = zctx.compressobj()
     flush = zstd.COMPRESSOBJ_FLUSH_BLOCK
     for chunk in chunks:
@@ -228,71 +228,71 @@ def compress_stream_compressobj(chunks, opts):
 
 
 @bench('content-dict', 'compress()', simple=True)
-def compress_content_dict_compress(chunks, opts):
-    zstd.ZstdCompressor(**opts).compress(chunks[0])
+def compress_content_dict_compress(chunks, zparams):
+    zstd.ZstdCompressor(compression_params=zparams).compress(chunks[0])
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
-        zstd.ZstdCompressor(dict_data=d, **opts).compress(chunk)
+        zstd.ZstdCompressor(dict_data=d, compression_params=zparams).compress(chunk)
 
 
 @bench('content-dict', 'stream_writer()')
-def compress_content_dict_stream_writer(chunks, opts, use_size=False):
-    zctx = zstd.ZstdCompressor(**opts)
+def compress_content_dict_stream_writer(chunks, zparams, use_size=False):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
     b = bio()
-    with zctx.stream_writer(b, size=len(chunks[0]) if use_size else 0) as compressor:
+    with zctx.stream_writer(b, size=len(chunks[0]) if use_size else -1) as compressor:
         compressor.write(chunks[0])
 
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
         b = bio()
-        zctx = zstd.ZstdCompressor(dict_data=d, **opts)
-        with zctx.stream_writer(b, size=len(chunk) if use_size else 0) as compressor:
+        zctx = zstd.ZstdCompressor(dict_data=d, compression_params=zparams)
+        with zctx.stream_writer(b, size=len(chunk) if use_size else -1) as compressor:
             compressor.write(chunk)
 
 
 @bench('content-dict', 'stream_writer() w/ input size')
-def compress_content_dict_stream_writer_size(chunks, opts):
-    compress_content_dict_stream_writer(chunks, opts, use_size=True)
+def compress_content_dict_stream_writer_size(chunks, zparams):
+    compress_content_dict_stream_writer(chunks, zparams, use_size=True)
 
 
 @bench('content-dict', 'read_to_iter()')
-def compress_content_dict_read_to_iter(chunks, opts, use_size=False):
-    zctx = zstd.ZstdCompressor(**opts)
-    size = len(chunks[0]) if use_size else 0
+def compress_content_dict_read_to_iter(chunks, zparams, use_size=False):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
+    size = len(chunks[0]) if use_size else -1
     for o in zctx.read_to_iter(chunks[0], size=size):
         pass
 
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
-        zctx = zstd.ZstdCompressor(dict_data=d, **opts)
-        size = len(chunk) if use_size else 0
+        zctx = zstd.ZstdCompressor(dict_data=d, compression_params=zparams)
+        size = len(chunk) if use_size else -1
         for o in zctx.read_to_iter(chunk, size=size):
             pass
 
 
 @bench('content-dict', 'read_to_iter() w/ input size')
-def compress_content_dict_read_to_iter_size(chunks, opts):
-    compress_content_dict_read_to_iter(chunks, opts, use_size=True)
+def compress_content_dict_read_to_iter_size(chunks, zparams):
+    compress_content_dict_read_to_iter(chunks, zparams, use_size=True)
 
 
 @bench('content-dict', 'compressobj()')
-def compress_content_dict_compressobj(chunks, opts, use_size=False):
-    zctx = zstd.ZstdCompressor(**opts)
-    cobj = zctx.compressobj(size=len(chunks[0]) if use_size else 0)
+def compress_content_dict_compressobj(chunks, zparams, use_size=False):
+    zctx = zstd.ZstdCompressor(compression_params=zparams)
+    cobj = zctx.compressobj(size=len(chunks[0]) if use_size else -1)
     cobj.compress(chunks[0])
     cobj.flush()
 
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
-        zctx = zstd.ZstdCompressor(dict_data=d, **opts)
-        cobj = zctx.compressobj(len(chunk) if use_size else 0)
+        zctx = zstd.ZstdCompressor(dict_data=d, compression_params=zparams)
+        cobj = zctx.compressobj(len(chunk) if use_size else -1)
         cobj.compress(chunk)
         cobj.flush()
 
 
 @bench('content-dict', 'compressobj() w/ input size')
-def compress_content_dict_compressobj_size(chunks, opts):
-    compress_content_dict_compressobj(chunks, opts, use_size=True)
+def compress_content_dict_compressobj_size(chunks, zparams):
+    compress_content_dict_compressobj(chunks, zparams, use_size=True)
 
 
 @bench('discrete', 'decompress() single use zctx', require_content_size=True)
@@ -552,10 +552,11 @@ def bench_discrete_zlib_decompression(chunks, total_size):
                        total_size)
 
 
-def bench_discrete_compression(chunks, opts, cover=False, threads=None):
+def bench_discrete_compression(chunks, zparams, cover=False, dict_data=None,
+                               batch_threads=None):
     total_size = sum(map(len, chunks))
 
-    if 'dict_data' in opts:
+    if dict_data:
         if cover:
             prefix = 'compress discrete cover dict'
         else:
@@ -568,7 +569,7 @@ def bench_discrete_compression(chunks, opts, cover=False, threads=None):
 
         kwargs = {}
         if fn.threads_arg:
-            kwargs['threads'] = threads
+            kwargs['threads'] = batch_threads
 
         if fn.chunks_as_buffer:
             s = struct.Struct('=QQ')
@@ -581,32 +582,31 @@ def bench_discrete_compression(chunks, opts, cover=False, threads=None):
             chunks_arg = zstd.BufferWithSegments(b''.join(chunks),
                                                  offsets.getvalue())
 
-        results = timer(lambda: fn(chunks_arg, opts, **kwargs))
+        results = timer(lambda: fn(chunks_arg, zparams, **kwargs))
         format_results(results, fn.title, prefix, total_size)
 
 
 def bench_discrete_decompression(orig_chunks, compressed_chunks,
-                                 total_size, opts, cover=False,
-                                 threads=None):
+                                 total_size,
+                                 zparams,
+                                 dict_data=None,
+                                 batch_threads=None):
     dopts = {}
-    if opts.get('dict_data'):
-        dopts['dict_data'] = opts['dict_data']
-        if cover:
-            prefix = 'decompress discrete cover dict'
-        else:
-            prefix = 'decompress discrete dict'
+    if dict_data:
+        dopts['dict_data'] = dict_data
+        prefix = 'decompress discrete dict'
     else:
         prefix = 'decompress discrete'
 
     for fn in get_benches('discrete', 'decompress'):
-        if not opts.get('write_content_size') and fn.require_content_size:
+        if not zparams.write_content_size and fn.require_content_size:
             continue
 
         chunks_arg = compressed_chunks
 
         kwargs = {}
         if fn.threads_arg:
-            kwargs['threads'] = threads
+            kwargs['threads'] = batch_threads
 
         # Pass compressed frames in a BufferWithSegments rather than a list
         # of bytes.
@@ -631,15 +631,15 @@ def bench_discrete_decompression(orig_chunks, compressed_chunks,
         format_results(results, fn.title, prefix, total_size)
 
 
-def bench_stream_compression(chunks, opts):
+def bench_stream_compression(chunks, zparams):
     total_size = sum(map(len, chunks))
 
     for fn in get_benches('stream', 'compress'):
-        results = timer(lambda: fn(chunks, opts))
+        results = timer(lambda: fn(chunks, zparams))
         format_results(results, fn.title, 'compress stream', total_size)
 
 
-def bench_stream_decompression(chunks, total_size, opts):
+def bench_stream_decompression(chunks, total_size):
     for fn in get_benches('stream', 'decompress'):
         results = timer(lambda: fn(chunks, {}))
         format_results(results, fn.title, 'decompress stream', total_size)
@@ -659,17 +659,17 @@ def bench_stream_zlib_decompression(chunks, total_size):
         format_results(results, fn.title, 'decompress stream zlib', total_size)
 
 
-def bench_content_dict_compression(chunks, opts):
+def bench_content_dict_compression(chunks, zparams):
     total_size = sum(map(len, chunks))
 
     for fn in get_benches('content-dict', 'compress'):
-        results = timer(lambda: fn(chunks, opts))
+        results = timer(lambda: fn(chunks, zparams))
         format_results(results, fn.title, 'compress content dict', total_size)
 
 
-def bench_content_dict_decompression(chunks, total_size, opts):
+def bench_content_dict_decompression(chunks, total_size, zparams):
     for fn in get_benches('content-dict', 'decompress'):
-        if not opts.get('write_content_size') and fn.require_content_size:
+        if not zparams.write_content_size and fn.require_content_size:
             continue
 
         results = timer(lambda: fn(chunks, {}))
@@ -750,16 +750,20 @@ if __name__ == '__main__':
     if args.only_simple:
         BENCHES[:] = [fn for fn in BENCHES if fn.simple]
 
-    opts = {
-        'level': args.level,
+    params = {
         'write_content_size': True,
     }
     if args.no_write_size:
-        opts['write_content_size'] = False
+        params['write_content_size'] = False
     if args.write_checksum:
-        opts['write_checksum'] = True
+        params['write_checksum'] = True
     if args.compress_threads:
-        opts['threads'] = args.compress_threads
+        params['threads'] = args.compress_threads
+
+    zparams = zstd.ZstdCompressionParameters.from_level(args.level, **params)
+    if args.compress_threads:
+        threads_zparams = zstd.ZstdCompressionParameters.from_level(
+            args.level, **params)
 
     chunks = get_chunks(args.path, args.limit_count, args.chunk_encoding)
     orig_size = sum(map(len, chunks))
@@ -772,7 +776,7 @@ if __name__ == '__main__':
             training_chunks = chunks
 
         train_args = {
-            'level': opts['level'],
+            'level': args.level,
         }
 
         if args.cover_k:
@@ -786,7 +790,7 @@ if __name__ == '__main__':
         dict_data = zstd.train_dictionary(args.dict_size, training_chunks,
                                           **train_args)
         print('trained dictionary of size %d (wanted %d) (l=%d)' % (
-            len(dict_data), args.dict_size, opts['level']))
+            len(dict_data), args.dict_size, args.level))
 
     if args.zlib and args.discrete:
         compressed_discrete_zlib = []
@@ -806,7 +810,7 @@ if __name__ == '__main__':
     # In discrete mode, each input is compressed independently, possibly
     # with a dictionary.
     if args.discrete:
-        zctx = zstd.ZstdCompressor(**opts)
+        zctx = zstd.ZstdCompressor(compression_params=zparams)
         compressed_discrete = []
         ratios = []
         # Always use multiple threads here so we complete faster.
@@ -825,13 +829,11 @@ if __name__ == '__main__':
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
         print('discrete compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
-            opts['level'], compressed_size, ratio, good_ratio))
+            args.level, compressed_size, ratio, good_ratio))
 
     # Discrete dict mode is like discrete but trains a dictionary.
     if args.discrete_dict:
-        dict_opts = dict(opts)
-        dict_opts['dict_data'] = dict_data
-        zctx = zstd.ZstdCompressor(**dict_opts)
+        zctx = zstd.ZstdCompressor(dict_data=dict_data, compression_params=zparams)
         compressed_discrete_dict = []
         ratios = []
 
@@ -850,7 +852,7 @@ if __name__ == '__main__':
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
         print('discrete dict compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
-            opts['level'], compressed_size, ratio, good_ratio))
+            args.level, compressed_size, ratio, good_ratio))
 
     # In stream mode the inputs are fed into a streaming compressor and
     # blocks are flushed for each input.
@@ -870,7 +872,7 @@ if __name__ == '__main__':
             args.zlib_level, compressed_size, ratio))
 
     if args.stream:
-        zctx = zstd.ZstdCompressor(**opts)
+        zctx = zstd.ZstdCompressor(compression_params=zparams)
         compressed_stream = []
         ratios = []
         compressor = zctx.compressobj()
@@ -882,20 +884,20 @@ if __name__ == '__main__':
         compressed_size = sum(map(len, compressed_stream))
         ratio = float(compressed_size) / float(orig_size) * 100.0
         print('stream compressed size (l=%d): %d (%.2f%%)' % (
-            opts['level'], compressed_size, ratio))
+            zparams.compression_level, compressed_size, ratio))
 
     if args.content_dict:
         compressed_content_dict = []
         ratios = []
         # First chunk is compressed like normal.
-        c = zstd.ZstdCompressor(**opts).compress(chunks[0])
+        c = zstd.ZstdCompressor(compression_params=zparams).compress(chunks[0])
         compressed_content_dict.append(c)
         ratios.append(float(len(c)) / float(len(chunks[0])))
 
         # Subsequent chunks use previous chunk as a dict.
         for i, chunk in enumerate(chunks[1:]):
             d = zstd.ZstdCompressionDict(chunks[i])
-            zctx = zstd.ZstdCompressor(dict_data=d, **opts)
+            zctx = zstd.ZstdCompressor(dict_data=d, compression_params=zparams)
             c = zctx.compress(chunk)
             compressed_content_dict.append(c)
             ratios.append(float(len(c)) / float(len(chunk)))
@@ -905,7 +907,7 @@ if __name__ == '__main__':
         bad_count = sum(1 for r in ratios if r >= 1.00)
         good_ratio = 100.0 - (float(bad_count) / float(len(chunks)) * 100.0)
         print('content dict compressed size (l=%d): %d (%.2f%%); smaller: %.2f%%' % (
-            opts['level'], compressed_size, ratio, good_ratio))
+            zparams.compression_level, compressed_size, ratio, good_ratio))
 
     print('')
 
@@ -914,18 +916,19 @@ if __name__ == '__main__':
             bench_discrete_zlib_compression(chunks,
                                             {'zlib_level': args.zlib_level})
         if args.discrete:
-            bench_discrete_compression(chunks, opts,
-                                       threads=args.batch_threads)
+            bench_discrete_compression(chunks, zparams,
+                                       batch_threads=args.batch_threads)
         if args.discrete_dict:
-            bench_discrete_compression(chunks, dict_opts,
-                                       threads=args.batch_threads)
+            bench_discrete_compression(chunks, zparams,
+                                       batch_threads=args.batch_threads,
+                                       dict_data=dict_data)
         if args.zlib and args.stream:
             bench_stream_zlib_compression(chunks,
                                           {'zlib_level': args.zlib_level})
         if args.stream:
-            bench_stream_compression(chunks, opts)
+            bench_stream_compression(chunks, zparams)
         if args.content_dict:
-            bench_content_dict_compression(chunks, opts)
+            bench_content_dict_compression(chunks, zparams)
 
         if not args.no_decompression:
             print('')
@@ -936,15 +939,19 @@ if __name__ == '__main__':
                                               orig_size)
         if args.discrete:
             bench_discrete_decompression(chunks, compressed_discrete, orig_size,
-                                         opts, threads=args.batch_threads)
+                                         zparams,
+                                         batch_threads=args.batch_threads)
         if args.discrete_dict:
             bench_discrete_decompression(chunks, compressed_discrete_dict,
-                                         orig_size, dict_opts,
-                                         threads=args.batch_threads)
+                                         orig_size,
+                                         zparams,
+                                         dict_data=dict_data,
+                                         batch_threads=args.batch_threads)
         if args.zlib and args.stream:
             bench_stream_zlib_decompression(compressed_stream_zlib, orig_size)
         if args.stream:
-            bench_stream_decompression(compressed_stream, orig_size, opts)
+            bench_stream_decompression(compressed_stream, orig_size)
         if args.content_dict:
             bench_content_dict_decompression(compressed_content_dict,
-                                             orig_size, opts)
+                                             orig_size,
+                                             zparams)
