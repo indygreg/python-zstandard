@@ -715,6 +715,10 @@ if __name__ == '__main__':
                        help='Write checksum data to zstd frames')
     group.add_argument('--dict-size', type=int, default=128 * 1024,
                        help='Maximum size of trained dictionary')
+    group.add_argument('--enable-ldm', action='store_true',
+                       help='Enable long distance matching')
+    group.add_argument('--ldm-hash-log', type=int,
+                       help='Long distance matching hash log value. Power of 2')
     group.add_argument('--compress-threads', type=int,
                        help='Use multi-threaded compression with this many '
                             'threads')
@@ -759,6 +763,10 @@ if __name__ == '__main__':
         params['write_checksum'] = True
     if args.compress_threads:
         params['threads'] = args.compress_threads
+    if args.enable_ldm:
+        params['enable_ldm'] = True
+    if args.ldm_hash_log:
+        params['ldm_hash_log'] = args.ldm_hash_log
 
     zparams = zstd.ZstdCompressionParameters.from_level(args.level, **params)
     if args.compress_threads:
