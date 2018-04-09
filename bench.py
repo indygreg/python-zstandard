@@ -709,8 +709,8 @@ if __name__ == '__main__':
     group = parser.add_argument_group('Compression Parameters')
     group.add_argument('-l', '--level', type=int, default=3,
                         help='Compression level')
-    group.add_argument('--write-size', action='store_true',
-                       help='Write content size to zstd frames')
+    group.add_argument('--no-write-size', action='store_true',
+                       help='Do not write content size to zstd frames')
     group.add_argument('--write-checksum', action='store_true',
                        help='Write checksum data to zstd frames')
     group.add_argument('--dict-size', type=int, default=128 * 1024,
@@ -750,10 +750,12 @@ if __name__ == '__main__':
     if args.only_simple:
         BENCHES[:] = [fn for fn in BENCHES if fn.simple]
 
-    opts = {}
-    opts['level'] = args.level
-    if args.write_size:
-        opts['write_content_size'] = True
+    opts = {
+        'level': args.level,
+        'write_content_size': True,
+    }
+    if args.no_write_size:
+        opts['write_content_size'] = False
     if args.write_checksum:
         opts['write_checksum'] = True
     if args.compress_threads:
