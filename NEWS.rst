@@ -38,8 +38,8 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
-0.9.0 (not yet released)
-========================
+0.9.0 (released 2018-04-08)
+===========================
 
 Backwards Compatibility Notes
 -----------------------------
