@@ -33,7 +33,7 @@ if '--system-zstd' in sys.argv:
 
 if '--warnings-as-errors' in sys.argv:
     WARNINGS_AS_ERRORS = True
-    sys.argv.remote('--warning-as-errors')
+    sys.argv.remove('--warning-as-errors')
 
 # Code for obtaining the Extension instance is in its own module to
 # facilitate reuse in other projects.
