@@ -42,6 +42,7 @@ Other Actions Not Blocking Release
 ========================
 
 * Debian packaging support.
+* Support building with mingw compiler (#46).
 
 0.9.0 (released 2018-04-08)
 ===========================
