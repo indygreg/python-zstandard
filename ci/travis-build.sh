@@ -8,7 +8,7 @@
 set -ex
 
 MANYLINUX_PYPATHS="cp27-cp27m cp27-cp27mu cp34-cp34m cp35-cp35m cp36-cp36m"
-CURRENT_VERSION=zstandard-0.9.0
+CURRENT_VERSION=zstandard-0.9.1
 MANYLINUX_URL=https://s3-us-west-2.amazonaws.com/python-zstandard/travis/${TRAVIS_BUILD_NUMBER}/manylinuxwheels/dist
 
 function make_manylinux_wheels {
