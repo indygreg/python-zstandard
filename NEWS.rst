@@ -42,6 +42,7 @@ Other Actions Not Blocking Release
 ========================
 
 * Debian packaging support.
+* Fix typo in setup.py (#44).
 * Support building with mingw compiler (#46).
 
 0.9.0 (released 2018-04-08)
