@@ -82,8 +82,8 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  - "pip install --disable-pip-version-check --user --upgrade pip"
-  - "pip install --disable-pip-version-check --user --upgrade virtualenv"
+  - "pip install --disable-pip-version-check --user --upgrade pip==9.0.3"
+  - "pip install --disable-pip-version-check --user --upgrade virtualenv==15.2.0"
   - "%CMD_IN_ENV% pip install tox==2.5.0"
 
   # This installs "pythonX.Y.bat" scripts to aid tox in using the correct
