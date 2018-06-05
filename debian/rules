@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=zstandard
+# Some fuzzing tests don't work in Debian build environment for some reason.
+# Ignore them for now.
+export PYBUILD_TEST_ARGS=-I fuzzing
+
+%:
+	dh $@ --parallel --with python2,python3 --buildsystem=pybuild
