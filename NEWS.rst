@@ -90,7 +90,7 @@ Bug Fixes
 New Features
 ------------
 
-* Bundlded zstandard library upgraded from 1.1.3 to 1.3.4. This delivers various
+* Bundled zstandard library upgraded from 1.1.3 to 1.3.4. This delivers various
   bug fixes and performance improvements. It also gives us access to newer
   features.
 * Support for negative compression levels.
