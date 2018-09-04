@@ -27,7 +27,6 @@ void constants_module_init(PyObject* mod) {
 #else
 	version = PyString_FromString(PYTHON_ZSTANDARD_VERSION);
 #endif
-	Py_INCREF(version);
 	PyModule_AddObject(mod, "__version__", version);
 
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
@@ -41,7 +40,6 @@ void constants_module_init(PyObject* mod) {
 	PyTuple_SetItem(zstdVersion, 0, PyLong_FromLong(ZSTD_VERSION_MAJOR));
 	PyTuple_SetItem(zstdVersion, 1, PyLong_FromLong(ZSTD_VERSION_MINOR));
 	PyTuple_SetItem(zstdVersion, 2, PyLong_FromLong(ZSTD_VERSION_RELEASE));
-	Py_INCREF(zstdVersion);
 	PyModule_AddObject(mod, "ZSTD_VERSION", zstdVersion);
 
 	frameHeader = PyBytes_FromStringAndSize(frame_header, sizeof(frame_header));
