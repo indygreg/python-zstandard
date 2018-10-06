@@ -249,9 +249,6 @@ function main () {
         InstallMinicondaPip $env:PYTHON
         UpdateConda $env:PYTHON
         InstallCondaPackages $env:PYTHON "conda-build"
-    } else {
-        InstallPython $env:PYTHON_VERSION $env:PYTHON_ARCH $env:PYTHON
-        InstallPip $env:PYTHON
     }
 }
 

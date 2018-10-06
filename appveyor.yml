@@ -7,13 +7,13 @@ environment:
   matrix:
     - JOB: "2.7 32-bit"
       TOXENV: "py27"
-      PYTHON: "C:\\Python27.14"
+      PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.14"
       PYTHON_ARCH: "32"
 
     - JOB: "2.7 64-bit"
       TOXENV: "py27"
-      PYTHON: "C:\\Python27.14-x64"
+      PYTHON: "C:\\Python27-x64"
       PYTHON_VERSION: "2.7.14"
       PYTHON_ARCH: "64"
 
@@ -22,37 +22,37 @@ environment:
     # that version.
     - JOB: "3.4 32-bit"
       TOXENV: "py34"
-      PYTHON: "C:\\Python34.4"
+      PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4.4"
       PYTHON_ARCH: "32"
 
     - JOB: "3.4 64-bit"
       TOXENV: "py34"
-      PYTHON: "C:\\Python34.4-x64"
+      PYTHON: "C:\\Python34-x64"
       PYTHON_VERSION: "3.4.4"
       PYTHON_ARCH: "64"
 
     - JOB: "3.5 32-bit"
       TOXENV: "py35"
-      PYTHON: "C:\\Python35.3"
+      PYTHON: "C:\\Python35"
       PYTHON_VERSION: "3.5.3"
       PYTHON_ARCH: "32"
 
     - JOB: "3.5 64-bit"
       TOXENV: "py35"
-      PYTHON: "C:\\Python35.3-x64"
+      PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5.3"
       PYTHON_ARCH: "64"
 
     - JOB: "3.6 32-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.5"
+      PYTHON: "C:\\Python36"
       PYTHON_VERSION: "3.6.5"
       PYTHON_ARCH: "32"
 
     - JOB: "3.6 64-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.5-x64"
+      PYTHON: "C:\\Python36-x64"
       PYTHON_VERSION: "3.6.5"
       PYTHON_ARCH: "64"
 
@@ -101,8 +101,6 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  - "pip install --disable-pip-version-check --user --upgrade pip==9.0.3"
-  - "pip install --disable-pip-version-check --user --upgrade virtualenv==15.2.0"
   - "%CMD_IN_ENV% pip install tox==2.5.0"
 
   # This installs "pythonX.Y.bat" scripts to aid tox in using the correct
