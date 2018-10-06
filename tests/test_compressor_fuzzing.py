@@ -135,6 +135,51 @@ class TestCompressor_compressobj_fuzzing(unittest.TestCase):
 
         self.assertEqual(b''.join(chunks), ref_frame)
 
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      chunk_sizes=strategies.data(),
+                      flushes=strategies.data())
+    def test_flush_block(self, original, level, chunk_sizes, flushes):
+        cctx = zstd.ZstdCompressor(level=level)
+        cobj = cctx.compressobj()
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj()
+
+        compressed_chunks = []
+        decompressed_chunks = []
+        i = 0
+        while True:
+            input_size = chunk_sizes.draw(strategies.integers(1, 4096))
+            source = original[i:i + input_size]
+            if not source:
+                break
+
+            i += input_size
+
+            chunk = cobj.compress(source)
+            compressed_chunks.append(chunk)
+            decompressed_chunks.append(dobj.decompress(chunk))
+
+            if not flushes.draw(strategies.booleans()):
+                continue
+
+            chunk = cobj.flush(zstd.COMPRESSOBJ_FLUSH_BLOCK)
+            compressed_chunks.append(chunk)
+            decompressed_chunks.append(dobj.decompress(chunk))
+
+            self.assertEqual(b''.join(decompressed_chunks), original[0:i])
+
+        chunk = cobj.flush(zstd.COMPRESSOBJ_FLUSH_FINISH)
+        compressed_chunks.append(chunk)
+        decompressed_chunks.append(dobj.decompress(chunk))
+
+        self.assertEqual(dctx.decompress(b''.join(compressed_chunks),
+                                         max_output_size=len(original)),
+                         original)
+        self.assertEqual(b''.join(decompressed_chunks), original)
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi
