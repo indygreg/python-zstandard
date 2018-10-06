@@ -749,16 +749,14 @@ class ZstdCompressor(object):
         self._dict_data = dict_data
 
         # We defer setting up garbage collection until after calling
-        # _ensure_cctx() to ensure the memory size estimate is more accurate.
+        # _setup_cctx() to ensure the memory size estimate is more accurate.
         try:
-            self._ensure_cctx()
+            self._setup_cctx()
         finally:
             self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx,
                                 size=lib.ZSTD_sizeof_CCtx(cctx))
 
-    def _ensure_cctx(self):
-        lib.ZSTD_CCtx_reset(self._cctx)
-
+    def _setup_cctx(self):
         zresult = lib.ZSTD_CCtx_setParametersUsingCCtxParams(self._cctx,
                                                              self._params)
         if lib.ZSTD_isError(zresult):
@@ -783,7 +781,7 @@ class ZstdCompressor(object):
         return lib.ZSTD_sizeof_CCtx(self._cctx)
 
     def compress(self, data):
-        self._ensure_cctx()
+        lib.ZSTD_CCtx_reset(self._cctx)
 
         data_buffer = ffi.from_buffer(data)
 
@@ -820,7 +818,7 @@ class ZstdCompressor(object):
         return ffi.buffer(out, out_buffer.pos)[:]
 
     def compressobj(self, size=-1):
-        self._ensure_cctx()
+        lib.ZSTD_CCtx_reset(self._cctx)
 
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
@@ -850,7 +848,7 @@ class ZstdCompressor(object):
         if not hasattr(ofh, 'write'):
             raise ValueError('second argument must have a write() method')
 
-        self._ensure_cctx()
+        lib.ZSTD_CCtx_reset(self._cctx)
 
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
@@ -917,7 +915,7 @@ class ZstdCompressor(object):
 
     def stream_reader(self, source, size=-1,
                       read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE):
-        self._ensure_cctx()
+        lib.ZSTD_CCtx_reset(self._cctx)
 
         try:
             size = len(source)
@@ -935,7 +933,7 @@ class ZstdCompressor(object):
         if not hasattr(writer, 'write'):
             raise ValueError('must pass an object with a write() method')
 
-        self._ensure_cctx()
+        lib.ZSTD_CCtx_reset(self._cctx)
 
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
@@ -957,7 +955,7 @@ class ZstdCompressor(object):
             raise ValueError('must pass an object with a read() method or '
                              'conforms to buffer protocol')
 
-        self._ensure_cctx()
+        lib.ZSTD_CCtx_reset(self._cctx)
 
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN

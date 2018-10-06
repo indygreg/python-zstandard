@@ -11,14 +11,12 @@
 
 extern PyObject* ZstdError;
 
-int ensure_cctx(ZstdCompressor* compressor) {
+int setup_cctx(ZstdCompressor* compressor) {
 	size_t zresult;
 
 	assert(compressor);
 	assert(compressor->cctx);
 	assert(compressor->params);
-
-	ZSTD_CCtx_reset(compressor->cctx);
 
 	zresult = ZSTD_CCtx_setParametersUsingCCtxParams(compressor->cctx, compressor->params);
 	if (ZSTD_isError(zresult)) {
@@ -237,9 +235,9 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		Py_INCREF(dict);
 	}
 
-	if (ensure_cctx(self)) {
-		return -1;
-	}
+    if (setup_cctx(self)) {
+        return -1;
+    }
 
 	return 0;
 }
@@ -346,9 +344,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -520,9 +516,7 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		goto except;
 	}
 
-	if (ensure_cctx(self)) {
-		goto except;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	result->compressor = self;
 	Py_INCREF(self);
@@ -576,9 +570,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		goto finally;
 	}
 
-	if (ensure_cctx(self)) {
-		goto finally;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	destSize = ZSTD_compressBound(source.len);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
@@ -652,9 +644,7 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, inSize);
 	if (ZSTD_isError(zresult)) {
@@ -743,9 +733,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 		goto except;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -817,9 +805,7 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 		return NULL;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
 	if (!result) {

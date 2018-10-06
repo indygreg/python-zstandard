@@ -30,6 +30,8 @@ Actions Blocking Release
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
 * Expose ``ZSTD_getFrameProgression()`` from more compressor types.
+* Support modifying compression parameters mid operation when supported by
+  zstd API.
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -49,6 +51,14 @@ Backwards Compatibility Notes
   API.
 * The ``zstd.TARGETLENGTH_MIN`` constant was removed because it was removed by
   the zstd 1.3.5 API.
+* ``ZSTD_CCtx_setParametersUsingCCtxParams()`` is no longer called on every
+  operation performed against ``ZstdCompressor`` instances. The reason for this
+  change is that the zstd 1.3.5 API no longer allows this without calling
+  ``ZSTD_CCtx_resetParameters()`` first. But if we called
+  ``ZSTD_CCtx_resetParameters()`` on every operation, we'd have to redo
+  potentially expensive setup when using dictionaries. We now call
+  ``ZSTD_CCtx_reset()`` on every operation and don't attempt to change
+  compression parameters.
 
 Changes
 -------
