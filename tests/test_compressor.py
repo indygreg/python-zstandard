@@ -153,7 +153,7 @@ class TestCompressor_compress(unittest.TestCase):
         no_params = zstd.get_frame_parameters(no_dict_id)
         with_params = zstd.get_frame_parameters(with_dict_id)
         self.assertEqual(no_params.dict_id, 0)
-        self.assertEqual(with_params.dict_id, 1387616518)
+        self.assertEqual(with_params.dict_id, 1880053135)
 
     def test_compress_dict_multiple(self):
         samples = []
@@ -216,7 +216,7 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(params.dict_id, d.dict_id())
 
         self.assertEqual(result,
-                         b'\x28\xb5\x2f\xfd\x23\x06\x59\xb5\x52\x03\x19\x00\x00'
+                         b'\x28\xb5\x2f\xfd\x23\x8f\x55\x0f\x70\x03\x19\x00\x00'
                          b'\x66\x6f\x6f')
 
     def test_multithreaded_compression_params(self):
@@ -794,7 +794,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         d = zstd.train_dictionary(8192, samples)
 
         h = hashlib.sha1(d.as_bytes()).hexdigest()
-        self.assertEqual(h, '3040faa0ddc37d50e71a4dd28052cb8db5d9d027')
+        self.assertEqual(h, '2b3b6428da5bf2c9cc9d4bb58ba0bc5990dd0e79')
 
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=9, dict_data=d)
@@ -810,9 +810,16 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertEqual(params.window_size, 2097152)
         self.assertEqual(params.dict_id, d.dict_id())
         self.assertFalse(params.has_checksum)
-        self.assertEqual(compressed,
-                         b'\x28\xb5\x2f\xfd\x03\x58\x06\x59\xb5\x52\x5d\x00'
-                         b'\x00\x00\x02\x3c\x3d\x3f\x19\x86\x8d\x1a\x28\x80')
+
+        h = hashlib.sha1(compressed).hexdigest()
+        self.assertEqual(h, '23f88344263678478f5f82298e0a5d1833125786')
+
+        source = b'foo' + b'bar' + (b'foo' * 16384)
+
+        dctx = zstd.ZstdDecompressor(dict_data=d)
+
+        self.assertEqual(dctx.decompress(compressed, max_output_size=len(source)),
+                         source)
 
     def test_compression_params(self):
         params = zstd.ZstdCompressionParameters(
