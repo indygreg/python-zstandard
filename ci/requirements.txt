@@ -4,9 +4,9 @@
 #
 #    pip-compile --generate-hashes --output-file ci/requirements.txt ci/requirements.in
 #
-attrs==17.4.0 \
-    --hash=sha256:1c7960ccfd6a005cd9f7ba884e6316b5e430a3f1a6c37c5f87d8b43f83b54ec9 \
-    --hash=sha256:a17a9573a6f475c99b551c0e0a812707ddda1ec9653bed04c13841404ed6f450 \
+attrs==18.2.0 \
+    --hash=sha256:10cbf6e27dbce8c30807caf056c8eb50917e0eaafe86347671b57254006c3e69 \
+    --hash=sha256:ca4be454458f9dec299268d472aaa5a11f67a4ff70093396e1ceae9c76cf4bbb \
     # via hypothesis
 bashlex==0.12 \
     --hash=sha256:94bcf8759f28286d4fe2bbc408fa50e9fb7c46fa7097eac5b7cd76d75ca9936d \
@@ -91,14 +91,13 @@ nose==1.3.7 \
     --hash=sha256:9ff7c6cc443f8c51994b34a667bbcf45afd6d945be7477b52e97516fd17c53ac \
     --hash=sha256:dadcddc0aefbf99eea214e0f1232b94f2fa9bd98fa8353711dacb112bfcbbb2a \
     --hash=sha256:f1bffef9cbc82628f6e7d7b40d7e255aefaa1adb6a1b1d26c69a8b79e6208a98
-pluggy==0.6.0 \
-    --hash=sha256:7f8ae7f5bdf75671a718d2daf0a64b7885f74510bcd98b1a0bb420eb9a9d0cff \
-    --hash=sha256:d345c8fe681115900d6da8d048ba67c25df42973bda370783cd58826442dcd7c \
-    --hash=sha256:e160a7fcf25762bb60efc7e171d4497ff1d8d2d75a3d0df7a21b76821ecbf5c5 \
+pluggy==0.7.1 \
+    --hash=sha256:6e3836e39f4d36ae72840833db137f7b7d35105079aee6ec4a62d9f80d594dd1 \
+    --hash=sha256:95eb8364a4708392bae89035f45341871286a333f749c3141c20573d2b3876e1 \
     # via tox
-py==1.5.3 \
-    --hash=sha256:29c9fab495d7528e80ba1e343b958684f4ace687327e6f789a94bf3d1915f881 \
-    --hash=sha256:983f77f3331356039fdd792e9220b7b8ee1aa6bd2b25f567a963ff1de5a64f6a \
+py==1.6.0 \
+    --hash=sha256:06a30435d058473046be836d3fc4f27167fd84c45b99704f2fb5509ef61f9af1 \
+    --hash=sha256:50402e9d1c9005d759426988a492e0edaadb7f4e68bcddfea586bc7432d009c6 \
     # via tox
 pycparser==2.18 \
     --hash=sha256:99a8ca03e29851d96616ad0404b4aad7d9ee16f25c9f9708a11faf2810f7b226
@@ -106,15 +105,19 @@ six==1.11.0 \
     --hash=sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9 \
     --hash=sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb \
     # via tox
-tox-travis==0.10 \
-    --hash=sha256:7399968fc8a3dfdaa00b6c649b6fb049691aea0d217a28b03024fb350ae196d1
-tox==3.0.0 \
-    --hash=sha256:96efa09710a3daeeb845561ebbe1497641d9cef2ee0aea30db6969058b2bda2f \
-    --hash=sha256:9ee7de958a43806402a38c0d2aa07fa8553f4d2c20a15b140e9f771c2afeade0 \
+toml==0.10.0 \
+    --hash=sha256:229f81c57791a41d65e399fc06bf0848bab550a9dfd5ed66df18ce5f05e73d5c \
+    --hash=sha256:235682dd292d5899d361a811df37e04a8828a5b1da3115886b73cf81ebc9100e \
+    # via tox
+tox-travis==0.11 \
+    --hash=sha256:7e2f0b9db1ff9521da6a32a34aa4bfe292ea1c90ff8eb26001bf52f44ca0dc47
+tox==3.4.0 \
+    --hash=sha256:7f802b37fffd3b5ef2aab104943fa5dad24bf9564bb7e732e54b8d0cfec2fca0 \
+    --hash=sha256:cc97859bd7f38aa5b3b8ba55ffe7ee9952e7050faad1aedc0829cd3db2fb61d6 \
     # via tox-travis
-virtualenv==15.2.0 \
-    --hash=sha256:1d7e241b431e7afce47e77f8843a276f652699d1fa4f93b9d8ce0076fd7b0b54 \
-    --hash=sha256:e8e05d4714a1c51a2f5921e62f547fcb0f713ebbe959e0a7f585cc8bef71d11f \
+virtualenv==16.0.0 \
+    --hash=sha256:2ce32cd126117ce2c539f0134eb89de91a8413a29baac49cbab3eb50e2026669 \
+    --hash=sha256:ca07b4c0b54e14a91af9f34d0919790b016923d157afda5efdde55c96718f752 \
     # via tox
 wheel==0.31.0 \
     --hash=sha256:1ae8153bed701cb062913b72429bcf854ba824f973735427681882a688cb55ce \

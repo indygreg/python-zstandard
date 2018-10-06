@@ -41,6 +41,8 @@ Other Actions Not Blocking Release
 0.10.0 (not yet released)
 =========================
 
+* Upgrade various packages used in CI to latest versions. Notably tox (in
+  order to support Python 3.7).
 * Use relative paths in setup.py to appease Python 3.7 (#51).
 * Added CI for Python 3.7.
 

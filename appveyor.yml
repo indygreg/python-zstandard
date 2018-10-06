@@ -101,7 +101,7 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  - "%CMD_IN_ENV% pip install tox==2.5.0"
+  - "%CMD_IN_ENV% pip install tox==3.4.0"
 
   # This installs "pythonX.Y.bat" scripts to aid tox in using the correct
   # Python binary. Without this, Python under tox is severely confused.
