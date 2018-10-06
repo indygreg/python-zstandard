@@ -47,6 +47,8 @@ Backwards Compatibility Notes
 * The ``compress_literals`` argument and attribute has been removed from
   ``zstd.ZstdCompressionParameters`` because it was removed by the zstd 1.3.5
   API.
+* The ``zstd.TARGETLENGTH_MIN`` constant was removed because it was removed by
+  the zstd 1.3.5 API.
 
 Changes
 -------

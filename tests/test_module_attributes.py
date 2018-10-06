@@ -38,7 +38,6 @@ class TestModuleAttributes(unittest.TestCase):
             'SEARCHLOG_MAX',
             'SEARCHLENGTH_MIN',
             'SEARCHLENGTH_MAX',
-            'TARGETLENGTH_MIN',
             'LDM_MINMATCH_MIN',
             'LDM_MINMATCH_MAX',
             'LDM_BUCKETSIZELOG_MAX',

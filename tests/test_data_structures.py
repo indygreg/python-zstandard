@@ -16,7 +16,8 @@ class TestCompressionParameters(unittest.TestCase):
                                        hash_log=zstd.HASHLOG_MIN,
                                        search_log=zstd.SEARCHLOG_MIN,
                                        min_match=zstd.SEARCHLENGTH_MIN + 1,
-                                       target_length=zstd.TARGETLENGTH_MIN,
+                                       # All values are allowed for target length.
+                                       target_length=1,
                                        compression_strategy=zstd.STRATEGY_FAST)
 
         zstd.ZstdCompressionParameters(window_log=zstd.WINDOWLOG_MAX,
