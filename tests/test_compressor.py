@@ -336,7 +336,9 @@ class TestCompressor_compressobj(unittest.TestCase):
                          b'\x28\xb5\x2f\xfd\x00\x48\x18\x00\x00foo')
         self.assertEqual(cobj.compress(b'bar'), b'')
         # 3 byte header plus content.
-        self.assertEqual(cobj.flush(), b'\x19\x00\x00bar')
+        self.assertEqual(cobj.flush(zstd.COMPRESSOBJ_FLUSH_BLOCK),
+                         b'\x18\x00\x00bar')
+        self.assertEqual(cobj.flush(), b'\x01\x00\x00')
 
     def test_flush_empty_block(self):
         cctx = zstd.ZstdCompressor(write_checksum=True)
