@@ -151,6 +151,11 @@ def get_c_extension(support_legacy=False, system_zstd=False, name='zstd',
 
     libraries = ['zstd'] if system_zstd else []
 
+    # Python 3.7 doesn't like absolute paths. So normalize to relative.
+    sources = [os.path.relpath(p, root) for p in sources]
+    include_dirs = [os.path.relpath(p, root) for p in include_dirs]
+    depends = [os.path.relpath(p, root) for p in depends]
+
     # TODO compile with optimizations.
     return Extension(name, sources,
                      include_dirs=include_dirs,

@@ -41,6 +41,7 @@ Other Actions Not Blocking Release
 0.10.0 (not yet released)
 =========================
 
+* Use relative paths in setup.py to appease Python 3.7 (#51).
 * Added CI for Python 3.7.
 
 0.9.1 (released 2018-06-04)
