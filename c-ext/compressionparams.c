@@ -39,7 +39,6 @@ int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* ob
 	TRY_SET_PARAMETER(params, ZSTD_p_nbWorkers, obj->threads);
 	TRY_SET_PARAMETER(params, ZSTD_p_jobSize, obj->jobSize);
 	TRY_SET_PARAMETER(params, ZSTD_p_overlapSizeLog, obj->overlapSizeLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_compressLiterals, obj->compressLiterals);
 	TRY_SET_PARAMETER(params, ZSTD_p_forceMaxWindow, obj->forceMaxWindow);
 	TRY_SET_PARAMETER(params, ZSTD_p_enableLongDistanceMatching, obj->enableLongDistanceMatching);
 	TRY_SET_PARAMETER(params, ZSTD_p_ldmHashLog, obj->ldmHashLog);
@@ -88,7 +87,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		"ldm_bucket_size_log",
 		"ldm_hash_every_log",
 		"threads",
-		"compress_literals",
 		NULL
 	};
 
@@ -114,27 +112,18 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	unsigned ldmHashEveryLog = 0;
 	int threads = 0;
 
-	/* Setting value 0 has the effect of disabling. So we use -1 as a default
-	 * to detect whether to set. Then we automatically derive the expected value
-	 * based on the level, just like zstandard does itself. */
-	int compressLiterals = -1;
-
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-		"|IiIIIIIIIIIIIIIIIIIIii:CompressionParameters",
+		"|IiIIIIIIIIIIIIIIIIIIi:CompressionParameters",
 		kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
 		&searchLog, &minMatch, &targetLength, &compressionStrategy,
 		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,
 		&forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog,
-		&ldmHashEveryLog, &threads, &compressLiterals)) {
+		&ldmHashEveryLog, &threads)) {
 		return -1;
 	}
 
 	if (threads < 0) {
 		threads = cpu_count();
-	}
-
-	if (compressLiterals < 0) {
-		compressLiterals = compressionLevel >= 0;
 	}
 
 	self->format = format;
@@ -152,7 +141,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	self->threads = threads;
 	self->jobSize = jobSize;
 	self->overlapSizeLog = overlapSizeLog;
-	self->compressLiterals = compressLiterals;
 	self->forceMaxWindow = forceMaxWindow;
 	self->enableLongDistanceMatching = enableLDM;
 	self->ldmHashLog = ldmHashLog;
@@ -299,16 +287,6 @@ ZstdCompressionParametersObject* CompressionParameters_from_level(PyObject* unde
 		Py_DECREF(val);
 	}
 
-	val = PyDict_GetItemString(kwargs, "compress_literals");
-	if (!val) {
-		val = PyLong_FromLong(level >= 0 ? 1 : 0);
-		if (!val) {
-			goto cleanup;
-		}
-		PyDict_SetItemString(kwargs, "compress_literals", val);
-		Py_DECREF(val);
-	}
-
 	result = PyObject_New(ZstdCompressionParametersObject, &ZstdCompressionParametersType);
 	if (!result) {
 		goto cleanup;
@@ -420,9 +398,6 @@ static PyMemberDef ZstdCompressionParameters_members[] = {
 	{ "overlap_size_log", T_UINT,
 	  offsetof(ZstdCompressionParametersObject, overlapSizeLog), READONLY,
 	  "Size of previous input reloaded at the beginning of each job" },
-	{ "compress_literals", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, compressLiterals), READONLY,
-	  "whether Huffman compression of literals is in use" },
 	{ "force_max_window", T_UINT,
 	  offsetof(ZstdCompressionParametersObject, forceMaxWindow), READONLY,
 	  "force back references to remain smaller than window size" },

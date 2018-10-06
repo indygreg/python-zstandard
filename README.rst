@@ -1077,7 +1077,6 @@ follows:
 * write_dict_id
 * job_size
 * overlap_size_log
-* compress_literals
 * force_max_window
 * enable_ldm
 * ldm_hash_log

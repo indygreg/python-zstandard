@@ -41,6 +41,16 @@ Other Actions Not Blocking Release
 0.10.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* The ``compress_literals`` argument and attribute has been removed from
+  ``zstd.ZstdCompressionParameters`` because it was removed by the zstd 1.3.5
+  API.
+
+Changes
+-------
+
 * Upgrade pip, setuptools, wheel, and cibuildwheel packages to latest versions.
 * Upgrade various packages used in CI to latest versions. Notably tox (in
   order to support Python 3.7).
