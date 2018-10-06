@@ -56,6 +56,18 @@ environment:
       PYTHON_VERSION: "3.6.5"
       PYTHON_ARCH: "64"
 
+    - JOB: "3.7 32-bit"
+      TOXENV: "py37"
+      PYTHON: "C:\\Python37"
+      PYTHON_VERSION: "3.7.0"
+      PYTHON_ARCH: "32"
+
+    - JOB: "3.7 64-bit"
+      TOXENV: "py37"
+      PYTHON: "C:\\Python37-x64"
+      PYTHON_VERSION: "3.7.0"
+      PYTHON_ARCH: "64"
+
     - JOB: "2.7 Conda"
       TOXENV: "py27"
       PYTHON: "C:\\Miniconda2.7-x64"
@@ -67,6 +79,13 @@ environment:
       TOXENV: "py36"
       PYTHON: "C:\\Miniconda3.6-x64"
       PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+      CONDA: "1"
+
+    - JOB: "3.7 Conda"
+      TOXENV: "py37"
+      PYTHON: "C:\\Miniconda3.7-x64"
+      PYTHON_VERSION: "3.7"
       PYTHON_ARCH: "64"
       CONDA: "1"
 

@@ -38,6 +38,11 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.10.0 (not yet released)
+=========================
+
+* Added CI for Python 3.7.
+
 0.9.1 (released 2018-06-04)
 ===========================
 

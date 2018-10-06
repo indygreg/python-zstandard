@@ -72,7 +72,19 @@ matrix:
     - stage: build
       language: python
       os: linux
+      python: 3.7
+      dist: xenial
+      sudo: required
+      env:
+        - BUILDMODE=tox
+        - ARTIFACT_PATH=tox/3.7
+
+    - stage: build
+      language: python
+      os: linux
       python: 3.7-dev
+      dist: xenial
+      sudo: required
       env:
         - BUILDMODE=tox
         - ARTIFACT_PATH=tox/3.7-dev
@@ -101,6 +113,16 @@ matrix:
         - BUILDMODE=conda
         - ARTIFACT_PATH=conda/3.6
 
+    - stage: build
+      language: python
+      os: linux
+      python: 3.7
+      dist: xenial
+      sudo: required
+      env:
+        - BUILDMODE=conda
+        - ARTIFACT_PATH=conda/3.7
+
     - stage: test
       language: python
       os: linux
@@ -126,6 +148,15 @@ matrix:
       language: python
       os: linux
       python: 3.6
+      env:
+        - BUILDMODE=manylinuxtest
+
+    - stage: test
+      language: python
+      os: linux
+      python: 3.7
+      dist: xenial
+      sudo: required
       env:
         - BUILDMODE=manylinuxtest
 
