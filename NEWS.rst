@@ -67,7 +67,7 @@ Backwards Compatibility Notes
 New Features
 ------------
 
-* Bundled zstandard library upgraded from 1.3.4 to 1.3.5.
+* Bundled zstandard library upgraded from 1.3.4 to 1.3.6.
 
 Changes
 -------
