@@ -39,6 +39,8 @@ function resolve_wheel {
         pypart=cp35-cp35m
     elif [ "${TRAVIS_PYTHON_VERSION}" = "3.6" ]; then
         pypart=cp36-cp36m
+    elif [ "${TRAVIS_PYTHON_VERSION}" = "3.7" ]; then
+        pypart=cp37-cp37m
     else
         echo "Unsure what version of Python we're running: ${TRAVIS_PYTHON_VERSION}"
         exit 1
