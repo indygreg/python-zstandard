@@ -57,7 +57,8 @@ class TestTrainDictionary(unittest.TestCase):
         d = zstd.train_dictionary(8192, generate_samples(), threads=-1, steps=1,
                                   d=16)
 
-        self.assertEqual(d.k, 2000)
+        # This varies by platform.
+        self.assertIn(d.k, (50, 2000))
         self.assertEqual(d.d, 16)
 
 @make_cffi
