@@ -32,6 +32,10 @@ Actions Blocking Release
 * Expose ``ZSTD_getFrameProgression()`` from more compressor types.
 * Support modifying compression parameters mid operation when supported by
   zstd API.
+* Expose ``ZSTD_CLEVEL_DEFAULT`` constant.
+* Support ``ZSTD_p_forceAttachDict`` compression parameter.
+* Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
+  compression parameters.
 
 Other Actions Not Blocking Release
 ---------------------------------------
