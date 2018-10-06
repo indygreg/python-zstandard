@@ -6,7 +6,6 @@
 
 import distutils.ccompiler
 import os
-import sys
 
 from distutils.extension import Extension
 
