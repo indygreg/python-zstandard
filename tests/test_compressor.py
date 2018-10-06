@@ -812,7 +812,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertFalse(params.has_checksum)
         self.assertEqual(compressed,
                          b'\x28\xb5\x2f\xfd\x03\x58\x06\x59\xb5\x52\x5d\x00'
-                         b'\x00\x00\x02\xfc\x3d\x3f\xd9\xb0\x51\x03\x45\x89')
+                         b'\x00\x00\x02\x3c\x3d\x3f\x19\x86\x8d\x1a\x28\x80')
 
     def test_compression_params(self):
         params = zstd.ZstdCompressionParameters(
