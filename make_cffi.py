@@ -38,6 +38,7 @@ SOURCES = ['zstd/%s' % p for p in (
     'decompress/huf_decompress.c',
     'decompress/zstd_decompress.c',
     'dictBuilder/cover.c',
+    'dictBuilder/fastcover.c',
     'dictBuilder/divsufsort.c',
     'dictBuilder/zdict.c',
 )]

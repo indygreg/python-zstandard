@@ -33,6 +33,7 @@ zstd_sources = ['zstd/%s' % p for p in (
     'decompress/zstd_decompress.c',
     'dictBuilder/cover.c',
     'dictBuilder/divsufsort.c',
+    'dictBuilder/fastcover.c',
     'dictBuilder/zdict.c',
 )]
 
