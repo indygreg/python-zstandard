@@ -36,6 +36,12 @@ Actions Blocking Release
 * Support ``ZSTD_p_forceAttachDict`` compression parameter.
 * Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
   compression parameters.
+* Consider exposing ``ZSTDMT_toFlushNow()``.
+* Expose ``ZDICT_trainFromBuffer_fastCover()``,
+  ``ZDICT_optimizeTrainFromBuffer_fastCover``.
+* Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
+* Expose ``ZSTD_BLOCKSIZELOG_MAX`` and ``ZSTD_BLOCKSIZE_MAX`` constants.
+* Expose ``ZSTD_TARGETLENGTH_MAX`` and ``ZSTD_TARGETLENGTH_MIN`` constants.
 
 Other Actions Not Blocking Release
 ---------------------------------------
