@@ -38,6 +38,13 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.9.1 (released 2018-06-04)
+===========================
+
+* Debian packaging support.
+* Fix typo in setup.py (#44).
+* Support building with mingw compiler (#46).
+
 0.9.0 (released 2018-04-08)
 ===========================
 

@@ -1,0 +1,43 @@
+Source: python-zstandard
+Maintainer: Gregory Szorc <gregory.szorc@gmail.com>
+Section: python
+Priority: optional
+Build-Depends:
+  debhelper (>= 7),
+  dh-python,
+  python-all-dev,
+  python3-all-dev,
+  python-hypothesis,
+  python3-hypothesis,
+  python-nose,
+  python3-nose,
+  python-setuptools,
+  python3-setuptools
+Standards-Version: 3.9.1
+X-Python-Version: >=2.7
+X-Python3-Version: >= 3.4
+Homepage: https://github.com/indygreg/python-zstandard
+Vcs-Browser: https://github.com/indygreg/python-zstandard.git
+Vcs-Git: https://github.com/indygreg/python-zstandard.git
+
+Package: python-zstandard
+Architecture: any
+Depends:
+  ${misc:Depends},
+  ${python:Depends},
+  ${shlibs:Depends}
+Provides:
+ ${python:Provides}
+Description: Zstandard bindings for Python
+  Python bindings to zstandard compression library.
+
+Package: python3-zstandard
+Architecture: any
+Depends:
+  ${misc:Depends},
+  ${python3:Depends},
+  ${shlibs:Depends}
+Provides:
+ ${python3:Provides}
+Description: Zstandard bindings for Python
+  Python bindings to zstandard compression library.

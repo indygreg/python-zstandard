@@ -1,4 +1,5 @@
 graft c-ext
+graft debian
 graft zstd
 graft tests
 include make_cffi.py

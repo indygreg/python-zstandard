@@ -46,14 +46,14 @@ environment:
 
     - JOB: "3.6 32-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.4"
-      PYTHON_VERSION: "3.6.4"
+      PYTHON: "C:\\Python36.5"
+      PYTHON_VERSION: "3.6.5"
       PYTHON_ARCH: "32"
 
     - JOB: "3.6 64-bit"
       TOXENV: "py36"
-      PYTHON: "C:\\Python36.4-x64"
-      PYTHON_VERSION: "3.6.4"
+      PYTHON: "C:\\Python36.5-x64"
+      PYTHON_VERSION: "3.6.5"
       PYTHON_ARCH: "64"
 
     - JOB: "2.7 Conda"
@@ -82,8 +82,8 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  - "pip install --disable-pip-version-check --user --upgrade pip"
-  - "pip install --disable-pip-version-check --user --upgrade virtualenv"
+  - "pip install --disable-pip-version-check --user --upgrade pip==9.0.3"
+  - "pip install --disable-pip-version-check --user --upgrade virtualenv==15.2.0"
   - "%CMD_IN_ENV% pip install tox==2.5.0"
 
   # This installs "pythonX.Y.bat" scripts to aid tox in using the correct

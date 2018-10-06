@@ -123,6 +123,8 @@ def get_c_extension(support_legacy=False, system_zstd=False, name='zstd',
         compiler_type = 'unix'
     elif compiler.compiler_type == 'msvc':
         compiler_type = 'msvc'
+    elif compiler.compiler_type == 'mingw32':
+        compiler_type = 'mingw32'
     else:
         raise Exception('unhandled compiler type: %s' %
                         compiler.compiler_type)
@@ -141,7 +143,7 @@ def get_c_extension(support_legacy=False, system_zstd=False, name='zstd',
         extra_args.append('-DZSTD_LEGACY_SUPPORT=1')
 
     if warnings_as_errors:
-        if compiler_type == 'unix':
+        if compiler_type in ('unix', 'mingw32'):
             extra_args.append('-Werror')
         elif compiler_type == 'msvc':
             extra_args.append('/WX')
