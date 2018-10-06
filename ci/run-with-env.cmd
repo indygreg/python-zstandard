@@ -36,24 +36,15 @@ IF %MAJOR_PYTHON_VERSION% == 2 (
 ) ELSE (
     IF %MAJOR_PYTHON_VERSION% == 3 (
         SET WINDOWS_SDK_VERSION="v7.1"
-        IF %MINOR_PYTHON_VERSION% LEQ 2 (
-            ECHO Unsupported Python version: "%MAJOR_PYTHON_VERSION%.%MINOR_PYTHON_VERSION%"
-            EXIT 1
+
+        IF %MINOR_PYTHON_VERSION% LEQ 4 (
+            SET WINDOWS_SDK_VERSION="v7.1"
+            SET TOOLS_VERSION="10.0"
+            SET VCVARS=amd64\vcvars64.bat
         ) ELSE (
-            IF %MINOR_PYTHON_VERSION% LEQ 4 (
-                SET WINDOWS_SDK_VERSION="v7.1"
-                SET TOOLS_VERSION="10.0"
-                SET VCVARS=amd64\vcvars64.bat
-            ) ELSE (
-                IF %MINOR_PYTHON_VERSION% LEQ 6 (
-                    SET WINDOWS_SDK_VERSION="v7.1"
-                    SET TOOLS_VERSION="14.0"
-                    SET VCVARS=amd64\vcvars64.bat
-                ) ELSE (
-                    ECHO Unsupported Python version: "%MAJOR_PYTHON_VERSION%.%MINOR_PYTHON_VERSION%"
-                    EXIT 1
-                )
-            )
+            SET WINDOWS_SDK_VERSION="v7.1"
+            SET TOOLS_VERSION="14.0"
+            SET VCVARS=amd64\vcvars64.bat
         )
 
         IF EXIST "%WIN_WDK%" (
