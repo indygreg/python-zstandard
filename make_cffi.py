@@ -17,6 +17,7 @@ import tempfile
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 SOURCES = ['zstd/%s' % p for p in (
+    'common/debug.c',
     'common/entropy_common.c',
     'common/error_private.c',
     'common/fse_decompress.c',
@@ -25,6 +26,7 @@ SOURCES = ['zstd/%s' % p for p in (
     'common/xxhash.c',
     'common/zstd_common.c',
     'compress/fse_compress.c',
+    'compress/hist.c',
     'compress/huf_compress.c',
     'compress/zstd_compress.c',
     'compress/zstd_double_fast.c',

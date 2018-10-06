@@ -11,6 +11,7 @@ from distutils.extension import Extension
 
 
 zstd_sources = ['zstd/%s' % p for p in (
+    'common/debug.c',
     'common/entropy_common.c',
     'common/error_private.c',
     'common/fse_decompress.c',
@@ -19,6 +20,7 @@ zstd_sources = ['zstd/%s' % p for p in (
     'common/xxhash.c',
     'common/zstd_common.c',
     'compress/fse_compress.c',
+    'compress/hist.c',
     'compress/huf_compress.c',
     'compress/zstd_compress.c',
     'compress/zstd_double_fast.c',
