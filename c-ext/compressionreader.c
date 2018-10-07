@@ -43,8 +43,6 @@ static void reader_dealloc(ZstdCompressionReader* self) {
 }
 
 static ZstdCompressionReader* reader_enter(ZstdCompressionReader* self) {
-	size_t zresult;
-
 	if (self->entered) {
 		PyErr_SetString(PyExc_ValueError, "cannot __enter__ multiple times");
 		return NULL;
@@ -151,11 +149,6 @@ static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObje
 	Py_ssize_t resultSize;
 	size_t zresult;
 	size_t oldPos;
-
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "read() must be called from an active context manager");
-		return NULL;
-	}
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");

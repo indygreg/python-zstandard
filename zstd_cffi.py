@@ -579,9 +579,6 @@ class CompressionReader(object):
     next = __next__
 
     def read(self, size=-1):
-        if not self._entered:
-            raise ZstdError('read() must be called from an active context manager')
-
         if self._closed:
             raise ValueError('stream is closed')
 

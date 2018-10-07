@@ -69,13 +69,18 @@ Backwards Compatibility Notes
   potentially expensive setup when using dictionaries. We now call
   ``ZSTD_CCtx_reset()`` on every operation and don't attempt to change
   compression parameters.
-* Objects returned by ``ZstdDecompressor.stream_reader()`` no longer needs to be
+* Objects returned by ``ZstdCompressor.stream_reader()`` no longer need to be
+  used as a context manager. The context manager interface still exists and its
+  behavior is unchanged.
+* Objects returned by ``ZstdDecompressor.stream_reader()`` no longer need to be
   used as a context manager. The context manager interface still exists and its
   behavior is unchanged.
 
 New Features
 ------------
 
+* ``ZstdCompressor.stream_reader()`` no longer needs to be used as a context
+  manager (#34).
 * ``ZstdDecompressor.stream_reader()`` no longer needs to be used as a context
   manager (#34).
 * Bundled zstandard library upgraded from 1.3.4 to 1.3.6.

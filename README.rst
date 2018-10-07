@@ -196,6 +196,17 @@ Stream Reader API
 
    with open(path, 'rb') as fh:
        cctx = zstd.ZstdCompressor()
+       reader = cctx.stream_reader(fh)
+       while True:
+           chunk = reader.read(16384)
+           if not chunk:
+               break
+
+           # Do something with compressed chunk.
+
+Instances can also be used as context managers::
+
+   with open(path, 'rb') as fh:
        with cctx.stream_reader(fh) as reader:
            while True:
                chunk = reader.read(16384)
@@ -204,9 +215,9 @@ Stream Reader API
 
                # Do something with compressed chunk.
 
-The stream can only be read within a context manager. When the context
-manager exits, the stream is closed and the underlying resource is
-released and future operations against the compression stream stream will fail.
+When the context manager exists or ``close()`` is called, the stream is closed,
+underlying resources are released, and future operations against the compression
+stream will fail.
 
 The ``source`` argument to ``stream_reader()`` can be any object with a
 ``read(size)`` method or any object implementing the *buffer protocol*.

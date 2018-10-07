@@ -578,14 +578,20 @@ class TestCompressor_stream_reader(unittest.TestCase):
     def test_context_manager(self):
         cctx = zstd.ZstdCompressor()
 
-        reader = cctx.stream_reader(b'foo' * 60)
-        with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
-            reader.read(10)
-
         with cctx.stream_reader(b'foo') as reader:
             with self.assertRaisesRegexp(ValueError, 'cannot __enter__ multiple times'):
                 with reader as reader2:
                     pass
+
+    def test_no_context_manager(self):
+        cctx = zstd.ZstdCompressor()
+
+        reader = cctx.stream_reader(b'foo')
+        reader.read(4)
+
+        reader.close()
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            reader.read(1)
 
     def test_not_implemented(self):
         cctx = zstd.ZstdCompressor()
@@ -717,7 +723,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
             while reader.read(8192):
                 pass
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
             reader.read(10)
 
     def test_bad_size(self):
