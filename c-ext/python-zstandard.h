@@ -161,7 +161,6 @@ typedef struct {
 	ZstdCompressor* compressor;
 	PyObject* reader;
 	Py_buffer buffer;
-	unsigned long long sourceSize;
 	size_t readSize;
 
 	int entered;

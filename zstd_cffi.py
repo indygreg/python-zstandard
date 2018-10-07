@@ -501,10 +501,9 @@ class ZstdCompressionObj(object):
 
 
 class CompressionReader(object):
-    def __init__(self, compressor, source, size, read_size):
+    def __init__(self, compressor, source, read_size):
         self._compressor = compressor
         self._source = source
-        self._source_size = size
         self._read_size = read_size
         self._entered = False
         self._closed = False
@@ -519,12 +518,6 @@ class CompressionReader(object):
     def __enter__(self):
         if self._entered:
             raise ValueError('cannot __enter__ multiple times')
-
-        zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._compressor._cctx,
-                                                  self._source_size)
-        if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
 
         self._entered = True
         return self
@@ -925,7 +918,12 @@ class ZstdCompressor(object):
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 
-        return CompressionReader(self, source, size, read_size)
+        zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, size)
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('error setting source size: %s' %
+                            _zstd_error(zresult))
+
+        return CompressionReader(self, source, read_size)
 
     def stream_writer(self, writer, size=-1,
                  write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):

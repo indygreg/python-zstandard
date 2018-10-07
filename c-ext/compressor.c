@@ -485,6 +485,7 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t readSize = ZSTD_CStreamInSize();
 	ZstdCompressionReader* result = NULL;
+	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:stream_reader", kwlist,
 		&source, &sourceSize, &readSize)) {
@@ -518,9 +519,15 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 
 	ZSTD_CCtx_reset(self->cctx);
 
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source source: %s",
+			ZSTD_getErrorName(zresult));
+		goto except;
+	}
+
 	result->compressor = self;
 	Py_INCREF(self);
-	result->sourceSize = sourceSize;
 
 	return result;
 
