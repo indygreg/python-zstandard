@@ -76,6 +76,15 @@ Backwards Compatibility Notes
   used as a context manager. The context manager interface still exists and its
   behavior is unchanged.
 
+Bug Fixes
+---------
+
+* ``ZstdCompressor.compressobj().flush(COMPRESSOBJ_FLUSH_BLOCK)`` now returns
+  all data necessary to flush a block. Before, it was possible for the
+  ``flush()`` to not emit all data necessary to fully represent a block. This
+  would mean decompressors wouldn't be able to decompress all data that had been
+  fed into the compressor and ``flush()``ed. (#55).
+
 New Features
 ------------
 

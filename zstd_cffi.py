@@ -450,6 +450,14 @@ class ZstdCompressionObj(object):
         if self._finished:
             raise ZstdError('compressor object already finished')
 
+        if flush_mode == COMPRESSOBJ_FLUSH_BLOCK:
+            z_flush_mode = lib.ZSTD_e_flush
+        elif flush_mode == COMPRESSOBJ_FLUSH_FINISH:
+            z_flush_mode = lib.ZSTD_e_end
+            self._finished = True
+        else:
+            raise ZstdError('unhandled flush mode')
+
         assert self._out.pos == 0
 
         in_buffer = ffi.new('ZSTD_inBuffer *')
@@ -457,35 +465,13 @@ class ZstdCompressionObj(object):
         in_buffer.size = 0
         in_buffer.pos = 0
 
-        if flush_mode == COMPRESSOBJ_FLUSH_BLOCK:
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                self._out,
-                                                in_buffer,
-                                                lib.ZSTD_e_flush)
-            if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s' %
-                                _zstd_error(zresult))
-
-            # Output buffer is guaranteed to hold full block.
-            assert zresult == 0
-
-            if self._out.pos:
-                result = ffi.buffer(self._out.dst, self._out.pos)[:]
-                self._out.pos = 0
-                return result
-            else:
-                return b''
-
-        assert flush_mode == COMPRESSOBJ_FLUSH_FINISH
-        self._finished = True
-
         chunks = []
 
         while True:
             zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
                                                 self._out,
                                                 in_buffer,
-                                                lib.ZSTD_e_end)
+                                                z_flush_mode)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 _zstd_error(zresult))

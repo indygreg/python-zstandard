@@ -115,6 +115,7 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
 	ZSTD_inBuffer input;
+	ZSTD_EndDirective zFlushMode;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:flush", kwlist, &flushMode)) {
 		return NULL;
@@ -130,52 +131,30 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 		return NULL;
 	}
 
+	switch (flushMode) {
+		case compressorobj_flush_block:
+			zFlushMode = ZSTD_e_flush;
+			break;
+
+		case compressorobj_flush_finish:
+			zFlushMode = ZSTD_e_end;
+			self->finished = 1;
+			break;
+
+		default:
+			assert(0);
+	}
+
 	assert(self->output.pos == 0);
 
 	input.src = NULL;
 	input.size = 0;
 	input.pos = 0;
 
-	if (flushMode == compressorobj_flush_block) {
-		/* The output buffer is of size ZSTD_CStreamOutSize(), which is 
-		   guaranteed to hold a full block. */
-		Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
-				&input, ZSTD_e_flush);
-		Py_END_ALLOW_THREADS
-
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
-		}
-
-		/* Output buffer is guaranteed to hold full block. */
-		assert(zresult == 0);
-
-		if (self->output.pos) {
-			result = PyBytes_FromStringAndSize(self->output.dst, self->output.pos);
-			if (!result) {
-				return NULL;
-			}
-		}
-
-		self->output.pos = 0;
-
-		if (result) {
-			return result;
-		}
-		else {
-			return PyBytes_FromString("");
-		}
-	}
-
-	assert(flushMode == compressorobj_flush_finish);
-	self->finished = 1;
-
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
-			&input, ZSTD_e_end);
+			&input, zFlushMode);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
