@@ -47,10 +47,6 @@ static ZstdDecompressionReader* reader_enter(ZstdDecompressionReader* self) {
 		return NULL;
 	}
 
-	if (ensure_dctx(self->decompressor, 1)) {
-		return NULL;
-	}
-
 	self->entered = 1;
 
 	Py_INCREF(self);
@@ -127,11 +123,6 @@ static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyOb
 	Py_ssize_t resultSize;
 	ZSTD_outBuffer output;
 	size_t zresult;
-
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "read() must be called from an active context manager");
-		return NULL;
-	}
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
@@ -280,11 +271,6 @@ static PyObject* reader_seek(ZstdDecompressionReader* self, PyObject* args) {
 	int whence = 0;
 	unsigned long long readAmount = 0;
 	size_t defaultOutSize = ZSTD_DStreamOutSize();
-
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "seek() must be called from an active context manager");
-		return NULL;
-	}
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");

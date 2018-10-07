@@ -1291,8 +1291,6 @@ class DecompressionReader(object):
         if self._entered:
             raise ValueError('cannot __enter__ multiple times')
 
-        self._decompressor._ensure_dctx()
-
         self._entered = True
         return self
 
@@ -1353,9 +1351,6 @@ class DecompressionReader(object):
     next = __next__
 
     def read(self, size=-1):
-        if not self._entered:
-            raise ZstdError('read() must be called from an active context manager')
-
         if self._closed:
             raise ValueError('stream is closed')
 
@@ -1430,10 +1425,6 @@ class DecompressionReader(object):
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
     def seek(self, pos, whence=os.SEEK_SET):
-        if not self._entered:
-            raise ZstdError('seek() must be called from an active context '
-                            'manager')
-
         if self._closed:
             raise ValueError('stream is closed')
 

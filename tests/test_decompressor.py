@@ -293,10 +293,6 @@ class TestDecompressor_stream_reader(unittest.TestCase):
     def test_context_manager(self):
         dctx = zstd.ZstdDecompressor()
 
-        reader = dctx.stream_reader(b'foo')
-        with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
-            reader.read(1)
-
         with dctx.stream_reader(b'foo') as reader:
             with self.assertRaisesRegexp(ValueError, 'cannot __enter__ multiple times'):
                 with reader as reader2:
@@ -440,7 +436,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             while reader.read(16):
                 pass
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'read\(\) must be called from an active'):
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
             reader.read(10)
 
     def test_illegal_seeks(self):
@@ -474,8 +470,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             with self.assertRaisesRegexp(ValueError, 'stream is closed'):
                 reader.seek(4, os.SEEK_SET)
 
-        with self.assertRaisesRegexp(
-            zstd.ZstdError, 'seek\(\) must be called from an active context'):
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
             reader.seek(0)
 
     def test_seek(self):
@@ -492,6 +487,22 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             reader.seek(4, os.SEEK_CUR)
             self.assertEqual(reader.read(2), b'ar')
 
+    def test_no_context_manager(self):
+        source = b'foobar' * 60
+        cctx = zstd.ZstdCompressor()
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(frame)
+
+        self.assertEqual(reader.read(6), b'foobar')
+        self.assertEqual(reader.read(18), b'foobar' * 3)
+
+        # Calling close prevents subsequent use.
+        reader.close()
+
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            reader.read(6)
 
 @make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):

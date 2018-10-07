@@ -542,17 +542,24 @@ Stream Reader API
 
    with open(path, 'rb') as fh:
        dctx = zstd.ZstdDecompressor()
+       reader = dctx.stream_reader(fh)
+       while True:
+           chunk = reader.read(16384)
+            if not chunk:
+                break
+
+            # Do something with decompressed chunk.
+
+The stream can also be used as a context manager::
+
+   with open(path, 'rb') as fh:
+       dctx = zstd.ZstdDecompressor()
        with dctx.stream_reader(fh) as reader:
-           while True:
-               chunk = reader.read(16384)
-               if not chunk:
-                   break
+           ...
 
-               # Do something with decompressed chunk.
-
-The stream can only be read within a context manager. When the context
-manager exits, the stream is closed and the underlying resource is
-released and future operations against the stream will fail.
+When used as a context manager, the stream is closed and the underlying
+resources are released when the context manager exits. Future operations against
+the stream will fail.
 
 The ``source`` argument to ``stream_reader()`` can be any object with a
 ``read(size)`` method or any object implementing the *buffer protocol*.

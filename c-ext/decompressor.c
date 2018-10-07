@@ -575,6 +575,10 @@ static ZstdDecompressionReader* Decompressor_stream_reader(ZstdDecompressor* sel
 		return NULL;
 	}
 
+	if (ensure_dctx(self, 1)) {
+		return NULL;
+	}
+
 	result = (ZstdDecompressionReader*)PyObject_CallObject((PyObject*)&ZstdDecompressionReaderType, NULL);
 	if (NULL == result) {
 		return NULL;
