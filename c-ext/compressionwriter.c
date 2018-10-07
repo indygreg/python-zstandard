@@ -222,10 +222,6 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 			return NULL;
 		}
 
-		if (!output.pos) {
-			break;
-		}
-
 		/* Copy data from output buffer to writer. */
 		if (output.pos) {
 #if PY_MAJOR_VERSION >= 3
@@ -238,7 +234,12 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 			totalWrite += output.pos;
 			self->bytesCompressed += output.pos;
 		}
+
 		output.pos = 0;
+
+		if (!zresult) {
+			break;
+		}
 	}
 
 	PyMem_Free(output.dst);

@@ -401,13 +401,14 @@ class ZstdCompressionWriter(object):
                 raise ZstdError('zstd compress error: %s' %
                                 _zstd_error(zresult))
 
-            if not out_buffer.pos:
-                break
+            if out_buffer.pos:
+                self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
+                total_write += out_buffer.pos
+                self._bytes_compressed += out_buffer.pos
+                out_buffer.pos = 0
 
-            self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
-            total_write += out_buffer.pos
-            self._bytes_compressed += out_buffer.pos
-            out_buffer.pos = 0
+            if not zresult:
+                break
 
         return total_write
 

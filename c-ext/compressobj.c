@@ -142,7 +142,8 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 			break;
 
 		default:
-			assert(0);
+			PyErr_SetString(ZstdError, "unhandled flush mode");
+			return NULL;
 	}
 
 	assert(self->output.pos == 0);
