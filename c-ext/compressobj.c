@@ -173,8 +173,11 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 	self->finished = 1;
 
 	while (1) {
+		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
 			&input, ZSTD_e_end);
+		Py_END_ALLOW_THREADS
+
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
 				ZSTD_getErrorName(zresult));
