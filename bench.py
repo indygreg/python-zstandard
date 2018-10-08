@@ -189,6 +189,28 @@ def compress_compressobj_size(chunks, zparams):
         cobj.flush()
 
 
+@bench('discrete', 'chunker()')
+def compress_chunker(chunks, zparams):
+    cctx = zstd.ZstdCompressor(compression_params=zparams)
+    for in_chunk in chunks:
+        chunker = cctx.chunker()
+        for out_chunk in chunker.compress(in_chunk):
+            pass
+        for out_chunk in chunker.finish():
+            pass
+
+
+@bench('discrete', 'chunker() w/ input size')
+def compress_chunker(chunks, zparams):
+    cctx = zstd.ZstdCompressor(compression_params=zparams)
+    for in_chunk in chunks:
+        chunker = cctx.chunker(size=len(in_chunk))
+        for out_chunk in chunker.compress(in_chunk):
+            pass
+        for out_chunk in chunker.finish():
+            pass
+
+
 @bench('discrete', 'compress()', simple=True, zlib=True)
 def compress_zlib_discrete(chunks, opts):
     level = opts['zlib_level']
@@ -225,6 +247,19 @@ def compress_stream_compressobj(chunks, zparams):
     for chunk in chunks:
         compressor.compress(chunk)
         compressor.flush(flush)
+
+
+@bench('stream', 'chunker()', simple=True)
+def compress_stream_chunker(chunks, zparams):
+    cctx = zstd.ZstdCompressor(compression_params=zparams)
+    chunker = cctx.chunker()
+
+    for chunk in chunks:
+        for c in chunker.compress(chunk):
+            pass
+
+    for c in chunker.finish():
+        pass
 
 
 @bench('content-dict', 'compress()', simple=True)
