@@ -26,8 +26,8 @@ s_searchlog = strategies.integers(min_value=zstd.SEARCHLOG_MIN,
                                     max_value=zstd.SEARCHLOG_MAX)
 s_searchlength = strategies.integers(min_value=zstd.SEARCHLENGTH_MIN,
                                      max_value=zstd.SEARCHLENGTH_MAX)
-s_targetlength = strategies.integers(min_value=1,
-                                     max_value=2**32)
+s_targetlength = strategies.integers(min_value=zstd.TARGETLENGTH_MIN,
+                                     max_value=zstd.TARGETLENGTH_MAX)
 s_strategy = strategies.sampled_from((zstd.STRATEGY_FAST,
                                         zstd.STRATEGY_DFAST,
                                         zstd.STRATEGY_GREEDY,

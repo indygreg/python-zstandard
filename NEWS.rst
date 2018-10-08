@@ -40,8 +40,6 @@ Actions Blocking Release
 * Expose ``ZDICT_trainFromBuffer_fastCover()``,
   ``ZDICT_optimizeTrainFromBuffer_fastCover``.
 * Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
-* Expose ``ZSTD_BLOCKSIZELOG_MAX`` and ``ZSTD_BLOCKSIZE_MAX`` constants.
-* Expose ``ZSTD_TARGETLENGTH_MAX`` and ``ZSTD_TARGETLENGTH_MIN`` constants.
 * Consider a ``chunker()`` API for decompression.
 * Consider stats for ``chunker()`` API, including finding the last consumed
   offset of input data.
@@ -62,8 +60,6 @@ Backwards Compatibility Notes
 * The ``compress_literals`` argument and attribute has been removed from
   ``zstd.ZstdCompressionParameters`` because it was removed by the zstd 1.3.5
   API.
-* The ``zstd.TARGETLENGTH_MIN`` constant was removed because it was removed by
-  the zstd 1.3.5 API.
 * ``ZSTD_CCtx_setParametersUsingCCtxParams()`` is no longer called on every
   operation performed against ``ZstdCompressor`` instances. The reason for this
   change is that the zstd 1.3.5 API no longer allows this without calling
@@ -91,6 +87,8 @@ Bug Fixes
 New Features
 ------------
 
+* New module constants ``BLOCKSIZELOG_MAX``, ``BLOCKSIZE_MAX``,
+  ``TARGETLENGTH_MAX`` that expose constants from libzstd.
 * New ``ZstdCompressor.chunker()`` API for manually feeding data into a
   compressor and emitting chunks of a fixed size. Like ``compressobj()``, the
   API doesn't impose restrictions on the input or output types for the
