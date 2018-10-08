@@ -22,12 +22,15 @@ PATHS = [
     ('manylinuxwheels', '-cp34-cp34m-manylinux1_x86_64.whl'),
     ('manylinuxwheels', '-cp35-cp35m-manylinux1_x86_64.whl'),
     ('manylinuxwheels', '-cp36-cp36m-manylinux1_x86_64.whl'),
+    ('manylinuxwheels', '-cp37-cp37m-manylinux1_x86_64.whl'),
     ('macos', '-cp27-cp27m-macosx_10_6_intel.whl'),
     ('macos', '-cp34-cp34m-macosx_10_6_intel.whl'),
     ('macos', '-cp35-cp35m-macosx_10_6_intel.whl'),
     ('macos', '-cp36-cp36m-macosx_10_6_intel.whl'),
+    ('macos', '-cp37-cp37m-macosx_10_6_intel.whl'),
     ('conda/2.7', '-py27_0.tar.bz2'),
     ('conda/3.6', '-py36_0.tar.bz2'),
+    ('conda/3.7', '-py37_0.tar.bz2'),
 ]
 
 def make_request(session, url):
