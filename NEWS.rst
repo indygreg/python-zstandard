@@ -57,6 +57,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Notes
 -----------------------------
 
+* ``ZstdDecompressor.stream_reader().read()`` now consistently requires an
+  argument in both the C and CFFI backends. Before, the CFFI implementation
+  would assume a default value of ``-1``, which was later rejected.
 * The ``compress_literals`` argument and attribute has been removed from
   ``zstd.ZstdCompressionParameters`` because it was removed by the zstd 1.3.5
   API.

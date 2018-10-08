@@ -1450,7 +1450,7 @@ class DecompressionReader(object):
 
     next = __next__
 
-    def read(self, size=-1):
+    def read(self, size):
         if self._closed:
             raise ValueError('stream is closed')
 

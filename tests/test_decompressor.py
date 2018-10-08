@@ -368,7 +368,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             self.assertEqual(reader.tell(), len(source))
 
             # Read after EOF should return empty bytes.
-            self.assertEqual(reader.read(), b'')
+            self.assertEqual(reader.read(1), b'')
             self.assertEqual(reader.tell(), len(result))
 
         self.assertTrue(reader.closed())
@@ -404,7 +404,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             chunk = reader.read(8192)
             self.assertEqual(chunk, source)
             self.assertEqual(reader.tell(), len(source))
-            self.assertEqual(reader.read(), b'')
+            self.assertEqual(reader.read(1), b'')
             self.assertEqual(reader.tell(), len(source))
 
     def test_read_stream_small_chunks(self):
