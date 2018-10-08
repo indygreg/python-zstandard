@@ -33,6 +33,8 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
 
+	output.dst = NULL;
+
 	if (self->finished) {
 		PyErr_SetString(ZstdError, "cannot use a decompressobj multiple times");
 		return NULL;
