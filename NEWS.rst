@@ -119,6 +119,7 @@ New Features
 Changes
 -------
 
+* Added ``zstd_cffi.py`` and ``NEWS.rst`` to ``MANIFEST.in``.
 * ``zstandard.__version__`` is now defined (#50).
 * Upgrade pip, setuptools, wheel, and cibuildwheel packages to latest versions.
 * Upgrade various packages used in CI to latest versions. Notably tox (in
