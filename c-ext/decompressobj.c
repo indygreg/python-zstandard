@@ -55,6 +55,12 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 		goto finally;
 	}
 
+	/* Special case of empty input. Output will always be empty. */
+	if (source.len == 0) {
+		result = PyBytes_FromString("");
+		goto finally;
+	}
+
 	input.src = source.buf;
 	input.size = source.len;
 	input.pos = 0;
