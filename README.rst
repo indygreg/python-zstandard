@@ -430,6 +430,64 @@ the compressor::
    data = cobj.compress(b'foobar')
    data = cobj.flush()
 
+Chunker API
+^^^^^^^^^^^
+
+``chunker(size=None, chunk_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE)`` returns
+an object that can be used to iteratively feed chunks of data into a compressor
+and produce output chunks of a uniform size.
+
+The object returned by ``chunker()`` exposes the following methods:
+
+``compress(data)``
+   Feeds new input data into the compressor.
+
+``flush()``
+   Flushes all data currently in the compressor.
+
+``finish()``
+   Signals the end of input data. No new data can be compressed after this
+   method is called.
+
+``compress()``, ``flush()``, and ``finish()`` all return an iterator of
+``bytes`` instances holding compressed data. The iterator may be empty. Callers
+MUST iterate through all elements of the returned iterator before performing
+another operation on the object.
+
+All chunks emitted by ``compress()`` will have a length of ``chunk_size``.
+
+``flush()`` and ``finish()`` may return a final chunk smaller than
+``chunk_size``.
+
+Here is how the API should be used::
+
+   cctx = zstd.ZstdCompressor()
+   chunker = cctx.chunker(chunk_size=32768)
+
+   with open(path, 'rb') as fh:
+       while True:
+           in_chunk = fh.read(32768)
+           if not in_chunk:
+               break
+
+           for out_chunk in chunker.compress(in_chunk):
+               # Do something with output chunk of size 32768.
+
+       for out_chunk in chunker.finish():
+           # Do something with output chunks that finalize the zstd frame.
+
+The ``chunker()`` API is often a better alternative to ``compressobj()``.
+
+``compressobj()`` will emit output data as it is available. This results in a
+*stream* of output chunks of varying sizes. The consistency of the output chunk
+size with ``chunker()`` is more appropriate for many usages, such as sending
+compressed data to a socket.
+
+``compressobj()`` may also perform extra memory reallocations in order to
+dynamically adjust the sizes of the output chunks. Since ``chunker()`` output
+chunks are all the same size (except for flushed or final chunks), there is
+less memory allocation overhead.
+
 Batch Compression API
 ^^^^^^^^^^^^^^^^^^^^^
 

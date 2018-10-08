@@ -182,6 +182,7 @@ void compressobj_module_init(PyObject* mod);
 void compressor_module_init(PyObject* mod);
 void compressionparams_module_init(PyObject* mod);
 void constants_module_init(PyObject* mod);
+void compressionchunker_module_init(PyObject* mod);
 void compressiondict_module_init(PyObject* mod);
 void compressionreader_module_init(PyObject* mod);
 void compressionwriter_module_init(PyObject* mod);
@@ -219,6 +220,7 @@ void zstd_module_init(PyObject* m) {
 	compressiondict_module_init(m);
 	compressobj_module_init(m);
 	compressor_module_init(m);
+	compressionchunker_module_init(m);
 	compressionreader_module_init(m);
 	compressionwriter_module_init(m);
 	compressoriterator_module_init(m);

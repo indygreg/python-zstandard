@@ -487,6 +487,103 @@ class ZstdCompressionObj(object):
         return b''.join(chunks)
 
 
+class ZstdCompressionChunker(object):
+    def __init__(self, compressor, chunk_size):
+        self._compressor = compressor
+        self._out = ffi.new('ZSTD_outBuffer *')
+        self._dst_buffer = ffi.new('char[]', chunk_size)
+        self._out.dst = self._dst_buffer
+        self._out.size = chunk_size
+        self._out.pos = 0
+
+        self._in = ffi.new('ZSTD_inBuffer *')
+        self._in.src = ffi.NULL
+        self._in.size = 0
+        self._in.pos = 0
+        self._finished = False
+
+    def compress(self, data):
+        if self._finished:
+            raise ZstdError('cannot call compress() after compression finished')
+
+        if self._in.src != ffi.NULL:
+            raise ZstdError('cannot perform operation before consuming output '
+                            'from previous operation')
+
+        data_buffer = ffi.from_buffer(data)
+
+        if not len(data_buffer):
+            return
+
+        self._in.src = data_buffer
+        self._in.size = len(data_buffer)
+        self._in.pos = 0
+
+        while self._in.pos < self._in.size:
+            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
+                                                self._out,
+                                                self._in,
+                                                lib.ZSTD_e_continue)
+
+            if self._in.pos == self._in.size:
+                self._in.src = ffi.NULL
+                self._in.size = 0
+                self._in.pos = 0
+
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('zstd compress error: %s' %
+                                _zstd_error(zresult))
+
+            if self._out.pos == self._out.size:
+                yield ffi.buffer(self._out.dst, self._out.pos)[:]
+                self._out.pos = 0
+
+    def flush(self):
+        if self._finished:
+            raise ZstdError('cannot call flush() after compression finished')
+
+        if self._in.src != ffi.NULL:
+            raise ZstdError('cannot call flush() before consuming output from '
+                            'previous operation')
+
+        while True:
+            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
+                                                self._out, self._in,
+                                                lib.ZSTD_e_flush)
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('zstd compress error: %s' % _zstd_error(zresult))
+
+            if self._out.pos:
+                yield ffi.buffer(self._out.dst, self._out.pos)[:]
+                self._out.pos = 0
+
+            if not zresult:
+                return
+
+    def finish(self):
+        if self._finished:
+            raise ZstdError('cannot call finish() after compression finished')
+
+        if self._in.src != ffi.NULL:
+            raise ZstdError('cannot call finish() before consuming output from '
+                            'previous operation')
+
+        while True:
+            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
+                                                self._out, self._in,
+                                                lib.ZSTD_e_end)
+            if lib.ZSTD_isError(zresult):
+                raise ZstdError('zstd compress error: %s' % _zstd_error(zresult))
+
+            if self._out.pos:
+                yield ffi.buffer(self._out.dst, self._out.pos)[:]
+                self._out.pos = 0
+
+            if not zresult:
+                self._finished = True
+                return
+
+
 class CompressionReader(object):
     def __init__(self, compressor, source, read_size):
         self._compressor = compressor
@@ -815,6 +912,19 @@ class ZstdCompressor(object):
         cobj._finished = False
 
         return cobj
+
+    def chunker(self, size=-1, chunk_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+        lib.ZSTD_CCtx_reset(self._cctx)
+
+        if size < 0:
+            size = lib.ZSTD_CONTENTSIZE_UNKNOWN
+
+        zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, size)
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('error setting source size: %s' %
+                            _zstd_error(zresult))
+
+        return ZstdCompressionChunker(self, chunk_size=chunk_size)
 
     def copy_stream(self, ifh, ofh, size=-1,
                     read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,

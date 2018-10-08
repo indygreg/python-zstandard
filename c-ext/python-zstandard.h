@@ -180,6 +180,34 @@ extern PyTypeObject ZstdCompressionReaderType;
 typedef struct {
 	PyObject_HEAD
 
+	ZstdCompressor* compressor;
+	ZSTD_inBuffer input;
+	ZSTD_outBuffer output;
+	Py_buffer inBuffer;
+	int finished;
+	size_t chunkSize;
+} ZstdCompressionChunker;
+
+extern PyTypeObject ZstdCompressionChunkerType;
+
+typedef enum {
+	compressionchunker_mode_normal,
+	compressionchunker_mode_flush,
+	compressionchunker_mode_finish,
+} CompressionChunkerMode;
+
+typedef struct {
+	PyObject_HEAD
+
+	ZstdCompressionChunker* chunker;
+	CompressionChunkerMode mode;
+} ZstdCompressionChunkerIterator;
+
+extern PyTypeObject ZstdCompressionChunkerIteratorType;
+
+typedef struct {
+	PyObject_HEAD
+
 	ZSTD_DCtx* dctx;
 	ZstdCompressionDict* dict;
 	size_t maxWindowSize;

@@ -42,6 +42,9 @@ Actions Blocking Release
 * Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
 * Expose ``ZSTD_BLOCKSIZELOG_MAX`` and ``ZSTD_BLOCKSIZE_MAX`` constants.
 * Expose ``ZSTD_TARGETLENGTH_MAX`` and ``ZSTD_TARGETLENGTH_MIN`` constants.
+* Consider a ``chunker()`` API for decompression.
+* Consider stats for ``chunker()`` API, including finding the last consumed
+  offset of input data.
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -88,6 +91,12 @@ Bug Fixes
 New Features
 ------------
 
+* New ``ZstdCompressor.chunker()`` API for manually feeding data into a
+  compressor and emitting chunks of a fixed size. Like ``compressobj()``, the
+  API doesn't impose restrictions on the input or output types for the
+  data streams. Unlike ``compressobj()``, it ensures output chunks are of a
+  fixed size. This makes this API useful when the compressed output is being
+  fed into an I/O layer, where uniform write sizes are useful.
 * ``ZstdCompressor.stream_reader()`` no longer needs to be used as a context
   manager (#34).
 * ``ZstdDecompressor.stream_reader()`` no longer needs to be used as a context
