@@ -51,6 +51,25 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.10.1 (not yet released)
+=========================
+
+Backwards Compatibility Notes
+-----------------------------
+
+* ``ZstdCompressor.stream_reader().closed`` is now a property instead of a
+  method (#58).
+* ``ZstdDecompressor.stream_reader().closed`` is now a property instead of a
+  method (#58).
+
+Changes
+-------
+
+* ``ZstdCompressor.stream_reader()``'s and ``ZstdDecompressor.stream_reader()``'s
+  ``closed`` attribute is now a read-only property instead of a method. This now
+  properly matches the ``IOBase`` API and allows instances to be used in more
+  places that accept ``IOBase`` instances.
+
 0.10.0 (released 2018-10-08)
 ============================
 

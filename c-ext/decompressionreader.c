@@ -94,15 +94,6 @@ static PyObject* reader_close(ZstdDecompressionReader* self) {
 	Py_RETURN_NONE;
 }
 
-static PyObject* reader_closed(ZstdDecompressionReader* self) {
-	if (self->closed) {
-		Py_RETURN_TRUE;
-	}
-	else {
-		Py_RETURN_FALSE;
-	}
-}
-
 static PyObject* reader_flush(PyObject* self) {
 	Py_RETURN_NONE;
 }
@@ -370,8 +361,6 @@ static PyMethodDef reader_methods[] = {
 	PyDoc_STR("Exit a compression context") },
 	{ "close", (PyCFunction)reader_close, METH_NOARGS,
 	PyDoc_STR("Close the stream so it cannot perform any more operations") },
-	{ "closed", (PyCFunction)reader_closed, METH_NOARGS,
-	PyDoc_STR("Whether stream is closed") },
 	{ "flush", (PyCFunction)reader_flush, METH_NOARGS, PyDoc_STR("no-ops") },
 	{ "isatty", (PyCFunction)reader_isatty, METH_NOARGS, PyDoc_STR("Returns False") },
 	{ "readable", (PyCFunction)reader_readable, METH_NOARGS,
@@ -391,6 +380,12 @@ static PyMethodDef reader_methods[] = {
 	{ "write", (PyCFunction)reader_write, METH_VARARGS, PyDoc_STR("unsupported operation") },
 	{ "writelines", (PyCFunction)reader_writelines, METH_VARARGS, PyDoc_STR("unsupported operation") },
 	{ NULL, NULL }
+};
+
+static PyMemberDef reader_members[] = {
+	{ "closed", T_BOOL, offsetof(ZstdDecompressionReader, closed),
+	  READONLY, "whether stream is closed" },
+	{ NULL }
 };
 
 PyTypeObject ZstdDecompressionReaderType = {
@@ -422,7 +417,7 @@ PyTypeObject ZstdDecompressionReaderType = {
 	reader_iter, /* tp_iter */
 	reader_iternext, /* tp_iternext */
 	reader_methods, /* tp_methods */
-	0, /* tp_members */
+	reader_members, /* tp_members */
 	0, /* tp_getset */
 	0, /* tp_base */
 	0, /* tp_dict */

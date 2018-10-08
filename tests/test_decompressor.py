@@ -327,17 +327,23 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with dctx.stream_reader(b'foo') as reader:
+            self.assertFalse(reader.closed)
             self.assertTrue(reader.readable())
             self.assertFalse(reader.writable())
             self.assertTrue(reader.seekable())
             self.assertFalse(reader.isatty())
+            self.assertFalse(reader.closed)
             self.assertIsNone(reader.flush())
+            self.assertFalse(reader.closed)
+
+        self.assertTrue(reader.closed)
 
     def test_read_closed(self):
         dctx = zstd.ZstdDecompressor()
 
         with dctx.stream_reader(b'foo') as reader:
             reader.close()
+            self.assertTrue(reader.closed)
             with self.assertRaisesRegexp(ValueError, 'stream is closed'):
                 reader.read(1)
 
@@ -371,7 +377,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             self.assertEqual(reader.read(1), b'')
             self.assertEqual(reader.tell(), len(result))
 
-        self.assertTrue(reader.closed())
+        self.assertTrue(reader.closed)
 
     def test_read_buffer_small_chunks(self):
         cctx = zstd.ZstdCompressor()
@@ -406,6 +412,9 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             self.assertEqual(reader.tell(), len(source))
             self.assertEqual(reader.read(1), b'')
             self.assertEqual(reader.tell(), len(source))
+            self.assertFalse(reader.closed)
+
+        self.assertTrue(reader.closed)
 
     def test_read_stream_small_chunks(self):
         cctx = zstd.ZstdCompressor()
@@ -435,6 +444,8 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         with dctx.stream_reader(frame) as reader:
             while reader.read(16):
                 pass
+
+        self.assertTrue(reader.closed)
 
         with self.assertRaisesRegexp(ValueError, 'stream is closed'):
             reader.read(10)
@@ -497,9 +508,11 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         self.assertEqual(reader.read(6), b'foobar')
         self.assertEqual(reader.read(18), b'foobar' * 3)
+        self.assertFalse(reader.closed)
 
         # Calling close prevents subsequent use.
         reader.close()
+        self.assertTrue(reader.closed)
 
         with self.assertRaisesRegexp(ValueError, 'stream is closed'):
             reader.read(6)

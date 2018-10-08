@@ -588,8 +588,10 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
         reader = cctx.stream_reader(b'foo')
         reader.read(4)
+        self.assertFalse(reader.closed)
 
         reader.close()
+        self.assertTrue(reader.closed)
         with self.assertRaisesRegexp(ValueError, 'stream is closed'):
             reader.read(1)
 
@@ -627,13 +629,18 @@ class TestCompressor_stream_reader(unittest.TestCase):
             self.assertFalse(reader.writable())
             self.assertFalse(reader.seekable())
             self.assertFalse(reader.isatty())
+            self.assertFalse(reader.closed)
             self.assertIsNone(reader.flush())
+            self.assertFalse(reader.closed)
+
+        self.assertTrue(reader.closed)
 
     def test_read_closed(self):
         cctx = zstd.ZstdCompressor()
 
         with cctx.stream_reader(b'foo' * 60) as reader:
             reader.close()
+            self.assertTrue(reader.closed)
             with self.assertRaisesRegexp(ValueError, 'stream is closed'):
                 reader.read(10)
 

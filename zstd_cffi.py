@@ -653,6 +653,7 @@ class CompressionReader(object):
         self._closed = True
         return None
 
+    @property
     def closed(self):
         return self._closed
 
@@ -1438,6 +1439,7 @@ class DecompressionReader(object):
         self._closed = True
         return None
 
+    @property
     def closed(self):
         return self._closed
 
