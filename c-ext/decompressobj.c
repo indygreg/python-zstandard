@@ -73,8 +73,7 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	output.size = self->outSize;
 	output.pos = 0;
 
-	/* Read input until exhausted. */
-	while (input.pos < input.size) {
+	while (1) {
 		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_decompress_generic(self->decompressor->dctx, &output, &input);
 		Py_END_ALLOW_THREADS
@@ -106,9 +105,13 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 					goto except;
 				}
 			}
-
-			output.pos = 0;
 		}
+
+		if (zresult == 0 || (input.pos == input.size && output.pos == 0)) {
+			break;
+		}
+
+		output.pos = 0;
 	}
 
 	if (!result) {

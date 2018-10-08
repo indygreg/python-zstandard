@@ -81,6 +81,16 @@ Backwards Compatibility Notes
 Bug Fixes
 ---------
 
+* ``ZstdDecompressor.decompressobj().decompress()`` should now return all data
+  from internal buffers in more scenarios. Before, it was possible for data to
+  remain in internal buffers. This data would be emitted on a subsequent call
+  to ``decompress()``. The overall output stream would still be valid. But if
+  callers were expecting input data to exactly map to output data (say the
+  producer had used ``flush(COMPRESSOBJ_FLUSH_BLOCK)`` and was attempting to
+  map input chunks to output chunks), then the previous behavior would be
+  wrong. The new behavior is such that output from
+  ``flush(COMPRESSOBJ_FLUSH_BLOCK)`` fed into ``decompressobj().decompress()``
+  should produce all available compressed input.
 * ``ZstdDecompressor.stream_reader().read()`` should no longer segfault after
   a previous context manager resulted in error (#56).
 * ``ZstdCompressor.compressobj().flush(COMPRESSOBJ_FLUSH_BLOCK)`` now returns

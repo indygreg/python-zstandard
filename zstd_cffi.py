@@ -1355,7 +1355,7 @@ class ZstdDecompressionObj(object):
 
         chunks = []
 
-        while in_buffer.pos < in_buffer.size:
+        while True:
             zresult = lib.ZSTD_decompress_generic(self._decompressor._dctx,
                                                   out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
@@ -1368,7 +1368,12 @@ class ZstdDecompressionObj(object):
 
             if out_buffer.pos:
                 chunks.append(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
-                out_buffer.pos = 0
+
+            if (zresult == 0 or
+                    (in_buffer.pos == in_buffer.size and out_buffer.pos == 0)):
+                break
+
+            out_buffer.pos = 0
 
         return b''.join(chunks)
 
