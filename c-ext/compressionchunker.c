@@ -178,6 +178,9 @@ PyDoc_STRVAR(ZstdCompressionChunker__doc__,
 );
 
 static void ZstdCompressionChunker_dealloc(ZstdCompressionChunker* self) {
+	PyBuffer_Release(&self->inBuffer);
+	self->input.src = NULL;
+
 	PyMem_Free(self->output.dst);
 	self->output.dst = NULL;
 
