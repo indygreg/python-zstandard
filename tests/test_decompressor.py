@@ -504,6 +504,21 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, 'stream is closed'):
             reader.read(6)
 
+    def test_read_after_error(self):
+        source = io.BytesIO(b'')
+        dctx = zstd.ZstdDecompressor()
+
+        reader = dctx.stream_reader(source)
+
+        with reader:
+            with self.assertRaises(TypeError):
+                reader.read()
+
+        with reader:
+            with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+                reader.read(100)
+
+
 @make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):
     def test_simple(self):

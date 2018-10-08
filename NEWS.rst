@@ -81,6 +81,8 @@ Backwards Compatibility Notes
 Bug Fixes
 ---------
 
+* ``ZstdDecompressor.stream_reader().read()`` should no longer segfault after
+  a previous context manager resulted in error (#56).
 * ``ZstdCompressor.compressobj().flush(COMPRESSOBJ_FLUSH_BLOCK)`` now returns
   all data necessary to flush a block. Before, it was possible for the
   ``flush()`` to not emit all data necessary to fully represent a block. This
