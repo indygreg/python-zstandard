@@ -95,25 +95,45 @@ zstd_depends = [
 
 
 def get_c_extension(support_legacy=False, system_zstd=False, name='zstd',
-                    warnings_as_errors=False):
-    """Obtain a distutils.extension.Extension for the C extension."""
-    root = os.path.abspath(os.path.dirname(__file__))
+                    warnings_as_errors=False, root=None):
+    """Obtain a distutils.extension.Extension for the C extension.
 
-    sources = set([os.path.join(root, p) for p in ext_sources])
+    ``support_legacy`` controls whether to compile in legacy zstd format support.
+
+    ``system_zstd`` controls whether to compile against the system zstd library.
+    For this to work, the system zstd library and headers must match what
+    python-zstandard is coded against exactly.
+
+    ``name`` is the module name of the C extension to produce.
+
+    ``warnings_as_errors`` controls whether compiler warnings are turned into
+    compiler errors.
+
+    ``root`` defines a root path that source should be computed as relative
+    to. This should be the directory with the main ``setup.py`` that is
+    being invoked. If not defined, paths will be relative to this file.
+    """
+    actual_root = os.path.abspath(os.path.dirname(__file__))
+    root = root or actual_root
+
+    sources = set([os.path.join(actual_root, p) for p in ext_sources])
     if not system_zstd:
-        sources.update([os.path.join(root, p) for p in zstd_sources])
+        sources.update([os.path.join(actual_root, p) for p in zstd_sources])
         if support_legacy:
-            sources.update([os.path.join(root, p) for p in zstd_sources_legacy])
+            sources.update([os.path.join(actual_root, p)
+                            for p in zstd_sources_legacy])
     sources = list(sources)
 
-    include_dirs = set([os.path.join(root, d) for d in ext_includes])
+    include_dirs = set([os.path.join(actual_root, d) for d in ext_includes])
     if not system_zstd:
-        include_dirs.update([os.path.join(root, d) for d in zstd_includes])
+        include_dirs.update([os.path.join(actual_root, d)
+                             for d in zstd_includes])
         if support_legacy:
-            include_dirs.update([os.path.join(root, d) for d in zstd_includes_legacy])
+            include_dirs.update([os.path.join(actual_root, d)
+                                 for d in zstd_includes_legacy])
     include_dirs = list(include_dirs)
 
-    depends = [os.path.join(root, p) for p in zstd_depends]
+    depends = [os.path.join(actual_root, p) for p in zstd_depends]
 
     compiler = distutils.ccompiler.new_compiler()
 
