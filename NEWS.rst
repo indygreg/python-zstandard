@@ -65,6 +65,9 @@ Backwards Compatibility Notes
 Changes
 -------
 
+* Stop attempting to package Python 3.6 for Miniconda. The latest version of
+  Miniconda is using Python 3.7. The Python 3.6 Miniconda packages were a lie
+  since this were built against Python 3.7.
 * ``ZstdCompressor.stream_reader()``'s and ``ZstdDecompressor.stream_reader()``'s
   ``closed`` attribute is now a read-only property instead of a method. This now
   properly matches the ``IOBase`` API and allows instances to be used in more

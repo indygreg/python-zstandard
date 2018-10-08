@@ -29,7 +29,6 @@ PATHS = [
     ('macos', '-cp36-cp36m-macosx_10_6_intel.whl'),
     ('macos', '-cp37-cp37m-macosx_10_6_intel.whl'),
     ('conda/2.7', '-py27_0.tar.bz2'),
-    ('conda/3.6', '-py36_0.tar.bz2'),
     ('conda/3.7', '-py37_0.tar.bz2'),
 ]
 
