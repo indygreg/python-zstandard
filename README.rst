@@ -20,7 +20,7 @@ https://github.com/indygreg/python-zstandard.
 Requirements
 ============
 
-This extension is designed to run with Python 2.7, 3.4, 3.5, and 3.6
+This extension is designed to run with Python 2.7, 3.4, 3.5, 3.6, and 3.7
 on common platforms (Linux, Windows, and OS X). x86 and x86_64 are well-tested
 on Windows. Only x86_64 is well-tested on Linux and macOS.
 
