@@ -153,7 +153,7 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < source.len) {
+	while (input.pos < (size_t)source.len) {
 		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_compress_generic(self->compressor->cctx, &output, &input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS

@@ -59,6 +59,11 @@ Bug Fixes
 
 * ``zstd_cffi.py`` added to ``setup.py`` (#60).
 
+Changes
+-------
+
+* Change some integer casts to avoid ``ssize_t`` (#61).
+
 0.10.1 (released 2018-10-08)
 ============================
 
