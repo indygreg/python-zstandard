@@ -51,6 +51,19 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.10.2 (released 2018-11-03)
+============================
+
+Bug Fixes
+---------
+
+* ``zstd_cffi.py`` added to ``setup.py`` (#60).
+
+Changes
+-------
+
+* Change some integer casts to avoid ``ssize_t`` (#61).
+
 0.10.1 (released 2018-10-08)
 ============================
 
