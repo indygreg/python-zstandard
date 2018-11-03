@@ -51,6 +51,14 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.11.0 (not yet released)
+=========================
+
+Changes
+-------
+
+* Upgraded various Python packages in CI environment.
+
 0.10.2 (released 2018-11-03)
 ============================
 
