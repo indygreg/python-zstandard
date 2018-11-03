@@ -825,7 +825,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertFalse(params.has_checksum)
 
         h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, '23f88344263678478f5f82298e0a5d1833125786')
+        self.assertEqual(h, 'd118cd7a008c7b8f416aa3a5f609eab4c629af95')
 
         source = b'foo' + b'bar' + (b'foo' * 16384)
 
