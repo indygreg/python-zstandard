@@ -35,27 +35,27 @@ if _module_policy == 'default':
         from zstd import *
         backend = 'cext'
     elif platform.python_implementation() in ('PyPy',):
-        from zstd_cffi import *
+        from .cffi import *
         backend = 'cffi'
     else:
         try:
             from zstd import *
             backend = 'cext'
         except ImportError:
-            from zstd_cffi import *
+            from .cffi import *
             backend = 'cffi'
 elif _module_policy == 'cffi_fallback':
     try:
         from zstd import *
         backend = 'cext'
     except ImportError:
-        from zstd_cffi import *
+        from .cffi import *
         backend = 'cffi'
 elif _module_policy == 'cext':
     from zstd import *
     backend = 'cext'
 elif _module_policy == 'cffi':
-    from zstd_cffi import *
+    from .cffi import *
     backend = 'cffi'
 else:
     raise ImportError('unknown module import policy: %s; use default, cffi_fallback, '

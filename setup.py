@@ -91,7 +91,6 @@ setup(
     ],
     keywords='zstandard zstd compression',
     packages=['zstandard'],
-    py_modules=['zstd_cffi'],
     ext_modules=extensions,
     test_suite='tests',
     install_requires=install_requires,

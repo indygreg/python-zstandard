@@ -54,9 +54,19 @@ Other Actions Not Blocking Release
 0.11.0 (not yet released)
 =========================
 
+Backwards Compatibility Nodes
+-----------------------------
+
+* The ``zstd_cffi`` module has been renamed to ``zstandard.cffi``. As had
+  been documented in the ``README`` file since the ``0.9.0`` release, the
+  module should not be imported directly at its new location. Instead,
+  ``import zstandard`` to cause an appropriate backend module to be loaded
+  automatically.
+
 Changes
 -------
 
+* ``zstd_cffi`` module has been renamed to ``zstandard.cffi``.
 * ``ZstdCompressor.stream_writer()`` now reuses a buffer in order to avoid
   allocating a new buffer for every operation. This should result in faster
   performance in cases where ``write()`` or ``flush()`` are being called
