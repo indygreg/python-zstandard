@@ -291,6 +291,12 @@ class ZstdCompressionWriter(object):
         self._entered = False
         self._bytes_compressed = 0
 
+        self._dst_buffer = ffi.new('char[]', write_size)
+        self._out_buffer = ffi.new('ZSTD_outBuffer *')
+        self._out_buffer.dst = self._dst_buffer
+        self._out_buffer.size = len(self._dst_buffer)
+        self._out_buffer.pos = 0
+
     def __enter__(self):
         if self._entered:
             raise ZstdError('cannot __enter__ multiple times')
@@ -308,13 +314,9 @@ class ZstdCompressionWriter(object):
         self._entered = False
 
         if not exc_type and not exc_value and not exc_tb:
-            dst_buffer = ffi.new('char[]', self._write_size)
-
-            out_buffer = ffi.new('ZSTD_outBuffer *')
             in_buffer = ffi.new('ZSTD_inBuffer *')
 
-            out_buffer.dst = dst_buffer
-            out_buffer.size = len(dst_buffer)
+            out_buffer = self._out_buffer
             out_buffer.pos = 0
 
             in_buffer.src = ffi.NULL
@@ -362,10 +364,7 @@ class ZstdCompressionWriter(object):
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
-        out_buffer = ffi.new('ZSTD_outBuffer *')
-        dst_buffer = ffi.new('char[]', self._write_size)
-        out_buffer.dst = dst_buffer
-        out_buffer.size = self._write_size
+        out_buffer = self._out_buffer
         out_buffer.pos = 0
 
         while in_buffer.pos < in_buffer.size:
@@ -390,10 +389,7 @@ class ZstdCompressionWriter(object):
 
         total_write = 0
 
-        out_buffer = ffi.new('ZSTD_outBuffer *')
-        dst_buffer = ffi.new('char[]', self._write_size)
-        out_buffer.dst = dst_buffer
-        out_buffer.size = self._write_size
+        out_buffer = self._out_buffer
         out_buffer.pos = 0
 
         in_buffer = ffi.new('ZSTD_inBuffer *')

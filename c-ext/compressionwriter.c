@@ -18,6 +18,9 @@ static void ZstdCompressionWriter_dealloc(ZstdCompressionWriter* self) {
 	Py_XDECREF(self->compressor);
 	Py_XDECREF(self->writer);
 
+	PyMem_Free(self->output.dst);
+	self->output.dst = NULL;
+
 	PyObject_Del(self);
 }
 
@@ -48,7 +51,6 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 	PyObject* exc_tb;
 	size_t zresult;
 
-	ZSTD_outBuffer output;
 	PyObject* res;
 
 	if (!PyArg_ParseTuple(args, "OOO:__exit__", &exc_type, &exc_value, &exc_tb)) {
@@ -60,33 +62,27 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 	if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
 		ZSTD_inBuffer inBuffer;
 
+		self->output.pos = 0;
+
 		inBuffer.src = NULL;
 		inBuffer.size = 0;
 		inBuffer.pos = 0;
 
-		output.dst = PyMem_Malloc(self->outSize);
-		if (!output.dst) {
-			return PyErr_NoMemory();
-		}
-		output.size = self->outSize;
-		output.pos = 0;
-
 		while (1) {
-			zresult = ZSTD_compress_generic(self->compressor->cctx, &output, &inBuffer, ZSTD_e_end);
+			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output, &inBuffer, ZSTD_e_end);
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "error ending compression stream: %s",
 					ZSTD_getErrorName(zresult));
-				PyMem_Free(output.dst);
 				return NULL;
 			}
 
-			if (output.pos) {
+			if (self->output.pos) {
 #if PY_MAJOR_VERSION >= 3
 				res = PyObject_CallMethod(self->writer, "write", "y#",
 #else
 				res = PyObject_CallMethod(self->writer, "write", "s#",
 #endif
-					output.dst, output.pos);
+					self->output.dst, self->output.pos);
 				Py_XDECREF(res);
 			}
 
@@ -94,10 +90,8 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 				break;
 			}
 
-			output.pos = 0;
+			self->output.pos = 0;
 		}
-
-		PyMem_Free(output.dst);
 	}
 
 	Py_RETURN_FALSE;
@@ -117,7 +111,6 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 	Py_buffer source;
 	size_t zresult;
 	ZSTD_inBuffer input;
-	ZSTD_outBuffer output;
 	PyObject* res;
 	Py_ssize_t totalWrite = 0;
 
@@ -141,13 +134,7 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 		goto finally;
 	}
 
-	output.dst = PyMem_Malloc(self->outSize);
-	if (!output.dst) {
-		PyErr_NoMemory();
-		goto finally;
-	}
-	output.size = self->outSize;
-	output.pos = 0;
+	self->output.pos = 0;
 
 	input.src = source.buf;
 	input.size = source.len;
@@ -155,31 +142,28 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 
 	while (input.pos < (size_t)source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->compressor->cctx, &output, &input, ZSTD_e_continue);
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output, &input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
-			PyMem_Free(output.dst);
 			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
 			goto finally;
 		}
 
 		/* Copy data from output buffer to writer. */
-		if (output.pos) {
+		if (self->output.pos) {
 #if PY_MAJOR_VERSION >= 3
 			res = PyObject_CallMethod(self->writer, "write", "y#",
 #else
 			res = PyObject_CallMethod(self->writer, "write", "s#",
 #endif
-				output.dst, output.pos);
+				self->output.dst, self->output.pos);
 			Py_XDECREF(res);
-			totalWrite += output.pos;
-			self->bytesCompressed += output.pos;
+			totalWrite += self->output.pos;
+			self->bytesCompressed += self->output.pos;
 		}
-		output.pos = 0;
+		self->output.pos = 0;
 	}
-
-	PyMem_Free(output.dst);
 
 	result = PyLong_FromSsize_t(totalWrite);
 
@@ -190,7 +174,6 @@ finally:
 
 static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObject* args) {
 	size_t zresult;
-	ZSTD_outBuffer output;
 	ZSTD_inBuffer input;
 	PyObject* res;
 	Py_ssize_t totalWrite = 0;
@@ -200,49 +183,41 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 		return NULL;
 	}
 
+	self->output.pos = 0;
+
 	input.src = NULL;
 	input.size = 0;
 	input.pos = 0;
 
-	output.dst = PyMem_Malloc(self->outSize);
-	if (!output.dst) {
-		return PyErr_NoMemory();
-	}
-	output.size = self->outSize;
-	output.pos = 0;
-
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->compressor->cctx, &output, &input, ZSTD_e_flush);
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output, &input, ZSTD_e_flush);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
-			PyMem_Free(output.dst);
 			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
 			return NULL;
 		}
 
 		/* Copy data from output buffer to writer. */
-		if (output.pos) {
+		if (self->output.pos) {
 #if PY_MAJOR_VERSION >= 3
 			res = PyObject_CallMethod(self->writer, "write", "y#",
 #else
 			res = PyObject_CallMethod(self->writer, "write", "s#",
 #endif
-				output.dst, output.pos);
+				self->output.dst, self->output.pos);
 			Py_XDECREF(res);
-			totalWrite += output.pos;
-			self->bytesCompressed += output.pos;
+			totalWrite += self->output.pos;
+			self->bytesCompressed += self->output.pos;
 		}
 
-		output.pos = 0;
+		self->output.pos = 0;
 
 		if (!zresult) {
 			break;
 		}
 	}
-
-	PyMem_Free(output.dst);
 
 	return PyLong_FromSsize_t(totalWrite);
 }

@@ -57,6 +57,10 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* ``ZstdCompressor.stream_writer()`` now reuses a buffer in order to avoid
+  allocating a new buffer for every operation. This should result in faster
+  performance in cases where ``write()`` or ``flush()`` are being called
+  frequently. (#62)
 * Bundled zstandard library upgraded from 1.3.6 to 1.3.7.
 * Upgraded various Python packages in CI environment.
 
