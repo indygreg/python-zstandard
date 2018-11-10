@@ -502,7 +502,7 @@ def decompress_content_dict_chain_api(chunks, opts):
     zctx.decompress_content_dict_chain(chunks)
 
 
-def get_chunks(paths, limit_count, encoding):
+def get_chunks(paths, limit_count, encoding, chunk_size=None):
     chunks = []
 
     def process_file(p):
@@ -518,7 +518,11 @@ def get_chunks(paths, limit_count, encoding):
             else:
                 raise Exception('unexpected chunk encoding: %s' % encoding)
 
-            chunks.append(data)
+            if chunk_size is not None:
+                chunks.extend([data[i:i + chunk_size]
+                               for i in range(0, len(data), chunk_size)])
+            else:
+                chunks.append(data)
 
     for path in paths:
         if os.path.isdir(path):
@@ -775,6 +779,9 @@ if __name__ == '__main__':
     group.add_argument('--chunk-encoding', choices=['raw', 'zlib'], default='raw',
                        help='How input chunks are encoded. Can be used to '
                             'pass compressed chunks for benchmarking')
+    group.add_argument('--split-input-size', type=int,
+                       help='Split inputs into chunks so they are at most this '
+                            'many bytes')
 
     parser.add_argument('path', metavar='PATH', nargs='+')
 
@@ -808,7 +815,8 @@ if __name__ == '__main__':
         threads_zparams = zstd.ZstdCompressionParameters.from_level(
             args.level, **params)
 
-    chunks = get_chunks(args.path, args.limit_count, args.chunk_encoding)
+    chunks = get_chunks(args.path, args.limit_count, args.chunk_encoding,
+                        chunk_size=args.split_input_size)
     orig_size = sum(map(len, chunks))
     print('%d chunks; %d bytes' % (len(chunks), orig_size))
 
