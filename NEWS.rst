@@ -66,6 +66,8 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``setup.py`` denotes support for Python 3.7 (Python 3.7 was supported and
+  tested in the 0.10 release).
 * ``zstd_cffi`` module has been renamed to ``zstandard.cffi``.
 * ``ZstdCompressor.stream_writer()`` now reuses a buffer in order to avoid
   allocating a new buffer for every operation. This should result in faster
