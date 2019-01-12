@@ -102,43 +102,18 @@ static PyObject* reader_isatty(PyObject* self) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
-	static char* kwlist[] = {
-		"size",
-		NULL
-	};
-
-	Py_ssize_t size = -1;
-	PyObject* result = NULL;
-	char* resultBuffer;
-	Py_ssize_t resultSize;
+static Py_ssize_t reader_read_internal(ZstdDecompressionReader* self, char *resultBuffer, Py_ssize_t resultSize) {
 	ZSTD_outBuffer output;
 	size_t zresult;
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
-		return NULL;
+		return -1;
 	}
 
 	if (self->finishedOutput) {
-		return PyBytes_FromStringAndSize("", 0);
+		return 0;
 	}
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n", kwlist, &size)) {
-		return NULL;
-	}
-
-	if (size < 1) {
-		PyErr_SetString(PyExc_ValueError, "cannot read negative or size 0 amounts");
-		return NULL;
-	}
-
-	result = PyBytes_FromStringAndSize(NULL, size);
-	if (NULL == result) {
-		return NULL;
-	}
-
-	PyBytes_AsStringAndSize(result, &resultBuffer, &resultSize);
 
 	output.dst = resultBuffer;
 	output.size = resultSize;
@@ -165,7 +140,7 @@ readinput:
 
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "zstd decompress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
+			return -1;
 		}
 		else if (0 == zresult) {
 			self->finishedOutput = 1;
@@ -174,7 +149,7 @@ readinput:
 		/* We fulfilled the full read request. Emit it. */
 		if (output.pos && output.pos == output.size) {
 			self->bytesDecompressed += output.size;
-			return result;
+			return resultSize;
 		}
 
 		/*
@@ -191,13 +166,13 @@ readinput:
 			self->readResult = PyObject_CallMethod(self->reader, "read",
 				"k", self->readSize);
 			if (NULL == self->readResult) {
-				return NULL;
+				return -1;
 			}
 
 			memset(&buffer, 0, sizeof(buffer));
 
 			if (0 != PyObject_GetBuffer(self->readResult, &buffer, PyBUF_CONTIG_RO)) {
-				return NULL;
+				return -1;
 			}
 
 			/* EOF */
@@ -234,12 +209,75 @@ readinput:
 	/* EOF */
 	self->bytesDecompressed += output.pos;
 
-	if (safe_pybytes_resize(&result, output.pos)) {
+	return output.pos;
+}
+
+static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"size",
+		NULL
+	};
+
+	Py_ssize_t size = -1;
+	PyObject* result = NULL;
+	char* resultBuffer;
+	Py_ssize_t resultSize;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n", kwlist, &size)) {
+		return NULL;
+	}
+
+	if (size < 1) {
+		PyErr_SetString(PyExc_ValueError, "cannot read negative or size 0 amounts");
+		return NULL;
+	}
+
+	result = PyBytes_FromStringAndSize(NULL, size);
+	if (NULL == result) {
+		return NULL;
+	}
+
+	PyBytes_AsStringAndSize(result, &resultBuffer, &resultSize);
+
+	Py_ssize_t readSize = reader_read_internal(self, resultBuffer, resultSize);
+	if (readSize < 0) {
+		return NULL;
+	}
+
+	if (safe_pybytes_resize(&result, readSize)) {
 		Py_XDECREF(result);
 		return NULL;
 	}
 
 	return result;
+}
+
+static PyObject* reader_readinto(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"buffer",
+		NULL
+	};
+
+	Py_buffer buffer = {};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*", kwlist, &buffer)) {
+		return NULL;
+	}
+
+	if (buffer.len < 1) {
+		PyErr_SetString(PyExc_ValueError, "cannot read negative or size 0 amounts");
+		PyBuffer_Release(&buffer);
+		return NULL;
+	}
+
+	Py_ssize_t readSize = reader_read_internal(self, buffer.buf, buffer.len);
+	if (readSize < 0) {
+		PyBuffer_Release(&buffer);
+		return NULL;
+	}
+
+	PyBuffer_Release(&buffer);
+	return PyLong_FromSsize_t(readSize);
 }
 
 static PyObject* reader_readall(PyObject* self) {
@@ -366,6 +404,8 @@ static PyMethodDef reader_methods[] = {
 	{ "readable", (PyCFunction)reader_readable, METH_NOARGS,
 	PyDoc_STR("Returns True") },
 	{ "read", (PyCFunction)reader_read, METH_VARARGS | METH_KEYWORDS,
+	PyDoc_STR("read compressed data into buffer") },
+	{ "readinto", (PyCFunction)reader_readinto, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("read compressed data") },
 	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readline", (PyCFunction)reader_readline, METH_NOARGS, PyDoc_STR("Not implemented") },
