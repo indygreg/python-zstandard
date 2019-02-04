@@ -1927,7 +1927,7 @@ class ZstdDecompressor(object):
         return ffi.buffer(last_buffer, len(last_buffer))[:]
 
     def _ensure_dctx(self, load_dict=True):
-        lib.ZSTD_DCtx_reset(self._dctx)
+        lib.ZSTD_DCtx_reset(self._dctx, lib.ZSTD_reset_session_only)
 
         if self._max_window_size:
             zresult = lib.ZSTD_DCtx_setMaxWindowSize(self._dctx,

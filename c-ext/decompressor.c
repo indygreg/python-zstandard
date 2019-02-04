@@ -17,7 +17,7 @@ extern PyObject* ZstdError;
 int ensure_dctx(ZstdDecompressor* decompressor, int loadDict) {
 	size_t zresult;
 
-	ZSTD_DCtx_reset(decompressor->dctx);
+	ZSTD_DCtx_reset(decompressor->dctx, ZSTD_reset_session_only);
 
 	if (decompressor->maxWindowSize) {
 		zresult = ZSTD_DCtx_setMaxWindowSize(decompressor->dctx, decompressor->maxWindowSize);
