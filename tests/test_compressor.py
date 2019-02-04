@@ -321,7 +321,7 @@ class TestCompressor_compressobj(unittest.TestCase):
         cobj.compress(b'foo')
         cobj.flush()
 
-        with self.assertRaisesRegexp(zstd.ZstdError, 'cannot call compress\(\) after compressor'):
+        with self.assertRaisesRegexp(zstd.ZstdError, r'cannot call compress\(\) after compressor'):
             cobj.compress(b'foo')
 
         with self.assertRaisesRegexp(zstd.ZstdError, 'compressor object already finished'):
@@ -1326,7 +1326,7 @@ class TestCompressor_chunker(unittest.TestCase):
 
         with self.assertRaisesRegexp(
                 zstd.ZstdError,
-                'cannot call compress\(\) after compression finished'):
+                r'cannot call compress\(\) after compression finished'):
             list(chunker.compress(b'foo'))
 
     def test_flush_after_finish(self):
@@ -1338,7 +1338,7 @@ class TestCompressor_chunker(unittest.TestCase):
 
         with self.assertRaisesRegexp(
                 zstd.ZstdError,
-                'cannot call flush\(\) after compression finished'):
+                r'cannot call flush\(\) after compression finished'):
             list(chunker.flush())
 
     def test_finish_after_finish(self):
@@ -1350,7 +1350,7 @@ class TestCompressor_chunker(unittest.TestCase):
 
         with self.assertRaisesRegexp(
                 zstd.ZstdError,
-                'cannot call finish\(\) after compression finished'):
+                r'cannot call finish\(\) after compression finished'):
             list(chunker.finish())
 
 
