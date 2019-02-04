@@ -24,27 +24,27 @@ int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned valu
 #define TRY_SET_PARAMETER(params, param, value) if (set_parameter(params, param, value)) return -1;
 
 int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj) {
-	TRY_SET_PARAMETER(params, ZSTD_p_format, obj->format);
-	TRY_SET_PARAMETER(params, ZSTD_p_compressionLevel, (unsigned)obj->compressionLevel);
-	TRY_SET_PARAMETER(params, ZSTD_p_windowLog, obj->windowLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_hashLog, obj->hashLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_chainLog, obj->chainLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_searchLog, obj->searchLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_minMatch, obj->minMatch);
-	TRY_SET_PARAMETER(params, ZSTD_p_targetLength, obj->targetLength);
-	TRY_SET_PARAMETER(params, ZSTD_p_compressionStrategy, obj->compressionStrategy);
-	TRY_SET_PARAMETER(params, ZSTD_p_contentSizeFlag, obj->contentSizeFlag);
-	TRY_SET_PARAMETER(params, ZSTD_p_checksumFlag, obj->checksumFlag);
-	TRY_SET_PARAMETER(params, ZSTD_p_dictIDFlag, obj->dictIDFlag);
-	TRY_SET_PARAMETER(params, ZSTD_p_nbWorkers, obj->threads);
-	TRY_SET_PARAMETER(params, ZSTD_p_jobSize, obj->jobSize);
-	TRY_SET_PARAMETER(params, ZSTD_p_overlapSizeLog, obj->overlapSizeLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_forceMaxWindow, obj->forceMaxWindow);
-	TRY_SET_PARAMETER(params, ZSTD_p_enableLongDistanceMatching, obj->enableLongDistanceMatching);
-	TRY_SET_PARAMETER(params, ZSTD_p_ldmHashLog, obj->ldmHashLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_ldmMinMatch, obj->ldmMinMatch);
-	TRY_SET_PARAMETER(params, ZSTD_p_ldmBucketSizeLog, obj->ldmBucketSizeLog);
-	TRY_SET_PARAMETER(params, ZSTD_p_ldmHashEveryLog, obj->ldmHashEveryLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_format, obj->format);
+	TRY_SET_PARAMETER(params, ZSTD_c_compressionLevel, (unsigned)obj->compressionLevel);
+	TRY_SET_PARAMETER(params, ZSTD_c_windowLog, obj->windowLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_hashLog, obj->hashLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_chainLog, obj->chainLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_searchLog, obj->searchLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_minMatch, obj->minMatch);
+	TRY_SET_PARAMETER(params, ZSTD_c_targetLength, obj->targetLength);
+	TRY_SET_PARAMETER(params, ZSTD_c_compressionStrategy, obj->compressionStrategy);
+	TRY_SET_PARAMETER(params, ZSTD_c_contentSizeFlag, obj->contentSizeFlag);
+	TRY_SET_PARAMETER(params, ZSTD_c_checksumFlag, obj->checksumFlag);
+	TRY_SET_PARAMETER(params, ZSTD_c_dictIDFlag, obj->dictIDFlag);
+	TRY_SET_PARAMETER(params, ZSTD_c_nbWorkers, obj->threads);
+	TRY_SET_PARAMETER(params, ZSTD_c_jobSize, obj->jobSize);
+	TRY_SET_PARAMETER(params, ZSTD_c_overlapSizeLog, obj->overlapSizeLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_forceMaxWindow, obj->forceMaxWindow);
+	TRY_SET_PARAMETER(params, ZSTD_c_enableLongDistanceMatching, obj->enableLongDistanceMatching);
+	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashLog, obj->ldmHashLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_ldmMinMatch, obj->ldmMinMatch);
+	TRY_SET_PARAMETER(params, ZSTD_c_ldmBucketSizeLog, obj->ldmBucketSizeLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashEveryLog, obj->ldmHashEveryLog);
 
 	return 0;
 }

@@ -204,27 +204,27 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		}
 	}
 	else {
-		if (set_parameter(self->params, ZSTD_p_compressionLevel, level)) {
+		if (set_parameter(self->params, ZSTD_c_compressionLevel, level)) {
 			return -1;
 		}
 
-		if (set_parameter(self->params, ZSTD_p_contentSizeFlag,
+		if (set_parameter(self->params, ZSTD_c_contentSizeFlag,
 			writeContentSize ? PyObject_IsTrue(writeContentSize) : 1)) {
 			return -1;
 		}
 
-		if (set_parameter(self->params, ZSTD_p_checksumFlag,
+		if (set_parameter(self->params, ZSTD_c_checksumFlag,
 			writeChecksum ? PyObject_IsTrue(writeChecksum) : 0)) {
 			return -1;
 		}
 
-		if (set_parameter(self->params, ZSTD_p_dictIDFlag,
+		if (set_parameter(self->params, ZSTD_c_dictIDFlag,
 			writeDictID ? PyObject_IsTrue(writeDictID) : 1)) {
 			return -1;
 		}
 
 		if (threads) {
-			if (set_parameter(self->params, ZSTD_p_nbWorkers, threads)) {
+			if (set_parameter(self->params, ZSTD_c_nbWorkers, threads)) {
 				return -1;
 			}
 		}

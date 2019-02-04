@@ -182,27 +182,27 @@ def _make_cctx_params(params):
     res = ffi.gc(res, lib.ZSTD_freeCCtxParams)
 
     attrs = [
-        (lib.ZSTD_p_format, params.format),
-        (lib.ZSTD_p_compressionLevel, params.compression_level),
-        (lib.ZSTD_p_windowLog, params.window_log),
-        (lib.ZSTD_p_hashLog, params.hash_log),
-        (lib.ZSTD_p_chainLog, params.chain_log),
-        (lib.ZSTD_p_searchLog, params.search_log),
-        (lib.ZSTD_p_minMatch, params.min_match),
-        (lib.ZSTD_p_targetLength, params.target_length),
-        (lib.ZSTD_p_compressionStrategy, params.compression_strategy),
-        (lib.ZSTD_p_contentSizeFlag, params.write_content_size),
-        (lib.ZSTD_p_checksumFlag, params.write_checksum),
-        (lib.ZSTD_p_dictIDFlag, params.write_dict_id),
-        (lib.ZSTD_p_nbWorkers, params.threads),
-        (lib.ZSTD_p_jobSize, params.job_size),
-        (lib.ZSTD_p_overlapSizeLog, params.overlap_size_log),
-        (lib.ZSTD_p_forceMaxWindow, params.force_max_window),
-        (lib.ZSTD_p_enableLongDistanceMatching, params.enable_ldm),
-        (lib.ZSTD_p_ldmHashLog, params.ldm_hash_log),
-        (lib.ZSTD_p_ldmMinMatch, params.ldm_min_match),
-        (lib.ZSTD_p_ldmBucketSizeLog, params.ldm_bucket_size_log),
-        (lib.ZSTD_p_ldmHashEveryLog, params.ldm_hash_every_log),
+        (lib.ZSTD_c_format, params.format),
+        (lib.ZSTD_c_compressionLevel, params.compression_level),
+        (lib.ZSTD_c_windowLog, params.window_log),
+        (lib.ZSTD_c_hashLog, params.hash_log),
+        (lib.ZSTD_c_chainLog, params.chain_log),
+        (lib.ZSTD_c_searchLog, params.search_log),
+        (lib.ZSTD_c_minMatch, params.min_match),
+        (lib.ZSTD_c_targetLength, params.target_length),
+        (lib.ZSTD_c_compressionStrategy, params.compression_strategy),
+        (lib.ZSTD_c_contentSizeFlag, params.write_content_size),
+        (lib.ZSTD_c_checksumFlag, params.write_checksum),
+        (lib.ZSTD_c_dictIDFlag, params.write_dict_id),
+        (lib.ZSTD_c_nbWorkers, params.threads),
+        (lib.ZSTD_c_jobSize, params.job_size),
+        (lib.ZSTD_c_overlapSizeLog, params.overlap_size_log),
+        (lib.ZSTD_c_forceMaxWindow, params.force_max_window),
+        (lib.ZSTD_c_enableLongDistanceMatching, params.enable_ldm),
+        (lib.ZSTD_c_ldmHashLog, params.ldm_hash_log),
+        (lib.ZSTD_c_ldmMinMatch, params.ldm_min_match),
+        (lib.ZSTD_c_ldmBucketSizeLog, params.ldm_bucket_size_log),
+        (lib.ZSTD_c_ldmHashEveryLog, params.ldm_hash_every_log),
     ]
 
     for param, value in attrs:
@@ -799,25 +799,25 @@ class ZstdCompressor(object):
             self._params = ffi.gc(params, lib.ZSTD_freeCCtxParams)
 
             _set_compression_parameter(self._params,
-                                       lib.ZSTD_p_compressionLevel,
+                                       lib.ZSTD_c_compressionLevel,
                                        level)
 
             _set_compression_parameter(
                 self._params,
-                lib.ZSTD_p_contentSizeFlag,
+                lib.ZSTD_c_contentSizeFlag,
                 write_content_size if write_content_size is not None else 1)
 
             _set_compression_parameter(self._params,
-                                       lib.ZSTD_p_checksumFlag,
+                                       lib.ZSTD_c_checksumFlag,
                                        1 if write_checksum else 0)
 
             _set_compression_parameter(self._params,
-                                       lib.ZSTD_p_dictIDFlag,
+                                       lib.ZSTD_c_dictIDFlag,
                                        1 if write_dict_id else 0)
 
             if threads:
                 _set_compression_parameter(self._params,
-                                           lib.ZSTD_p_nbWorkers,
+                                           lib.ZSTD_c_nbWorkers,
                                            threads)
 
         cctx = lib.ZSTD_createCCtx()
