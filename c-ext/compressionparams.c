@@ -32,7 +32,7 @@ int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* ob
 	TRY_SET_PARAMETER(params, ZSTD_c_searchLog, obj->searchLog);
 	TRY_SET_PARAMETER(params, ZSTD_c_minMatch, obj->minMatch);
 	TRY_SET_PARAMETER(params, ZSTD_c_targetLength, obj->targetLength);
-	TRY_SET_PARAMETER(params, ZSTD_c_compressionStrategy, obj->compressionStrategy);
+	TRY_SET_PARAMETER(params, ZSTD_c_strategy, obj->compressionStrategy);
 	TRY_SET_PARAMETER(params, ZSTD_c_contentSizeFlag, obj->contentSizeFlag);
 	TRY_SET_PARAMETER(params, ZSTD_c_checksumFlag, obj->checksumFlag);
 	TRY_SET_PARAMETER(params, ZSTD_c_dictIDFlag, obj->dictIDFlag);

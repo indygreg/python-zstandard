@@ -190,7 +190,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_c_searchLog, params.search_log),
         (lib.ZSTD_c_minMatch, params.min_match),
         (lib.ZSTD_c_targetLength, params.target_length),
-        (lib.ZSTD_c_compressionStrategy, params.compression_strategy),
+        (lib.ZSTD_c_strategy, params.compression_strategy),
         (lib.ZSTD_c_contentSizeFlag, params.write_content_size),
         (lib.ZSTD_c_checksumFlag, params.write_checksum),
         (lib.ZSTD_c_dictIDFlag, params.write_dict_id),
