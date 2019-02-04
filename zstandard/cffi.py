@@ -202,7 +202,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_c_ldmHashLog, params.ldm_hash_log),
         (lib.ZSTD_c_ldmMinMatch, params.ldm_min_match),
         (lib.ZSTD_c_ldmBucketSizeLog, params.ldm_bucket_size_log),
-        (lib.ZSTD_c_ldmHashEveryLog, params.ldm_hash_every_log),
+        (lib.ZSTD_c_ldmHashRateLog, params.ldm_hash_every_log),
     ]
 
     for param, value in attrs:

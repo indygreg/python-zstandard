@@ -44,7 +44,7 @@ int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* ob
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashLog, obj->ldmHashLog);
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmMinMatch, obj->ldmMinMatch);
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmBucketSizeLog, obj->ldmBucketSizeLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashEveryLog, obj->ldmHashEveryLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashRateLog, obj->ldmHashEveryLog);
 
 	return 0;
 }
