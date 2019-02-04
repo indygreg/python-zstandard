@@ -196,7 +196,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_c_dictIDFlag, params.write_dict_id),
         (lib.ZSTD_c_nbWorkers, params.threads),
         (lib.ZSTD_c_jobSize, params.job_size),
-        (lib.ZSTD_c_overlapSizeLog, params.overlap_size_log),
+        (lib.ZSTD_c_overlapLog, params.overlap_size_log),
         (lib.ZSTD_c_forceMaxWindow, params.force_max_window),
         (lib.ZSTD_c_enableLongDistanceMatching, params.enable_ldm),
         (lib.ZSTD_c_ldmHashLog, params.ldm_hash_log),

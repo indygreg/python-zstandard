@@ -38,7 +38,7 @@ int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* ob
 	TRY_SET_PARAMETER(params, ZSTD_c_dictIDFlag, obj->dictIDFlag);
 	TRY_SET_PARAMETER(params, ZSTD_c_nbWorkers, obj->threads);
 	TRY_SET_PARAMETER(params, ZSTD_c_jobSize, obj->jobSize);
-	TRY_SET_PARAMETER(params, ZSTD_c_overlapSizeLog, obj->overlapSizeLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_overlapLog, obj->overlapSizeLog);
 	TRY_SET_PARAMETER(params, ZSTD_c_forceMaxWindow, obj->forceMaxWindow);
 	TRY_SET_PARAMETER(params, ZSTD_c_enableLongDistanceMatching, obj->enableLongDistanceMatching);
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashLog, obj->ldmHashLog);
