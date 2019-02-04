@@ -344,7 +344,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -517,7 +517,7 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		goto except;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -577,7 +577,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		goto finally;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	destSize = ZSTD_compressBound(source.len);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
@@ -651,7 +651,7 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, inSize);
 	if (ZSTD_isError(zresult)) {
@@ -740,7 +740,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 		goto except;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -812,7 +812,7 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
 	if (!result) {
@@ -863,7 +863,7 @@ static ZstdCompressionChunker* ZstdCompressor_chunker(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
