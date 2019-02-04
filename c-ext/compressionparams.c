@@ -259,7 +259,7 @@ ZstdCompressionParametersObject* CompressionParameters_from_level(PyObject* unde
 
 	val = PyDict_GetItemString(kwargs, "min_match");
 	if (!val) {
-		val = PyLong_FromUnsignedLong(params.searchLength);
+		val = PyLong_FromUnsignedLong(params.minMatch);
 		if (!val) {
 			goto cleanup;
 		}

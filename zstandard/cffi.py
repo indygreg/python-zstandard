@@ -116,8 +116,8 @@ HASHLOG_MAX = lib.ZSTD_HASHLOG_MAX
 HASHLOG3_MAX = lib.ZSTD_HASHLOG3_MAX
 SEARCHLOG_MIN = lib.ZSTD_SEARCHLOG_MIN
 SEARCHLOG_MAX = lib.ZSTD_SEARCHLOG_MAX
-SEARCHLENGTH_MIN = lib.ZSTD_SEARCHLENGTH_MIN
-SEARCHLENGTH_MAX = lib.ZSTD_SEARCHLENGTH_MAX
+SEARCHLENGTH_MIN = lib.ZSTD_MINMATCH_MIN
+SEARCHLENGTH_MAX = lib.ZSTD_MINMATCH_MAX
 TARGETLENGTH_MIN = lib.ZSTD_TARGETLENGTH_MIN
 TARGETLENGTH_MAX = lib.ZSTD_TARGETLENGTH_MAX
 LDM_MINMATCH_MIN = lib.ZSTD_LDM_MINMATCH_MIN
@@ -220,7 +220,7 @@ class ZstdCompressionParameters(object):
             'chain_log': 'chainLog',
             'hash_log': 'hashLog',
             'search_log': 'searchLog',
-            'min_match': 'searchLength',
+            'min_match': 'minMatch',
             'target_length': 'targetLength',
             'compression_strategy': 'strategy',
         }
@@ -1230,7 +1230,7 @@ class ZstdCompressionDict(object):
             cparams = ffi.new('ZSTD_compressionParameters')
             cparams.chainLog = compression_params.chain_log
             cparams.hashLog = compression_params.hash_log
-            cparams.searchLength = compression_params.min_match
+            cparams.minMatch = compression_params.min_match
             cparams.searchLog = compression_params.search_log
             cparams.strategy = compression_params.compression_strategy
             cparams.targetLength = compression_params.target_length

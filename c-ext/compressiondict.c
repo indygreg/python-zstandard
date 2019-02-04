@@ -300,7 +300,7 @@ static PyObject* ZstdCompressionDict_precompute_compress(ZstdCompressionDict* se
 	else {
 		cParams.chainLog = compressionParams->chainLog;
 		cParams.hashLog = compressionParams->hashLog;
-		cParams.searchLength = compressionParams->minMatch;
+		cParams.minMatch = compressionParams->minMatch;
 		cParams.searchLog = compressionParams->searchLog;
 		cParams.strategy = compressionParams->compressionStrategy;
 		cParams.targetLength = compressionParams->targetLength;
