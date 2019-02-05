@@ -95,7 +95,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 
 	while (input.pos < (size_t)source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompress_generic(self->decompressor->dctx, &output, &input);
+		zresult = ZSTD_decompressStream(self->decompressor->dctx, &output, &input);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {

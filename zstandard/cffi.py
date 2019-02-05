@@ -1353,8 +1353,8 @@ class ZstdDecompressionObj(object):
         chunks = []
 
         while True:
-            zresult = lib.ZSTD_decompress_generic(self._decompressor._dctx,
-                                                  out_buffer, in_buffer)
+            zresult = lib.ZSTD_decompressStream(self._decompressor._dctx,
+                                                out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd decompressor error: %s' %
                                 _zstd_error(zresult))
@@ -1470,8 +1470,8 @@ class DecompressionReader(object):
         out_buffer.pos = 0
 
         def decompress():
-            zresult = lib.ZSTD_decompress_generic(self._decompressor._dctx,
-                                                  out_buffer, self._in_buffer)
+            zresult = lib.ZSTD_decompressStream(self._decompressor._dctx,
+                                                out_buffer, self._in_buffer)
 
             if self._in_buffer.pos == self._in_buffer.size:
                 self._in_buffer.src = ffi.NULL
@@ -1612,7 +1612,7 @@ class ZstdDecompressionWriter(object):
         dctx = self._decompressor._dctx
 
         while in_buffer.pos < in_buffer.size:
-            zresult = lib.ZSTD_decompress_generic(dctx, out_buffer, in_buffer)
+            zresult = lib.ZSTD_decompressStream(dctx, out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd decompress error: %s' %
                                 _zstd_error(zresult))
@@ -1680,7 +1680,7 @@ class ZstdDecompressor(object):
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
-        zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
+        zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
         if lib.ZSTD_isError(zresult):
             raise ZstdError('decompression error: %s' %
                             _zstd_error(zresult))
@@ -1763,7 +1763,7 @@ class ZstdDecompressor(object):
             while in_buffer.pos < in_buffer.size:
                 assert out_buffer.pos == 0
 
-                zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
+                zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd decompress error: %s' %
                                     _zstd_error(zresult))
@@ -1825,7 +1825,7 @@ class ZstdDecompressor(object):
 
             # Flush all read data to output.
             while in_buffer.pos < in_buffer.size:
-                zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
+                zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd decompressor error: %s' %
                                     _zstd_error(zresult))
@@ -1877,7 +1877,7 @@ class ZstdDecompressor(object):
         in_buffer.size = len(chunk_buffer)
         in_buffer.pos = 0
 
-        zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
+        zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
         if lib.ZSTD_isError(zresult):
             raise ZstdError('could not decompress chunk 0: %s' %
                             _zstd_error(zresult))
@@ -1914,7 +1914,7 @@ class ZstdDecompressor(object):
             in_buffer.size = len(chunk_buffer)
             in_buffer.pos = 0
 
-            zresult = lib.ZSTD_decompress_generic(self._dctx, out_buffer, in_buffer)
+            zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('could not decompress chunk %d: %s' %
                                 _zstd_error(zresult))

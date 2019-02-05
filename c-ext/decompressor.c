@@ -229,7 +229,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 
 		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_decompress_generic(self->dctx, &output, &input);
+			zresult = ZSTD_decompressStream(self->dctx, &output, &input);
 			Py_END_ALLOW_THREADS
 
 			if (ZSTD_isError(zresult)) {
@@ -379,7 +379,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	inBuffer.pos = 0;
 
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
+	zresult = ZSTD_decompressStream(self->dctx, &outBuffer, &inBuffer);
 	Py_END_ALLOW_THREADS
 
 	if (ZSTD_isError(zresult)) {
@@ -756,7 +756,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 	inBuffer.pos = 0;
 
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
+	zresult = ZSTD_decompressStream(self->dctx, &outBuffer, &inBuffer);
 	Py_END_ALLOW_THREADS
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "could not decompress chunk 0: %s", ZSTD_getErrorName(zresult));
@@ -852,7 +852,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 			outBuffer.pos = 0;
 
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
+			zresult = ZSTD_decompressStream(self->dctx, &outBuffer, &inBuffer);
 			Py_END_ALLOW_THREADS
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "could not decompress chunk %zd: %s",
@@ -892,7 +892,7 @@ static PyObject* Decompressor_decompress_content_dict_chain(ZstdDecompressor* se
 			outBuffer.pos = 0;
 
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_decompress_generic(self->dctx, &outBuffer, &inBuffer);
+			zresult = ZSTD_decompressStream(self->dctx, &outBuffer, &inBuffer);
 			Py_END_ALLOW_THREADS
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "could not decompress chunk %zd: %s",
@@ -1176,7 +1176,7 @@ static void decompress_worker(WorkerState* state) {
 		inBuffer.size = sourceSize;
 		inBuffer.pos = 0;
 
-		zresult = ZSTD_decompress_generic(state->dctx, &outBuffer, &inBuffer);
+		zresult = ZSTD_decompressStream(state->dctx, &outBuffer, &inBuffer);
 		if (ZSTD_isError(zresult)) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;

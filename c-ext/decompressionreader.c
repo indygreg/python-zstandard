@@ -149,7 +149,7 @@ readinput:
 	/* Consume input data left over from last time. */
 	if (self->input.pos < self->input.size) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompress_generic(self->decompressor->dctx,
+		zresult = ZSTD_decompressStream(self->decompressor->dctx,
 			&output, &self->input);
 		Py_END_ALLOW_THREADS
 

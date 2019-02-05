@@ -57,7 +57,7 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 	self->output.pos = 0;
 
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_decompress_generic(self->decompressor->dctx, &self->output, &self->input);
+	zresult = ZSTD_decompressStream(self->decompressor->dctx, &self->output, &self->input);
 	Py_END_ALLOW_THREADS
 
 	/* We're done with the pointer. Nullify to prevent anyone from getting a
