@@ -219,7 +219,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         frame = cctx.compress(source)
 
-        dctx = zstd.ZstdDecompressor(max_window_size=1)
+        dctx = zstd.ZstdDecompressor(max_window_size=2**zstd.WINDOWLOG_MIN)
 
         with self.assertRaisesRegexp(
             zstd.ZstdError, 'decompression error: Frame requires too much memory'):
