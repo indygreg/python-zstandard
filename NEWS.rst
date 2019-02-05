@@ -67,6 +67,7 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* Bundled zstandard library upgraded from 1.3.7 to 1.3.8.
 * ``setup.py`` denotes support for Python 3.7 (Python 3.7 was supported and
   tested in the 0.10 release).
 * ``zstd_cffi`` module has been renamed to ``zstandard.cffi``.
