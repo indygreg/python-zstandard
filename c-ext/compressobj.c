@@ -61,7 +61,7 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 
 	while (input.pos < (size_t)source.len) {
 		Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+			zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output,
 				&input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
@@ -154,7 +154,7 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+		zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output,
 			&input, zFlushMode);
 		Py_END_ALLOW_THREADS
 

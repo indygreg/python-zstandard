@@ -69,7 +69,7 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 		inBuffer.pos = 0;
 
 		while (1) {
-			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output, &inBuffer, ZSTD_e_end);
+			zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output, &inBuffer, ZSTD_e_end);
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "error ending compression stream: %s",
 					ZSTD_getErrorName(zresult));
@@ -142,7 +142,7 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 
 	while (input.pos < (size_t)source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output, &input, ZSTD_e_continue);
+		zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output, &input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -191,7 +191,7 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output, &input, ZSTD_e_flush);
+		zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output, &input, ZSTD_e_flush);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {

@@ -391,7 +391,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_compress_generic(self->cctx, &output, &input, ZSTD_e_continue);
+			zresult = ZSTD_compressStream2(self->cctx, &output, &input, ZSTD_e_continue);
 			Py_END_ALLOW_THREADS
 
 			if (ZSTD_isError(zresult)) {
@@ -421,7 +421,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->cctx, &output, &input, ZSTD_e_end);
+		zresult = ZSTD_compressStream2(self->cctx, &output, &input, ZSTD_e_end);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -605,7 +605,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	/* By avoiding ZSTD_compress(), we don't necessarily write out content
 		size. This means the argument to ZstdCompressor to control frame
 		parameters is honored. */
-	zresult = ZSTD_compress_generic(self->cctx, &outBuffer, &inBuffer, ZSTD_e_end);
+	zresult = ZSTD_compressStream2(self->cctx, &outBuffer, &inBuffer, ZSTD_e_end);
 	Py_END_ALLOW_THREADS
 
 	if (ZSTD_isError(zresult)) {
@@ -1125,7 +1125,7 @@ static void compress_worker(WorkerState* state) {
 			break;
 		}
 
-		zresult = ZSTD_compress_generic(state->cctx, &opOutBuffer, &opInBuffer, ZSTD_e_end);
+		zresult = ZSTD_compressStream2(state->cctx, &opOutBuffer, &opInBuffer, ZSTD_e_end);
 		if (ZSTD_isError(zresult)) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;

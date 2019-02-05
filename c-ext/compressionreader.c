@@ -177,7 +177,7 @@ readinput:
 		oldPos = self->output.pos;
 
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->compressor->cctx,
+		zresult = ZSTD_compressStream2(self->compressor->cctx,
 			&self->output, &self->input, ZSTD_e_continue);
 
 		Py_END_ALLOW_THREADS
@@ -261,7 +261,7 @@ readinput:
 	/* Else EOF */
 	oldPos = self->output.pos;
 
-	zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+	zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output,
 		&self->input, ZSTD_e_end);
 
 	self->bytesCompressed += self->output.pos - oldPos;

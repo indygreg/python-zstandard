@@ -324,9 +324,9 @@ class ZstdCompressionWriter(object):
             in_buffer.pos = 0
 
             while True:
-                zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                    out_buffer, in_buffer,
-                                                    lib.ZSTD_e_end)
+                zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                                   out_buffer, in_buffer,
+                                                   lib.ZSTD_e_end)
 
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('error ending compression stream: %s' %
@@ -368,9 +368,9 @@ class ZstdCompressionWriter(object):
         out_buffer.pos = 0
 
         while in_buffer.pos < in_buffer.size:
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                out_buffer, in_buffer,
-                                                lib.ZSTD_e_continue)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               out_buffer, in_buffer,
+                                               lib.ZSTD_e_continue)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 _zstd_error(zresult))
@@ -398,9 +398,9 @@ class ZstdCompressionWriter(object):
         in_buffer.pos = 0
 
         while True:
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                out_buffer, in_buffer,
-                                                lib.ZSTD_e_flush)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               out_buffer, in_buffer,
+                                               lib.ZSTD_e_flush)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 _zstd_error(zresult))
@@ -434,10 +434,10 @@ class ZstdCompressionObj(object):
         chunks = []
 
         while source.pos < len(data):
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                self._out,
-                                                source,
-                                                lib.ZSTD_e_continue)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               self._out,
+                                               source,
+                                               lib.ZSTD_e_continue)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 _zstd_error(zresult))
@@ -473,10 +473,10 @@ class ZstdCompressionObj(object):
         chunks = []
 
         while True:
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                self._out,
-                                                in_buffer,
-                                                z_flush_mode)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               self._out,
+                                               in_buffer,
+                                               z_flush_mode)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 _zstd_error(zresult))
@@ -524,10 +524,10 @@ class ZstdCompressionChunker(object):
         self._in.pos = 0
 
         while self._in.pos < self._in.size:
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                self._out,
-                                                self._in,
-                                                lib.ZSTD_e_continue)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               self._out,
+                                               self._in,
+                                               lib.ZSTD_e_continue)
 
             if self._in.pos == self._in.size:
                 self._in.src = ffi.NULL
@@ -551,9 +551,9 @@ class ZstdCompressionChunker(object):
                             'previous operation')
 
         while True:
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                self._out, self._in,
-                                                lib.ZSTD_e_flush)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               self._out, self._in,
+                                               lib.ZSTD_e_flush)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' % _zstd_error(zresult))
 
@@ -573,9 +573,9 @@ class ZstdCompressionChunker(object):
                             'previous operation')
 
         while True:
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                self._out, self._in,
-                                                lib.ZSTD_e_end)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               self._out, self._in,
+                                               lib.ZSTD_e_end)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' % _zstd_error(zresult))
 
@@ -690,9 +690,9 @@ class CompressionReader(object):
 
             old_pos = out_buffer.pos
 
-            zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                                out_buffer, self._in_buffer,
-                                                lib.ZSTD_e_continue)
+            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                               out_buffer, self._in_buffer,
+                                               lib.ZSTD_e_continue)
 
             self._bytes_compressed += out_buffer.pos - old_pos
 
@@ -746,9 +746,9 @@ class CompressionReader(object):
         # EOF
         old_pos = out_buffer.pos
 
-        zresult = lib.ZSTD_compress_generic(self._compressor._cctx,
-                                            out_buffer, self._in_buffer,
-                                            lib.ZSTD_e_end)
+        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                           out_buffer, self._in_buffer,
+                                           lib.ZSTD_e_end)
 
         self._bytes_compressed += out_buffer.pos - old_pos
 
@@ -883,10 +883,10 @@ class ZstdCompressor(object):
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
-        zresult = lib.ZSTD_compress_generic(self._cctx,
-                                            out_buffer,
-                                            in_buffer,
-                                            lib.ZSTD_e_end)
+        zresult = lib.ZSTD_compressStream2(self._cctx,
+                                           out_buffer,
+                                           in_buffer,
+                                           lib.ZSTD_e_end)
 
         if lib.ZSTD_isError(zresult):
             raise ZstdError('cannot compress: %s' %
@@ -972,10 +972,10 @@ class ZstdCompressor(object):
             in_buffer.pos = 0
 
             while in_buffer.pos < in_buffer.size:
-                zresult = lib.ZSTD_compress_generic(self._cctx,
-                                                    out_buffer,
-                                                    in_buffer,
-                                                    lib.ZSTD_e_continue)
+                zresult = lib.ZSTD_compressStream2(self._cctx,
+                                                   out_buffer,
+                                                   in_buffer,
+                                                   lib.ZSTD_e_continue)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd compress error: %s' %
                                     _zstd_error(zresult))
@@ -987,10 +987,10 @@ class ZstdCompressor(object):
 
         # We've finished reading. Flush the compressor.
         while True:
-            zresult = lib.ZSTD_compress_generic(self._cctx,
-                                                out_buffer,
-                                                in_buffer,
-                                                lib.ZSTD_e_end)
+            zresult = lib.ZSTD_compressStream2(self._cctx,
+                                               out_buffer,
+                                               in_buffer,
+                                               lib.ZSTD_e_end)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 _zstd_error(zresult))
@@ -1100,8 +1100,8 @@ class ZstdCompressor(object):
             in_buffer.pos = 0
 
             while in_buffer.pos < in_buffer.size:
-                zresult = lib.ZSTD_compress_generic(self._cctx, out_buffer, in_buffer,
-                                                    lib.ZSTD_e_continue)
+                zresult = lib.ZSTD_compressStream2(self._cctx, out_buffer, in_buffer,
+                                                   lib.ZSTD_e_continue)
                 if lib.ZSTD_isError(zresult):
                     raise ZstdError('zstd compress error: %s' %
                                     _zstd_error(zresult))
@@ -1120,10 +1120,10 @@ class ZstdCompressor(object):
         # remains.
         while True:
             assert out_buffer.pos == 0
-            zresult = lib.ZSTD_compress_generic(self._cctx,
-                                                out_buffer,
-                                                in_buffer,
-                                                lib.ZSTD_e_end)
+            zresult = lib.ZSTD_compressStream2(self._cctx,
+                                               out_buffer,
+                                               in_buffer,
+                                               lib.ZSTD_e_end)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('error ending compression stream: %s' %
                                 _zstd_error(zresult))

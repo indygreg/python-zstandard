@@ -43,7 +43,7 @@ static PyObject* ZstdCompressionChunkerIterator_iternext(ZstdCompressionChunkerI
 	/* If we have data left in the input, consume it. */
 	while (chunker->input.pos < chunker->input.size) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(chunker->compressor->cctx, &chunker->output,
+		zresult = ZSTD_compressStream2(chunker->compressor->cctx, &chunker->output,
 			&chunker->input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
@@ -104,7 +104,7 @@ static PyObject* ZstdCompressionChunkerIterator_iternext(ZstdCompressionChunkerI
 	}
 
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_compress_generic(chunker->compressor->cctx, &chunker->output,
+	zresult = ZSTD_compressStream2(chunker->compressor->cctx, &chunker->output,
 		&chunker->input, zFlushMode);
 	Py_END_ALLOW_THREADS
 
