@@ -272,7 +272,7 @@ class TestCompressor_compressobj(unittest.TestCase):
 
         params = zstd.get_frame_parameters(result)
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 1048576)
+        self.assertEqual(params.window_size, 2097152)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
@@ -453,7 +453,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
         params = zstd.get_frame_parameters(dest.getvalue())
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 1048576)
+        self.assertEqual(params.window_size, 2097152)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
@@ -794,7 +794,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
         result = buffer.getvalue()
         self.assertEqual(result,
-                         b'\x28\xb5\x2f\xfd\x00\x50\x75\x00\x00\x38\x66\x6f'
+                         b'\x28\xb5\x2f\xfd\x00\x58\x75\x00\x00\x38\x66\x6f'
                          b'\x6f\x62\x61\x72\x78\x01\x00\xfc\xdf\x03\x23')
 
     def test_dictionary(self):
@@ -807,7 +807,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         d = zstd.train_dictionary(8192, samples)
 
         h = hashlib.sha1(d.as_bytes()).hexdigest()
-        self.assertEqual(h, '2b3b6428da5bf2c9cc9d4bb58ba0bc5990dd0e79')
+        self.assertEqual(h, '88ca0d38332aff379d4ced166a51c280a7679aad')
 
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=9, dict_data=d)
@@ -825,7 +825,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertFalse(params.has_checksum)
 
         h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, 'd118cd7a008c7b8f416aa3a5f609eab4c629af95')
+        self.assertEqual(h, '8703b4316f274d26697ea5dd480f29c08e85d940')
 
         source = b'foo' + b'bar' + (b'foo' * 16384)
 
@@ -1192,7 +1192,7 @@ class TestCompressor_chunker(unittest.TestCase):
 
         it = chunker.finish()
 
-        self.assertEqual(next(it), b'\x28\xb5\x2f\xfd\x00\x50\x01\x00\x00')
+        self.assertEqual(next(it), b'\x28\xb5\x2f\xfd\x00\x58\x01\x00\x00')
 
         with self.assertRaises(StopIteration):
             next(it)
@@ -1214,7 +1214,7 @@ class TestCompressor_chunker(unittest.TestCase):
         it = chunker.finish()
 
         self.assertEqual(next(it),
-                         b'\x28\xb5\x2f\xfd\x00\x50\x7d\x00\x00\x48\x66\x6f'
+                         b'\x28\xb5\x2f\xfd\x00\x58\x7d\x00\x00\x48\x66\x6f'
                          b'\x6f\x62\x61\x72\x62\x61\x7a\x01\x00\xe4\xe4\x8e')
 
         with self.assertRaises(StopIteration):
@@ -1258,7 +1258,7 @@ class TestCompressor_chunker(unittest.TestCase):
 
         self.assertEqual(
             b''.join(chunks),
-            b'\x28\xb5\x2f\xfd\x00\x50\x55\x00\x00\x18\x66\x6f\x6f\x01\x00'
+            b'\x28\xb5\x2f\xfd\x00\x58\x55\x00\x00\x18\x66\x6f\x6f\x01\x00'
             b'\xfa\xd3\x77\x43')
 
         dctx = zstd.ZstdDecompressor()
@@ -1283,7 +1283,7 @@ class TestCompressor_chunker(unittest.TestCase):
 
             self.assertEqual(list(chunker.compress(source)), [])
             self.assertEqual(list(chunker.finish()), [
-                b'\x28\xb5\x2f\xfd\x00\x50\x19\x00\x00\x66\x6f\x6f'
+                b'\x28\xb5\x2f\xfd\x00\x58\x19\x00\x00\x66\x6f\x6f'
             ])
 
     def test_flush(self):
@@ -1296,7 +1296,7 @@ class TestCompressor_chunker(unittest.TestCase):
         chunks1 = list(chunker.flush())
 
         self.assertEqual(chunks1, [
-            b'\x28\xb5\x2f\xfd\x00\x50\x8c\x00\x00\x30\x66\x6f\x6f\x62\x61\x72'
+            b'\x28\xb5\x2f\xfd\x00\x58\x8c\x00\x00\x30\x66\x6f\x6f\x62\x61\x72'
             b'\x02\x00\xfa\x03\xfe\xd0\x9f\xbe\x1b\x02'
         ])
 
