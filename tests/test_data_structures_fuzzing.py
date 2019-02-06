@@ -35,7 +35,8 @@ s_strategy = strategies.sampled_from((zstd.STRATEGY_FAST,
                                         zstd.STRATEGY_LAZY2,
                                         zstd.STRATEGY_BTLAZY2,
                                         zstd.STRATEGY_BTOPT,
-                                        zstd.STRATEGY_BTULTRA))
+                                        zstd.STRATEGY_BTULTRA,
+                                        zstd.STRATEGY_BTULTRA2))
 
 
 @make_cffi

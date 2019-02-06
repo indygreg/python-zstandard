@@ -1294,6 +1294,8 @@ STRATEGY_BTOPT
     Compression strategy
 STRATEGY_BTULTRA
     Compression strategy
+STRATEGY_BTULTRA2
+    Compression strategy
 
 FORMAT_ZSTD1
     Zstandard frame format

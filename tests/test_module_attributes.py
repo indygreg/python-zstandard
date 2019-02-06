@@ -57,6 +57,7 @@ class TestModuleAttributes(unittest.TestCase):
             'STRATEGY_BTLAZY2',
             'STRATEGY_BTOPT',
             'STRATEGY_BTULTRA',
+            'STRATEGY_BTULTRA2',
             'DICT_TYPE_AUTO',
             'DICT_TYPE_RAWCONTENT',
             'DICT_TYPE_FULLDICT',

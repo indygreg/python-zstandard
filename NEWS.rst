@@ -85,6 +85,7 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* Exposed the ``STRATEGY_BTULTRA2`` constant.
 * ``CompressionParameters`` instances now expose an ``overlap_log`` attribute.
   This behaves identically to the ``overlap_size_log`` attribute.
 * ``CompressionParameters()`` now accepts an ``overlap_log`` argument that
