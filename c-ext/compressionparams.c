@@ -10,7 +10,7 @@
 
 extern PyObject* ZstdError;
 
-int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value) {
+int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, int value) {
 	size_t zresult = ZSTD_CCtxParam_setParameter(params, param, value);
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "unable to set compression context parameter: %s",
@@ -25,7 +25,7 @@ int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned valu
 
 int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj) {
 	TRY_SET_PARAMETER(params, ZSTD_c_format, obj->format);
-	TRY_SET_PARAMETER(params, ZSTD_c_compressionLevel, (unsigned)obj->compressionLevel);
+	TRY_SET_PARAMETER(params, ZSTD_c_compressionLevel, obj->compressionLevel);
 	TRY_SET_PARAMETER(params, ZSTD_c_windowLog, obj->windowLog);
 	TRY_SET_PARAMETER(params, ZSTD_c_hashLog, obj->hashLog);
 	TRY_SET_PARAMETER(params, ZSTD_c_chainLog, obj->chainLog);
@@ -90,30 +90,30 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		NULL
 	};
 
-	unsigned format = 0;
+	int format = 0;
 	int compressionLevel = 0;
-	unsigned windowLog = 0;
-	unsigned hashLog = 0;
-	unsigned chainLog = 0;
-	unsigned searchLog = 0;
-	unsigned minMatch = 0;
-	unsigned targetLength = 0;
-	unsigned compressionStrategy = 0;
-	unsigned contentSizeFlag = 1;
-	unsigned checksumFlag = 0;
-	unsigned dictIDFlag = 0;
-	unsigned jobSize = 0;
-	unsigned overlapSizeLog = 0;
-	unsigned forceMaxWindow = 0;
-	unsigned enableLDM = 0;
-	unsigned ldmHashLog = 0;
-	unsigned ldmMinMatch = 0;
-	unsigned ldmBucketSizeLog = 0;
-	unsigned ldmHashEveryLog = 0;
+	int windowLog = 0;
+	int hashLog = 0;
+	int chainLog = 0;
+	int searchLog = 0;
+	int minMatch = 0;
+	int targetLength = 0;
+	int compressionStrategy = 0;
+	int contentSizeFlag = 1;
+	int checksumFlag = 0;
+	int dictIDFlag = 0;
+	int jobSize = 0;
+	int overlapSizeLog = 0;
+	int forceMaxWindow = 0;
+	int enableLDM = 0;
+	int ldmHashLog = 0;
+	int ldmMinMatch = 0;
+	int ldmBucketSizeLog = 0;
+	int ldmHashEveryLog = 0;
 	int threads = 0;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-		"|IiIIIIIIIIIIIIIIIIIIi:CompressionParameters",
+		"|iiiiiiiiiiiiiiiiiiiii:CompressionParameters",
 		kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
 		&searchLog, &minMatch, &targetLength, &compressionStrategy,
 		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,

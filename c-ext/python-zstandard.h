@@ -361,7 +361,7 @@ typedef struct {
 
 extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
 
-int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value);
+int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, int value);
 int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs);
 int ensure_ddict(ZstdCompressionDict* dict);
