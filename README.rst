@@ -1147,7 +1147,8 @@ follows:
 * search_log
 * min_match
 * target_length
-* compression_strategy
+* strategy
+* compression_strategy (deprecated: same as ``strategy``)
 * write_content_size
 * write_checksum
 * write_dict_id

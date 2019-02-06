@@ -58,6 +58,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* The ``compression_strategy`` argument to ``CompressionParameters`` has been
+  deprecated and will be removed in a future release. The ``strategy``
+  argument should be used instead.
 * The ``SEARCHLENGTH_MIN`` and ``SEARCHLENGTH_MAX`` constants are deprecated
   and will be removed in a future release. Use ``MINMATCH_MIN`` and
   ``MINMATCH_MAX`` instead.
@@ -70,6 +73,9 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``CompressionParameters()`` now accepts a ``strategy`` argument that behaves
+  identically to the ``compression_strategy`` argument. An error will be raised
+  if both arguments are specified.
 * The ``MINMATCH_MIN`` and ``MINMATCH_MAX`` constants were added. They are
   semantically equivalent to the old ``SEARCHLENGTH_MIN`` and
   ``SEARCHLENGTH_MAX`` constants.

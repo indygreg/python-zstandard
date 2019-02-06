@@ -842,7 +842,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
             min_match=5,
             search_log=4,
             target_length=10,
-            compression_strategy=zstd.STRATEGY_FAST)
+            strategy=zstd.STRATEGY_FAST)
 
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(compression_params=params)

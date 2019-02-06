@@ -75,6 +75,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		"min_match",
 		"target_length",
 		"compression_strategy",
+		"strategy",
 		"write_content_size",
 		"write_checksum",
 		"write_dict_id",
@@ -98,7 +99,8 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	int searchLog = 0;
 	int minMatch = 0;
 	int targetLength = 0;
-	int compressionStrategy = 0;
+	int compressionStrategy = -1;
+	int strategy = -1;
 	int contentSizeFlag = 1;
 	int checksumFlag = 0;
 	int dictIDFlag = 0;
@@ -113,9 +115,9 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	int threads = 0;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-		"|iiiiiiiiiiiiiiiiiiiii:CompressionParameters",
+		"|iiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
 		kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
-		&searchLog, &minMatch, &targetLength, &compressionStrategy,
+		&searchLog, &minMatch, &targetLength, &compressionStrategy, &strategy,
 		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,
 		&forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog,
 		&ldmHashEveryLog, &threads)) {
@@ -134,7 +136,20 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	self->searchLog = searchLog;
 	self->minMatch = minMatch;
 	self->targetLength = targetLength;
-	self->compressionStrategy = compressionStrategy;
+
+	if (compressionStrategy != -1 && strategy != -1) {
+		PyErr_SetString(PyExc_ValueError, "cannot specify both compression_strategy and strategy");
+		return -1;
+    }
+
+	if (compressionStrategy != -1) {
+		strategy = compressionStrategy;
+	}
+	else if (strategy == -1) {
+		strategy = 0;
+	}
+
+	self->compressionStrategy = strategy;
 	self->contentSizeFlag = contentSizeFlag;
 	self->checksumFlag = checksumFlag;
 	self->dictIDFlag = dictIDFlag;

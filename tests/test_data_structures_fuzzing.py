@@ -51,7 +51,7 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
                                        search_log=searchlog,
                                        min_match=minmatch,
                                        target_length=targetlength,
-                                       compression_strategy=strategy)
+                                       strategy=strategy)
 
     @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
                       s_minmatch, s_targetlength, s_strategy)
@@ -70,6 +70,6 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
                                            search_log=searchlog,
                                            min_match=minmatch,
                                            target_length=targetlength,
-                                           compression_strategy=strategy)
+                                           strategy=strategy)
         size = p.estimated_compression_context_size()
 

@@ -17,7 +17,7 @@ class TestCompressionParameters(unittest.TestCase):
                                        search_log=zstd.SEARCHLOG_MIN,
                                        min_match=zstd.MINMATCH_MIN + 1,
                                        target_length=zstd.TARGETLENGTH_MIN,
-                                       compression_strategy=zstd.STRATEGY_FAST)
+                                       strategy=zstd.STRATEGY_FAST)
 
         zstd.ZstdCompressionParameters(window_log=zstd.WINDOWLOG_MAX,
                                        chain_log=zstd.CHAINLOG_MAX,
@@ -25,7 +25,7 @@ class TestCompressionParameters(unittest.TestCase):
                                        search_log=zstd.SEARCHLOG_MAX,
                                        min_match=zstd.MINMATCH_MAX - 1,
                                        target_length=zstd.TARGETLENGTH_MAX,
-                                       compression_strategy=zstd.STRATEGY_BTULTRA)
+                                       strategy=zstd.STRATEGY_BTULTRA)
 
     def test_from_level(self):
         p = zstd.ZstdCompressionParameters.from_level(1)
@@ -43,7 +43,7 @@ class TestCompressionParameters(unittest.TestCase):
                                            search_log=4,
                                            min_match=5,
                                            target_length=8,
-                                           compression_strategy=1)
+                                           strategy=1)
         self.assertEqual(p.window_log, 10)
         self.assertEqual(p.chain_log, 6)
         self.assertEqual(p.hash_log, 7)
@@ -95,11 +95,21 @@ class TestCompressionParameters(unittest.TestCase):
                                            search_log=1,
                                            min_match=5,
                                            target_length=16,
-                                           compression_strategy=zstd.STRATEGY_DFAST)
+                                           strategy=zstd.STRATEGY_DFAST)
 
         # 32-bit has slightly different values from 64-bit.
         self.assertAlmostEqual(p.estimated_compression_context_size(), 1294072,
                                delta=250)
+
+    def test_strategy(self):
+        with self.assertRaisesRegexp(ValueError, 'cannot specify both compression_strategy'):
+            zstd.ZstdCompressionParameters(strategy=0, compression_strategy=0)
+
+        p = zstd.ZstdCompressionParameters(strategy=2)
+        self.assertEqual(p.compression_strategy, 2)
+
+        p = zstd.ZstdCompressionParameters(strategy=3)
+        self.assertEqual(p.compression_strategy, 3)
 
 
 @make_cffi

@@ -237,7 +237,8 @@ class ZstdCompressionParameters(object):
 
     def __init__(self, format=0, compression_level=0, window_log=0, hash_log=0,
                  chain_log=0, search_log=0, min_match=0, target_length=0,
-                 compression_strategy=0, write_content_size=1, write_checksum=0,
+                 strategy=-1, compression_strategy=-1,
+                 write_content_size=1, write_checksum=0,
                  write_dict_id=0, job_size=0, overlap_size_log=0,
                  force_max_window=0, enable_ldm=0, ldm_hash_log=0,
                  ldm_min_match=0, ldm_bucket_size_log=0, ldm_hash_every_log=0,
@@ -254,7 +255,16 @@ class ZstdCompressionParameters(object):
         self.search_log = search_log
         self.min_match = min_match
         self.target_length = target_length
-        self.compression_strategy = compression_strategy
+
+        if strategy != -1 and compression_strategy != -1:
+            raise ValueError('cannot specify both compression_strategy and strategy')
+
+        if compression_strategy != -1:
+            strategy = compression_strategy
+        elif strategy == -1:
+            strategy = 0
+
+        self.compression_strategy = strategy
         self.write_content_size = write_content_size
         self.write_checksum = write_checksum
         self.write_dict_id = write_dict_id
