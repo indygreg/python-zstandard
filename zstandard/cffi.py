@@ -241,8 +241,8 @@ class ZstdCompressionParameters(object):
                  write_content_size=1, write_checksum=0,
                  write_dict_id=0, job_size=0, overlap_size_log=0,
                  force_max_window=0, enable_ldm=0, ldm_hash_log=0,
-                 ldm_min_match=0, ldm_bucket_size_log=0, ldm_hash_every_log=0,
-                 threads=0):
+                 ldm_min_match=0, ldm_bucket_size_log=0, ldm_hash_rate_log=-1,
+                 ldm_hash_every_log=-1, threads=0):
 
         if threads < 0:
             threads = _cpu_count()
@@ -275,7 +275,16 @@ class ZstdCompressionParameters(object):
         self.ldm_hash_log = ldm_hash_log
         self.ldm_min_match = ldm_min_match
         self.ldm_bucket_size_log = ldm_bucket_size_log
-        self.ldm_hash_every_log = ldm_hash_every_log
+
+        if ldm_hash_rate_log != -1 and ldm_hash_every_log != -1:
+            raise ValueError('cannot specify both ldm_hash_rate_log and ldm_hash_every_log')
+
+        if ldm_hash_every_log != -1:
+            ldm_hash_rate_log = ldm_hash_every_log
+        elif ldm_hash_rate_log == -1:
+            ldm_hash_rate_log = 0
+
+        self.ldm_hash_every_log = ldm_hash_rate_log
         self.threads = threads
 
         self.params = _make_cctx_params(self)

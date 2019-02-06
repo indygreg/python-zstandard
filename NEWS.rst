@@ -58,6 +58,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* The ``ldm_hash_every_log`` argument to ``CompressionParameters`` has been
+  deprecated and will be removed in a future release. The ``ldm_hash_rate_log``
+  argument should be used instead.
 * The ``compression_strategy`` argument to ``CompressionParameters`` has been
   deprecated and will be removed in a future release. The ``strategy``
   argument should be used instead.
@@ -73,6 +76,9 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``CompressionParameters()`` now accepts a ``ldm_hash_rate_log`` argument that
+  behaves identically to the ``ldm_hash_every_log`` argument. An error will be
+  raised if both arguments are specified.
 * ``CompressionParameters()`` now accepts a ``strategy`` argument that behaves
   identically to the ``compression_strategy`` argument. An error will be raised
   if both arguments are specified.

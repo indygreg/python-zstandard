@@ -86,6 +86,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		"ldm_hash_log",
 		"ldm_min_match",
 		"ldm_bucket_size_log",
+		"ldm_hash_rate_log",
 		"ldm_hash_every_log",
 		"threads",
 		NULL
@@ -111,16 +112,17 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	int ldmHashLog = 0;
 	int ldmMinMatch = 0;
 	int ldmBucketSizeLog = 0;
-	int ldmHashRateLog = 0;
+	int ldmHashRateLog = -1;
+	int ldmHashEveryLog = -1;
 	int threads = 0;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-		"|iiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
+		"|iiiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
 		kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
 		&searchLog, &minMatch, &targetLength, &compressionStrategy, &strategy,
 		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,
 		&forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog,
-		&ldmHashRateLog, &threads)) {
+		&ldmHashRateLog, &ldmHashEveryLog, &threads)) {
 		return -1;
 	}
 
@@ -161,6 +163,19 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	self->ldmHashLog = ldmHashLog;
 	self->ldmMinMatch = ldmMinMatch;
 	self->ldmBucketSizeLog = ldmBucketSizeLog;
+
+	if (ldmHashRateLog != -1 && ldmHashEveryLog != -1) {
+		PyErr_SetString(PyExc_ValueError, "cannot specify both ldm_hash_rate_log and ldm_hash_everyLog");
+		return -1;
+	}
+
+	if (ldmHashEveryLog != -1) {
+		ldmHashRateLog = ldmHashEveryLog;
+	}
+	else if (ldmHashRateLog == -1) {
+		ldmHashRateLog = 0;
+	}
+
 	self->ldmHashRateLog = ldmHashRateLog;
 
 	if (reset_params(self)) {

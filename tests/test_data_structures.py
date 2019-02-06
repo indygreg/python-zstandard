@@ -85,7 +85,7 @@ class TestCompressionParameters(unittest.TestCase):
         p = zstd.ZstdCompressionParameters(ldm_bucket_size_log=7)
         self.assertEqual(p.ldm_bucket_size_log, 7)
 
-        p = zstd.ZstdCompressionParameters(ldm_hash_every_log=8)
+        p = zstd.ZstdCompressionParameters(ldm_hash_rate_log=8)
         self.assertEqual(p.ldm_hash_every_log, 8)
 
     def test_estimated_compression_context_size(self):
@@ -110,6 +110,16 @@ class TestCompressionParameters(unittest.TestCase):
 
         p = zstd.ZstdCompressionParameters(strategy=3)
         self.assertEqual(p.compression_strategy, 3)
+
+    def test_ldm_hash_rate_log(self):
+        with self.assertRaisesRegexp(ValueError, 'cannot specify both ldm_hash_rate_log'):
+            zstd.ZstdCompressionParameters(ldm_hash_rate_log=8, ldm_hash_every_log=4)
+
+        p = zstd.ZstdCompressionParameters(ldm_hash_rate_log=8)
+        self.assertEqual(p.ldm_hash_every_log, 8)
+
+        p = zstd.ZstdCompressionParameters(ldm_hash_every_log=16)
+        self.assertEqual(p.ldm_hash_every_log, 16)
 
 
 @make_cffi
