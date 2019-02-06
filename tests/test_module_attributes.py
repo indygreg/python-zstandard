@@ -38,6 +38,8 @@ class TestModuleAttributes(unittest.TestCase):
             'HASHLOG_MIN',
             'HASHLOG_MAX',
             'HASHLOG3_MAX',
+            'MINMATCH_MIN',
+            'MINMATCH_MAX',
             'SEARCHLOG_MIN',
             'SEARCHLOG_MAX',
             'SEARCHLENGTH_MIN',

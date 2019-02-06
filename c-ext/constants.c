@@ -77,7 +77,9 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "HASHLOG3_MAX", ZSTD_HASHLOG3_MAX);
 	PyModule_AddIntConstant(mod, "SEARCHLOG_MIN", ZSTD_SEARCHLOG_MIN);
 	PyModule_AddIntConstant(mod, "SEARCHLOG_MAX", ZSTD_SEARCHLOG_MAX);
-	/* TODO Expose MINMATCH_MIN, MINMATCH_MAX */
+	PyModule_AddIntConstant(mod, "MINMATCH_MIN", ZSTD_MINMATCH_MIN);
+	PyModule_AddIntConstant(mod, "MINMATCH_MAX", ZSTD_MINMATCH_MAX);
+	/* TODO SEARCHLENGTH_* is deprecated. */
 	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MIN", ZSTD_MINMATCH_MIN);
 	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MAX", ZSTD_MINMATCH_MAX);
 	PyModule_AddIntConstant(mod, "TARGETLENGTH_MIN", ZSTD_TARGETLENGTH_MIN);

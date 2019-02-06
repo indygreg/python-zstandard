@@ -1261,10 +1261,18 @@ SEARCHLOG_MIN
     Minimum value for compression parameter
 SEARCHLOG_MAX
     Maximum value for compression parameter
+MINMATCH_MIN
+    Minimum value for compression parameter
+MINMATCH_MAX
+    Maximum value for compression parameter
 SEARCHLENGTH_MIN
     Minimum value for compression parameter
+
+    Deprecated: use ``MINMATCH_MIN``
 SEARCHLENGTH_MAX
     Maximum value for compression parameter
+
+    Deprecated: use ``MINMATCH_MAX``
 TARGETLENGTH_MIN
     Minimum value for compression parameter
 STRATEGY_FAST

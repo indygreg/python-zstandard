@@ -58,6 +58,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* The ``SEARCHLENGTH_MIN`` and ``SEARCHLENGTH_MAX`` constants are deprecated
+  and will be removed in a future release. Use ``MINMATCH_MIN`` and
+  ``MINMATCH_MAX`` instead.
 * The ``zstd_cffi`` module has been renamed to ``zstandard.cffi``. As had
   been documented in the ``README`` file since the ``0.9.0`` release, the
   module should not be imported directly at its new location. Instead,
@@ -67,6 +70,9 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* The ``MINMATCH_MIN`` and ``MINMATCH_MAX`` constants were added. They are
+  semantically equivalent to the old ``SEARCHLENGTH_MIN`` and
+  ``SEARCHLENGTH_MAX`` constants.
 * Bundled zstandard library upgraded from 1.3.7 to 1.3.8.
 * ``setup.py`` denotes support for Python 3.7 (Python 3.7 was supported and
   tested in the 0.10 release).

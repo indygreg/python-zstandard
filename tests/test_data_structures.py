@@ -15,7 +15,7 @@ class TestCompressionParameters(unittest.TestCase):
                                        chain_log=zstd.CHAINLOG_MIN,
                                        hash_log=zstd.HASHLOG_MIN,
                                        search_log=zstd.SEARCHLOG_MIN,
-                                       min_match=zstd.SEARCHLENGTH_MIN + 1,
+                                       min_match=zstd.MINMATCH_MIN + 1,
                                        target_length=zstd.TARGETLENGTH_MIN,
                                        compression_strategy=zstd.STRATEGY_FAST)
 
@@ -23,7 +23,7 @@ class TestCompressionParameters(unittest.TestCase):
                                        chain_log=zstd.CHAINLOG_MAX,
                                        hash_log=zstd.HASHLOG_MAX,
                                        search_log=zstd.SEARCHLOG_MAX,
-                                       min_match=zstd.SEARCHLENGTH_MAX - 1,
+                                       min_match=zstd.MINMATCH_MAX - 1,
                                        target_length=zstd.TARGETLENGTH_MAX,
                                        compression_strategy=zstd.STRATEGY_BTULTRA)
 
