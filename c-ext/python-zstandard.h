@@ -51,7 +51,7 @@ typedef struct {
 	unsigned ldmHashLog;
 	unsigned ldmMinMatch;
 	unsigned ldmBucketSizeLog;
-	unsigned ldmHashEveryLog;
+	unsigned ldmHashRateLog;
 } ZstdCompressionParametersObject;
 
 extern PyTypeObject ZstdCompressionParametersType;

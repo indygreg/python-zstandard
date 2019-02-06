@@ -44,7 +44,7 @@ int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* ob
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashLog, obj->ldmHashLog);
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmMinMatch, obj->ldmMinMatch);
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmBucketSizeLog, obj->ldmBucketSizeLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashRateLog, obj->ldmHashEveryLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashRateLog, obj->ldmHashRateLog);
 
 	return 0;
 }
@@ -111,7 +111,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	int ldmHashLog = 0;
 	int ldmMinMatch = 0;
 	int ldmBucketSizeLog = 0;
-	int ldmHashEveryLog = 0;
+	int ldmHashRateLog = 0;
 	int threads = 0;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
@@ -120,7 +120,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		&searchLog, &minMatch, &targetLength, &compressionStrategy, &strategy,
 		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,
 		&forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog,
-		&ldmHashEveryLog, &threads)) {
+		&ldmHashRateLog, &threads)) {
 		return -1;
 	}
 
@@ -161,7 +161,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	self->ldmHashLog = ldmHashLog;
 	self->ldmMinMatch = ldmMinMatch;
 	self->ldmBucketSizeLog = ldmBucketSizeLog;
-	self->ldmHashEveryLog = ldmHashEveryLog;
+	self->ldmHashRateLog = ldmHashRateLog;
 
 	if (reset_params(self)) {
 		return -1;
@@ -429,7 +429,7 @@ static PyMemberDef ZstdCompressionParameters_members[] = {
 	  offsetof(ZstdCompressionParametersObject, ldmBucketSizeLog), READONLY,
 	  "log size of each bucket in the LDM hash table for collision resolution" },
 	{ "ldm_hash_every_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, ldmHashEveryLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, ldmHashRateLog), READONLY,
 	  "frequency of inserting/looking up entries in the LDM hash table" },
 	{ NULL }
 };
