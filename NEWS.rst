@@ -44,6 +44,10 @@ Actions Blocking Release
 * Consider a ``chunker()`` API for decompression.
 * Consider stats for ``chunker()`` API, including finding the last consumed
   offset of input data.
+* Consider exposing ``ZSTD_cParam_getBounds()`` and
+  ``ZSTD_dParam_getBounds()`` APIs.
+* Consider controls over resetting compression contexts (session only, parameters,
+  or session and parameters).
 
 Other Actions Not Blocking Release
 ---------------------------------------
