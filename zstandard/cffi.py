@@ -276,8 +276,7 @@ def estimate_decompression_context_size():
 
 
 def _set_compression_parameter(params, param, value):
-    zresult = lib.ZSTD_CCtxParam_setParameter(params, param,
-                                              ffi.cast('unsigned', value))
+    zresult = lib.ZSTD_CCtxParam_setParameter(params, param, value)
     if lib.ZSTD_isError(zresult):
         raise ZstdError('unable to set compression context parameter: %s' %
                         _zstd_error(zresult))
