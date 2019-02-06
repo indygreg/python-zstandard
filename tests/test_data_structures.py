@@ -59,9 +59,10 @@ class TestCompressionParameters(unittest.TestCase):
         self.assertEqual(p.threads, 4)
 
         p = zstd.ZstdCompressionParameters(threads=2, job_size=1048576,
-                                       overlap_size_log=6)
+                                           overlap_log=6)
         self.assertEqual(p.threads, 2)
         self.assertEqual(p.job_size, 1048576)
+        self.assertEqual(p.overlap_log, 6)
         self.assertEqual(p.overlap_size_log, 6)
 
         p = zstd.ZstdCompressionParameters(compression_level=-1)
@@ -121,6 +122,18 @@ class TestCompressionParameters(unittest.TestCase):
 
         p = zstd.ZstdCompressionParameters(ldm_hash_every_log=16)
         self.assertEqual(p.ldm_hash_every_log, 16)
+
+    def test_overlap_log(self):
+        with self.assertRaisesRegexp(ValueError, 'cannot specify both overlap_log'):
+            zstd.ZstdCompressionParameters(overlap_log=1, overlap_size_log=9)
+
+        p = zstd.ZstdCompressionParameters(overlap_log=2)
+        self.assertEqual(p.overlap_log, 2)
+        self.assertEqual(p.overlap_size_log, 2)
+
+        p = zstd.ZstdCompressionParameters(overlap_size_log=4)
+        self.assertEqual(p.overlap_log, 4)
+        self.assertEqual(p.overlap_size_log, 4)
 
 
 @make_cffi

@@ -200,7 +200,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_c_dictIDFlag, params.write_dict_id),
         (lib.ZSTD_c_nbWorkers, params.threads),
         (lib.ZSTD_c_jobSize, params.job_size),
-        (lib.ZSTD_c_overlapLog, params.overlap_size_log),
+        (lib.ZSTD_c_overlapLog, params.overlap_log),
         (lib.ZSTD_c_forceMaxWindow, params.force_max_window),
         (lib.ZSTD_c_enableLongDistanceMatching, params.enable_ldm),
         (lib.ZSTD_c_ldmHashLog, params.ldm_hash_log),
@@ -239,10 +239,10 @@ class ZstdCompressionParameters(object):
                  chain_log=0, search_log=0, min_match=0, target_length=0,
                  strategy=-1, compression_strategy=-1,
                  write_content_size=1, write_checksum=0,
-                 write_dict_id=0, job_size=0, overlap_size_log=0,
-                 force_max_window=0, enable_ldm=0, ldm_hash_log=0,
-                 ldm_min_match=0, ldm_bucket_size_log=0, ldm_hash_rate_log=-1,
-                 ldm_hash_every_log=-1, threads=0):
+                 write_dict_id=0, job_size=0, overlap_log=-1,
+                 overlap_size_log=-1, force_max_window=0, enable_ldm=0,
+                 ldm_hash_log=0, ldm_min_match=0, ldm_bucket_size_log=0,
+                 ldm_hash_rate_log=-1, ldm_hash_every_log=-1, threads=0):
 
         if threads < 0:
             threads = _cpu_count()
@@ -269,7 +269,17 @@ class ZstdCompressionParameters(object):
         self.write_checksum = write_checksum
         self.write_dict_id = write_dict_id
         self.job_size = job_size
-        self.overlap_size_log = overlap_size_log
+
+        if overlap_log != -1 and overlap_size_log != -1:
+            raise ValueError('cannot specify both overlap_log and overlap_size_log')
+
+        if overlap_size_log != -1:
+            overlap_log = overlap_size_log
+        elif overlap_log == -1:
+            overlap_log = 0
+
+        self.overlap_log = overlap_log
+        self.overlap_size_log = overlap_log
         self.force_max_window = force_max_window
         self.enable_ldm = enable_ldm
         self.ldm_hash_log = ldm_hash_log
