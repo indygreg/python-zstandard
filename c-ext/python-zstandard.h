@@ -45,7 +45,7 @@ typedef struct {
 	unsigned dictIDFlag;
 	unsigned threads;
 	unsigned jobSize;
-	unsigned overlapSizeLog;
+	unsigned overlapLog;
 	unsigned forceMaxWindow;
 	unsigned enableLongDistanceMatching;
 	unsigned ldmHashLog;

@@ -38,7 +38,7 @@ int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* ob
 	TRY_SET_PARAMETER(params, ZSTD_c_dictIDFlag, obj->dictIDFlag);
 	TRY_SET_PARAMETER(params, ZSTD_c_nbWorkers, obj->threads);
 	TRY_SET_PARAMETER(params, ZSTD_c_jobSize, obj->jobSize);
-	TRY_SET_PARAMETER(params, ZSTD_c_overlapLog, obj->overlapSizeLog);
+	TRY_SET_PARAMETER(params, ZSTD_c_overlapLog, obj->overlapLog);
 	TRY_SET_PARAMETER(params, ZSTD_c_forceMaxWindow, obj->forceMaxWindow);
 	TRY_SET_PARAMETER(params, ZSTD_c_enableLongDistanceMatching, obj->enableLongDistanceMatching);
 	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashLog, obj->ldmHashLog);
@@ -106,7 +106,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	int checksumFlag = 0;
 	int dictIDFlag = 0;
 	int jobSize = 0;
-	int overlapSizeLog = 0;
+	int overlapLog = 0;
 	int forceMaxWindow = 0;
 	int enableLDM = 0;
 	int ldmHashLog = 0;
@@ -120,7 +120,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		"|iiiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
 		kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
 		&searchLog, &minMatch, &targetLength, &compressionStrategy, &strategy,
-		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapSizeLog,
+		&contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize, &overlapLog,
 		&forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog,
 		&ldmHashRateLog, &ldmHashEveryLog, &threads)) {
 		return -1;
@@ -157,7 +157,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	self->dictIDFlag = dictIDFlag;
 	self->threads = threads;
 	self->jobSize = jobSize;
-	self->overlapSizeLog = overlapSizeLog;
+	self->overlapLog = overlapLog;
 	self->forceMaxWindow = forceMaxWindow;
 	self->enableLongDistanceMatching = enableLDM;
 	self->ldmHashLog = ldmHashLog;
@@ -426,7 +426,7 @@ static PyMemberDef ZstdCompressionParameters_members[] = {
 	  offsetof(ZstdCompressionParametersObject, jobSize), READONLY,
 	  "size of compression job when using multiple threads" },
 	{ "overlap_size_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, overlapSizeLog), READONLY,
+	  offsetof(ZstdCompressionParametersObject, overlapLog), READONLY,
 	  "Size of previous input reloaded at the beginning of each job" },
 	{ "force_max_window", T_UINT,
 	  offsetof(ZstdCompressionParametersObject, forceMaxWindow), READONLY,
