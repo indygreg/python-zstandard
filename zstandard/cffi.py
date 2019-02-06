@@ -206,7 +206,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_c_ldmHashLog, params.ldm_hash_log),
         (lib.ZSTD_c_ldmMinMatch, params.ldm_min_match),
         (lib.ZSTD_c_ldmBucketSizeLog, params.ldm_bucket_size_log),
-        (lib.ZSTD_c_ldmHashRateLog, params.ldm_hash_every_log),
+        (lib.ZSTD_c_ldmHashRateLog, params.ldm_hash_rate_log),
     ]
 
     for param, value in attrs:
@@ -284,6 +284,7 @@ class ZstdCompressionParameters(object):
         elif ldm_hash_rate_log == -1:
             ldm_hash_rate_log = 0
 
+        self.ldm_hash_rate_log = ldm_hash_rate_log
         self.ldm_hash_every_log = ldm_hash_rate_log
         self.threads = threads
 

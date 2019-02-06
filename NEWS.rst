@@ -58,6 +58,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* The ``ldm_hash_every_log`` attribute on ``CompressionParameters`` instances
+  has been deprecated and will be removed in a future release. The
+  ``ldm_hash_rate_log`` attribute should be used instead.
 * The ``ldm_hash_every_log`` argument to ``CompressionParameters`` has been
   deprecated and will be removed in a future release. The ``ldm_hash_rate_log``
   argument should be used instead.
@@ -76,6 +79,8 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``CompressionParameters`` instances now expose an ``ldm_hash_rate_log``
+  attribute. This behaves identically to the ``ldm_hash_every_log`` attribute.
 * ``CompressionParameters()`` now accepts a ``ldm_hash_rate_log`` argument that
   behaves identically to the ``ldm_hash_every_log`` argument. An error will be
   raised if both arguments are specified.

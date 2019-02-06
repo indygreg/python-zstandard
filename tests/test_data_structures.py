@@ -87,6 +87,7 @@ class TestCompressionParameters(unittest.TestCase):
 
         p = zstd.ZstdCompressionParameters(ldm_hash_rate_log=8)
         self.assertEqual(p.ldm_hash_every_log, 8)
+        self.assertEqual(p.ldm_hash_rate_log, 8)
 
     def test_estimated_compression_context_size(self):
         p = zstd.ZstdCompressionParameters(window_log=20,

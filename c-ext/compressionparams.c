@@ -443,6 +443,10 @@ static PyMemberDef ZstdCompressionParameters_members[] = {
 	{ "ldm_bucket_size_log", T_UINT,
 	  offsetof(ZstdCompressionParametersObject, ldmBucketSizeLog), READONLY,
 	  "log size of each bucket in the LDM hash table for collision resolution" },
+	{ "ldm_hash_rate_log", T_UINT,
+	  offsetof(ZstdCompressionParametersObject, ldmHashRateLog), READONLY,
+	  "frequency of inserting/looking up entries in the LDM hash table" },
+	/* TODO remove this deprecated attribute */
 	{ "ldm_hash_every_log", T_UINT,
 	  offsetof(ZstdCompressionParametersObject, ldmHashRateLog), READONLY,
 	  "frequency of inserting/looking up entries in the LDM hash table" },

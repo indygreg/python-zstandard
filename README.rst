@@ -1159,7 +1159,8 @@ follows:
 * ldm_hash_log
 * ldm_min_match
 * ldm_bucket_size_log
-* ldm_hash_every_log
+* ldm_hash_rate_log
+* ldm_hash_every_log (deprecated: same as ``ldm_hash_rate_log``)
 * threads
 
 Some of these are very low-level settings. It may help to consult the official
