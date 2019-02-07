@@ -143,8 +143,7 @@ if hypothesis:
     default_settings = hypothesis.settings()
     hypothesis.settings.register_profile('default', default_settings)
 
-    ci_settings = hypothesis.settings(max_examples=2500,
-                                      max_iterations=2500)
+    ci_settings = hypothesis.settings(max_examples=2500)
     hypothesis.settings.register_profile('ci', ci_settings)
 
     hypothesis.settings.load_profile(
