@@ -246,17 +246,29 @@ class ZstdCompressionParameters(object):
                  ldm_hash_log=0, ldm_min_match=0, ldm_bucket_size_log=0,
                  ldm_hash_rate_log=-1, ldm_hash_every_log=-1, threads=0):
 
+        params = lib.ZSTD_createCCtxParams()
+        if params == ffi.NULL:
+            raise MemoryError()
+
+        params = ffi.gc(params, lib.ZSTD_freeCCtxParams)
+
+        self._params = params
+
         if threads < 0:
             threads = _cpu_count()
 
-        self.format = format
-        self.compression_level = compression_level
-        self.window_log = window_log
-        self.hash_log = hash_log
-        self.chain_log = chain_log
-        self.search_log = search_log
-        self.min_match = min_match
-        self.target_length = target_length
+        # We need to set ZSTD_c_nbWorkers before ZSTD_c_jobSize and ZSTD_c_overlapLog
+        # because setting ZSTD_c_nbWorkers resets the other parameters.
+        _set_compression_parameter(params, lib.ZSTD_c_nbWorkers, threads)
+
+        _set_compression_parameter(params, lib.ZSTD_c_format, format)
+        _set_compression_parameter(params, lib.ZSTD_c_compressionLevel, compression_level)
+        _set_compression_parameter(params, lib.ZSTD_c_windowLog, window_log)
+        _set_compression_parameter(params, lib.ZSTD_c_hashLog, hash_log)
+        _set_compression_parameter(params, lib.ZSTD_c_chainLog, chain_log)
+        _set_compression_parameter(params, lib.ZSTD_c_searchLog, search_log)
+        _set_compression_parameter(params, lib.ZSTD_c_minMatch, min_match)
+        _set_compression_parameter(params, lib.ZSTD_c_targetLength, target_length)
 
         if strategy != -1 and compression_strategy != -1:
             raise ValueError('cannot specify both compression_strategy and strategy')
@@ -266,11 +278,11 @@ class ZstdCompressionParameters(object):
         elif strategy == -1:
             strategy = 0
 
-        self.compression_strategy = strategy
-        self.write_content_size = write_content_size
-        self.write_checksum = write_checksum
-        self.write_dict_id = write_dict_id
-        self.job_size = job_size
+        _set_compression_parameter(params, lib.ZSTD_c_strategy, strategy)
+        _set_compression_parameter(params, lib.ZSTD_c_contentSizeFlag, write_content_size)
+        _set_compression_parameter(params, lib.ZSTD_c_checksumFlag, write_checksum)
+        _set_compression_parameter(params, lib.ZSTD_c_dictIDFlag, write_dict_id)
+        _set_compression_parameter(params, lib.ZSTD_c_jobSize, job_size)
 
         if overlap_log != -1 and overlap_size_log != -1:
             raise ValueError('cannot specify both overlap_log and overlap_size_log')
@@ -280,13 +292,12 @@ class ZstdCompressionParameters(object):
         elif overlap_log == -1:
             overlap_log = 0
 
-        self.overlap_log = overlap_log
-        self.overlap_size_log = overlap_log
-        self.force_max_window = force_max_window
-        self.enable_ldm = enable_ldm
-        self.ldm_hash_log = ldm_hash_log
-        self.ldm_min_match = ldm_min_match
-        self.ldm_bucket_size_log = ldm_bucket_size_log
+        _set_compression_parameter(params, lib.ZSTD_c_overlapLog, overlap_log)
+        _set_compression_parameter(params, lib.ZSTD_c_forceMaxWindow, force_max_window)
+        _set_compression_parameter(params, lib.ZSTD_c_enableLongDistanceMatching, enable_ldm)
+        _set_compression_parameter(params, lib.ZSTD_c_ldmHashLog, ldm_hash_log)
+        _set_compression_parameter(params, lib.ZSTD_c_ldmMinMatch, ldm_min_match)
+        _set_compression_parameter(params, lib.ZSTD_c_ldmBucketSizeLog, ldm_bucket_size_log)
 
         if ldm_hash_rate_log != -1 and ldm_hash_every_log != -1:
             raise ValueError('cannot specify both ldm_hash_rate_log and ldm_hash_every_log')
@@ -296,14 +307,102 @@ class ZstdCompressionParameters(object):
         elif ldm_hash_rate_log == -1:
             ldm_hash_rate_log = 0
 
-        self.ldm_hash_rate_log = ldm_hash_rate_log
-        self.ldm_hash_every_log = ldm_hash_rate_log
-        self.threads = threads
+        _set_compression_parameter(params, lib.ZSTD_c_ldmHashRateLog, ldm_hash_rate_log)
 
-        self.params = _make_cctx_params(self)
+    @property
+    def format(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_format)
+
+    @property
+    def compression_level(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_compressionLevel)
+
+    @property
+    def window_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_windowLog)
+
+    @property
+    def hash_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_hashLog)
+
+    @property
+    def chain_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_chainLog)
+
+    @property
+    def search_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_searchLog)
+
+    @property
+    def min_match(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_minMatch)
+
+    @property
+    def target_length(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_targetLength)
+
+    @property
+    def compression_strategy(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_strategy)
+
+    @property
+    def write_content_size(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_contentSizeFlag)
+
+    @property
+    def write_checksum(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_checksumFlag)
+
+    @property
+    def write_dict_id(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_dictIDFlag)
+
+    @property
+    def job_size(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_jobSize)
+
+    @property
+    def overlap_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_overlapLog)
+
+    @property
+    def overlap_size_log(self):
+        return self.overlap_log
+
+    @property
+    def force_max_window(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_forceMaxWindow)
+
+    @property
+    def enable_ldm(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_enableLongDistanceMatching)
+
+    @property
+    def ldm_hash_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_ldmHashLog)
+
+    @property
+    def ldm_min_match(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_ldmMinMatch)
+
+    @property
+    def ldm_bucket_size_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_ldmBucketSizeLog)
+
+    @property
+    def ldm_hash_rate_log(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_ldmHashRateLog)
+
+    @property
+    def ldm_hash_every_log(self):
+        return self.ldm_hash_rate_log
+
+    @property
+    def threads(self):
+        return _get_compression_parameter(self._params, lib.ZSTD_c_nbWorkers)
 
     def estimated_compression_context_size(self):
-        return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self.params)
+        return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self._params)
 
 CompressionParameters = ZstdCompressionParameters
 
@@ -316,6 +415,18 @@ def _set_compression_parameter(params, param, value):
     if lib.ZSTD_isError(zresult):
         raise ZstdError('unable to set compression context parameter: %s' %
                         _zstd_error(zresult))
+
+
+def _get_compression_parameter(params, param):
+    result = ffi.new('int *')
+
+    zresult = lib.ZSTD_CCtxParam_getParameter(params, param, result)
+    if lib.ZSTD_isError(zresult):
+        raise ZstdError('unable to get compression context parameter: %s' %
+                        _zstd_error(zresult))
+
+    return result[0]
+
 
 class ZstdCompressionWriter(object):
     def __init__(self, compressor, writer, source_size, write_size):
