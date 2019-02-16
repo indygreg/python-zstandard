@@ -489,10 +489,6 @@ class ZstdCompressionWriter(object):
         return False
 
     def memory_size(self):
-        if not self._entered:
-            raise ZstdError('cannot determine size of an inactive compressor; '
-                            'call when a context manager is active')
-
         return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)
 
     def write(self, data):
