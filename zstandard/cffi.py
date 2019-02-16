@@ -1734,10 +1734,6 @@ class ZstdDecompressionWriter(object):
         self._entered = False
 
     def memory_size(self):
-        if not self._decompressor._dctx:
-            raise ZstdError('cannot determine size of inactive decompressor '
-                            'call when context manager is active')
-
         return lib.ZSTD_sizeof_DCtx(self._decompressor._dctx)
 
     def write(self, data):
