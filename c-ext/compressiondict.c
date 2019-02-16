@@ -298,13 +298,9 @@ static PyObject* ZstdCompressionDict_precompute_compress(ZstdCompressionDict* se
 		cParams = ZSTD_getCParams(level, 0, self->dictSize);
 	}
 	else {
-		cParams.chainLog = compressionParams->chainLog;
-		cParams.hashLog = compressionParams->hashLog;
-		cParams.minMatch = compressionParams->minMatch;
-		cParams.searchLog = compressionParams->searchLog;
-		cParams.strategy = compressionParams->compressionStrategy;
-		cParams.targetLength = compressionParams->targetLength;
-		cParams.windowLog = compressionParams->windowLog;
+		if (to_cparams(compressionParams, &cParams)) {
+			return NULL;
+		}
 	}
 
 	assert(!self->cdict);

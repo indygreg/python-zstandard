@@ -23,28 +23,41 @@ int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, int value) {
 
 #define TRY_SET_PARAMETER(params, param, value) if (set_parameter(params, param, value)) return -1;
 
+#define TRY_COPY_PARAMETER(source, dest, param) { \
+	int result; \
+	size_t zresult = ZSTD_CCtxParam_getParameter(source, param, &result); \
+	if (ZSTD_isError(zresult)) { \
+		return 1; \
+	} \
+	zresult = ZSTD_CCtxParam_setParameter(dest, param, result); \
+	if (ZSTD_isError(zresult)) { \
+		return 1; \
+	} \
+}
+
 int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj) {
-	TRY_SET_PARAMETER(params, ZSTD_c_format, obj->format);
-	TRY_SET_PARAMETER(params, ZSTD_c_compressionLevel, obj->compressionLevel);
-	TRY_SET_PARAMETER(params, ZSTD_c_windowLog, obj->windowLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_hashLog, obj->hashLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_chainLog, obj->chainLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_searchLog, obj->searchLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_minMatch, obj->minMatch);
-	TRY_SET_PARAMETER(params, ZSTD_c_targetLength, obj->targetLength);
-	TRY_SET_PARAMETER(params, ZSTD_c_strategy, obj->compressionStrategy);
-	TRY_SET_PARAMETER(params, ZSTD_c_contentSizeFlag, obj->contentSizeFlag);
-	TRY_SET_PARAMETER(params, ZSTD_c_checksumFlag, obj->checksumFlag);
-	TRY_SET_PARAMETER(params, ZSTD_c_dictIDFlag, obj->dictIDFlag);
-	TRY_SET_PARAMETER(params, ZSTD_c_nbWorkers, obj->threads);
-	TRY_SET_PARAMETER(params, ZSTD_c_jobSize, obj->jobSize);
-	TRY_SET_PARAMETER(params, ZSTD_c_overlapLog, obj->overlapLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_forceMaxWindow, obj->forceMaxWindow);
-	TRY_SET_PARAMETER(params, ZSTD_c_enableLongDistanceMatching, obj->enableLongDistanceMatching);
-	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashLog, obj->ldmHashLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_ldmMinMatch, obj->ldmMinMatch);
-	TRY_SET_PARAMETER(params, ZSTD_c_ldmBucketSizeLog, obj->ldmBucketSizeLog);
-	TRY_SET_PARAMETER(params, ZSTD_c_ldmHashRateLog, obj->ldmHashRateLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_nbWorkers);
+
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_format);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_compressionLevel);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_windowLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_hashLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_chainLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_searchLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_minMatch);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_targetLength);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_strategy);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_contentSizeFlag);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_checksumFlag);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_dictIDFlag);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_jobSize);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_overlapLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_forceMaxWindow);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_enableLongDistanceMatching);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_ldmHashLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_ldmMinMatch);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_ldmBucketSizeLog);
+	TRY_COPY_PARAMETER(obj->params, params, ZSTD_c_ldmHashRateLog);
 
 	return 0;
 }
@@ -62,6 +75,41 @@ int reset_params(ZstdCompressionParametersObject* params) {
 	}
 
 	return set_parameters(params->params, params);
+}
+
+#define TRY_GET_PARAMETER(params, param, value) { \
+    size_t zresult = ZSTD_CCtxParam_getParameter(params, param, value); \
+    if (ZSTD_isError(zresult)) { \
+        PyErr_Format(ZstdError, "unable to retrieve parameter: %s", ZSTD_getErrorName(zresult)); \
+        return 1; \
+    } \
+}
+
+int to_cparams(ZstdCompressionParametersObject* params, ZSTD_compressionParameters* cparams) {
+	int value;
+
+	TRY_GET_PARAMETER(params->params, ZSTD_c_windowLog, &value);
+	cparams->windowLog = value;
+
+	TRY_GET_PARAMETER(params->params, ZSTD_c_chainLog, &value);
+	cparams->chainLog = value;
+
+	TRY_GET_PARAMETER(params->params, ZSTD_c_hashLog, &value);
+	cparams->hashLog = value;
+
+	TRY_GET_PARAMETER(params->params, ZSTD_c_searchLog, &value);
+	cparams->searchLog = value;
+
+	TRY_GET_PARAMETER(params->params, ZSTD_c_minMatch, &value);
+	cparams->minMatch = value;
+
+	TRY_GET_PARAMETER(params->params, ZSTD_c_targetLength, &value);
+	cparams->targetLength = value;
+
+	TRY_GET_PARAMETER(params->params, ZSTD_c_strategy, &value);
+	cparams->strategy = value;
+
+	return 0;
 }
 
 static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self, PyObject* args, PyObject* kwargs) {
@@ -136,14 +184,18 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		threads = cpu_count();
 	}
 
-	self->format = format;
-	self->compressionLevel = compressionLevel;
-	self->windowLog = windowLog;
-	self->hashLog = hashLog;
-	self->chainLog = chainLog;
-	self->searchLog = searchLog;
-	self->minMatch = minMatch;
-	self->targetLength = targetLength;
+	/* We need to set ZSTD_c_nbWorkers before ZSTD_c_jobSize and ZSTD_c_overlapLog
+	 * because setting ZSTD_c_nbWorkers resets the other parameters. */
+	TRY_SET_PARAMETER(self->params, ZSTD_c_nbWorkers, threads);
+
+	TRY_SET_PARAMETER(self->params, ZSTD_c_format, format);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_compressionLevel, compressionLevel);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_windowLog, windowLog);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_hashLog, hashLog);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_chainLog, chainLog);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_searchLog, searchLog);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_minMatch, minMatch);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_targetLength, targetLength);
 
 	if (compressionStrategy != -1 && strategy != -1) {
 		PyErr_SetString(PyExc_ValueError, "cannot specify both compression_strategy and strategy");
@@ -157,12 +209,11 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		strategy = 0;
 	}
 
-	self->compressionStrategy = strategy;
-	self->contentSizeFlag = contentSizeFlag;
-	self->checksumFlag = checksumFlag;
-	self->dictIDFlag = dictIDFlag;
-	self->threads = threads;
-	self->jobSize = jobSize;
+	TRY_SET_PARAMETER(self->params, ZSTD_c_strategy, strategy);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_contentSizeFlag, contentSizeFlag);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_checksumFlag, checksumFlag);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_dictIDFlag, dictIDFlag);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_jobSize, jobSize);
 
 	if (overlapLog != -1 && overlapSizeLog != -1) {
 		PyErr_SetString(PyExc_ValueError, "cannot specify both overlap_log and overlap_size_log");
@@ -176,12 +227,12 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		overlapLog = 0;
 	}
 
-	self->overlapLog = overlapLog;
-	self->forceMaxWindow = forceMaxWindow;
-	self->enableLongDistanceMatching = enableLDM;
-	self->ldmHashLog = ldmHashLog;
-	self->ldmMinMatch = ldmMinMatch;
-	self->ldmBucketSizeLog = ldmBucketSizeLog;
+	TRY_SET_PARAMETER(self->params, ZSTD_c_overlapLog, overlapLog);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_forceMaxWindow, forceMaxWindow);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_enableLongDistanceMatching, enableLDM);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_ldmHashLog, ldmHashLog);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_ldmMinMatch, ldmMinMatch);
+	TRY_SET_PARAMETER(self->params, ZSTD_c_ldmBucketSizeLog, ldmBucketSizeLog);
 
 	if (ldmHashRateLog != -1 && ldmHashEveryLog != -1) {
 		PyErr_SetString(PyExc_ValueError, "cannot specify both ldm_hash_rate_log and ldm_hash_everyLog");
@@ -195,7 +246,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		ldmHashRateLog = 0;
 	}
 
-	self->ldmHashRateLog = ldmHashRateLog;
+	TRY_SET_PARAMETER(self->params, ZSTD_c_ldmHashRateLog, ldmHashRateLog);
 
 	return 0;
 }
@@ -381,6 +432,41 @@ static void ZstdCompressionParameters_dealloc(ZstdCompressionParametersObject* s
 	PyObject_Del(self);
 }
 
+#define PARAM_GETTER(name, param) PyObject* ZstdCompressionParameters_get_##name(PyObject* self, void* unused) { \
+    int result; \
+    size_t zresult; \
+    ZstdCompressionParametersObject* p = (ZstdCompressionParametersObject*)(self); \
+    zresult = ZSTD_CCtxParam_getParameter(p->params, param, &result); \
+    if (ZSTD_isError(zresult)) { \
+        PyErr_Format(ZstdError, "unable to get compression parameter: %s", \
+            ZSTD_getErrorName(zresult)); \
+        return NULL; \
+    } \
+    return PyLong_FromLong(result); \
+}
+
+PARAM_GETTER(format, ZSTD_c_format)
+PARAM_GETTER(compression_level, ZSTD_c_compressionLevel)
+PARAM_GETTER(window_log, ZSTD_c_windowLog)
+PARAM_GETTER(hash_log, ZSTD_c_hashLog)
+PARAM_GETTER(chain_log, ZSTD_c_chainLog)
+PARAM_GETTER(search_log, ZSTD_c_searchLog)
+PARAM_GETTER(min_match, ZSTD_c_minMatch)
+PARAM_GETTER(target_length, ZSTD_c_targetLength)
+PARAM_GETTER(compression_strategy, ZSTD_c_strategy)
+PARAM_GETTER(write_content_size, ZSTD_c_contentSizeFlag)
+PARAM_GETTER(write_checksum, ZSTD_c_checksumFlag)
+PARAM_GETTER(write_dict_id, ZSTD_c_dictIDFlag)
+PARAM_GETTER(job_size, ZSTD_c_jobSize)
+PARAM_GETTER(overlap_log, ZSTD_c_overlapLog)
+PARAM_GETTER(force_max_window, ZSTD_c_forceMaxWindow)
+PARAM_GETTER(enable_ldm, ZSTD_c_enableLongDistanceMatching)
+PARAM_GETTER(ldm_hash_log, ZSTD_c_ldmHashLog)
+PARAM_GETTER(ldm_min_match, ZSTD_c_ldmMinMatch)
+PARAM_GETTER(ldm_bucket_size_log, ZSTD_c_ldmBucketSizeLog)
+PARAM_GETTER(ldm_hash_rate_log, ZSTD_c_ldmHashRateLog)
+PARAM_GETTER(threads, ZSTD_c_nbWorkers)
+
 static PyMethodDef ZstdCompressionParameters_methods[] = {
 	{
 		"from_level",
@@ -397,78 +483,34 @@ static PyMethodDef ZstdCompressionParameters_methods[] = {
 	{ NULL, NULL }
 };
 
-static PyMemberDef ZstdCompressionParameters_members[] = {
-	{ "format", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, format), READONLY,
-	  "compression format" },
-	{ "compression_level", T_INT,
-	  offsetof(ZstdCompressionParametersObject, compressionLevel), READONLY,
-	  "compression level" },
-	{ "window_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, windowLog), READONLY,
-	  "window log" },
-	{ "hash_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, hashLog), READONLY,
-	  "hash log" },
-	{ "chain_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, chainLog), READONLY,
-	  "chain log" },
-	{ "search_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, searchLog), READONLY,
-	  "search log" },
-	{ "min_match", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, minMatch), READONLY,
-	  "search length" },
-	{ "target_length", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, targetLength), READONLY,
-	  "target length" },
-	{ "compression_strategy", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, compressionStrategy), READONLY,
-	  "compression strategy" },
-	{ "write_content_size", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, contentSizeFlag), READONLY,
-	  "whether to write content size in frames" },
-	{ "write_checksum", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, checksumFlag), READONLY,
-	  "whether to write checksum in frames" },
-	{ "write_dict_id", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, dictIDFlag), READONLY,
-	  "whether to write dictionary ID in frames" },
-	{ "threads", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, threads), READONLY,
-	  "number of threads to use" },
-	{ "job_size", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, jobSize), READONLY,
-	  "size of compression job when using multiple threads" },
-	{ "overlap_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, overlapLog), READONLY,
-	  "Size of previous input reloaded at the beginning of each job" },
+#define GET_SET_ENTRY(name) { #name, ZstdCompressionParameters_get_##name, NULL, NULL, NULL }
+
+static PyGetSetDef ZstdCompressionParameters_getset[] = {
+	GET_SET_ENTRY(format),
+	GET_SET_ENTRY(compression_level),
+	GET_SET_ENTRY(window_log),
+	GET_SET_ENTRY(hash_log),
+	GET_SET_ENTRY(chain_log),
+	GET_SET_ENTRY(search_log),
+	GET_SET_ENTRY(min_match),
+	GET_SET_ENTRY(target_length),
+	GET_SET_ENTRY(compression_strategy),
+	GET_SET_ENTRY(write_content_size),
+	GET_SET_ENTRY(write_checksum),
+	GET_SET_ENTRY(write_dict_id),
+	GET_SET_ENTRY(threads),
+	GET_SET_ENTRY(job_size),
+	GET_SET_ENTRY(overlap_log),
 	/* TODO remove this deprecated attribute */
-	{ "overlap_size_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, overlapLog), READONLY,
-	  "Size of previous input reloaded at the beginning of each job" },
-	{ "force_max_window", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, forceMaxWindow), READONLY,
-	  "force back references to remain smaller than window size" },
-	{ "enable_ldm", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, enableLongDistanceMatching), READONLY,
-	  "whether to enable long distance matching" },
-	{ "ldm_hash_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, ldmHashLog), READONLY,
-	  "Size of the table for long distance matching, as a power of 2" },
-	{ "ldm_min_match", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, ldmMinMatch), READONLY,
-	  "minimum size of searched matches for long distance matcher" },
-	{ "ldm_bucket_size_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, ldmBucketSizeLog), READONLY,
-	  "log size of each bucket in the LDM hash table for collision resolution" },
-	{ "ldm_hash_rate_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, ldmHashRateLog), READONLY,
-	  "frequency of inserting/looking up entries in the LDM hash table" },
+	{ "overlap_size_log", ZstdCompressionParameters_get_overlap_log, NULL, NULL, NULL },
+	GET_SET_ENTRY(force_max_window),
+	GET_SET_ENTRY(enable_ldm),
+	GET_SET_ENTRY(ldm_hash_log),
+	GET_SET_ENTRY(ldm_min_match),
+	GET_SET_ENTRY(ldm_bucket_size_log),
+	GET_SET_ENTRY(ldm_hash_rate_log),
 	/* TODO remove this deprecated attribute */
-	{ "ldm_hash_every_log", T_UINT,
-	  offsetof(ZstdCompressionParametersObject, ldmHashRateLog), READONLY,
-	  "frequency of inserting/looking up entries in the LDM hash table" },
+	{ "ldm_hash_every_log", ZstdCompressionParameters_get_ldm_hash_rate_log, NULL, NULL, NULL },
 	{ NULL }
 };
 
@@ -501,8 +543,8 @@ PyTypeObject ZstdCompressionParametersType = {
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
 	ZstdCompressionParameters_methods, /* tp_methods */
-	ZstdCompressionParameters_members, /* tp_members */
-	0,                         /* tp_getset */
+	0,                          /* tp_members */
+	ZstdCompressionParameters_getset,  /* tp_getset */
 	0,                         /* tp_base */
 	0,                         /* tp_dict */
 	0,                         /* tp_descr_get */

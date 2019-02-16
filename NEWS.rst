@@ -89,6 +89,10 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``CompressionParameters`` no longer redundantly store individual compression
+  parameters on each instance. Instead, compression parameters are stored inside
+  the underlying ``ZSTD_CCtx_params`` instance. Attributes for obtaining
+  parameters are now properties rather than instance variables.
 * Exposed the ``STRATEGY_BTULTRA2`` constant.
 * ``CompressionParameters`` instances now expose an ``overlap_log`` attribute.
   This behaves identically to the ``overlap_size_log`` attribute.

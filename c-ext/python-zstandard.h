@@ -31,27 +31,6 @@ typedef enum {
 typedef struct {
 	PyObject_HEAD
 	ZSTD_CCtx_params* params;
-	unsigned format;
-	int compressionLevel;
-	unsigned windowLog;
-	unsigned hashLog;
-	unsigned chainLog;
-	unsigned searchLog;
-	unsigned minMatch;
-	unsigned targetLength;
-	unsigned compressionStrategy;
-	unsigned contentSizeFlag;
-	unsigned checksumFlag;
-	unsigned dictIDFlag;
-	unsigned threads;
-	unsigned jobSize;
-	unsigned overlapLog;
-	unsigned forceMaxWindow;
-	unsigned enableLongDistanceMatching;
-	unsigned ldmHashLog;
-	unsigned ldmMinMatch;
-	unsigned ldmBucketSizeLog;
-	unsigned ldmHashRateLog;
 } ZstdCompressionParametersObject;
 
 extern PyTypeObject ZstdCompressionParametersType;
@@ -363,6 +342,7 @@ extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
 
 int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, int value);
 int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj);
+int to_cparams(ZstdCompressionParametersObject* params, ZSTD_compressionParameters* cparams);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs);
 int ensure_ddict(ZstdCompressionDict* dict);
 int ensure_dctx(ZstdDecompressor* decompressor, int loadDict);
