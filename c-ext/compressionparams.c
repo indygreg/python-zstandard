@@ -128,6 +128,10 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 		return -1;
 	}
 
+	if (reset_params(self)) {
+		return -1;
+	}
+
 	if (threads < 0) {
 		threads = cpu_count();
 	}
@@ -192,10 +196,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject* self,
 	}
 
 	self->ldmHashRateLog = ldmHashRateLog;
-
-	if (reset_params(self)) {
-		return -1;
-	}
 
 	return 0;
 }
