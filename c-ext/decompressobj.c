@@ -130,9 +130,26 @@ finally:
 	return result;
 }
 
+static PyObject* DecompressionObj_flush(ZstdDecompressionObj* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"length",
+		NULL
+	};
+
+	PyObject* length = NULL;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:flush", kwlist, &length)) {
+	return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
 static PyMethodDef DecompressionObj_methods[] = {
 	{ "decompress", (PyCFunction)DecompressionObj_decompress,
 	  METH_VARARGS | METH_KEYWORDS, PyDoc_STR("decompress data") },
+	{ "flush", (PyCFunction)DecompressionObj_flush,
+	  METH_VARARGS | METH_KEYWORDS, PyDoc_STR("no-op") },
 	{ NULL, NULL }
 };
 

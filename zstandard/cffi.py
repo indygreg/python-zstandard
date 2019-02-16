@@ -1520,6 +1520,9 @@ class ZstdDecompressionObj(object):
 
         return b''.join(chunks)
 
+    def flush(self, length=0):
+        pass
+
 
 class DecompressionReader(object):
     def __init__(self, decompressor, source, read_size):

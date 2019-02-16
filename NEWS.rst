@@ -89,6 +89,8 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``ZstdDecompressionObj`` instances now have a ``flush([length=None])`` method.
+  This provides parity with standard library equivalent types. (#65)
 * ``CompressionParameters`` no longer redundantly store individual compression
   parameters on each instance. Instead, compression parameters are stored inside
   the underlying ``ZSTD_CCtx_params`` instance. Attributes for obtaining

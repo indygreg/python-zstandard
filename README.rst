@@ -791,6 +791,10 @@ these temporary chunks by passing ``write_size`` to ``decompressobj()``::
    memory (re)allocations, this streaming decompression API isn't as
    efficient as other APIs.
 
+For compatibility with the standard library APIs, instances expose a
+``flush([length=None])`` method. This method no-ops and has no meaningful
+side-effects, making it safe to call any time.
+
 Batch Decompression API
 ^^^^^^^^^^^^^^^^^^^^^^^
 
