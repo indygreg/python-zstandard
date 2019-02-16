@@ -799,6 +799,7 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 
 	PyObject* writer;
 	ZstdCompressionWriter* result;
+	size_t zresult;
 	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t outSize = ZSTD_CStreamOutSize();
 
@@ -813,6 +814,13 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 	}
 
 	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
+
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
+	}
 
 	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
 	if (!result) {
@@ -833,8 +841,6 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 
 	result->writer = writer;
 	Py_INCREF(result->writer);
-
-	result->sourceSize = sourceSize;
 
 	result->outSize = outSize;
 	result->bytesCompressed = 0;

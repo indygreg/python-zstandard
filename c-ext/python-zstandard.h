@@ -108,7 +108,6 @@ typedef struct {
 
 	ZstdCompressor* compressor;
 	PyObject* writer;
-	unsigned long long sourceSize;
 	ZSTD_outBuffer output;
 	size_t outSize;
 	int entered;

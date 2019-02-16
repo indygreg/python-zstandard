@@ -432,7 +432,6 @@ class ZstdCompressionWriter(object):
     def __init__(self, compressor, writer, source_size, write_size):
         self._compressor = compressor
         self._writer = writer
-        self._source_size = source_size
         self._write_size = write_size
         self._entered = False
         self._bytes_compressed = 0
@@ -443,15 +442,15 @@ class ZstdCompressionWriter(object):
         self._out_buffer.size = len(self._dst_buffer)
         self._out_buffer.pos = 0
 
-    def __enter__(self):
-        if self._entered:
-            raise ZstdError('cannot __enter__ multiple times')
-
-        zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._compressor._cctx,
-                                                  self._source_size)
+        zresult = lib.ZSTD_CCtx_setPledgedSrcSize(compressor._cctx,
+                                                  source_size)
         if lib.ZSTD_isError(zresult):
             raise ZstdError('error setting source size: %s' %
                             _zstd_error(zresult))
+
+    def __enter__(self):
+        if self._entered:
+            raise ZstdError('cannot __enter__ multiple times')
 
         self._entered = True
         return self

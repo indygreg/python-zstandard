@@ -25,17 +25,8 @@ static void ZstdCompressionWriter_dealloc(ZstdCompressionWriter* self) {
 }
 
 static PyObject* ZstdCompressionWriter_enter(ZstdCompressionWriter* self) {
-	size_t zresult;
-
 	if (self->entered) {
 		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
-		return NULL;
-	}
-
-	zresult = ZSTD_CCtx_setPledgedSrcSize(self->compressor->cctx, self->sourceSize);
-	if (ZSTD_isError(zresult)) {
-		PyErr_Format(ZstdError, "error setting source size: %s",
-			ZSTD_getErrorName(zresult));
 		return NULL;
 	}
 
