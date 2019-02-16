@@ -114,11 +114,6 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 		return NULL;
 	}
 
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "compress must be called from an active context manager");
-		goto finally;
-	}
-
 	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
 		PyErr_SetString(PyExc_ValueError,
 			"data buffer should be contiguous and have at most one dimension");
@@ -175,11 +170,6 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 	Py_ssize_t totalWrite = 0;
 	unsigned flush_mode = 0;
 	ZSTD_EndDirective flush;
-
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "flush must be called from an active context manager");
-		return NULL;
-	}
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|I:flush",
 		kwlist, &flush_mode)) {

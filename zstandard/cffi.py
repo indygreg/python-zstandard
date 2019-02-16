@@ -497,10 +497,6 @@ class ZstdCompressionWriter(object):
         return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)
 
     def write(self, data):
-        if not self._entered:
-            raise ZstdError('write() must be called from an active context '
-                            'manager')
-
         total_write = 0
 
         data_buffer = ffi.from_buffer(data)
@@ -530,9 +526,6 @@ class ZstdCompressionWriter(object):
         return total_write
 
     def flush(self, flush_mode=FLUSH_BLOCK):
-        if not self._entered:
-            raise ZstdError('flush must be called from an active context manager')
-
         if flush_mode == FLUSH_BLOCK:
             flush = lib.ZSTD_e_flush
         elif flush_mode == FLUSH_FRAME:

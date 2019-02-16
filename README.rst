@@ -251,14 +251,7 @@ emitted so far.
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
-``stream_writer(fh)`` (which behaves as a context manager) allows you to *stream*
-data into a compressor.::
-
-   cctx = zstd.ZstdCompressor(level=10)
-   with cctx.stream_writer(fh) as compressor:
-       compressor.write(b'chunk 0')
-       compressor.write(b'chunk 1')
-       ...
+``stream_writer(fh)`` allows you to *stream* data into a compressor.
 
 The argument to ``stream_writer()`` must have a ``write(data)`` method. As
 compressed data is available, ``write()`` will be called with the compressed
@@ -266,10 +259,11 @@ data as its argument. Many common Python types implement ``write()``, including
 open file handles and ``io.BytesIO``.
 
 ``stream_writer()`` returns an object representing a streaming compressor
-instance. It **must** be used as a context manager. That object's
-``write(data)`` method is used to feed data into the compressor.
+instance.
 
-A ``flush([flush_mode=FLUSH_BLOCK])`` method can be called to evict whatever
+The ``write(data)`` method is used to feed data into the compressor.
+
+The ``flush([flush_mode=FLUSH_BLOCK])`` method can be called to evict whatever
 data remains within the compressor's internal state into the output object. This
 may result in 0 or more ``write()`` calls to the output object. This method
 accepts an optional ``flush_mode`` argument to control the flushing behavior.
@@ -278,6 +272,40 @@ Its value can be any of the ``FLUSH_*`` constants.
 Both ``write()`` and ``flush()`` return the number of bytes written to the
 object's ``write()``. In many cases, small inputs do not accumulate enough
 data to cause a write and ``write()`` will return ``0``.
+
+Typically usage is as follows::
+
+   cctx = zstd.ZstdCompressor(level=10)
+   compressor = cctx.stream_writer(fh)
+
+   compressor.write(b'chunk 0\n')
+   compressor.write(b'chunk 1\n')
+   compressor.flush()
+   # Receiver will be able to decode ``chunk 0\nchunk 1\n`` at this point.
+   # Receiver is also expecting more data in the zstd *frame*.
+
+   compressor.write(b'chunk 2\n')
+   compressor.flush(zstd.FLUSH_FRAME)
+   # Receiver will be able to decode ``chunk 0\nchunk 1\nchunk 2``.
+   # Receiver is expecting no more data, as the zstd frame is closed.
+   # Any future calls to ``write()`` at this point will construct a new
+   # zstd frame.
+
+Instances can be used as context managers. Exiting the context manager is
+the equivalent of calling ``flush(zstd.FLUSH_FRAME)``::
+
+   cctx = zstd.ZstdCompressor(level=10)
+   with cctx.stream_writer(fh) as compressor:
+       compressor.write(b'chunk 0')
+       compressor.write(b'chunk 1')
+       ...
+
+.. important::
+
+   If ``flush(FLUSH_FRAME)`` is not called, emitted data doesn't constitute
+   a full zstd *frame* and consumers of this data may complain about malformed
+   input. It is recommended to use instances as a context manager to ensure
+   *frames* are properly finished.
 
 If the size of the data being fed to this streaming compressor is known,
 you can declare it before compression begins::

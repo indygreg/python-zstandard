@@ -62,6 +62,8 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* ``ZstdCompressionWriter`` no longer requires being used as a context
+  manager (#57).
 * The ``overlap_size_log`` attribute on ``CompressionParameters`` instances
   has been deprecated and will be removed in a future release. The
   ``overlap_log`` attribute should be used instead.
@@ -89,6 +91,10 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``ZstdCompressionWriter`` no longer must be used as a context manager.
+  When not using as a context manager, it is important to call
+  ``flush(FRAME_FRAME)`` or the compression stream won't be properly
+  terminated and decoders may complain about malformed input.
 * ``ZstdCompressionWriter.flush()`` (what is returned from
   ``ZstdCompressor.stream_writer()``) now accepts an argument controlling the
   flush behavior. Its value can be one of the new constants
