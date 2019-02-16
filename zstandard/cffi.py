@@ -1715,6 +1715,8 @@ class DecompressionReader(object):
 
 class ZstdDecompressionWriter(object):
     def __init__(self, decompressor, writer, write_size):
+        decompressor._ensure_dctx()
+
         self._decompressor = decompressor
         self._writer = writer
         self._write_size = write_size
@@ -1724,7 +1726,6 @@ class ZstdDecompressionWriter(object):
         if self._entered:
             raise ZstdError('cannot __enter__ multiple times')
 
-        self._decompressor._ensure_dctx()
         self._entered = True
 
         return self

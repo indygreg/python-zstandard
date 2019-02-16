@@ -642,6 +642,10 @@ static ZstdDecompressionWriter* Decompressor_stream_writer(ZstdDecompressor* sel
 		return NULL;
 	}
 
+	if (ensure_dctx(self, 1)) {
+		return NULL;
+	}
+
 	result = (ZstdDecompressionWriter*)PyObject_CallObject((PyObject*)&ZstdDecompressionWriterType, NULL);
 	if (!result) {
 		return NULL;

@@ -27,10 +27,6 @@ static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
 		return NULL;
 	}
 
-	if (ensure_dctx(self->decompressor, 1)) {
-		return NULL;
-	}
-
 	self->entered = 1;
 
 	Py_INCREF(self);
