@@ -28,6 +28,8 @@ __all__ = [
     'train_dictionary',
 
     # Constants.
+    'FLUSH_BLOCK',
+    'FLUSH_FRAME',
     'COMPRESSOBJ_FLUSH_FINISH',
     'COMPRESSOBJ_FLUSH_BLOCK',
     'ZSTD_VERSION',
@@ -145,6 +147,9 @@ DICT_TYPE_FULLDICT = lib.ZSTD_dct_fullDict
 
 FORMAT_ZSTD1 = lib.ZSTD_f_zstd1
 FORMAT_ZSTD1_MAGICLESS = lib.ZSTD_f_zstd1_magicless
+
+FLUSH_BLOCK = 0
+FLUSH_FRAME = 1
 
 COMPRESSOBJ_FLUSH_FINISH = 0
 COMPRESSOBJ_FLUSH_BLOCK = 1
@@ -524,9 +529,16 @@ class ZstdCompressionWriter(object):
 
         return total_write
 
-    def flush(self):
+    def flush(self, flush_mode=FLUSH_BLOCK):
         if not self._entered:
             raise ZstdError('flush must be called from an active context manager')
+
+        if flush_mode == FLUSH_BLOCK:
+            flush = lib.ZSTD_e_flush
+        elif flush_mode == FLUSH_FRAME:
+            flush = lib.ZSTD_e_end
+        else:
+            raise ValueError('unknown flush_mode: %r' % flush_mode)
 
         total_write = 0
 
@@ -541,7 +553,7 @@ class ZstdCompressionWriter(object):
         while True:
             zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
                                                out_buffer, in_buffer,
-                                               lib.ZSTD_e_flush)
+                                               flush)
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd compress error: %s' %
                                 _zstd_error(zresult))

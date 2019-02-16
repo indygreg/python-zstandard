@@ -163,15 +163,39 @@ finally:
 	return result;
 }
 
-static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObject* args) {
+static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"flush_mode",
+		NULL
+	};
+
 	size_t zresult;
 	ZSTD_inBuffer input;
 	PyObject* res;
 	Py_ssize_t totalWrite = 0;
+	unsigned flush_mode = 0;
+	ZSTD_EndDirective flush;
 
 	if (!self->entered) {
 		PyErr_SetString(ZstdError, "flush must be called from an active context manager");
 		return NULL;
+	}
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|I:flush",
+		kwlist, &flush_mode)) {
+		return NULL;
+	}
+
+	switch (flush_mode) {
+		case 0:
+			flush = ZSTD_e_flush;
+			break;
+		case 1:
+			flush = ZSTD_e_end;
+			break;
+		default:
+			PyErr_Format(PyExc_ValueError, "unknown flush_mode: %d", flush_mode);
+			return NULL;
 	}
 
 	self->output.pos = 0;
@@ -182,7 +206,7 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output, &input, ZSTD_e_flush);
+		zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output, &input, flush);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -226,7 +250,7 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	PyDoc_STR("Obtain the memory size of the underlying compressor") },
 	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Compress data") },
-	{ "flush", (PyCFunction)ZstdCompressionWriter_flush, METH_NOARGS,
+	{ "flush", (PyCFunction)ZstdCompressionWriter_flush, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Flush data and finish a zstd frame") },
 	{ "tell", (PyCFunction)ZstdCompressionWriter_tell, METH_NOARGS,
 	PyDoc_STR("Returns current number of bytes compressed") },

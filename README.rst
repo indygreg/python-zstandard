@@ -269,9 +269,11 @@ open file handles and ``io.BytesIO``.
 instance. It **must** be used as a context manager. That object's
 ``write(data)`` method is used to feed data into the compressor.
 
-A ``flush()`` method can be called to evict whatever data remains within the
-compressor's internal state into the output object. This may result in 0 or
-more ``write()`` calls to the output object.
+A ``flush([flush_mode=FLUSH_BLOCK])`` method can be called to evict whatever
+data remains within the compressor's internal state into the output object. This
+may result in 0 or more ``write()`` calls to the output object. This method
+accepts an optional ``flush_mode`` argument to control the flushing behavior.
+Its value can be any of the ``FLUSH_*`` constants.
 
 Both ``write()`` and ``flush()`` return the number of bytes written to the
 object's ``write()``. In many cases, small inputs do not accumulate enough
@@ -1246,6 +1248,13 @@ FRAME_HEADER
     bytes containing header of the Zstandard frame
 MAGIC_NUMBER
     Frame header as an integer
+
+FLUSH_BLOCK
+    Flushing behavior that denotes to flush a zstd block. A decompressor will
+    be able to decode all data fed into the compressor so far.
+FLUSH_FRAME
+    Flushing behavior that denotes to end a zstd frame. Any new data fed
+    to the compressor will start a new frame.
 
 CONTENTSIZE_UNKNOWN
     Value for content size when the content size is unknown.

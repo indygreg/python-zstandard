@@ -29,6 +29,8 @@ class TestModuleAttributes(unittest.TestCase):
             'DECOMPRESSION_RECOMMENDED_INPUT_SIZE',
             'DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE',
             'MAGIC_NUMBER',
+            'FLUSH_BLOCK',
+            'FLUSH_FRAME',
             'BLOCKSIZELOG_MAX',
             'BLOCKSIZE_MAX',
             'WINDOWLOG_MIN',

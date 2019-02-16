@@ -89,6 +89,10 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``ZstdCompressionWriter.flush()`` (what is returned from
+  ``ZstdCompressor.stream_writer()``) now accepts an argument controlling the
+  flush behavior. Its value can be one of the new constants
+  ``FLUSH_BLOCK`` or ``FLUSH_FRAME``.
 * ``ZstdDecompressionObj`` instances now have a ``flush([length=None])`` method.
   This provides parity with standard library equivalent types. (#65)
 * ``CompressionParameters`` no longer redundantly store individual compression

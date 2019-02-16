@@ -32,6 +32,9 @@ void constants_module_init(PyObject* mod) {
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
 	PyModule_AddObject(mod, "ZstdError", ZstdError);
 
+	PyModule_AddIntConstant(mod, "FLUSH_BLOCK", 0);
+	PyModule_AddIntConstant(mod, "FLUSH_FRAME", 1);
+
 	PyModule_AddIntConstant(mod, "COMPRESSOBJ_FLUSH_FINISH", compressorobj_flush_finish);
 	PyModule_AddIntConstant(mod, "COMPRESSOBJ_FLUSH_BLOCK", compressorobj_flush_block);
 

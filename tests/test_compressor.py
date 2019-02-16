@@ -1009,6 +1009,30 @@ class TestCompressor_stream_writer(unittest.TestCase):
         header = trailing[0:3]
         self.assertEqual(header, b'\x01\x00\x00')
 
+    def test_flush_frame(self):
+        cctx = zstd.ZstdCompressor(level=3)
+        dest = OpCountingBytesIO()
+
+        with cctx.stream_writer(dest) as compressor:
+            self.assertEqual(compressor.write(b'foobar' * 8192), 0)
+            self.assertEqual(compressor.flush(zstd.FLUSH_FRAME), 23)
+            compressor.write(b'biz' * 16384)
+
+        self.assertEqual(dest.getvalue(),
+                         # Frame 1.
+                         b'\x28\xb5\x2f\xfd\x00\x58\x75\x00\x00\x30\x66\x6f\x6f'
+                         b'\x62\x61\x72\x01\x00\xf7\xbf\xe8\xa5\x08'
+                         # Frame 2.
+                         b'\x28\xb5\x2f\xfd\x00\x58\x5d\x00\x00\x18\x62\x69\x7a'
+                         b'\x01\x00\xfa\x3f\x75\x37\x04')
+
+    def test_bad_flush_mode(self):
+        cctx = zstd.ZstdCompressor()
+        dest = io.BytesIO()
+        with cctx.stream_writer(dest) as compressor:
+            with self.assertRaisesRegexp(ValueError, 'unknown flush_mode: 42'):
+                compressor.flush(flush_mode=42)
+
     def test_multithreaded(self):
         dest = io.BytesIO()
         cctx = zstd.ZstdCompressor(threads=2)
