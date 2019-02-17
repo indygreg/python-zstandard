@@ -828,48 +828,30 @@ class TestCompressor_stream_writer(unittest.TestCase):
             self.assertEqual(writer.fileno(), tf.fileno())
 
     def test_close(self):
-        # We can't call io.BytesIO.getvalue() after closing. So we need to
-        # use a real file. We also can't use some of the higher-level
-        # tempfile primitives because they unlink the file at close time.
-        fd, path = tempfile.mkstemp()
-        try:
-            fh = os.fdopen(fd, 'wb')
-            cctx = zstd.ZstdCompressor(level=1)
-            writer = cctx.stream_writer(fh)
+        buffer = NonClosingBytesIO()
+        cctx = zstd.ZstdCompressor(level=1)
+        writer = cctx.stream_writer(buffer)
 
-            writer.write(b'foo' * 1024)
-            self.assertFalse(writer.closed)
-            self.assertFalse(fh.closed)
-            writer.close()
-            self.assertTrue(writer.closed)
-            self.assertTrue(fh.closed)
+        writer.write(b'foo' * 1024)
+        self.assertFalse(writer.closed)
+        self.assertFalse(buffer.closed)
+        writer.close()
+        self.assertTrue(writer.closed)
+        self.assertTrue(buffer.closed)
 
-            with self.assertRaisesRegexp(ValueError, 'stream is closed'):
-                writer.write(b'foo')
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            writer.write(b'foo')
 
-            with self.assertRaisesRegexp(ValueError, 'stream is closed'):
-                writer.flush()
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            writer.flush()
 
-            with self.assertRaisesRegexp(ValueError, 'stream is closed'):
-                with writer:
-                    pass
-
-            with open(path, 'rb') as fh:
-                data = fh.read()
-
-            self.assertEqual(data,
-                             b'\x28\xb5\x2f\xfd\x00\x48\x55\x00\x00\x18\x66\x6f'
-                             b'\x6f\x01\x00\xfa\xd3\x77\x43')
-        finally:
-            try:
-                os.close()
-            except Exception:
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            with writer:
                 pass
 
-            try:
-                os.unlink(path)
-            except Exception:
-                pass
+        self.assertEqual(buffer.getvalue(),
+                         b'\x28\xb5\x2f\xfd\x00\x48\x55\x00\x00\x18\x66\x6f'
+                         b'\x6f\x01\x00\xfa\xd3\x77\x43')
 
         # Context manager exit should close stream.
         buffer = io.BytesIO()
