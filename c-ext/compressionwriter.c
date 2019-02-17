@@ -25,6 +25,11 @@ static void ZstdCompressionWriter_dealloc(ZstdCompressionWriter* self) {
 }
 
 static PyObject* ZstdCompressionWriter_enter(ZstdCompressionWriter* self) {
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
 	if (self->entered) {
 		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
 		return NULL;
@@ -49,6 +54,7 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 	}
 
 	self->entered = 0;
+	self->closed = 1;
 
 	if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
 		ZSTD_inBuffer inBuffer;
@@ -120,6 +126,11 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 		goto finally;
 	}
 
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
 	self->output.pos = 0;
 
 	input.src = source.buf;
@@ -188,6 +199,11 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 			return NULL;
 	}
 
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
 	self->output.pos = 0;
 
 	input.src = NULL;
@@ -225,6 +241,28 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 	}
 
 	return PyLong_FromSsize_t(totalWrite);
+}
+
+static PyObject* ZstdCompressionWriter_close(ZstdCompressionWriter* self) {
+	PyObject* result;
+
+	if (self->closed) {
+		Py_RETURN_NONE;
+	}
+
+	result = PyObject_CallMethod((PyObject*)self, "flush", "I", 1);
+	self->closed = 1;
+
+	if (NULL == result) {
+	    return NULL;
+	}
+
+    /* Call close on underlying stream as well. */
+	if (PyObject_HasAttrString(self->writer, "close")) {
+		return PyObject_CallMethod(self->writer, "close", NULL);
+	}
+
+	Py_RETURN_NONE;
 }
 
 static PyObject* ZstdCompressionWriter_fileno(ZstdCompressionWriter* self) {
@@ -281,6 +319,7 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	PyDoc_STR("Enter a compression context.") },
 	{ "__exit__", (PyCFunction)ZstdCompressionWriter_exit, METH_VARARGS,
 	PyDoc_STR("Exit a compression context.") },
+	{ "close", (PyCFunction)ZstdCompressionWriter_close, METH_NOARGS, NULL },
 	{ "fileno", (PyCFunction)ZstdCompressionWriter_fileno, METH_NOARGS, NULL },
 	{ "isatty", (PyCFunction)ZstdCompressionWriter_false, METH_NOARGS, NULL },
 	{ "readable", (PyCFunction)ZstdCompressionWriter_false, METH_NOARGS, NULL },
@@ -302,6 +341,11 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	{ "tell", (PyCFunction)ZstdCompressionWriter_tell, METH_NOARGS,
 	PyDoc_STR("Returns current number of bytes compressed") },
 	{ NULL, NULL }
+};
+
+static PyMemberDef ZstdCompressionWriter_members[] = {
+	 { "closed", T_BOOL, offsetof(ZstdCompressionWriter, closed), READONLY, NULL },
+	 { NULL }
 };
 
 PyTypeObject ZstdCompressionWriterType = {
@@ -333,7 +377,7 @@ PyTypeObject ZstdCompressionWriterType = {
 	0,                              /* tp_iter */
 	0,                              /* tp_iternext */
 	ZstdCompressionWriter_methods,  /* tp_methods */
-	0,                              /* tp_members */
+	ZstdCompressionWriter_members,  /* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
 	0,                              /* tp_dict */

@@ -111,6 +111,7 @@ typedef struct {
 	ZSTD_outBuffer output;
 	size_t outSize;
 	int entered;
+	int closed;
 	unsigned long long bytesCompressed;
 } ZstdCompressionWriter;
 

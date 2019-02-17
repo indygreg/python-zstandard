@@ -439,6 +439,7 @@ class ZstdCompressionWriter(object):
         self._writer = writer
         self._write_size = write_size
         self._entered = False
+        self._closed = False
         self._bytes_compressed = 0
 
         self._dst_buffer = ffi.new('char[]', write_size)
@@ -454,6 +455,9 @@ class ZstdCompressionWriter(object):
                             _zstd_error(zresult))
 
     def __enter__(self):
+        if self._closed:
+            raise ValueError('stream is closed')
+
         if self._entered:
             raise ZstdError('cannot __enter__ multiple times')
 
@@ -462,6 +466,7 @@ class ZstdCompressionWriter(object):
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
+        self._closed = True
 
         if not exc_type and not exc_value and not exc_tb:
             in_buffer = ffi.new('ZSTD_inBuffer *')
@@ -503,6 +508,24 @@ class ZstdCompressionWriter(object):
         else:
             raise OSError('fileno not available on underlying writer')
 
+    def close(self):
+        if self._closed:
+            return
+
+        try:
+            self.flush(FLUSH_FRAME)
+        finally:
+            self._closed = True
+
+        # Call close() on underlying stream as well.
+        f = getattr(self._writer, 'close', None)
+        if f:
+            f()
+
+    @property
+    def closed(self):
+        return self._closed
+
     def isatty(self):
         return False
 
@@ -537,6 +560,9 @@ class ZstdCompressionWriter(object):
         raise io.UnsupportedOperation()
 
     def write(self, data):
+        if self._closed:
+            raise ValueError('stream is closed')
+
         total_write = 0
 
         data_buffer = ffi.from_buffer(data)
@@ -572,6 +598,9 @@ class ZstdCompressionWriter(object):
             flush = lib.ZSTD_e_end
         else:
             raise ValueError('unknown flush_mode: %r' % flush_mode)
+
+        if self._closed:
+            raise ValueError('stream is closed')
 
         total_write = 0
 
