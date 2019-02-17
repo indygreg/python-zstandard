@@ -224,6 +224,7 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	{ "readlines", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "seek", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "seekable", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
+	{ "tell", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "truncate", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "writable", ZstdDecompressionWriter_true, METH_NOARGS, NULL },
 	{ "writelines" , (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },

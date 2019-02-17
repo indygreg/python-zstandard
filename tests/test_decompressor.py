@@ -643,6 +643,9 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertFalse(writer.seekable())
 
         with self.assertRaises(io.UnsupportedOperation):
+            writer.tell()
+
+        with self.assertRaises(io.UnsupportedOperation):
             writer.truncate()
 
         with self.assertRaises(io.UnsupportedOperation):

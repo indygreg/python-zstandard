@@ -1846,6 +1846,9 @@ class ZstdDecompressionWriter(object):
     def seekable(self):
         return False
 
+    def tell(self):
+        raise io.UnsupportedOperation()
+
     def truncate(self, size=None):
         raise io.UnsupportedOperation()
 
