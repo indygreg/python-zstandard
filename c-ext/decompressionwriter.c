@@ -128,6 +128,15 @@ static PyObject* ZstdDecompressionWriter_fileno(ZstdDecompressionWriter* self) {
 	}
 }
 
+static PyObject* ZstdDecompressionWriter_flush(ZstdDecompressionWriter* self) {
+	if (PyObject_HasAttrString(self->writer, "flush")) {
+		return PyObject_CallMethod(self->writer, "flush", NULL);
+	}
+	else {
+		Py_RETURN_NONE;
+	}
+}
+
 static PyObject* ZstdDecompressionWriter_false(PyObject* self, PyObject* args) {
 	Py_RETURN_FALSE;
 }
@@ -166,6 +175,7 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	{ "memory_size", (PyCFunction)ZstdDecompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size in bytes of the underlying decompressor.") },
 	{ "fileno", (PyCFunction)ZstdDecompressionWriter_fileno, METH_NOARGS, NULL },
+	{ "flush", (PyCFunction)ZstdDecompressionWriter_flush, METH_NOARGS, NULL },
 	{ "isatty", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
 	{ "readable", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
 	{ "readline", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },

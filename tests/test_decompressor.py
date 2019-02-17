@@ -680,6 +680,16 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
             self.assertEqual(writer.fileno(), tf.fileno())
 
+    def test_flush(self):
+        buffer = OpCountingBytesIO()
+        dctx = zstd.ZstdDecompressor()
+        writer = dctx.stream_writer(buffer)
+
+        writer.flush()
+        self.assertEqual(buffer._flush_count, 1)
+        writer.flush()
+        self.assertEqual(buffer._flush_count, 2)
+
     def test_empty_roundtrip(self):
         cctx = zstd.ZstdCompressor()
         empty = cctx.compress(b'')

@@ -1798,6 +1798,11 @@ class ZstdDecompressionWriter(object):
         else:
             raise OSError('fileno not available on underlying writer')
 
+    def flush(self):
+        f = getattr(self._writer, 'flush', None)
+        if f:
+            return f()
+
     def isatty(self):
         return False
 

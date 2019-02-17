@@ -101,9 +101,14 @@ class NonClosingBytesIO(io.BytesIO):
 
 class OpCountingBytesIO(NonClosingBytesIO):
     def __init__(self, *args, **kwargs):
+        self._flush_count = 0
         self._read_count = 0
         self._write_count = 0
         return super(OpCountingBytesIO, self).__init__(*args, **kwargs)
+
+    def flush(self):
+        self._flush_count += 1
+        return super(OpCountingBytesIO, self).flush()
 
     def read(self, *args):
         self._read_count += 1
