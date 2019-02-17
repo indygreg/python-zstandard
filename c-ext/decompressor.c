@@ -625,15 +625,17 @@ static ZstdDecompressionWriter* Decompressor_stream_writer(ZstdDecompressor* sel
 	static char* kwlist[] = {
 		"writer",
 		"write_size",
+		"write_return_read",
 		NULL
 	};
 
 	PyObject* writer;
 	size_t outSize = ZSTD_DStreamOutSize();
+	PyObject* writeReturnRead = NULL;
 	ZstdDecompressionWriter* result;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k:stream_writer", kwlist,
-		&writer, &outSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kO:stream_writer", kwlist,
+		&writer, &outSize, &writeReturnRead)) {
 		return NULL;
 	}
 
@@ -658,6 +660,7 @@ static ZstdDecompressionWriter* Decompressor_stream_writer(ZstdDecompressor* sel
 	Py_INCREF(result->writer);
 
 	result->outSize = outSize;
+	result->writeReturnRead = writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 0;
 
 	return result;
 }

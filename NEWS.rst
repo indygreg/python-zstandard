@@ -66,6 +66,12 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* ``ZstdDecompressor.stream_writer()`` now accepts a ``write_return_read``
+  argument to control whether ``write()`` returns the number of bytes
+  read from the source / written to the decompressor. It defaults to off,
+  which preserves the existing behavior of returning the number of bytes
+  emitted from the decompressor. The default will change in a future release
+  so behavior aligns with the specified behavior of ``io.RawIOBase``.
 * ``ZstdDecompressionWriter.__exit__`` now calls ``self.close()``. This
   will result in that stream plus the underlying stream being closed as
   well. If this behavior is not desirable, do not use instances as
@@ -75,8 +81,7 @@ Backwards Compatibility Nodes
   from the source / written to the compressor. It defaults to off, which
   preserves the existing behavior of returning the number of bytes emitted
   from the compressor. The default will change in a future release so
-  behavior aligns with how ``io.RawIOBase`` dictates that ``write()``
-  behave.
+  behavior aligns with the specified behavior of ``io.RawIOBase``.
 * ``ZstdCompressionWriter.__exit__`` now calls ``self.close()``. This will
   result in that stream plus any underlying stream being closed as well. If
   this behavior is not desirable, do not use instances as context managers.
@@ -111,9 +116,13 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``ZstdDecompressor.stream_writer()`` now accepts a ``write_return_read``
+  argument to control whether ``write()`` returns the number of bytes read
+  from the source. It defaults to ``False`` to preserve backwards
+  compatibility.
 * ``ZstdDecompressor.stream_writer()`` now implements the ``io.RawIOBase``
   interface and behaves as a proper stream object.
-* ``ZstdCompressor.stream_writer()`` now accepts as ``write_return_read``
+* ``ZstdCompressor.stream_writer()`` now accepts a ``write_return_read``
   argument to control whether ``write()`` returns the number of bytes read
   from the source. It defaults to ``False`` to preserve backwards
   compatibility.

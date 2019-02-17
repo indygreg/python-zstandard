@@ -249,6 +249,7 @@ typedef struct {
 	size_t outSize;
 	int entered;
 	int closed;
+	int writeReturnRead;
 } ZstdDecompressionWriter;
 
 extern PyTypeObject ZstdDecompressionWriterType;

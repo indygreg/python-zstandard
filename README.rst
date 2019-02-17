@@ -751,6 +751,13 @@ You can see how much memory is being used by the decompressor::
     with dctx.stream_writer(fh) as decompressor:
         byte_size = decompressor.memory_size()
 
+``stream_writer()`` accepts a ``write_return_read`` boolean argument to control
+the return value of ``write()``. When ``False`` (the default)``, ``write()``
+returns the number of bytes that were ``write()``en to the underlying stream.
+When ``True``, ``write()`` returns the number of bytes read from the input.
+``True`` is the *proper* behavior for ``write()`` as specified by the
+``io.RawIOBase`` interface and will become the default in a future release.
+
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
 

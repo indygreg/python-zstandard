@@ -125,7 +125,12 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 
 	PyMem_Free(output.dst);
 
-	result = PyLong_FromSsize_t(totalWrite);
+	if (self->writeReturnRead) {
+		result = PyLong_FromSize_t(input.pos);
+	}
+	else {
+		result = PyLong_FromSsize_t(totalWrite);
+	}
 
 finally:
 	PyBuffer_Release(&source);

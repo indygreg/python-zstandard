@@ -759,8 +759,13 @@ class TestDecompressor_stream_writer(unittest.TestCase):
             buffer = NonClosingBytesIO()
 
             with dctx.stream_writer(buffer) as decompressor:
-                decompressor.write(source)
+                self.assertEqual(decompressor.write(source), 3)
 
+            self.assertEqual(buffer.getvalue(), b'foo')
+
+            buffer = io.BytesIO()
+            writer = dctx.stream_writer(buffer, write_return_read=True)
+            self.assertEqual(writer.write(source), len(source))
             self.assertEqual(buffer.getvalue(), b'foo')
 
     def test_large_roundtrip(self):
@@ -791,6 +796,17 @@ class TestDecompressor_stream_writer(unittest.TestCase):
                 pos2 = pos + 8192
                 decompressor.write(compressed[pos:pos2])
                 pos += 8192
+        self.assertEqual(buffer.getvalue(), orig)
+
+        # Again with write_return_read=True
+        buffer = io.BytesIO()
+        writer = dctx.stream_writer(buffer, write_return_read=True)
+        pos = 0
+        while pos < len(compressed):
+            pos2 = pos + 8192
+            chunk = compressed[pos:pos2]
+            self.assertEqual(writer.write(chunk), len(chunk))
+            pos += 8192
         self.assertEqual(buffer.getvalue(), orig)
 
     def test_dictionary(self):
