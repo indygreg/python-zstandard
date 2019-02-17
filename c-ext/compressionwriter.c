@@ -131,7 +131,12 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 		self->output.pos = 0;
 	}
 
-	result = PyLong_FromSsize_t(totalWrite);
+	if (self->writeReturnRead) {
+		result = PyLong_FromSize_t(input.pos);
+	}
+	else {
+		result = PyLong_FromSsize_t(totalWrite);
+	}
 
 finally:
 	PyBuffer_Release(&source);

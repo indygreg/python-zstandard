@@ -892,6 +892,10 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
+        # Test write_return_read=True
+        compressor = cctx.stream_writer(buffer, write_return_read=True)
+        self.assertEqual(compressor.write(b''), 0)
+
     def test_input_types(self):
         expected = b'\x28\xb5\x2f\xfd\x00\x48\x19\x00\x00\x66\x6f\x6f'
         cctx = zstd.ZstdCompressor(level=1)
@@ -911,6 +915,9 @@ class TestCompressor_stream_writer(unittest.TestCase):
                 compressor.write(source)
 
             self.assertEqual(buffer.getvalue(), expected)
+
+            compressor = cctx.stream_writer(buffer, write_return_read=True)
+            self.assertEqual(compressor.write(source), len(source))
 
     def test_multiple_compress(self):
         buffer = NonClosingBytesIO()
@@ -936,6 +943,12 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertEqual(result,
                          b'\x28\xb5\x2f\xfd\x00\x58\x75\x00\x00\x38\x66\x6f'
                          b'\x6f\x62\x61\x72\x78\x01\x00\xfc\xdf\x03\x23')
+
+        # Test with write_return_read=True.
+        compressor = cctx.stream_writer(buffer, write_return_read=True)
+        self.assertEqual(compressor.write(b'foo'), 3)
+        self.assertEqual(compressor.write(b'barbiz'), 6)
+        self.assertEqual(compressor.write(b'x' * 8192), 8192)
 
     def test_dictionary(self):
         samples = []

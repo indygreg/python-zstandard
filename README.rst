@@ -346,6 +346,14 @@ Thte total number of bytes written so far are exposed via ``tell()``::
         ...
         total_written = compressor.tell()
 
+``stream_writer()`` accepts a ``write_return_read`` boolean argument to control
+the return value of ``write()``. When ``False`` (the default), ``write()`` returns
+the number of bytes that were ``write()``en to the underlying object. When
+``True``, ``write()`` returns the number of bytes read from the input that
+were subsequently written to the compressor. ``True`` is the *proper* behavior
+for ``write()`` as specified by the ``io.RawIOBase`` interface and will become
+the default value in a future release.
+
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
 

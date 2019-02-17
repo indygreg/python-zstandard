@@ -434,10 +434,12 @@ def _get_compression_parameter(params, param):
 
 
 class ZstdCompressionWriter(object):
-    def __init__(self, compressor, writer, source_size, write_size):
+    def __init__(self, compressor, writer, source_size, write_size,
+                 write_return_read):
         self._compressor = compressor
         self._writer = writer
         self._write_size = write_size
+        self._write_return_read = bool(write_return_read)
         self._entered = False
         self._closed = False
         self._bytes_compressed = 0
@@ -568,7 +570,10 @@ class ZstdCompressionWriter(object):
                 self._bytes_compressed += out_buffer.pos
                 out_buffer.pos = 0
 
-        return total_write
+        if self._write_return_read:
+            return in_buffer.pos
+        else:
+            return total_write
 
     def flush(self, flush_mode=FLUSH_BLOCK):
         if flush_mode == FLUSH_BLOCK:
@@ -1219,7 +1224,8 @@ class ZstdCompressor(object):
         return CompressionReader(self, source, read_size)
 
     def stream_writer(self, writer, size=-1,
-                 write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+                 write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+                 write_return_read=False):
 
         if not hasattr(writer, 'write'):
             raise ValueError('must pass an object with a write() method')
@@ -1229,7 +1235,8 @@ class ZstdCompressor(object):
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 
-        return ZstdCompressionWriter(self, writer, size, write_size)
+        return ZstdCompressionWriter(self, writer, size, write_size,
+                                     write_return_read)
 
     write_to = stream_writer
 

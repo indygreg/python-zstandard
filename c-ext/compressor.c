@@ -794,6 +794,7 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 		"writer",
 		"size",
 		"write_size",
+		"write_return_read",
 		NULL
 	};
 
@@ -802,9 +803,10 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 	size_t zresult;
 	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t outSize = ZSTD_CStreamOutSize();
+	PyObject* writeReturnRead = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:stream_writer", kwlist,
-		&writer, &sourceSize, &outSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|KkO:stream_writer", kwlist,
+		&writer, &sourceSize, &outSize, &writeReturnRead)) {
 		return NULL;
 	}
 
@@ -844,6 +846,7 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 
 	result->outSize = outSize;
 	result->bytesCompressed = 0;
+	result->writeReturnRead = writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 0;
 
 	return result;
 }
