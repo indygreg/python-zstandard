@@ -121,6 +121,7 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* Upgrade to hypothesis 4.5.11.
 * In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``
   were renamed to ``ZstdCompressionReader`` and ``ZstdDecompressionReader``,
   respectively.

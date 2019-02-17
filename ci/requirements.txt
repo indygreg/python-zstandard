@@ -51,15 +51,15 @@ enum34==1.1.6 \
     --hash=sha256:644837f692e5f550741432dd3f223bbb9852018674981b1664e5dc339387588a \
     --hash=sha256:6bd0f6ad48ec2aa117d3d141940d484deccda84d4fcd884f5c3d93c23ecd8c79 \
     --hash=sha256:8ad8c4783bf61ded74527bffb48ed9b54166685e4230386a9ed9b1279e2df5b1 \
-    # via bashlex, hypothesis
+    # via bashlex
 filelock==3.0.10 \
     --hash=sha256:b8d5ca5ca1c815e1574aee746650ea7301de63d87935b3463d26368b76e31633 \
     --hash=sha256:d610c1bb404daf85976d7a82eb2ada120f04671007266b708606565dd03b5be6 \
     # via tox
-hypothesis==3.82.1 \
-    --hash=sha256:43cabc87f32adc90fec41cb3f36d96c2e5d564d71f2e60817cd2b23d24c7ad7a \
-    --hash=sha256:46eef013dafe09467bc83065ab621b51098a84712ab39399fd15477406807c13 \
-    --hash=sha256:f33d2e50080e09dcd4e81f939b1d825c6f5b104d89ebad7f57cdd3ea11983680
+hypothesis==4.5.11 \
+    --hash=sha256:2c54dda0fa9746efa232d78d86fe619a485bd68f2d3c7522d2de26d924f77639 \
+    --hash=sha256:30c6aa211f61ee5ff29b501cba4d4a15cfbcacb0f6722cae271548f76ef7db4e \
+    --hash=sha256:3d3d7c67cd21a146e1afa474a83523cb57c1fb191d1c1dec400fcd1b9c9bd868
 nose==1.3.7 \
     --hash=sha256:9ff7c6cc443f8c51994b34a667bbcf45afd6d945be7477b52e97516fd17c53ac \
     --hash=sha256:dadcddc0aefbf99eea214e0f1232b94f2fa9bd98fa8353711dacb112bfcbbb2a \
