@@ -11,6 +11,8 @@ Actions Blocking Release
 * compression and decompression APIs that support ``io.rawIOBase`` interface
   (#13).
 * ``stream_writer()`` APIs should support ``io.rawIOBase`` interface.
+* Properly handle non-blocking I/O and partial writes for objects implementing
+  ``io.rawIOBase``.
 * Refactor module names so C and CFFI extensions live under ``zstandard``
   package.
 * Overall API design review.
