@@ -254,7 +254,7 @@ Streaming Input API
 ``stream_writer(fh)`` allows you to *stream* data into a compressor.
 
 Returned instances implement the ``io.RawIOBase`` interface. Only methods
-that involving writing will do useful things.
+that involve writing will do useful things.
 
 The argument to ``stream_writer()`` must have a ``write(data)`` method. As
 compressed data is available, ``write()`` will be called with the compressed
@@ -704,8 +704,20 @@ these is planned for a future release.
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
-``stream_writer(fh)`` can be used to incrementally send compressed data to a
-decompressor.::
+``stream_writer(fh)`` allows you to *stream* data into a decompressor.
+
+Returned instances implement the ``io.RawIOBase`` interface. Only methods
+that involve writing will do useful things.
+
+The argument to ``stream_writer()`` is typically an object that also implements
+``io.RawIOBase``. But any object with a ``write(data)`` method will work. Many
+common Python types conform to this interface, including open file handles
+and ``io.BytesIO``.
+
+Behavior is similar to ``ZstdCompressor.stream_writer()``: compressed data
+is sent to the decompressor by calling ``write(data)`` and decompressed
+output is written to the underlying stream by calling its ``write(data)``
+method.::
 
     dctx = zstd.ZstdDecompressor()
     decompressor = dctx.stream_writer(fh)
@@ -714,10 +726,6 @@ decompressor.::
     ...
 
 
-This behaves similarly to ``zstd.ZstdCompressor``: compressed data is written to
-the decompressor by calling ``write(data)`` and decompressed output is written
-to the output object by calling its ``write(data)`` method.
-
 Calls to ``write()`` will return the number of bytes written to the output
 object. Not all inputs will result in bytes being written, so return values
 of ``0`` are possible.
@@ -725,6 +733,11 @@ of ``0`` are possible.
 Like the ``stream_writer()`` compressor, instances can be used as context
 managers. However, context managers add no extra special behavior and offer
 little to no benefit to being used.
+
+Calling ``close()`` will mark the stream as closed and subsequent I/O operations
+will raise ``ValueError`` (per the documented behavior of ``io.RawIOBase``).
+``close()`` will also call ``close()`` on the underlying stream if such a
+method exists.
 
 The size of chunks being ``write()`` to the destination can be specified::
 

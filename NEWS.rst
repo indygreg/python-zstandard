@@ -66,6 +66,10 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* ``ZstdDecompressionWriter.__exit__`` now calls ``self.close()``. This
+  will result in that stream plus the underlying stream being closed as
+  well. If this behavior is not desirable, do not use instances as
+  context managers.
 * ``ZstdCompressor.stream_writer()`` now accepts a ``write_return_read``
   argument to control whether ``write()`` returns the number of bytes read
   from the source / written to the compressor. It defaults to off, which
@@ -107,6 +111,8 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``ZstdDecompressor.stream_writer()`` now implements the ``io.RawIOBase``
+  interface and behaves as a proper stream object.
 * ``ZstdCompressor.stream_writer()`` now accepts as ``write_return_read``
   argument to control whether ``write()`` returns the number of bytes read
   from the source. It defaults to ``False`` to preserve backwards
