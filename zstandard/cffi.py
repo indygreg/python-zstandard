@@ -544,6 +544,9 @@ class ZstdCompressionWriter(object):
     def seekable(self):
         return False
 
+    def truncate(self, size=None):
+        raise io.UnsupportedOperation()
+
     def writable(self):
         return True
 

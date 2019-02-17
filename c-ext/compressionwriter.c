@@ -327,6 +327,7 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	{ "readlines", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "seek", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "seekable", ZstdCompressionWriter_false, METH_NOARGS, NULL },
+	{ "truncate", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "writable", ZstdCompressionWriter_true, METH_NOARGS, NULL },
 	{ "writelines", ZstdCompressionWriter_writelines, METH_VARARGS, NULL },
 	{ "read", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },

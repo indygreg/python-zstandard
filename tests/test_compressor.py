@@ -784,6 +784,16 @@ class TestCompressor_stream_writer(unittest.TestCase):
             writer.seek(10, os.SEEK_SET)
 
         self.assertFalse(writer.seekable())
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.truncate()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.truncate(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.truncate(size=42)
+
         self.assertTrue(writer.writable())
 
         with self.assertRaises(NotImplementedError):
