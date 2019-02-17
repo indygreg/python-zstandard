@@ -597,8 +597,9 @@ class TestDecompressor_decompressobj(unittest.TestCase):
 def decompress_via_writer(data):
     buffer = io.BytesIO()
     dctx = zstd.ZstdDecompressor()
-    with dctx.stream_writer(buffer) as decompressor:
-        decompressor.write(data)
+    decompressor = dctx.stream_writer(buffer)
+    decompressor.write(data)
+
     return buffer.getvalue()
 
 
@@ -625,6 +626,13 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         for source in sources:
             buffer = io.BytesIO()
+
+            decompressor = dctx.stream_writer(buffer)
+            decompressor.write(source)
+            self.assertEqual(buffer.getvalue(), b'foo')
+
+            buffer = io.BytesIO()
+
             with dctx.stream_writer(buffer) as decompressor:
                 decompressor.write(source)
 
@@ -679,6 +687,12 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         buffer = io.BytesIO()
 
         dctx = zstd.ZstdDecompressor(dict_data=d)
+        decompressor = dctx.stream_writer(buffer)
+        self.assertEqual(decompressor.write(compressed), len(orig))
+        self.assertEqual(buffer.getvalue(), orig)
+
+        buffer = io.BytesIO()
+
         with dctx.stream_writer(buffer) as decompressor:
             self.assertEqual(decompressor.write(compressed), len(orig))
 
@@ -687,6 +701,11 @@ class TestDecompressor_stream_writer(unittest.TestCase):
     def test_memory_size(self):
         dctx = zstd.ZstdDecompressor()
         buffer = io.BytesIO()
+
+        decompressor = dctx.stream_writer(buffer)
+        size = decompressor.memory_size()
+        self.assertGreater(size, 100000)
+
         with dctx.stream_writer(buffer) as decompressor:
             size = decompressor.memory_size()
 

@@ -1737,9 +1737,6 @@ class ZstdDecompressionWriter(object):
         return lib.ZSTD_sizeof_DCtx(self._decompressor._dctx)
 
     def write(self, data):
-        if not self._entered:
-            raise ZstdError('write must be called from an active context manager')
-
         total_write = 0
 
         in_buffer = ffi.new('ZSTD_inBuffer *')

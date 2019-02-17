@@ -72,11 +72,6 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 		goto finally;
 	}
 
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "write must be called from an active context manager");
-		goto finally;
-	}
-
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();

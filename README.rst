@@ -694,8 +694,11 @@ Streaming Input API
 decompressor.::
 
     dctx = zstd.ZstdDecompressor()
-    with dctx.stream_writer(fh) as decompressor:
-        decompressor.write(compressed_data)
+    decompressor = dctx.stream_writer(fh)
+
+    decompressor.write(compressed_data)
+    ...
+
 
 This behaves similarly to ``zstd.ZstdCompressor``: compressed data is written to
 the decompressor by calling ``write(data)`` and decompressed output is written
@@ -704,6 +707,10 @@ to the output object by calling its ``write(data)`` method.
 Calls to ``write()`` will return the number of bytes written to the output
 object. Not all inputs will result in bytes being written, so return values
 of ``0`` are possible.
+
+Like the ``stream_writer()`` compressor, instances can be used as context
+managers. However, context managers add no extra special behavior and offer
+little to no benefit to being used.
 
 The size of chunks being ``write()`` to the destination can be specified::
 
