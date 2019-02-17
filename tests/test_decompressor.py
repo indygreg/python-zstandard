@@ -533,6 +533,23 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             with self.assertRaisesRegexp(ValueError, 'stream is closed'):
                 reader.read(100)
 
+    def test_partial_read(self):
+        # Inspired by https://github.com/indygreg/python-zstandard/issues/71.
+        buffer = io.BytesIO()
+        cctx = zstd.ZstdCompressor()
+        writer = cctx.stream_writer(buffer)
+        writer.write(bytearray(os.urandom(1000000)))
+        writer.flush(zstd.FLUSH_FRAME)
+        buffer.seek(0)
+
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(buffer)
+
+        while True:
+            chunk = reader.read(8192)
+            if not chunk:
+                break
+
 
 @make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):

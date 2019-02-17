@@ -142,6 +142,13 @@ def random_input_data():
             except OSError:
                 pass
 
+    # Also add some actual random data.
+    _source_files.append(os.urandom(100))
+    _source_files.append(os.urandom(1000))
+    _source_files.append(os.urandom(10000))
+    _source_files.append(os.urandom(100000))
+    _source_files.append(os.urandom(1000000))
+
     return _source_files
 
 
@@ -165,11 +172,14 @@ def generate_samples():
 
 
 if hypothesis:
-    default_settings = hypothesis.settings()
+    default_settings = hypothesis.settings(deadline=1000)
     hypothesis.settings.register_profile('default', default_settings)
 
-    ci_settings = hypothesis.settings(max_examples=2500)
+    ci_settings = hypothesis.settings(deadline=10000, max_examples=2500)
     hypothesis.settings.register_profile('ci', ci_settings)
+
+    expensive_settings = hypothesis.settings(deadline=None, max_examples=10000)
+    hypothesis.settings.register_profile('expensive', expensive_settings)
 
     hypothesis.settings.load_profile(
         os.environ.get('HYPOTHESIS_PROFILE', 'default'))

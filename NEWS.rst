@@ -118,9 +118,19 @@ Backwards Compatibility Nodes
   ``import zstandard`` to cause an appropriate backend module to be loaded
   automatically.
 
+Bug Fixes
+---------
+
+* CFFI backend could encounter an error when calling
+  ``ZstdDecompressionReader.read()`` if there was data remaining in an
+  internal buffer. The issue has been fixed. (#71)
+
 Changes
 -------
 
+* CFFI's ``ZstdDecompressionReader.read()`` now properly handles data
+  remaining in any internal buffer. Before, repeated ``read()`` could
+  result in *random* errors. #71.
 * Upgraded various Python packages in CI environment.
 * Upgrade to hypothesis 4.5.11.
 * In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``

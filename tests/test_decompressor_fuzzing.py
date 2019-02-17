@@ -24,20 +24,29 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         suppress_health_check=[hypothesis.HealthCheck.large_base_example])
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
-                      source_read_size=strategies.integers(1, 16384),
+                      streaming=strategies.booleans(),
+                      source_read_size=strategies.integers(1, 1048576),
                       read_sizes=strategies.data())
-    def test_stream_source_read_variance(self, original, level, source_read_size,
-                                         read_sizes):
+    def test_stream_source_read_variance(self, original, level, streaming,
+                                         source_read_size, read_sizes):
         cctx = zstd.ZstdCompressor(level=level)
-        frame = cctx.compress(original)
+
+        if streaming:
+            source = io.BytesIO()
+            writer = cctx.stream_writer(source)
+            writer.write(original)
+            writer.flush(zstd.FLUSH_FRAME)
+            source.seek(0)
+        else:
+            frame = cctx.compress(original)
+            source = io.BytesIO(frame)
 
         dctx = zstd.ZstdDecompressor()
-        source = io.BytesIO(frame)
 
         chunks = []
         with dctx.stream_reader(source, read_size=source_read_size) as reader:
             while True:
-                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                read_size = read_sizes.draw(strategies.integers(1, 131072))
                 chunk = reader.read(read_size)
                 if not chunk:
                     break
@@ -46,28 +55,106 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         self.assertEqual(b''.join(chunks), original)
 
+    # Similar to above except we have a constant read() size.
     @hypothesis.settings(
         suppress_health_check=[hypothesis.HealthCheck.large_base_example])
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
-                      source_read_size=strategies.integers(1, 16384),
-                      read_sizes=strategies.data())
-    def test_buffer_source_read_variance(self, original, level, source_read_size,
-                                         read_sizes):
+                      streaming=strategies.booleans(),
+                      source_read_size=strategies.integers(1, 1048576),
+                      read_size=strategies.integers(1, 131072))
+    def test_stream_source_read_size(self, original, level, streaming,
+                                     source_read_size, read_size):
         cctx = zstd.ZstdCompressor(level=level)
-        frame = cctx.compress(original)
+
+        if streaming:
+            source = io.BytesIO()
+            writer = cctx.stream_writer(source)
+            writer.write(original)
+            writer.flush(zstd.FLUSH_FRAME)
+            source.seek(0)
+        else:
+            frame = cctx.compress(original)
+            source = io.BytesIO(frame)
+
+        dctx = zstd.ZstdDecompressor()
+
+        chunks = []
+        reader = dctx.stream_reader(source, read_size=source_read_size)
+        while True:
+            chunk = reader.read(read_size)
+            if not chunk:
+                break
+
+            chunks.append(chunk)
+
+        self.assertEqual(b''.join(chunks), original)
+
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      streaming=strategies.booleans(),
+                      source_read_size=strategies.integers(1, 1048576),
+                      read_sizes=strategies.data())
+    def test_buffer_source_read_variance(self, original, level, streaming,
+                                         source_read_size, read_sizes):
+        cctx = zstd.ZstdCompressor(level=level)
+
+        if streaming:
+            source = io.BytesIO()
+            writer = cctx.stream_writer(source)
+            writer.write(original)
+            writer.flush(zstd.FLUSH_FRAME)
+            frame = source.getvalue()
+        else:
+            frame = cctx.compress(original)
 
         dctx = zstd.ZstdDecompressor()
         chunks = []
 
         with dctx.stream_reader(frame, read_size=source_read_size) as reader:
             while True:
-                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                read_size = read_sizes.draw(strategies.integers(1, 131072))
                 chunk = reader.read(read_size)
                 if not chunk:
                     break
 
                 chunks.append(chunk)
+
+        self.assertEqual(b''.join(chunks), original)
+
+    # Similar to above except we have a constant read() size.
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      streaming=strategies.booleans(),
+                      source_read_size=strategies.integers(1, 1048576),
+                      read_size=strategies.integers(1, 131072))
+    def test_buffer_source_constant_read_size(self, original, level, streaming,
+                                              source_read_size, read_size):
+        cctx = zstd.ZstdCompressor(level=level)
+
+        if streaming:
+            source = io.BytesIO()
+            writer = cctx.stream_writer(source)
+            writer.write(original)
+            writer.flush(zstd.FLUSH_FRAME)
+            frame = source.getvalue()
+        else:
+            frame = cctx.compress(original)
+
+        dctx = zstd.ZstdDecompressor()
+        chunks = []
+
+        reader = dctx.stream_reader(frame, read_size=source_read_size)
+        while True:
+            chunk = reader.read(read_size)
+            if not chunk:
+                break
+
+            chunks.append(chunk)
 
         self.assertEqual(b''.join(chunks), original)
 
@@ -76,7 +163,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
-        source_read_size=strategies.integers(1, 16384),
+        source_read_size=strategies.integers(1, 1048576),
         seek_amounts=strategies.data(),
         read_sizes=strategies.data())
     def test_relative_seeks(self, original, level, source_read_size, seek_amounts,

@@ -1697,9 +1697,15 @@ class ZstdDecompressionReader(object):
                 return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         def get_input():
+            # We have data left over in the input buffer. Use it.
+            if self._in_buffer.pos < self._in_buffer.size:
+                return
+
+            # All input data exhausted. Nothing to do.
             if self._finished_input:
                 return
 
+            # Else populate the input buffer from our source.
             if hasattr(self._source, 'read'):
                 data = self._source.read(self._read_size)
 
