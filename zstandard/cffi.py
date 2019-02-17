@@ -1791,6 +1791,49 @@ class ZstdDecompressionWriter(object):
     def memory_size(self):
         return lib.ZSTD_sizeof_DCtx(self._decompressor._dctx)
 
+    def fileno(self):
+        f = getattr(self._writer, 'fileno', None)
+        if f:
+            return f()
+        else:
+            raise OSError('fileno not available on underlying writer')
+
+    def isatty(self):
+        return False
+
+    def readable(self):
+        return False
+
+    def readline(self, size=-1):
+        raise io.UnsupportedOperation()
+
+    def readlines(self, hint=-1):
+        raise io.UnsupportedOperation()
+
+    def seek(self, offset, whence=None):
+        raise io.UnsupportedOperation()
+
+    def seekable(self):
+        return False
+
+    def truncate(self, size=None):
+        raise io.UnsupportedOperation()
+
+    def writable(self):
+        return True
+
+    def writelines(self, lines):
+        raise io.UnsupportedOperation()
+
+    def read(self, size=-1):
+        raise io.UnsupportedOperation()
+
+    def readall(self):
+        raise io.UnsupportedOperation()
+
+    def readinto(self, b):
+        raise io.UnsupportedOperation()
+
     def write(self, data):
         total_write = 0
 

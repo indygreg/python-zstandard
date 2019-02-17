@@ -3,6 +3,7 @@ import os
 import random
 import struct
 import sys
+import tempfile
 import unittest
 
 import zstandard as zstd
@@ -606,6 +607,79 @@ def decompress_via_writer(data):
 
 @make_cffi
 class TestDecompressor_stream_writer(unittest.TestCase):
+    def test_io_api(self):
+        buffer = io.BytesIO()
+        dctx = zstd.ZstdDecompressor()
+        writer = dctx.stream_writer(buffer)
+
+        self.assertFalse(writer.isatty())
+        self.assertFalse(writer.readable())
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readline()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readline(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readline(size=42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readlines()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readlines(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readlines(hint=42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.seek(0)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.seek(10, os.SEEK_SET)
+
+        self.assertFalse(writer.seekable())
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.truncate()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.truncate(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.truncate(size=42)
+
+        self.assertTrue(writer.writable())
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.writelines([])
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.read()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.read(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.read(size=42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readall()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readinto(None)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.fileno()
+
+    def test_fileno_file(self):
+        with tempfile.TemporaryFile('wb') as tf:
+            dctx = zstd.ZstdDecompressor()
+            writer = dctx.stream_writer(tf)
+
+            self.assertEqual(writer.fileno(), tf.fileno())
+
     def test_empty_roundtrip(self):
         cctx = zstd.ZstdCompressor()
         empty = cctx.compress(b'')

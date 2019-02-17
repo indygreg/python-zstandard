@@ -118,6 +118,46 @@ finally:
 	return result;
 }
 
+static PyObject* ZstdDecompressionWriter_fileno(ZstdDecompressionWriter* self) {
+	if (PyObject_HasAttrString(self->writer, "fileno")) {
+		return PyObject_CallMethod(self->writer, "fileno", NULL);
+	}
+	else {
+		PyErr_SetString(PyExc_OSError, "fileno not available on underlying writer");
+		return NULL;
+	}
+}
+
+static PyObject* ZstdDecompressionWriter_false(PyObject* self, PyObject* args) {
+	Py_RETURN_FALSE;
+}
+
+static PyObject* ZstdDecompressionWriter_true(PyObject* self, PyObject* args) {
+	Py_RETURN_TRUE;
+}
+
+static PyObject* ZstdDecompressionWriter_unsupported(PyObject* self, PyObject* args, PyObject* kwargs) {
+	PyObject* iomod;
+	PyObject* exc;
+
+	iomod = PyImport_ImportModule("io");
+	if (NULL == iomod) {
+		return NULL;
+	}
+
+	exc = PyObject_GetAttrString(iomod, "UnsupportedOperation");
+	if (NULL == exc) {
+		Py_DECREF(iomod);
+		return NULL;
+	}
+
+	PyErr_SetNone(exc);
+	Py_DECREF(exc);
+	Py_DECREF(iomod);
+
+	return NULL;
+}
+
 static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	{ "__enter__", (PyCFunction)ZstdDecompressionWriter_enter, METH_NOARGS,
 	PyDoc_STR("Enter a decompression context.") },
@@ -125,6 +165,19 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	PyDoc_STR("Exit a decompression context.") },
 	{ "memory_size", (PyCFunction)ZstdDecompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size in bytes of the underlying decompressor.") },
+	{ "fileno", (PyCFunction)ZstdDecompressionWriter_fileno, METH_NOARGS, NULL },
+	{ "isatty", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
+	{ "readable", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
+	{ "readline", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readlines", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "seek", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "seekable", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
+	{ "truncate", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "writable", ZstdDecompressionWriter_true, METH_NOARGS, NULL },
+	{ "writelines" , (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "read", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readall", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readinto", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
