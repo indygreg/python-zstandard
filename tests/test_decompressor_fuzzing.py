@@ -12,6 +12,7 @@ import zstandard as zstd
 
 from . common import (
     make_cffi,
+    NonClosingBytesIO,
     random_input_data,
 )
 
@@ -113,7 +114,7 @@ class TestDecompressor_stream_writer_fuzzing(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         source = io.BytesIO(frame)
-        dest = io.BytesIO()
+        dest = NonClosingBytesIO()
 
         with dctx.stream_writer(dest, write_size=write_size) as decompressor:
             while True:

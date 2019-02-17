@@ -1776,8 +1776,12 @@ class ZstdDecompressionWriter(object):
         self._writer = writer
         self._write_size = write_size
         self._entered = False
+        self._closed = False
 
     def __enter__(self):
+        if self._closed:
+            raise ValueError('stream is closed')
+
         if self._entered:
             raise ZstdError('cannot __enter__ multiple times')
 
@@ -1787,9 +1791,27 @@ class ZstdDecompressionWriter(object):
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
+        self.close()
 
     def memory_size(self):
         return lib.ZSTD_sizeof_DCtx(self._decompressor._dctx)
+
+    def close(self):
+        if self._closed:
+            return
+
+        try:
+            self.flush()
+        finally:
+            self._closed = True
+
+        f = getattr(self._writer, 'close', None)
+        if f:
+            f()
+
+    @property
+    def closed(self):
+        return self._closed
 
     def fileno(self):
         f = getattr(self._writer, 'fileno', None)
@@ -1799,6 +1821,9 @@ class ZstdDecompressionWriter(object):
             raise OSError('fileno not available on underlying writer')
 
     def flush(self):
+        if self._closed:
+            raise ValueError('stream is closed')
+
         f = getattr(self._writer, 'flush', None)
         if f:
             return f()
@@ -1840,6 +1865,9 @@ class ZstdDecompressionWriter(object):
         raise io.UnsupportedOperation()
 
     def write(self, data):
+        if self._closed:
+            raise ValueError('stream is closed')
+
         total_write = 0
 
         in_buffer = ffi.new('ZSTD_inBuffer *')

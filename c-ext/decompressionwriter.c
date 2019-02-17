@@ -22,6 +22,11 @@ static void ZstdDecompressionWriter_dealloc(ZstdDecompressionWriter* self) {
 }
 
 static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
 	if (self->entered) {
 		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
 		return NULL;
@@ -35,6 +40,10 @@ static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
 
 static PyObject* ZstdDecompressionWriter_exit(ZstdDecompressionWriter* self, PyObject* args) {
 	self->entered = 0;
+
+	if (NULL == PyObject_CallMethod((PyObject*)self, "close", NULL)) {
+		return NULL;
+	}
 
 	Py_RETURN_FALSE;
 }
@@ -70,6 +79,11 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 		PyErr_SetString(PyExc_ValueError,
 			"data buffer should be contiguous and have at most one dimension");
 		goto finally;
+	}
+
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
 	}
 
 	output.dst = PyMem_Malloc(self->outSize);
@@ -118,6 +132,28 @@ finally:
 	return result;
 }
 
+static PyObject* ZstdDecompressionWriter_close(ZstdDecompressionWriter* self) {
+	PyObject* result;
+
+	if (self->closed) {
+		Py_RETURN_NONE;
+	}
+
+	result = PyObject_CallMethod((PyObject*)self, "flush", NULL);
+	self->closed = 1;
+
+	if (NULL == result) {
+		return NULL;
+	}
+
+	/* Call close on underlying stream as well. */
+	if (PyObject_HasAttrString(self->writer, "close")) {
+		return PyObject_CallMethod(self->writer, "close", NULL);
+	}
+
+	Py_RETURN_NONE;
+}
+
 static PyObject* ZstdDecompressionWriter_fileno(ZstdDecompressionWriter* self) {
 	if (PyObject_HasAttrString(self->writer, "fileno")) {
 		return PyObject_CallMethod(self->writer, "fileno", NULL);
@@ -129,6 +165,11 @@ static PyObject* ZstdDecompressionWriter_fileno(ZstdDecompressionWriter* self) {
 }
 
 static PyObject* ZstdDecompressionWriter_flush(ZstdDecompressionWriter* self) {
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
 	if (PyObject_HasAttrString(self->writer, "flush")) {
 		return PyObject_CallMethod(self->writer, "flush", NULL);
 	}
@@ -174,6 +215,7 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	PyDoc_STR("Exit a decompression context.") },
 	{ "memory_size", (PyCFunction)ZstdDecompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size in bytes of the underlying decompressor.") },
+	{ "close", (PyCFunction)ZstdDecompressionWriter_close, METH_NOARGS, NULL },
 	{ "fileno", (PyCFunction)ZstdDecompressionWriter_fileno, METH_NOARGS, NULL },
 	{ "flush", (PyCFunction)ZstdDecompressionWriter_flush, METH_NOARGS, NULL },
 	{ "isatty", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
@@ -191,6 +233,11 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
+};
+
+static PyMemberDef ZstdDecompressionWriter_members[] = {
+	{ "closed", T_BOOL, offsetof(ZstdDecompressionWriter, closed), READONLY, NULL },
+	{ NULL }
 };
 
 PyTypeObject ZstdDecompressionWriterType = {
@@ -222,7 +269,7 @@ PyTypeObject ZstdDecompressionWriterType = {
 	0,                              /* tp_iter */
 	0,                              /* tp_iternext */
 	ZstdDecompressionWriter_methods,/* tp_methods */
-	0,                              /* tp_members */
+	ZstdDecompressionWriter_members,/* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
 	0,                              /* tp_dict */

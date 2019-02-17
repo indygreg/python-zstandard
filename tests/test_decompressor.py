@@ -612,6 +612,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         writer = dctx.stream_writer(buffer)
 
+        self.assertFalse(writer.closed)
         self.assertFalse(writer.isatty())
         self.assertFalse(writer.readable())
 
@@ -680,6 +681,42 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
             self.assertEqual(writer.fileno(), tf.fileno())
 
+    def test_close(self):
+        foo = zstd.ZstdCompressor().compress(b'foo')
+
+        buffer = NonClosingBytesIO()
+        dctx = zstd.ZstdDecompressor()
+        writer = dctx.stream_writer(buffer)
+
+        writer.write(foo)
+        self.assertFalse(writer.closed)
+        self.assertFalse(buffer.closed)
+        writer.close()
+        self.assertTrue(writer.closed)
+        self.assertTrue(buffer.closed)
+
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            writer.write(b'')
+
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            writer.flush()
+
+        with self.assertRaisesRegexp(ValueError, 'stream is closed'):
+            with writer:
+                pass
+
+        self.assertEqual(buffer.getvalue(), b'foo')
+
+        # Context manager exit should close stream.
+        buffer = NonClosingBytesIO()
+        writer = dctx.stream_writer(buffer)
+
+        with writer:
+            writer.write(foo)
+
+        self.assertTrue(writer.closed)
+        self.assertEqual(buffer.getvalue(), b'foo')
+
     def test_flush(self):
         buffer = OpCountingBytesIO()
         dctx = zstd.ZstdDecompressor()
@@ -716,7 +753,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
             decompressor.write(source)
             self.assertEqual(buffer.getvalue(), b'foo')
 
-            buffer = io.BytesIO()
+            buffer = NonClosingBytesIO()
 
             with dctx.stream_writer(buffer) as decompressor:
                 decompressor.write(source)
@@ -743,7 +780,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         cctx = zstd.ZstdCompressor()
         compressed = cctx.compress(orig)
 
-        buffer = io.BytesIO()
+        buffer = NonClosingBytesIO()
         dctx = zstd.ZstdDecompressor()
         with dctx.stream_writer(buffer) as decompressor:
             pos = 0
@@ -776,7 +813,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertEqual(decompressor.write(compressed), len(orig))
         self.assertEqual(buffer.getvalue(), orig)
 
-        buffer = io.BytesIO()
+        buffer = NonClosingBytesIO()
 
         with dctx.stream_writer(buffer) as decompressor:
             self.assertEqual(decompressor.write(compressed), len(orig))
