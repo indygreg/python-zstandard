@@ -66,6 +66,11 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``
+  were renamed to ``ZstdCompressionReader`` and ``ZstdDecompressionReader``,
+  respectively so naming is identical to the C extension. This should have
+  no meaningful end-user impact, as instances aren't meant to be
+  constructed directly.
 * ``ZstdDecompressor.stream_writer()`` now accepts a ``write_return_read``
   argument to control whether ``write()`` returns the number of bytes
   read from the source / written to the decompressor. It defaults to off,
@@ -116,6 +121,9 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``
+  were renamed to ``ZstdCompressionReader`` and ``ZstdDecompressionReader``,
+  respectively.
 * ``ZstdDecompressor.stream_writer()`` now accepts a ``write_return_read``
   argument to control whether ``write()`` returns the number of bytes read
   from the source. It defaults to ``False`` to preserve backwards

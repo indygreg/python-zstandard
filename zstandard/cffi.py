@@ -787,7 +787,7 @@ class ZstdCompressionChunker(object):
                 return
 
 
-class CompressionReader(object):
+class ZstdCompressionReader(object):
     def __init__(self, compressor, source, read_size):
         self._compressor = compressor
         self._source = source
@@ -1221,7 +1221,7 @@ class ZstdCompressor(object):
             raise ZstdError('error setting source size: %s' %
                             _zstd_error(zresult))
 
-        return CompressionReader(self, source, read_size)
+        return ZstdCompressionReader(self, source, read_size)
 
     def stream_writer(self, writer, size=-1,
                  write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
@@ -1579,7 +1579,7 @@ class ZstdDecompressionObj(object):
         pass
 
 
-class DecompressionReader(object):
+class ZstdDecompressionReader(object):
     def __init__(self, decompressor, source, read_size):
         self._decompressor = decompressor
         self._source = source
@@ -1975,7 +1975,7 @@ class ZstdDecompressor(object):
 
     def stream_reader(self, source, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE):
         self._ensure_dctx()
-        return DecompressionReader(self, source, read_size)
+        return ZstdDecompressionReader(self, source, read_size)
 
     def decompressobj(self, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
         if write_size < 1:
