@@ -227,6 +227,16 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 	return PyLong_FromSsize_t(totalWrite);
 }
 
+static PyObject* ZstdCompressionWriter_fileno(ZstdCompressionWriter* self) {
+	if (PyObject_HasAttrString(self->writer, "fileno")) {
+		return PyObject_CallMethod(self->writer, "fileno", NULL);
+	}
+	else {
+		PyErr_SetString(PyExc_OSError, "fileno not available on underlying writer");
+		return NULL;
+	}
+}
+
 static PyObject* ZstdCompressionWriter_tell(ZstdCompressionWriter* self) {
 	return PyLong_FromUnsignedLongLong(self->bytesCompressed);
 }
@@ -271,6 +281,7 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	PyDoc_STR("Enter a compression context.") },
 	{ "__exit__", (PyCFunction)ZstdCompressionWriter_exit, METH_VARARGS,
 	PyDoc_STR("Exit a compression context.") },
+	{ "fileno", (PyCFunction)ZstdCompressionWriter_fileno, METH_NOARGS, NULL },
 	{ "isatty", (PyCFunction)ZstdCompressionWriter_false, METH_NOARGS, NULL },
 	{ "readable", (PyCFunction)ZstdCompressionWriter_false, METH_NOARGS, NULL },
 	{ "readline", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },

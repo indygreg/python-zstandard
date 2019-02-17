@@ -4,6 +4,7 @@ import os
 import struct
 import sys
 import tarfile
+import tempfile
 import unittest
 
 import zstandard as zstd
@@ -802,6 +803,16 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
         with self.assertRaises(io.UnsupportedOperation):
             writer.readinto(None)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.fileno()
+
+    def test_fileno_file(self):
+        with tempfile.TemporaryFile('wb') as tf:
+            cctx = zstd.ZstdCompressor()
+            writer = cctx.stream_writer(tf)
+
+            self.assertEqual(writer.fileno(), tf.fileno())
 
     def test_empty(self):
         buffer = io.BytesIO()

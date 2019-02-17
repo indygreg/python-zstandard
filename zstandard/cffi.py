@@ -496,6 +496,13 @@ class ZstdCompressionWriter(object):
     def memory_size(self):
         return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)
 
+    def fileno(self):
+        f = getattr(self._writer, 'fileno', None)
+        if f:
+            return f()
+        else:
+            raise OSError('fileno not available on underlying writer')
+
     def isatty(self):
         return False
 
