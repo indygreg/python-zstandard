@@ -1,5 +1,6 @@
 import hashlib
 import io
+import os
 import struct
 import sys
 import tarfile
@@ -749,6 +750,59 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
 @make_cffi
 class TestCompressor_stream_writer(unittest.TestCase):
+    def test_io_api(self):
+        buffer = io.BytesIO()
+        cctx = zstd.ZstdCompressor()
+        writer = cctx.stream_writer(buffer)
+
+        self.assertFalse(writer.isatty())
+        self.assertFalse(writer.readable())
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readline()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readline(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readline(size=42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readlines()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readlines(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readlines(hint=42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.seek(0)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.seek(10, os.SEEK_SET)
+
+        self.assertFalse(writer.seekable())
+        self.assertTrue(writer.writable())
+
+        with self.assertRaises(NotImplementedError):
+            writer.writelines([])
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.read()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.read(42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.read(size=42)
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readall()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.readinto(None)
+
     def test_empty(self):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)

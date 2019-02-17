@@ -231,11 +231,57 @@ static PyObject* ZstdCompressionWriter_tell(ZstdCompressionWriter* self) {
 	return PyLong_FromUnsignedLongLong(self->bytesCompressed);
 }
 
+static PyObject* ZstdCompressionWriter_writelines(PyObject* self, PyObject* args) {
+	PyErr_SetNone(PyExc_NotImplementedError);
+	return NULL;
+}
+
+static PyObject* ZstdCompressionWriter_false(PyObject* self, PyObject* args) {
+	Py_RETURN_FALSE;
+}
+
+static PyObject* ZstdCompressionWriter_true(PyObject* self, PyObject* args) {
+	Py_RETURN_TRUE;
+}
+
+static PyObject* ZstdCompressionWriter_unsupported(PyObject* self, PyObject* args, PyObject* kwargs) {
+	PyObject* iomod;
+	PyObject* exc;
+
+	iomod = PyImport_ImportModule("io");
+	if (NULL == iomod) {
+		return NULL;
+	}
+
+	exc = PyObject_GetAttrString(iomod, "UnsupportedOperation");
+	if (NULL == exc) {
+		Py_DECREF(iomod);
+		return NULL;
+	}
+
+	PyErr_SetNone(exc);
+	Py_DECREF(exc);
+	Py_DECREF(iomod);
+
+	return NULL;
+}
+
 static PyMethodDef ZstdCompressionWriter_methods[] = {
 	{ "__enter__", (PyCFunction)ZstdCompressionWriter_enter, METH_NOARGS,
 	PyDoc_STR("Enter a compression context.") },
 	{ "__exit__", (PyCFunction)ZstdCompressionWriter_exit, METH_VARARGS,
 	PyDoc_STR("Exit a compression context.") },
+	{ "isatty", (PyCFunction)ZstdCompressionWriter_false, METH_NOARGS, NULL },
+	{ "readable", (PyCFunction)ZstdCompressionWriter_false, METH_NOARGS, NULL },
+	{ "readline", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readlines", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "seek", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "seekable", ZstdCompressionWriter_false, METH_NOARGS, NULL },
+	{ "writable", ZstdCompressionWriter_true, METH_NOARGS, NULL },
+	{ "writelines", ZstdCompressionWriter_writelines, METH_VARARGS, NULL },
+	{ "read", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readall", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readinto", (PyCFunction)ZstdCompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "memory_size", (PyCFunction)ZstdCompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size of the underlying compressor") },
 	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS | METH_KEYWORDS,

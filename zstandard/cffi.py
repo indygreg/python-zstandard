@@ -496,6 +496,39 @@ class ZstdCompressionWriter(object):
     def memory_size(self):
         return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)
 
+    def isatty(self):
+        return False
+
+    def readable(self):
+        return False
+
+    def readline(self, size=-1):
+        raise io.UnsupportedOperation()
+
+    def readlines(self, hint=-1):
+        raise io.UnsupportedOperation()
+
+    def seek(self, offset, whence=None):
+        raise io.UnsupportedOperation()
+
+    def seekable(self):
+        return False
+
+    def writable(self):
+        return True
+
+    def writelines(self, lines):
+        raise NotImplementedError('writelines() is not yet implemented')
+
+    def read(self, size=-1):
+        raise io.UnsupportedOperation()
+
+    def readall(self):
+        raise io.UnsupportedOperation()
+
+    def readinto(self, b):
+        raise io.UnsupportedOperation()
+
     def write(self, data):
         total_write = 0
 
