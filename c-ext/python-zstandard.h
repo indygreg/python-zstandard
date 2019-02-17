@@ -216,6 +216,8 @@ typedef struct {
 	PyObject* reader;
 	/* Size for read() operations on reader. */
 	size_t readSize;
+	/* Whether a read() can return data spanning multiple zstd frames. */
+	int readAcrossFrames;
 	/* Buffer to read from (if reading from a buffer). */
 	Py_buffer buffer;
 

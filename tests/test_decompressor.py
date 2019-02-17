@@ -562,6 +562,19 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         reader = dctx.stream_reader(source.getvalue())
+        self.assertEqual(reader.read(2), b'fo')
+        self.assertEqual(reader.read(2), b'o')
+        self.assertEqual(reader.read(2), b'ba')
+        self.assertEqual(reader.read(2), b'r')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source)
+        self.assertEqual(reader.read(2), b'fo')
+        self.assertEqual(reader.read(2), b'o')
+        self.assertEqual(reader.read(2), b'ba')
+        self.assertEqual(reader.read(2), b'r')
+
+        reader = dctx.stream_reader(source.getvalue())
         self.assertEqual(reader.read(3), b'foo')
         self.assertEqual(reader.read(3), b'bar')
 
@@ -571,31 +584,53 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertEqual(reader.read(3), b'bar')
 
         reader = dctx.stream_reader(source.getvalue())
-        data = reader.read(6)
-        self.assertEqual(data, b'foobar')
+        self.assertEqual(reader.read(4), b'foo')
+        self.assertEqual(reader.read(4), b'bar')
 
         source.seek(0)
         reader = dctx.stream_reader(source)
-        data = reader.read(6)
-        self.assertEqual(data, b'foobar')
+        self.assertEqual(reader.read(4), b'foo')
+        self.assertEqual(reader.read(4), b'bar')
 
         reader = dctx.stream_reader(source.getvalue())
-        data = reader.read(7)
-        self.assertEqual(data, b'foobar')
+        self.assertEqual(reader.read(128), b'foo')
+        self.assertEqual(reader.read(128), b'bar')
 
         source.seek(0)
         reader = dctx.stream_reader(source)
-        data = reader.read(7)
-        self.assertEqual(data, b'foobar')
+        self.assertEqual(reader.read(128), b'foo')
+        self.assertEqual(reader.read(128), b'bar')
 
-        reader = dctx.stream_reader(source.getvalue())
-        data = reader.read(128)
-        self.assertEqual(data, b'foobar')
+        # Now tests for reads spanning frames.
+        reader = dctx.stream_reader(source.getvalue(), read_across_frames=True)
+        self.assertEqual(reader.read(3), b'foo')
+        self.assertEqual(reader.read(3), b'bar')
 
         source.seek(0)
-        reader = dctx.stream_reader(source)
-        data = reader.read(128)
-        self.assertEqual(data, b'foobar')
+        reader = dctx.stream_reader(source, read_across_frames=True)
+        self.assertEqual(reader.read(3), b'foo')
+        self.assertEqual(reader.read(3), b'bar')
+
+        reader = dctx.stream_reader(source.getvalue(), read_across_frames=True)
+        self.assertEqual(reader.read(6), b'foobar')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source, read_across_frames=True)
+        self.assertEqual(reader.read(6), b'foobar')
+
+        reader = dctx.stream_reader(source.getvalue(), read_across_frames=True)
+        self.assertEqual(reader.read(7), b'foobar')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source, read_across_frames=True)
+        self.assertEqual(reader.read(7), b'foobar')
+
+        reader = dctx.stream_reader(source.getvalue(), read_across_frames=True)
+        self.assertEqual(reader.read(128), b'foobar')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source, read_across_frames=True)
+        self.assertEqual(reader.read(128), b'foobar')
 
 
 @make_cffi

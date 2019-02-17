@@ -1580,10 +1580,11 @@ class ZstdDecompressionObj(object):
 
 
 class ZstdDecompressionReader(object):
-    def __init__(self, decompressor, source, read_size):
+    def __init__(self, decompressor, source, read_size, read_across_frames):
         self._decompressor = decompressor
         self._source = source
         self._read_size = read_size
+        self._read_across_frames = bool(read_across_frames)
         self._entered = False
         self._closed = False
         self._bytes_decompressed = 0
@@ -1690,8 +1691,15 @@ class ZstdDecompressionReader(object):
                 raise ZstdError('zstd decompress error: %s',
                                 _zstd_error(zresult))
 
-            if out_buffer.pos and out_buffer.pos == out_buffer.size:
-                self._bytes_decompressed += out_buffer.size
+            # Emit data if there is data AND either:
+            # a) output buffer is full (read amount is satisfied)
+            # b) we're at end of a frame and not in frame spanning mode
+            emit_output = (out_buffer.pos and
+                           (out_buffer.pos == out_buffer.size or
+                            zresult == 0 and not self._read_across_frames))
+
+            if emit_output:
+                self._bytes_decompressed += out_buffer.pos
                 return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         def get_input():
@@ -1977,9 +1985,10 @@ class ZstdDecompressor(object):
 
         return ffi.buffer(result_buffer, out_buffer.pos)[:]
 
-    def stream_reader(self, source, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE):
+    def stream_reader(self, source, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+                      read_across_frames=False):
         self._ensure_dctx()
-        return ZstdDecompressionReader(self, source, read_size)
+        return ZstdDecompressionReader(self, source, read_size, read_across_frames)
 
     def decompressobj(self, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
         if write_size < 1:

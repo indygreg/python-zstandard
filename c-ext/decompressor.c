@@ -550,28 +550,35 @@ finally:
 }
 
 PyDoc_STRVAR(Decompressor_stream_reader__doc__,
-"stream_reader(source, [read_size=default])\n"
+"stream_reader(source, [read_size=default, [read_across_frames=False]])\n"
 "\n"
 "Obtain an object that behaves like an I/O stream that can be used for\n"
 "reading decompressed output from an object.\n"
 "\n"
 "The source object can be any object with a ``read(size)`` method or that\n"
 "conforms to the buffer protocol.\n"
+"\n"
+"``read_across_frames`` controls the behavior of ``read()`` when the end\n"
+"of a zstd frame is reached. When ``True``, ``read()`` can potentially\n"
+"return data belonging to multiple zstd frames. When ``False``, ``read()``\n"
+"will return when the end of a frame is reached.\n"
 );
 
 static ZstdDecompressionReader* Decompressor_stream_reader(ZstdDecompressor* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"source",
 		"read_size",
+		"read_across_frames",
 		NULL
 	};
 
 	PyObject* source;
 	size_t readSize = ZSTD_DStreamInSize();
+	PyObject* readAcrossFrames = NULL;
 	ZstdDecompressionReader* result;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|k:stream_reader", kwlist,
-		&source, &readSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kO:stream_reader", kwlist,
+		&source, &readSize, &readAcrossFrames)) {
 		return NULL;
 	}
 
@@ -604,6 +611,7 @@ static ZstdDecompressionReader* Decompressor_stream_reader(ZstdDecompressor* sel
 
 	result->decompressor = self;
 	Py_INCREF(self);
+	result->readAcrossFrames = readAcrossFrames ? PyObject_IsTrue(readAcrossFrames) : 0;
 
 	return result;
 }

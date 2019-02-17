@@ -173,6 +173,18 @@ readinput:
 			self->bytesDecompressed += output.size;
 			return result;
 		}
+		/* We're at the end of a frame and we aren't allowed to return data
+		 * spanning frames. */
+		else if (output.pos && zresult == 0 && !self->readAcrossFrames) {
+			self->bytesDecompressed += output.pos;
+
+			if (safe_pybytes_resize(&result, output.pos)) {
+				Py_XDECREF(result);
+				return NULL;
+			}
+
+			return result;
+		}
 
 		/*
 		 * There is more room in the output. Fall through to try to collect

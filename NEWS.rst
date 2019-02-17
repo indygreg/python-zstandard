@@ -71,9 +71,10 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
-* ``ZstdDecompressionReader.read()`` may now return data belonging to multiple
-  zstd *frames*. Before, a ``read()`` would stop returning data once end of
-  frame was encountered.
+* ``ZstdDecompressor.stream_reader()`` now accepts a ``read_across_frames``
+  argument. The default value will likely be changed in a future release
+  and consumers are advised to pass the argument to avoid unwanted change
+  of behavior in the future.
 * ``setup.py`` now always disables the CFFI backend if the installed
   CFFI package does not meet the minimum version requirements. Before, it was
   possible for the CFFI backend to be generated and a run-time error to
@@ -140,10 +141,13 @@ Bug Fixes
 Changes
 -------
 
-* ``ZstdDecompressionReader`` now transparently supports reading multiple
-  frames. If the underlying data contains multiple zstandard frames, a call
-  to ``read()`` that requests data spanning multiple frames will automatically
-  decode multiple frames.
+* ``ZstdDecompressor.stream_reader()`` now accepts a ``read_across_frames``
+  argument to control behavior when the input data has multiple zstd
+  *frames*. When ``False`` (the default for backwards compatibility), a
+  ``read()`` will stop when the end of a zstd *frame* is encountered. When
+  ``True``, ``read()`` can potentially return data spanning multiple zstd
+  *frames*. The default will likely be changed to ``True`` in a future
+  release.
 * ``setup.py`` now performs CFFI version sniffing and disables the CFFI
   backend if CFFI is too old. Previously, we only used ``install_requires``
   to enforce the CFFI version and not all build modes would properly enforce

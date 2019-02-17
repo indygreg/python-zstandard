@@ -701,9 +701,11 @@ Not all I/O methods are implemented. Notably missing is support for
 ``readline()``, ``readlines()``, and linewise iteration support. Support for
 these is planned for a future release.
 
-``read()`` will attempt to exhaust all input data in order to fill the
-requested read size. If the underlying data spans multiple zstd *frames*,
-``read()`` can return data belonging to multiple *frames*.
+The ``read_across_frames`` argument to ``stream_reader()`` controls the
+behavior of read operations when the end of a zstd *frame* is encountered.
+When ``False`` (the default), a read will complete when the end of a
+zstd *frame* is encountered. When ``True``, a read can potentially
+return data spanning multiple zstd *frames*.
 
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^

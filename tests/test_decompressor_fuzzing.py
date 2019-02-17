@@ -211,7 +211,8 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         buffer.seek(0)
-        reader = dctx.stream_reader(buffer, read_size=source_read_size)
+        reader = dctx.stream_reader(buffer, read_size=source_read_size,
+                                    read_across_frames=True)
 
         chunks = []
 
@@ -225,7 +226,6 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
             chunks.append(chunk)
 
         self.assertEqual(source.getvalue(), b''.join(chunks))
-
 
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
