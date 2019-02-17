@@ -215,7 +215,7 @@ Instances can also be used as context managers::
 
                # Do something with compressed chunk.
 
-When the context manager exists or ``close()`` is called, the stream is closed,
+When the context manager exits or ``close()`` is called, the stream is closed,
 underlying resources are released, and future operations against the compression
 stream will fail.
 
