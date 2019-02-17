@@ -66,6 +66,10 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* ``setup.py`` now always disables the CFFI backend if the installed
+  CFFI package does not meet the minimum version requirements. Before, it was
+  possible for the CFFI backend to be generated and a run-time error to
+  occur.
 * In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``
   were renamed to ``ZstdCompressionReader`` and ``ZstdDecompressionReader``,
   respectively so naming is identical to the C extension. This should have
@@ -128,9 +132,13 @@ Bug Fixes
 Changes
 -------
 
+* ``setup.py`` now performs CFFI version sniffing and disables the CFFI
+  backend if CFFI is too old. Previously, we only used ``install_requires``
+  to enforce the CFFI version and not all build modes would properly enforce
+  the minimum CFFI version. (#69)
 * CFFI's ``ZstdDecompressionReader.read()`` now properly handles data
   remaining in any internal buffer. Before, repeated ``read()`` could
-  result in *random* errors. #71.
+  result in *random* errors. (#71)
 * Upgraded various Python packages in CI environment.
 * Upgrade to hypothesis 4.5.11.
 * In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``

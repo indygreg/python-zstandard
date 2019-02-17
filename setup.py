@@ -5,12 +5,32 @@
 # This software may be modified and distributed under the terms
 # of the BSD license. See the LICENSE file for details.
 
+from __future__ import print_function
+
+from distutils.version import LooseVersion
 import os
 import sys
 from setuptools import setup
 
+# Need change in 1.10 for ffi.from_buffer() to handle all buffer types
+# (like memoryview).
+# Need feature in 1.11 for ffi.gc() to declare size of objects so we avoid
+# garbage collection pitfalls.
+MINIMUM_CFFI_VERSION = '1.11'
+
 try:
     import cffi
+
+    # PyPy (and possibly other distros) have CFFI distributed as part of
+    # them. The install_requires for CFFI below won't work. We need to sniff
+    # out the CFFI version here and reject CFFI if it is too old.
+    cffi_version = LooseVersion(cffi.__version__)
+    if cffi_version < LooseVersion(MINIMUM_CFFI_VERSION):
+        print('CFFI 1.11 or newer required (%s found); '
+              'not building CFFI backend' % cffi_version,
+              file=sys.stderr)
+        cffi = None
+
 except ImportError:
     cffi = None
 
@@ -49,12 +69,7 @@ install_requires = []
 if cffi:
     import make_cffi
     extensions.append(make_cffi.ffi.distutils_extension())
-
-    # Need change in 1.10 for ffi.from_buffer() to handle all buffer types
-    # (like memoryview).
-    # Need feature in 1.11 for ffi.gc() to declare size of objects so we avoid
-    # garbage collection pitfalls.
-    install_requires.append('cffi>=1.11')
+    install_requires.append('cffi>=%s' % MINIMUM_CFFI_VERSION)
 
 version = None
 
