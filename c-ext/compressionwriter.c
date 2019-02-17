@@ -45,49 +45,18 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 	PyObject* exc_type;
 	PyObject* exc_value;
 	PyObject* exc_tb;
-	size_t zresult;
-
-	PyObject* res;
 
 	if (!PyArg_ParseTuple(args, "OOO:__exit__", &exc_type, &exc_value, &exc_tb)) {
 		return NULL;
 	}
 
 	self->entered = 0;
-	self->closed = 1;
 
 	if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
-		ZSTD_inBuffer inBuffer;
+		PyObject* result = PyObject_CallMethod((PyObject*)self, "close", NULL);
 
-		self->output.pos = 0;
-
-		inBuffer.src = NULL;
-		inBuffer.size = 0;
-		inBuffer.pos = 0;
-
-		while (1) {
-			zresult = ZSTD_compressStream2(self->compressor->cctx, &self->output, &inBuffer, ZSTD_e_end);
-			if (ZSTD_isError(zresult)) {
-				PyErr_Format(ZstdError, "error ending compression stream: %s",
-					ZSTD_getErrorName(zresult));
-				return NULL;
-			}
-
-			if (self->output.pos) {
-#if PY_MAJOR_VERSION >= 3
-				res = PyObject_CallMethod(self->writer, "write", "y#",
-#else
-				res = PyObject_CallMethod(self->writer, "write", "s#",
-#endif
-					self->output.dst, self->output.pos);
-				Py_XDECREF(res);
-			}
-
-			if (!zresult) {
-				break;
-			}
-
-			self->output.pos = 0;
+		if (NULL == result) {
+			return NULL;
 		}
 	}
 

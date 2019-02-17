@@ -79,7 +79,27 @@ def make_cffi(cls):
     return cls
 
 
-class OpCountingBytesIO(io.BytesIO):
+class NonClosingBytesIO(io.BytesIO):
+    """BytesIO that saves the underlying buffer on close().
+
+    This allows us to access written data after close().
+    """
+    def __init__(self, *args, **kwargs):
+        super(NonClosingBytesIO, self).__init__(*args, **kwargs)
+        self._saved_buffer = None
+
+    def close(self):
+        self._saved_buffer = self.getvalue()
+        return super(NonClosingBytesIO, self).close()
+
+    def getvalue(self):
+        if self.closed:
+            return self._saved_buffer
+        else:
+            return super(NonClosingBytesIO, self).getvalue()
+
+
+class OpCountingBytesIO(NonClosingBytesIO):
     def __init__(self, *args, **kwargs):
         self._read_count = 0
         self._write_count = 0

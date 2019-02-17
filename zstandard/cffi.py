@@ -466,33 +466,9 @@ class ZstdCompressionWriter(object):
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
-        self._closed = True
 
         if not exc_type and not exc_value and not exc_tb:
-            in_buffer = ffi.new('ZSTD_inBuffer *')
-
-            out_buffer = self._out_buffer
-            out_buffer.pos = 0
-
-            in_buffer.src = ffi.NULL
-            in_buffer.size = 0
-            in_buffer.pos = 0
-
-            while True:
-                zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                                   out_buffer, in_buffer,
-                                                   lib.ZSTD_e_end)
-
-                if lib.ZSTD_isError(zresult):
-                    raise ZstdError('error ending compression stream: %s' %
-                                    _zstd_error(zresult))
-
-                if out_buffer.pos:
-                    self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
-                    out_buffer.pos = 0
-
-                if zresult == 0:
-                    break
+            self.close()
 
         self._compressor = None
 

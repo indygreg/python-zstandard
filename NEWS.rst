@@ -62,6 +62,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* ``ZstdCompressionWriter.__exit__`` now calls ``self.close()``. This will
+  result in that stream plus any underlying stream being closed as well. If
+  this behavior is not desirable, do not use instances as context managers.
 * ``ZstdDecompressionWriter`` no longer requires being used as a context
   manager (#57).
 * ``ZstdCompressionWriter`` no longer requires being used as a context

@@ -10,6 +10,7 @@ import zstandard as zstd
 from .common import (
     generate_samples,
     make_cffi,
+    NonClosingBytesIO,
     OpCountingBytesIO,
 )
 
@@ -678,7 +679,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         d = zstd.train_dictionary(8192, samples)
 
         orig = b'foobar' * 16384
-        buffer = io.BytesIO()
+        buffer = NonClosingBytesIO()
         cctx = zstd.ZstdCompressor(dict_data=d)
         with cctx.stream_writer(buffer) as compressor:
             self.assertEqual(compressor.write(orig), 0)
@@ -838,7 +839,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
     @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
     def test_large_input(self):
         bytes = list(struct.Struct('>B').pack(i) for i in range(256))
-        compressed = io.BytesIO()
+        compressed = NonClosingBytesIO()
         input_size = 0
         cctx = zstd.ZstdCompressor(level=1)
         with cctx.stream_writer(compressed) as compressor:
@@ -851,7 +852,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
                 if have_compressed and have_raw:
                     break
 
-        compressed.seek(0)
+        compressed = io.BytesIO(compressed.getvalue())
         self.assertGreater(len(compressed.getvalue()),
                            zstd.DECOMPRESSION_RECOMMENDED_INPUT_SIZE)
 
@@ -889,7 +890,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
 
         source = io.BytesIO()
 
-        compressed = io.BytesIO()
+        compressed = NonClosingBytesIO()
         with cctx.stream_writer(compressed) as compressor:
             for i in range(256):
                 chunk = b'\0' * 1024
@@ -902,7 +903,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
                                  max_output_size=len(source.getvalue()))
         self.assertEqual(simple, source.getvalue())
 
-        compressed.seek(0)
+        compressed = io.BytesIO(compressed.getvalue())
         streamed = b''.join(dctx.read_to_iter(compressed))
         self.assertEqual(streamed, source.getvalue())
 
