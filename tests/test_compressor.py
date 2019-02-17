@@ -1220,21 +1220,20 @@ class TestCompressor_stream_writer(unittest.TestCase):
             pass
 
     def test_tarfile_compat(self):
-        raise unittest.SkipTest('not yet fully working')
-
-        dest = io.BytesIO()
+        dest = NonClosingBytesIO()
         cctx = zstd.ZstdCompressor()
         with cctx.stream_writer(dest) as compressor:
-            with tarfile.open('tf', mode='w', fileobj=compressor) as tf:
+            with tarfile.open('tf', mode='w|', fileobj=compressor) as tf:
                 tf.add(__file__, 'test_compressor.py')
 
-        dest.seek(0)
+        dest = io.BytesIO(dest.getvalue())
 
         dctx = zstd.ZstdDecompressor()
         with dctx.stream_reader(dest) as reader:
-            with tarfile.open(mode='r:', fileobj=reader) as tf:
+            with tarfile.open(mode='r|', fileobj=reader) as tf:
                 for member in tf:
                     self.assertEqual(member.name, 'test_compressor.py')
+
 
 @make_cffi
 class TestCompressor_read_to_iter(unittest.TestCase):
