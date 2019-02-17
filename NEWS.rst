@@ -121,6 +121,7 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* Upgraded various Python packages in CI environment.
 * Upgrade to hypothesis 4.5.11.
 * In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``
   were renamed to ``ZstdCompressionReader`` and ``ZstdDecompressionReader``,
@@ -180,7 +181,6 @@ Changes
   performance in cases where ``write()`` or ``flush()`` are being called
   frequently. (#62)
 * Bundled zstandard library upgraded from 1.3.6 to 1.3.7.
-* Upgraded various Python packages in CI environment.
 
 0.10.2 (released 2018-11-03)
 ============================
