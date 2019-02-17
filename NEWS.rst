@@ -96,6 +96,10 @@ Backwards Compatibility Nodes
 Changes
 -------
 
+* ``ZstdCompressionWriter`` now implements the ``io.RawIOBase`` interface and
+  behaves as a proper stream object. ``close()`` will now close the stream
+  and the underlying stream (if possible). ``__exit__`` will now call
+  ``close()``. Methods like ``writable()`` and ``fileno()`` are implemented.
 * ``ZstdDecompressionWriter`` no longer must be used as a context manager.
 * ``ZstdCompressionWriter`` no longer must be used as a context manager.
   When not using as a context manager, it is important to call

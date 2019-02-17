@@ -253,13 +253,13 @@ Streaming Input API
 
 ``stream_writer(fh)`` allows you to *stream* data into a compressor.
 
+Returned instances implement the ``io.RawIOBase`` interface. Only methods
+that involving writing will do useful things.
+
 The argument to ``stream_writer()`` must have a ``write(data)`` method. As
 compressed data is available, ``write()`` will be called with the compressed
 data as its argument. Many common Python types implement ``write()``, including
 open file handles and ``io.BytesIO``.
-
-``stream_writer()`` returns an object representing a streaming compressor
-instance.
 
 The ``write(data)`` method is used to feed data into the compressor.
 
@@ -272,6 +272,11 @@ Its value can be any of the ``FLUSH_*`` constants.
 Both ``write()`` and ``flush()`` return the number of bytes written to the
 object's ``write()``. In many cases, small inputs do not accumulate enough
 data to cause a write and ``write()`` will return ``0``.
+
+Calling ``close()`` will mark the stream as closed and subsequent I/O
+operations will raise ``ValueError`` (per the documented behavior of
+``io.RawIOBase``). ``close()`` will also call ``close()`` on the underlying
+stream if such a method exists.
 
 Typically usage is as follows::
 
@@ -292,7 +297,8 @@ Typically usage is as follows::
    # zstd frame.
 
 Instances can be used as context managers. Exiting the context manager is
-the equivalent of calling ``flush(zstd.FLUSH_FRAME)``::
+the equivalent of calling ``close()``, which is equivalent to calling
+``flush(zstd.FLUSH_FRAME)``::
 
    cctx = zstd.ZstdCompressor(level=10)
    with cctx.stream_writer(fh) as compressor:
