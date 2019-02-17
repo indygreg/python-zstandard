@@ -1689,8 +1689,6 @@ class ZstdDecompressionReader(object):
             if lib.ZSTD_isError(zresult):
                 raise ZstdError('zstd decompress error: %s',
                                 _zstd_error(zresult))
-            elif zresult == 0:
-                self._finished_output = True
 
             if out_buffer.pos and out_buffer.pos == out_buffer.size:
                 self._bytes_decompressed += out_buffer.size

@@ -187,6 +187,46 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
                 self.assertEqual(original[offset:offset + len(chunk)], chunk)
 
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(
+        originals=strategies.data(),
+        frame_count=strategies.integers(min_value=2, max_value=10),
+        level=strategies.integers(min_value=1, max_value=5),
+        source_read_size=strategies.integers(1, 1048576),
+        read_sizes=strategies.data())
+    def test_multiple_frames(self, originals, frame_count, level,
+                             source_read_size, read_sizes):
+
+        cctx = zstd.ZstdCompressor(level=level)
+        source = io.BytesIO()
+        buffer = io.BytesIO()
+        writer = cctx.stream_writer(buffer)
+
+        for i in range(frame_count):
+            data = originals.draw(strategies.sampled_from(random_input_data()))
+            source.write(data)
+            writer.write(data)
+            writer.flush(zstd.FLUSH_FRAME)
+
+        dctx = zstd.ZstdDecompressor()
+        buffer.seek(0)
+        reader = dctx.stream_reader(buffer, read_size=source_read_size)
+
+        chunks = []
+
+        while True:
+            read_amount = read_sizes.draw(strategies.integers(1, 16384))
+            chunk = reader.read(read_amount)
+
+            if not chunk:
+                break
+
+            chunks.append(chunk)
+
+        self.assertEqual(source.getvalue(), b''.join(chunks))
+
+
 
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi

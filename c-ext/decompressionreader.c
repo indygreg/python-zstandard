@@ -167,9 +167,6 @@ readinput:
 			PyErr_Format(ZstdError, "zstd decompress error: %s", ZSTD_getErrorName(zresult));
 			return NULL;
 		}
-		else if (0 == zresult) {
-			self->finishedOutput = 1;
-		}
 
 		/* We fulfilled the full read request. Emit it. */
 		if (output.pos && output.pos == output.size) {
@@ -183,7 +180,7 @@ readinput:
 		 */
 	}
 
-	if (!self->finishedInput) {
+	if (!self->finishedInput && self->input.pos == self->input.size) {
 		if (self->reader) {
 			Py_buffer buffer;
 

@@ -19,6 +19,7 @@ Actions Blocking Release
   all objects implementing ``io.RawIOBase``. Is calling ``close()`` on
   wrapped stream acceptable, should ``__exit__`` always call ``close()``,
   should ``close()`` imply ``flush()``, etc.
+* Consider making reads across frames configurable behavior.
 * Refactor module names so C and CFFI extensions live under ``zstandard``
   package.
 * Overall API design review.
@@ -70,6 +71,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* ``ZstdDecompressionReader.read()`` may now return data belonging to multiple
+  zstd *frames*. Before, a ``read()`` would stop returning data once end of
+  frame was encountered.
 * ``setup.py`` now always disables the CFFI backend if the installed
   CFFI package does not meet the minimum version requirements. Before, it was
   possible for the CFFI backend to be generated and a run-time error to
@@ -136,6 +140,10 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdDecompressionReader`` now transparently supports reading multiple
+  frames. If the underlying data contains multiple zstandard frames, a call
+  to ``read()`` that requests data spanning multiple frames will automatically
+  decode multiple frames.
 * ``setup.py`` now performs CFFI version sniffing and disables the CFFI
   backend if CFFI is too old. Previously, we only used ``install_requires``
   to enforce the CFFI version and not all build modes would properly enforce

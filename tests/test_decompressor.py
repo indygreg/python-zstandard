@@ -550,6 +550,53 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             if not chunk:
                 break
 
+    def test_read_multiple_frames(self):
+        cctx = zstd.ZstdCompressor()
+        source = io.BytesIO()
+        writer = cctx.stream_writer(source)
+        writer.write(b'foo')
+        writer.flush(zstd.FLUSH_FRAME)
+        writer.write(b'bar')
+        writer.flush(zstd.FLUSH_FRAME)
+
+        dctx = zstd.ZstdDecompressor()
+
+        reader = dctx.stream_reader(source.getvalue())
+        self.assertEqual(reader.read(3), b'foo')
+        self.assertEqual(reader.read(3), b'bar')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source)
+        self.assertEqual(reader.read(3), b'foo')
+        self.assertEqual(reader.read(3), b'bar')
+
+        reader = dctx.stream_reader(source.getvalue())
+        data = reader.read(6)
+        self.assertEqual(data, b'foobar')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source)
+        data = reader.read(6)
+        self.assertEqual(data, b'foobar')
+
+        reader = dctx.stream_reader(source.getvalue())
+        data = reader.read(7)
+        self.assertEqual(data, b'foobar')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source)
+        data = reader.read(7)
+        self.assertEqual(data, b'foobar')
+
+        reader = dctx.stream_reader(source.getvalue())
+        data = reader.read(128)
+        self.assertEqual(data, b'foobar')
+
+        source.seek(0)
+        reader = dctx.stream_reader(source)
+        data = reader.read(128)
+        self.assertEqual(data, b'foobar')
+
 
 @make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):
