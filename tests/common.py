@@ -172,7 +172,7 @@ def generate_samples():
 
 
 if hypothesis:
-    default_settings = hypothesis.settings(deadline=1000)
+    default_settings = hypothesis.settings(deadline=10000)
     hypothesis.settings.register_profile('default', default_settings)
 
     ci_settings = hypothesis.settings(deadline=10000, max_examples=2500)
