@@ -1658,6 +1658,34 @@ class ZstdDecompressionReader(object):
 
     next = __next__
 
+    def _decompress_into_buffer(self, out_buffer):
+        """Decompress available input into an output buffer.
+
+        Returns True if data in output buffer should be emitted.
+        """
+        zresult = lib.ZSTD_decompressStream(self._decompressor._dctx,
+                                            out_buffer, self._in_buffer)
+
+        if self._in_buffer.pos == self._in_buffer.size:
+            self._in_buffer.src = ffi.NULL
+            self._in_buffer.pos = 0
+            self._in_buffer.size = 0
+            self._source_buffer = None
+
+            if not hasattr(self._source, 'read'):
+                self._finished_input = True
+
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('zstd decompress error: %s',
+                            _zstd_error(zresult))
+
+        # Emit data if there is data AND either:
+        # a) output buffer is full (read amount is satisfied)
+        # b) we're at end of a frame and not in frame spanning mode
+        return (out_buffer.pos and
+                (out_buffer.pos == out_buffer.size or
+                 zresult == 0 and not self._read_across_frames))
+
     def read(self, size):
         if self._closed:
             raise ValueError('stream is closed')
@@ -1673,34 +1701,6 @@ class ZstdDecompressionReader(object):
         out_buffer.dst = dst_buffer
         out_buffer.size = size
         out_buffer.pos = 0
-
-        def decompress(out_buffer):
-            zresult = lib.ZSTD_decompressStream(self._decompressor._dctx,
-                                                out_buffer, self._in_buffer)
-
-            if self._in_buffer.pos == self._in_buffer.size:
-                self._in_buffer.src = ffi.NULL
-                self._in_buffer.pos = 0
-                self._in_buffer.size = 0
-                self._source_buffer = None
-
-                if not hasattr(self._source, 'read'):
-                    self._finished_input = True
-
-            if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd decompress error: %s',
-                                _zstd_error(zresult))
-
-            # Emit data if there is data AND either:
-            # a) output buffer is full (read amount is satisfied)
-            # b) we're at end of a frame and not in frame spanning mode
-            emit_output = (out_buffer.pos and
-                           (out_buffer.pos == out_buffer.size or
-                            zresult == 0 and not self._read_across_frames))
-
-            if emit_output:
-                self._bytes_decompressed += out_buffer.pos
-                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         def get_input():
             # We have data left over in the input buffer. Use it.
@@ -1730,15 +1730,15 @@ class ZstdDecompressionReader(object):
                 self._in_buffer.pos = 0
 
         get_input()
-        result = decompress(out_buffer)
-        if result:
-            return result
+        if self._decompress_into_buffer(out_buffer):
+            self._bytes_decompressed += out_buffer.pos
+            return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         while not self._finished_input:
             get_input()
-            result = decompress(out_buffer)
-            if result:
-                return result
+            if self._decompress_into_buffer(out_buffer):
+                self._bytes_decompressed += out_buffer.pos
+                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         self._bytes_decompressed += out_buffer.pos
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
