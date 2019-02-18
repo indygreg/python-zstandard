@@ -1674,7 +1674,7 @@ class ZstdDecompressionReader(object):
         out_buffer.size = size
         out_buffer.pos = 0
 
-        def decompress():
+        def decompress(out_buffer):
             zresult = lib.ZSTD_decompressStream(self._decompressor._dctx,
                                                 out_buffer, self._in_buffer)
 
@@ -1730,13 +1730,13 @@ class ZstdDecompressionReader(object):
                 self._in_buffer.pos = 0
 
         get_input()
-        result = decompress()
+        result = decompress(out_buffer)
         if result:
             return result
 
         while not self._finished_input:
             get_input()
-            result = decompress()
+            result = decompress(out_buffer)
             if result:
                 return result
 
