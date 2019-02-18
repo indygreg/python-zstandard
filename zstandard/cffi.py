@@ -1658,6 +1658,33 @@ class ZstdDecompressionReader(object):
 
     next = __next__
 
+    def _read_input(self):
+        # We have data left over in the input buffer. Use it.
+        if self._in_buffer.pos < self._in_buffer.size:
+            return
+
+        # All input data exhausted. Nothing to do.
+        if self._finished_input:
+            return
+
+        # Else populate the input buffer from our source.
+        if hasattr(self._source, 'read'):
+            data = self._source.read(self._read_size)
+
+            if not data:
+                self._finished_input = True
+                return
+
+            self._source_buffer = ffi.from_buffer(data)
+            self._in_buffer.src = self._source_buffer
+            self._in_buffer.size = len(self._source_buffer)
+            self._in_buffer.pos = 0
+        else:
+            self._source_buffer = ffi.from_buffer(self._source)
+            self._in_buffer.src = self._source_buffer
+            self._in_buffer.size = len(self._source_buffer)
+            self._in_buffer.pos = 0
+
     def _decompress_into_buffer(self, out_buffer):
         """Decompress available input into an output buffer.
 
@@ -1702,40 +1729,13 @@ class ZstdDecompressionReader(object):
         out_buffer.size = size
         out_buffer.pos = 0
 
-        def get_input():
-            # We have data left over in the input buffer. Use it.
-            if self._in_buffer.pos < self._in_buffer.size:
-                return
-
-            # All input data exhausted. Nothing to do.
-            if self._finished_input:
-                return
-
-            # Else populate the input buffer from our source.
-            if hasattr(self._source, 'read'):
-                data = self._source.read(self._read_size)
-
-                if not data:
-                    self._finished_input = True
-                    return
-
-                self._source_buffer = ffi.from_buffer(data)
-                self._in_buffer.src = self._source_buffer
-                self._in_buffer.size = len(self._source_buffer)
-                self._in_buffer.pos = 0
-            else:
-                self._source_buffer = ffi.from_buffer(self._source)
-                self._in_buffer.src = self._source_buffer
-                self._in_buffer.size = len(self._source_buffer)
-                self._in_buffer.pos = 0
-
-        get_input()
+        self._read_input()
         if self._decompress_into_buffer(out_buffer):
             self._bytes_decompressed += out_buffer.pos
             return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         while not self._finished_input:
-            get_input()
+            self._read_input()
             if self._decompress_into_buffer(out_buffer):
                 self._bytes_decompressed += out_buffer.pos
                 return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
