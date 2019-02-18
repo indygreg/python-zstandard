@@ -102,6 +102,53 @@ static PyObject* reader_isatty(PyObject* self) {
 	Py_RETURN_FALSE;
 }
 
+/**
+ * Decompresses available input into an output buffer.
+ *
+ * Returns 0 if we need more input.
+ * Returns 1 if output buffer should be emitted.
+ * Returns -1 on error and sets a Python exception.
+ */
+int decompress_input(ZstdDecompressionReader* self, ZSTD_outBuffer* output) {
+	size_t zresult;
+
+	if (self->input.pos >= self->input.size) {
+		return 0;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	zresult = ZSTD_decompressStream(self->decompressor->dctx, output, &self->input);
+	Py_END_ALLOW_THREADS
+
+	/* Input exhausted. Clear our state tracking. */
+	if (self->input.pos == self->input.size) {
+		memset(&self->input, 0, sizeof(self->input));
+		Py_CLEAR(self->readResult);
+
+		if (self->buffer.buf) {
+			self->finishedInput = 1;
+		}
+	}
+
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "zstd decompress error: %s", ZSTD_getErrorName(zresult));
+		return -1;
+	}
+
+	/* We fulfilled the full read request. Signal to emit. */
+	if (output->pos && output->pos == output->size) {
+		return 1;
+	}
+	/* We're at the end of a frame and we aren't allowed to return data
+	   spanning frames. */
+	else if (output->pos && zresult == 0 && !self->readAcrossFrames) {
+		return 1;
+	}
+
+	/* There is more room in the output. Signal to collect more data. */
+	return 0;
+}
+
 static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"size",
@@ -113,7 +160,7 @@ static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyOb
 	char* resultBuffer;
 	Py_ssize_t resultSize;
 	ZSTD_outBuffer output;
-	size_t zresult;
+	int decompressResult;
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
@@ -146,50 +193,25 @@ static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyOb
 
 readinput:
 
-	/* Consume input data left over from last time. */
-	if (self->input.pos < self->input.size) {
-		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompressStream(self->decompressor->dctx,
-			&output, &self->input);
-		Py_END_ALLOW_THREADS
+	decompressResult = decompress_input(self, &output);
 
-		/* Input exhausted. Clear our state tracking. */
-		if (self->input.pos == self->input.size) {
-			memset(&self->input, 0, sizeof(self->input));
-			Py_CLEAR(self->readResult);
+	if (-1 == decompressResult) {
+		return NULL;
+	}
+	else if (0 == decompressResult) { }
+	else if (1 == decompressResult) {
+		self->bytesDecompressed += output.pos;
 
-			if (self->buffer.buf) {
-				self->finishedInput = 1;
-			}
-		}
-
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "zstd decompress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
-		}
-
-		/* We fulfilled the full read request. Emit it. */
-		if (output.pos && output.pos == output.size) {
-			self->bytesDecompressed += output.size;
-			return result;
-		}
-		/* We're at the end of a frame and we aren't allowed to return data
-		 * spanning frames. */
-		else if (output.pos && zresult == 0 && !self->readAcrossFrames) {
-			self->bytesDecompressed += output.pos;
-
+		if (output.pos != output.size) {
 			if (safe_pybytes_resize(&result, output.pos)) {
 				Py_XDECREF(result);
 				return NULL;
 			}
-
-			return result;
 		}
-
-		/*
-		 * There is more room in the output. Fall through to try to collect
-		 * more data so we can try to fill the output.
-		 */
+		return result;
+	}
+	else {
+		assert(0);
 	}
 
 	if (!self->finishedInput && self->input.pos == self->input.size) {
