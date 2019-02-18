@@ -103,6 +103,67 @@ static PyObject* reader_isatty(PyObject* self) {
 }
 
 /**
+ * Read available input.
+ *
+ * Returns 0 if no data was added to input.
+ * Returns 1 if new input data is available.
+ * Returns -1 on error and sets a Python exception as a side-effect.
+ */
+int read_input(ZstdDecompressionReader* self) {
+	if (self->finishedInput) {
+		return 0;
+	}
+
+	if (self->input.pos != self->input.size) {
+		return 0;
+	}
+
+	if (self->reader) {
+        Py_buffer buffer;
+
+        assert(self->readResult == NULL);
+        self->readResult = PyObject_CallMethod(self->reader, "read",
+            "k", self->readSize);
+        if (NULL == self->readResult) {
+            return -1;
+        }
+
+        memset(&buffer, 0, sizeof(buffer));
+
+        if (0 != PyObject_GetBuffer(self->readResult, &buffer, PyBUF_CONTIG_RO)) {
+            return -1;
+        }
+
+        /* EOF */
+        if (0 == buffer.len) {
+            self->finishedInput = 1;
+            Py_CLEAR(self->readResult);
+        }
+        else {
+            self->input.src = buffer.buf;
+            self->input.size = buffer.len;
+            self->input.pos = 0;
+        }
+
+        PyBuffer_Release(&buffer);
+	}
+	else {
+		assert(self->buffer.buf);
+        /*
+         * We should only get here once since expectation is we always
+         * exhaust input buffer before reading again.
+         */
+        assert(self->input.src == NULL);
+
+		self->input.src = self->buffer.buf;
+        self->input.size = self->buffer.len;
+        self->input.pos = 0;
+	}
+
+	return 1;
+}
+
+/**
  * Decompresses available input into an output buffer.
  *
  * Returns 0 if we need more input.
@@ -160,7 +221,7 @@ static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyOb
 	char* resultBuffer;
 	Py_ssize_t resultSize;
 	ZSTD_outBuffer output;
-	int decompressResult;
+	int decompressResult, readResult;
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
@@ -214,48 +275,15 @@ readinput:
 		assert(0);
 	}
 
-	if (!self->finishedInput && self->input.pos == self->input.size) {
-		if (self->reader) {
-			Py_buffer buffer;
+	readResult = read_input(self);
 
-			assert(self->readResult == NULL);
-			self->readResult = PyObject_CallMethod(self->reader, "read",
-				"k", self->readSize);
-			if (NULL == self->readResult) {
-				return NULL;
-			}
-
-			memset(&buffer, 0, sizeof(buffer));
-
-			if (0 != PyObject_GetBuffer(self->readResult, &buffer, PyBUF_CONTIG_RO)) {
-				return NULL;
-			}
-
-			/* EOF */
-			if (0 == buffer.len) {
-				self->finishedInput = 1;
-				Py_CLEAR(self->readResult);
-			}
-			else {
-				self->input.src = buffer.buf;
-				self->input.size = buffer.len;
-				self->input.pos = 0;
-			}
-
-			PyBuffer_Release(&buffer);
-		}
-		else {
-			assert(self->buffer.buf);
-			/*
-			 * We should only get here once since above block will exhaust
-			 * source buffer until finishedInput is set.
-			 */
-			assert(self->input.src == NULL);
-
-			self->input.src = self->buffer.buf;
-			self->input.size = self->buffer.len;
-			self->input.pos = 0;
-		}
+	if (-1 == readResult) {
+		return NULL;
+	}
+	else if (0 == readResult) {}
+	else if (1 == readResult) {}
+	else {
+		assert(0);
 	}
 
 	if (self->input.size) {
