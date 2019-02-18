@@ -141,6 +141,8 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdDecompressionReader`` has gained a ``readinto(b)`` method for
+  reading decompressed output into an existing buffer.
 * ``ZstdDecompressor.stream_reader()`` now accepts a ``read_across_frames``
   argument to control behavior when the input data has multiple zstd
   *frames*. When ``False`` (the default for backwards compatibility), a

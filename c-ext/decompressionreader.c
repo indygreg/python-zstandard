@@ -301,6 +301,78 @@ readinput:
 	return result;
 }
 
+
+static PyObject* reader_readinto(ZstdDecompressionReader* self, PyObject* args) {
+	Py_buffer dest;
+	ZSTD_outBuffer output;
+	int decompressResult, readResult;
+	PyObject* result = NULL;
+
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
+	if (self->finishedOutput) {
+		return PyLong_FromLong(0);
+	}
+
+	if (!PyArg_ParseTuple(args, "w*:readinto", &dest)) {
+		return NULL;
+	}
+
+	if (!PyBuffer_IsContiguous(&dest, 'C') || dest.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"destination buffer should be contiguous and have at most one dimension");
+	    goto finally;
+	}
+
+	output.dst = dest.buf;
+	output.size = dest.len;
+	output.pos = 0;
+
+readinput:
+
+	decompressResult = decompress_input(self, &output);
+
+	if (-1 == decompressResult) {
+		goto finally;
+	}
+	else if (0 == decompressResult) { }
+	else if (1 == decompressResult) {
+		self->bytesDecompressed += output.pos;
+		result = PyLong_FromSize_t(output.pos);
+		goto finally;
+	}
+	else {
+		assert(0);
+	}
+
+	readResult = read_input(self);
+
+	if (-1 == readResult) {
+		goto finally;
+	}
+	else if (0 == readResult) {}
+	else if (1 == readResult) {}
+	else {
+		assert(0);
+	}
+
+	if (self->input.size) {
+		goto readinput;
+	}
+
+	/* EOF */
+	self->bytesDecompressed += output.pos;
+	result = PyLong_FromSize_t(output.pos);
+
+finally:
+	PyBuffer_Release(&dest);
+
+	return result;
+}
+
 static PyObject* reader_readall(PyObject* self) {
 	PyErr_SetNone(PyExc_NotImplementedError);
 	return NULL;
@@ -426,6 +498,7 @@ static PyMethodDef reader_methods[] = {
 	PyDoc_STR("Returns True") },
 	{ "read", (PyCFunction)reader_read, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("read compressed data") },
+	{ "readinto", (PyCFunction)reader_readinto, METH_VARARGS, NULL },
 	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readline", (PyCFunction)reader_readline, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readlines", (PyCFunction)reader_readlines, METH_NOARGS, PyDoc_STR("Not implemented") },

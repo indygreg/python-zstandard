@@ -632,6 +632,38 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         reader = dctx.stream_reader(source, read_across_frames=True)
         self.assertEqual(reader.read(128), b'foobar')
 
+    def test_readinto(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b'foo')
+
+        dctx = zstd.ZstdDecompressor()
+
+        # Attempting to readinto() a non-writable buffer fails.
+        # The exact exception varies based on the backend.
+        reader = dctx.stream_reader(foo)
+        with self.assertRaises(Exception):
+            reader.readinto(b'foobar')
+
+        # readinto() with sufficiently large destination.
+        b = bytearray(1024)
+        reader = dctx.stream_reader(foo)
+        self.assertEqual(reader.readinto(b), 3)
+        self.assertEqual(b[0:3], b'foo')
+        self.assertEqual(reader.readinto(b), 0)
+        self.assertEqual(b[0:3], b'foo')
+
+        # readinto() with small reads.
+        b = bytearray(1024)
+        reader = dctx.stream_reader(foo, read_size=1)
+        self.assertEqual(reader.readinto(b), 3)
+        self.assertEqual(b[0:3], b'foo')
+
+        # Too small destination buffer.
+        b = bytearray(2)
+        reader = dctx.stream_reader(foo)
+        self.assertEqual(reader.readinto(b), 2)
+        self.assertEqual(b[:], b'fo')
+
 
 @make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):
