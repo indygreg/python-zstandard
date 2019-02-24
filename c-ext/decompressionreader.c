@@ -261,6 +261,7 @@ readinput:
 	decompressResult = decompress_input(self, &output);
 
 	if (-1 == decompressResult) {
+		Py_XDECREF(result);
 		return NULL;
 	}
 	else if (0 == decompressResult) { }
@@ -282,6 +283,7 @@ readinput:
 	readResult = read_decompressor_input(self);
 
 	if (-1 == readResult) {
+		Py_XDECREF(result);
 		return NULL;
 	}
 	else if (0 == readResult) {}
@@ -361,6 +363,7 @@ static PyObject* reader_read1(ZstdDecompressionReader* self, PyObject* args, PyO
 
 		readResult = read_decompressor_input(self);
 		if (-1 == readResult) {
+			Py_XDECREF(result);
 			return NULL;
 		}
 		else if (0 == readResult || 1 == readResult) { }
@@ -371,6 +374,7 @@ static PyObject* reader_read1(ZstdDecompressionReader* self, PyObject* args, PyO
 		decompressResult = decompress_input(self, &output);
 
 		if (-1 == decompressResult) {
+			Py_XDECREF(result);
 			return NULL;
 		}
 		else if (0 == decompressResult || 1 == decompressResult) { }
