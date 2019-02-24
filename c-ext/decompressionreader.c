@@ -109,7 +109,7 @@ static PyObject* reader_isatty(PyObject* self) {
  * Returns 1 if new input data is available.
  * Returns -1 on error and sets a Python exception as a side-effect.
  */
-int read_input(ZstdDecompressionReader* self) {
+int read_decompressor_input(ZstdDecompressionReader* self) {
 	if (self->finishedInput) {
 		return 0;
 	}
@@ -279,7 +279,7 @@ readinput:
 		assert(0);
 	}
 
-	readResult = read_input(self);
+	readResult = read_decompressor_input(self);
 
 	if (-1 == readResult) {
 		return NULL;
@@ -359,7 +359,7 @@ static PyObject* reader_read1(ZstdDecompressionReader* self, PyObject* args, PyO
 	while (!self->finishedInput) {
 		int readResult, decompressResult;
 
-		readResult = read_input(self);
+		readResult = read_decompressor_input(self);
 		if (-1 == readResult) {
 			return NULL;
 		}
@@ -438,7 +438,7 @@ readinput:
 		assert(0);
 	}
 
-	readResult = read_input(self);
+	readResult = read_decompressor_input(self);
 
 	if (-1 == readResult) {
 		goto finally;
@@ -494,7 +494,7 @@ static PyObject* reader_readinto1(ZstdDecompressionReader* self, PyObject* args)
 	while (!self->finishedInput && !self->finishedOutput) {
 		int decompressResult, readResult;
 
-		readResult = read_input(self);
+		readResult = read_decompressor_input(self);
 
 		if (-1 == readResult) {
 			goto finally;
