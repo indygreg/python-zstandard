@@ -1821,6 +1821,32 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
+    def readinto1(self, b):
+        if self._closed:
+            raise ValueError('stream is closed')
+
+        if self._finished_output:
+            return 0
+
+        # TODO use writable=True once we require CFFI >= 1.12.
+        dest_buffer = ffi.from_buffer(b)
+        ffi.memmove(b, b'', 0)
+
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = dest_buffer
+        out_buffer.size = len(dest_buffer)
+        out_buffer.pos = 0
+
+        while not self._finished_input and not self._finished_output:
+            self._read_input()
+            self._decompress_into_buffer(out_buffer)
+
+            if out_buffer.pos:
+                break
+
+        self._bytes_decompressed += out_buffer.pos
+        return out_buffer.pos
+
     def seek(self, pos, whence=os.SEEK_SET):
         if self._closed:
             raise ValueError('stream is closed')

@@ -463,6 +463,71 @@ finally:
 	return result;
 }
 
+static PyObject* reader_readinto1(ZstdDecompressionReader* self, PyObject* args) {
+	Py_buffer dest;
+	ZSTD_outBuffer output;
+	PyObject* result = NULL;
+
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
+	if (self->finishedOutput) {
+		return PyLong_FromLong(0);
+	}
+
+	if (!PyArg_ParseTuple(args, "w*:readinto1", &dest)) {
+		return NULL;
+	}
+
+	if (!PyBuffer_IsContiguous(&dest, 'C') || dest.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"destination buffer should be contiguous and have at most one dimension");
+	    goto finally;
+	}
+
+	output.dst = dest.buf;
+	output.size = dest.len;
+	output.pos = 0;
+
+	while (!self->finishedInput && !self->finishedOutput) {
+		int decompressResult, readResult;
+
+		readResult = read_input(self);
+
+		if (-1 == readResult) {
+			goto finally;
+		}
+		else if (0 == readResult || 1 == readResult) {}
+		else {
+			assert(0);
+		}
+
+		decompressResult = decompress_input(self, &output);
+
+		if (-1 == decompressResult) {
+			goto finally;
+		}
+		else if (0 == decompressResult || 1 == decompressResult) {}
+		else {
+			assert(0);
+		}
+
+		if (output.pos) {
+			break;
+		}
+	}
+
+	self->bytesDecompressed += output.pos;
+	result = PyLong_FromSize_t(output.pos);
+
+finally:
+	PyBuffer_Release(&dest);
+
+	return result;
+}
+
 static PyObject* reader_readall(PyObject* self) {
 	PyObject* chunks = NULL;
 	PyObject* empty = NULL;
@@ -632,6 +697,7 @@ static PyMethodDef reader_methods[] = {
 	{ "read1", (PyCFunction)reader_read1, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("read compressed data") },
 	{ "readinto", (PyCFunction)reader_readinto, METH_VARARGS, NULL },
+	{ "readinto1", (PyCFunction)reader_readinto1, METH_VARARGS, NULL },
 	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readline", (PyCFunction)reader_readline, METH_NOARGS, PyDoc_STR("Not implemented") },
 	{ "readlines", (PyCFunction)reader_readlines, METH_NOARGS, PyDoc_STR("Not implemented") },

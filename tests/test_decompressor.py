@@ -663,6 +663,36 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertEqual(reader.readinto(b), 2)
         self.assertEqual(b[:], b'fo')
 
+    def test_readinto1(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b'foo')
+
+        dctx = zstd.ZstdDecompressor()
+
+        reader = dctx.stream_reader(foo)
+        with self.assertRaises(Exception):
+            reader.readinto1(b'foobar')
+
+        # Sufficiently large destination.
+        b = bytearray(1024)
+        reader = dctx.stream_reader(foo)
+        self.assertEqual(reader.readinto1(b), 3)
+        self.assertEqual(b[0:3], b'foo')
+        self.assertEqual(reader.readinto1(b), 0)
+        self.assertEqual(b[0:3], b'foo')
+
+        # readinto() with small reads.
+        b = bytearray(1024)
+        reader = dctx.stream_reader(foo, read_size=1)
+        self.assertEqual(reader.readinto1(b), 3)
+        self.assertEqual(b[0:3], b'foo')
+
+        # Too small destination buffer.
+        b = bytearray(2)
+        reader = dctx.stream_reader(foo)
+        self.assertEqual(reader.readinto1(b), 2)
+        self.assertEqual(b[:], b'fo')
+
     def test_readall(self):
         cctx = zstd.ZstdCompressor()
         foo = cctx.compress(b'foo')
