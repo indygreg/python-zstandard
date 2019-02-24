@@ -179,6 +179,45 @@ int read_compressor_input(ZstdCompressionReader* self) {
 	return 1;
 }
 
+int compress_input(ZstdCompressionReader* self) {
+	size_t oldPos;
+	size_t zresult;
+
+	/* If we have data left over, consume it. */
+	if (self->input.pos < self->input.size) {
+		oldPos = self->output.pos;
+
+		Py_BEGIN_ALLOW_THREADS
+		zresult = ZSTD_compressStream2(self->compressor->cctx,
+		    &self->output, &self->input, ZSTD_e_continue);
+		Py_END_ALLOW_THREADS
+
+		self->bytesCompressed += self->output.pos - oldPos;
+
+		/* Input exhausted. Clear out state tracking. */
+		if (self->input.pos == self->input.size) {
+			memset(&self->input, 0, sizeof(self->input));
+			Py_CLEAR(self->readResult);
+
+			if (self->buffer.buf) {
+				self->finishedInput = 1;
+			}
+		}
+
+		if (ZSTD_isError(zresult)) {
+			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
+			return -1;
+		}
+	}
+
+    if (self->output.pos && self->output.pos == self->output.size) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
 static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"size",
@@ -191,7 +230,7 @@ static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObje
 	Py_ssize_t resultSize;
 	size_t zresult;
 	size_t oldPos;
-	int readResult;
+	int readResult, compressResult;
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
@@ -224,47 +263,23 @@ static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObje
 
 readinput:
 
-	/* If we have data left over, consume it. */
-	if (self->input.pos < self->input.size) {
-		oldPos = self->output.pos;
+    compressResult = compress_input(self);
 
-		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compressStream2(self->compressor->cctx,
-			&self->output, &self->input, ZSTD_e_continue);
-
-		Py_END_ALLOW_THREADS
-
-		self->bytesCompressed += self->output.pos - oldPos;
-
-		/* Input exhausted. Clear out state tracking. */
-		if (self->input.pos == self->input.size) {
-			memset(&self->input, 0, sizeof(self->input));
-			Py_CLEAR(self->readResult);
-
-			if (self->buffer.buf) {
-				self->finishedInput = 1;
-			}
-		}
-
-		if (ZSTD_isError(zresult)) {
-			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
-		}
-
-		if (self->output.pos) {
-			/* If no more room in output, emit it. */
-			if (self->output.pos == self->output.size) {
-				memset(&self->output, 0, sizeof(self->output));
-				return result;
-			}
-
-			/*
-			 * There is room in the output. We fall through to below, which will either
-			 * get more input for us or will attempt to end the stream.
-			 */
-		}
-
-		/* Fall through to gather more input. */
+	if (-1 == compressResult) {
+		Py_DECREF(result);
+		return NULL;
+	}
+	else if (0 == compressResult) {
+		/* There is room in the output. We fall through to below, which will
+		 * either get more input for us or will attempt to end the stream.
+		 */
+	}
+	else if (1 == compressResult) {
+		memset(&self->output, 0, sizeof(self->output));
+		return result;
+	}
+	else {
+		assert(0);
 	}
 
 	readResult = read_compressor_input(self);
