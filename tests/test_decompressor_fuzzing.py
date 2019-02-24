@@ -191,6 +191,41 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      streaming=strategies.booleans(),
+                      source_read_size=strategies.integers(1, 1048576),
+                      read_sizes=strategies.data())
+    def test_stream_source_read1_variance(self, original, level, streaming,
+                                          source_read_size, read_sizes):
+        cctx = zstd.ZstdCompressor(level=level)
+
+        if streaming:
+            source = io.BytesIO()
+            writer = cctx.stream_writer(source)
+            writer.write(original)
+            writer.flush(zstd.FLUSH_FRAME)
+            source.seek(0)
+        else:
+            frame = cctx.compress(original)
+            source = io.BytesIO(frame)
+
+        dctx = zstd.ZstdDecompressor()
+
+        chunks = []
+        with dctx.stream_reader(source, read_size=source_read_size) as reader:
+            while True:
+                read_size = read_sizes.draw(strategies.integers(-1, 131072))
+                chunk = reader.read1(read_size)
+                if not chunk and read_size:
+                    break
+
+                chunks.append(chunk)
+
+        self.assertEqual(b''.join(chunks), original)
+
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),

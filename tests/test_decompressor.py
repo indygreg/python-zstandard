@@ -672,6 +672,29 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         self.assertEqual(reader.readall(), b'foo')
 
+    def test_read1(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b'foo')
+
+        dctx = zstd.ZstdDecompressor()
+
+        b = OpCountingBytesIO(foo)
+        reader = dctx.stream_reader(b)
+
+        self.assertEqual(reader.read1(), b'foo')
+        self.assertEqual(b._read_count, 1)
+
+        b = OpCountingBytesIO(foo)
+        reader = dctx.stream_reader(b)
+
+        self.assertEqual(reader.read1(0), b'')
+        self.assertEqual(reader.read1(2), b'fo')
+        self.assertEqual(b._read_count, 1)
+        self.assertEqual(reader.read1(1), b'o')
+        self.assertEqual(b._read_count, 1)
+        self.assertEqual(reader.read1(1), b'')
+        self.assertEqual(b._read_count, 2)
+
     def test_read_lines(self):
         cctx = zstd.ZstdCompressor()
         source = b'\n'.join(('line %d' % i).encode('ascii') for i in range(1024))

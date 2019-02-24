@@ -305,6 +305,92 @@ readinput:
 	return result;
 }
 
+static PyObject* reader_read1(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"size",
+		NULL
+	};
+
+	Py_ssize_t size = -1;
+	PyObject* result = NULL;
+	char* resultBuffer;
+	Py_ssize_t resultSize;
+	ZSTD_outBuffer output;
+
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|n", kwlist, &size)) {
+		return NULL;
+	}
+
+	if (size < -1) {
+		PyErr_SetString(PyExc_ValueError, "cannot read negative amounts less than -1");
+		return NULL;
+	}
+
+	if (self->finishedOutput || size == 0) {
+		return PyBytes_FromStringAndSize("", 0);
+	}
+
+	if (size == -1) {
+		size = ZSTD_CStreamOutSize();
+	}
+
+	result = PyBytes_FromStringAndSize(NULL, size);
+	if (NULL == result) {
+		return NULL;
+	}
+
+	PyBytes_AsStringAndSize(result, &resultBuffer, &resultSize);
+
+	output.dst = resultBuffer;
+	output.size = resultSize;
+	output.pos = 0;
+
+	/* read1() is supposed to use at most 1 read() from the underlying stream.
+	 * However, we can't satisfy this requirement with decompression due to the
+	 * nature of how decompression works. Our strategy is to read + decompress
+	 * until we get any output, at which point we return. This satisfies the
+	 * intent of the read1() API to limit read operations.
+	 */
+	while (!self->finishedInput) {
+		int readResult, decompressResult;
+
+		readResult = read_input(self);
+		if (-1 == readResult) {
+			return NULL;
+		}
+		else if (0 == readResult || 1 == readResult) { }
+		else {
+			assert(0);
+		}
+
+		decompressResult = decompress_input(self, &output);
+
+		if (-1 == decompressResult) {
+			return NULL;
+		}
+		else if (0 == decompressResult || 1 == decompressResult) { }
+		else {
+			assert(0);
+		}
+
+		if (output.pos) {
+		    break;
+		}
+	}
+
+	self->bytesDecompressed += output.pos;
+	if (safe_pybytes_resize(&result, output.pos)) {
+		Py_XDECREF(result);
+		return NULL;
+	}
+
+	return result;
+}
 
 static PyObject* reader_readinto(ZstdDecompressionReader* self, PyObject* args) {
 	Py_buffer dest;
@@ -542,6 +628,8 @@ static PyMethodDef reader_methods[] = {
 	{ "readable", (PyCFunction)reader_readable, METH_NOARGS,
 	PyDoc_STR("Returns True") },
 	{ "read", (PyCFunction)reader_read, METH_VARARGS | METH_KEYWORDS,
+	PyDoc_STR("read compressed data") },
+	{ "read1", (PyCFunction)reader_read1, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("read compressed data") },
 	{ "readinto", (PyCFunction)reader_readinto, METH_VARARGS, NULL },
 	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },

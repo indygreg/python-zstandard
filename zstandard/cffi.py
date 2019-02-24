@@ -1787,6 +1787,40 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return out_buffer.pos
 
+    def read1(self, size=-1):
+        if self._closed:
+            raise ValueError('stream is closed')
+
+        if size < -1:
+            raise ValueError('cannot read negative amounts less than -1')
+
+        if self._finished_output or size == 0:
+            return b''
+
+        # -1 returns arbitrary number of bytes.
+        if size == -1:
+            size = DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE
+
+        dst_buffer = ffi.new('char[]', size)
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = dst_buffer
+        out_buffer.size = size
+        out_buffer.pos = 0
+
+        # read1() dictates that we can perform at most 1 call to underlying
+        # stream to get input. However, we can't satisfy this restriction with
+        # decompression because not all input generates output. So we allow
+        # multiple read(). But unlike read(), we stop once we have any output.
+        while not self._finished_input:
+            self._read_input()
+            self._decompress_into_buffer(out_buffer)
+
+            if out_buffer.pos:
+                break
+
+        self._bytes_decompressed += out_buffer.pos
+        return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
     def seek(self, pos, whence=os.SEEK_SET):
         if self._closed:
             raise ValueError('stream is closed')

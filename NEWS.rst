@@ -148,6 +148,8 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdDecompressionReader`` now implements ``read1()``. This is part of the
+  ``io.BufferedIOBase`` interface.
 * ``ZstdDecompressionReader.read()`` now defaults to ``size=-1`` and accepts
   read sizes of ``-1`` and ``0``. The new behavior aligns with the documented
   behavior of ``io.RawIOBase``.
