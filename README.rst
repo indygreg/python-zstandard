@@ -698,8 +698,22 @@ will raise ``ValueError`` if attempted.
 ``tell()`` returns the number of decompressed bytes read so far.
 
 Not all I/O methods are implemented. Notably missing is support for
-``readline()``, ``readlines()``, and linewise iteration support. Support for
-these is planned for a future release.
+``readline()``, ``readlines()``, and linewise iteration support. This is
+because streams operate on binary data - not text data. If you want to
+convert decompressed output to text, you can chain an ``io.TextIOWrapper``
+to the stream::
+
+   with open(path, 'rb') as fh:
+       dctx = zstd.ZstdDecompressor()
+       stream_reader = dctx.stream_reader(fh)
+       # BufferdReader is needed on some Python versions because we don't
+       # yet implement the entire ``io.BufferedIOBase`` interface. If things
+       # work without an ``io.BufferedReader``, you can safely remove it.
+       buffered_reader = io.BufferedReader(stream_reader)
+       text_stream = io.TextIOWrapper(buffered_reader, encoding='utf-8')
+
+       for line in text_stream:
+           ...
 
 The ``read_across_frames`` argument to ``stream_reader()`` controls the
 behavior of read operations when the end of a zstd *frame* is encountered.

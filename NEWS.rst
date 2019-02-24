@@ -141,8 +141,11 @@ Bug Fixes
 Changes
 -------
 
+* ``README.rst`` now documented how to achieve linewise iteration using
+  an ``io.TextIOWrapper`` with a ``ZstdDecompressionReader``.
 * ``ZstdDecompressionReader`` has gained a ``readinto(b)`` method for
-  reading decompressed output into an existing buffer.
+  reading decompressed output into an existing buffer. This allows chaining
+  to an ``io.TextIOWrapper`` on Python 3 without using an ``io.BufferedReader``.
 * ``ZstdDecompressor.stream_reader()`` now accepts a ``read_across_frames``
   argument to control behavior when the input data has multiple zstd
   *frames*. When ``False`` (the default for backwards compatibility), a
