@@ -379,12 +379,12 @@ static PyObject* reader_readall(PyObject* self) {
 }
 
 static PyObject* reader_readline(PyObject* self) {
-	PyErr_SetNone(PyExc_NotImplementedError);
+	set_unsupported_operation();
 	return NULL;
 }
 
 static PyObject* reader_readlines(PyObject* self) {
-	PyErr_SetNone(PyExc_NotImplementedError);
+	set_unsupported_operation();
 	return NULL;
 }
 
@@ -476,12 +476,12 @@ static PyObject* reader_writelines(PyObject* self, PyObject* args) {
 }
 
 static PyObject* reader_iter(PyObject* self) {
-	PyErr_SetNone(PyExc_NotImplementedError);
+	set_unsupported_operation();
 	return NULL;
 }
 
 static PyObject* reader_iternext(PyObject* self) {
-	PyErr_SetNone(PyExc_NotImplementedError);
+	set_unsupported_operation();
 	return NULL;
 }
 

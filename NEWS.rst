@@ -71,6 +71,9 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* The ``readline()``, ``readlines()``, ``__iter__``, and ``__next__`` methods
+  of ``ZstdDecompressionReader()`` now raise ``io.UnsupportedOperation``
+  instead of ``NotImplementedError``.
 * ``ZstdDecompressor.stream_reader()`` now accepts a ``read_across_frames``
   argument. The default value will likely be changed in a future release
   and consumers are advised to pass the argument to avoid unwanted change
@@ -141,6 +144,11 @@ Bug Fixes
 Changes
 -------
 
+* The ``readline()``, ``readlines()``, ``__iter__``, and ``__next__`` methods
+  of ``ZstdDecompressionReader()`` now raise ``io.UnsupportedOperation``
+  instead of ``NotImplementedError``. This reflects a decision to never
+  implement text-based I/O on (de)compressors and keep the low-level API
+  operating in the binary domain. (#13)
 * ``README.rst`` now documented how to achieve linewise iteration using
   an ``io.TextIOWrapper`` with a ``ZstdDecompressionReader``.
 * ``ZstdDecompressionReader`` has gained a ``readinto(b)`` method for

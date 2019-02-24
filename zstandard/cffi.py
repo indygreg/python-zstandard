@@ -1619,10 +1619,10 @@ class ZstdDecompressionReader(object):
         return True
 
     def readline(self):
-        raise NotImplementedError()
+        raise io.UnsupportedOperation()
 
     def readlines(self):
-        raise NotImplementedError()
+        raise io.UnsupportedOperation()
 
     def write(self, data):
         raise io.UnsupportedOperation()
@@ -1651,10 +1651,10 @@ class ZstdDecompressionReader(object):
         raise NotImplementedError()
 
     def __iter__(self):
-        raise NotImplementedError()
+        raise io.UnsupportedOperation()
 
     def __next__(self):
-        raise NotImplementedError()
+        raise io.UnsupportedOperation()
 
     next = __next__
 

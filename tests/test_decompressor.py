@@ -304,19 +304,19 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with dctx.stream_reader(b'foo') as reader:
-            with self.assertRaises(NotImplementedError):
+            with self.assertRaises(io.UnsupportedOperation):
                 reader.readline()
 
-            with self.assertRaises(NotImplementedError):
+            with self.assertRaises(io.UnsupportedOperation):
                 reader.readlines()
 
             with self.assertRaises(NotImplementedError):
                 reader.readall()
 
-            with self.assertRaises(NotImplementedError):
+            with self.assertRaises(io.UnsupportedOperation):
                 iter(reader)
 
-            with self.assertRaises(NotImplementedError):
+            with self.assertRaises(io.UnsupportedOperation):
                 next(reader)
 
             with self.assertRaises(io.UnsupportedOperation):
