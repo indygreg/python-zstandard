@@ -128,6 +128,57 @@ static PyObject* reader_tell(ZstdCompressionReader* self) {
 	return PyLong_FromUnsignedLongLong(self->bytesCompressed);
 }
 
+int read_compressor_input(ZstdCompressionReader* self) {
+	if (self->finishedInput) {
+		return 0;
+	}
+
+	if (self->input.pos != self->input.size) {
+		return 0;
+	}
+
+	if (self->reader) {
+		Py_buffer buffer;
+
+		assert(self->readResult == NULL);
+
+		self->readResult = PyObject_CallMethod(self->reader, "read",
+		    "k", self->readSize);
+
+		if (NULL == self->readResult) {
+			return -1;
+		}
+
+		memset(&buffer, 0, sizeof(buffer));
+
+		if (0 != PyObject_GetBuffer(self->readResult, &buffer, PyBUF_CONTIG_RO)) {
+			return -1;
+		}
+
+		/* EOF */
+		if (0 == buffer.len) {
+			self->finishedInput = 1;
+			Py_CLEAR(self->readResult);
+		}
+		else {
+			self->input.src = buffer.buf;
+			self->input.size = buffer.len;
+			self->input.pos = 0;
+		}
+
+		PyBuffer_Release(&buffer);
+	}
+	else {
+		assert(self->buffer.buf);
+
+		self->input.src = self->buffer.buf;
+		self->input.size = self->buffer.len;
+		self->input.pos = 0;
+	}
+
+	return 1;
+}
+
 static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"size",
@@ -140,6 +191,7 @@ static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObje
 	Py_ssize_t resultSize;
 	size_t zresult;
 	size_t oldPos;
+	int readResult;
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
@@ -215,43 +267,15 @@ readinput:
 		/* Fall through to gather more input. */
 	}
 
-	if (!self->finishedInput) {
-		if (self->reader) {
-			Py_buffer buffer;
+	readResult = read_compressor_input(self);
 
-			assert(self->readResult == NULL);
-			self->readResult = PyObject_CallMethod(self->reader, "read",
-				"k", self->readSize);
-			if (self->readResult == NULL) {
-				return NULL;
-			}
-
-			memset(&buffer, 0, sizeof(buffer));
-
-			if (0 != PyObject_GetBuffer(self->readResult, &buffer, PyBUF_CONTIG_RO)) {
-				return NULL;
-			}
-
-			/* EOF */
-			if (0 == buffer.len) {
-				self->finishedInput = 1;
-				Py_CLEAR(self->readResult);
-			}
-			else {
-				self->input.src = buffer.buf;
-				self->input.size = buffer.len;
-				self->input.pos = 0;
-			}
-
-			PyBuffer_Release(&buffer);
-		}
-		else {
-			assert(self->buffer.buf);
-
-			self->input.src = self->buffer.buf;
-			self->input.size = self->buffer.len;
-			self->input.pos = 0;
-		}
+	if (-1 == readResult) {
+		return NULL;
+	}
+	else if (0 == readResult) { }
+	else if (1 == readResult) { }
+	else {
+		assert(0);
 	}
 
 	if (self->input.size) {
