@@ -266,7 +266,7 @@ readinput:
     compressResult = compress_input(self);
 
 	if (-1 == compressResult) {
-		Py_DECREF(result);
+		Py_XDECREF(result);
 		return NULL;
 	}
 	else if (0 == compressResult) {
@@ -308,6 +308,7 @@ readinput:
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "error ending compression stream: %s",
 			ZSTD_getErrorName(zresult));
+		Py_XDECREF(result);
 		return NULL;
 	}
 
