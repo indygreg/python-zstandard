@@ -179,20 +179,20 @@ int read_compressor_input(ZstdCompressionReader* self) {
 	return 1;
 }
 
-int compress_input(ZstdCompressionReader* self) {
+int compress_input(ZstdCompressionReader* self, ZSTD_outBuffer* output) {
 	size_t oldPos;
 	size_t zresult;
 
 	/* If we have data left over, consume it. */
 	if (self->input.pos < self->input.size) {
-		oldPos = self->output.pos;
+		oldPos = output->pos;
 
 		Py_BEGIN_ALLOW_THREADS
 		zresult = ZSTD_compressStream2(self->compressor->cctx,
-		    &self->output, &self->input, ZSTD_e_continue);
+		    output, &self->input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
-		self->bytesCompressed += self->output.pos - oldPos;
+		self->bytesCompressed += output->pos - oldPos;
 
 		/* Input exhausted. Clear out state tracking. */
 		if (self->input.pos == self->input.size) {
@@ -210,7 +210,7 @@ int compress_input(ZstdCompressionReader* self) {
 		}
 	}
 
-    if (self->output.pos && self->output.pos == self->output.size) {
+    if (output->pos && output->pos == output->size) {
         return 1;
     }
     else {
@@ -267,7 +267,7 @@ static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObje
 
 readinput:
 
-    compressResult = compress_input(self);
+    compressResult = compress_input(self, &self->output);
 
 	if (-1 == compressResult) {
 		Py_XDECREF(result);
