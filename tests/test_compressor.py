@@ -608,10 +608,6 @@ class TestCompressor_stream_reader(unittest.TestCase):
             with self.assertRaises(io.UnsupportedOperation):
                 reader.readlines()
 
-            # This could probably be implemented someday.
-            with self.assertRaises(NotImplementedError):
-                reader.readall()
-
             with self.assertRaises(io.UnsupportedOperation):
                 iter(reader)
 
@@ -748,6 +744,13 @@ class TestCompressor_stream_reader(unittest.TestCase):
         # Try another compression operation.
         with cctx.stream_reader(source, size=42):
             pass
+
+    def test_readall(self):
+        cctx = zstd.ZstdCompressor()
+        frame = cctx.compress(b'foo' * 1024)
+
+        reader = cctx.stream_reader(b'foo' * 1024)
+        self.assertEqual(reader.readall(), frame)
 
 
 @make_cffi

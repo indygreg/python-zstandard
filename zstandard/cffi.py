@@ -856,7 +856,16 @@ class ZstdCompressionReader(object):
         return self._bytes_compressed
 
     def readall(self):
-        raise NotImplementedError()
+        chunks = []
+
+        while True:
+            chunk = self.read(1048576)
+            if not chunk:
+                break
+
+            chunks.append(chunk)
+
+        return b''.join(chunks)
 
     def __iter__(self):
         raise io.UnsupportedOperation()

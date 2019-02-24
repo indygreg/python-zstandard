@@ -148,6 +148,8 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdCompressionReader`` now implements ``readall()``. Previously, this
+  method raised ``NotImplementedError``.
 * ``ZstdDecompressionReader`` now implements ``read1()`` and ``readinto1()``.
   These are part of the ``io.BufferedIOBase`` interface.
 * ``ZstdDecompressionReader.read()`` now defaults to ``size=-1`` and accepts
