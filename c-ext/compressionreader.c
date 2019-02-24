@@ -378,6 +378,105 @@ static PyObject* reader_readall(PyObject* self) {
 	return result;
 }
 
+static PyObject* reader_readinto(ZstdCompressionReader* self, PyObject* args) {
+	Py_buffer dest;
+	ZSTD_outBuffer output;
+	int readResult, compressResult;
+	PyObject* result = NULL;
+	size_t zresult;
+	size_t oldPos;
+
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
+	if (self->finishedOutput) {
+		return PyLong_FromLong(0);
+	}
+
+	if (!PyArg_ParseTuple(args, "w*:readinto", &dest)) {
+		return NULL;
+	}
+
+	if (!PyBuffer_IsContiguous(&dest, 'C') || dest.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+		    "destination buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
+	output.dst = dest.buf;
+	output.size = dest.len;
+	output.pos = 0;
+
+	compressResult = compress_input(self, &output);
+
+	if (-1 == compressResult) {
+		goto finally;
+	}
+	else if (0 == compressResult) {	}
+	else if (1 == compressResult) {
+		result = PyLong_FromSize_t(output.pos);
+		goto finally;
+	}
+	else {
+		assert(0);
+	}
+
+	while (!self->finishedInput) {
+		readResult = read_compressor_input(self);
+
+		if (-1 == readResult) {
+			goto finally;
+		}
+		else if (0 == readResult || 1 == readResult) {}
+		else {
+			assert(0);
+		}
+
+		compressResult = compress_input(self, &output);
+
+		if (-1 == compressResult) {
+			goto finally;
+		}
+		else if (0 == compressResult) { }
+		else if (1 == compressResult) {
+			result = PyLong_FromSize_t(output.pos);
+			goto finally;
+		}
+		else {
+			assert(0);
+		}
+	}
+
+	/* EOF */
+	oldPos = output.pos;
+
+	zresult = ZSTD_compressStream2(self->compressor->cctx, &output, &self->input,
+	    ZSTD_e_end);
+
+	self->bytesCompressed += self->output.pos - oldPos;
+
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error ending compression stream: %s",
+		    ZSTD_getErrorName(zresult));
+		goto finally;
+	}
+
+	assert(output.pos);
+
+	if (0 == zresult) {
+		self->finishedOutput = 1;
+	}
+
+	result = PyLong_FromSize_t(output.pos);
+
+finally:
+	PyBuffer_Release(&dest);
+
+	return result;
+}
+
 static PyObject* reader_iter(PyObject* self) {
 	set_unsupported_operation();
 	return NULL;
@@ -401,6 +500,7 @@ static PyMethodDef reader_methods[] = {
 	PyDoc_STR("Returns True") },
 	{ "read", (PyCFunction)reader_read, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("read compressed data") },
 	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
+	{ "readinto", (PyCFunction)reader_readinto, METH_VARARGS, NULL },
 	{ "readline", (PyCFunction)reader_readline, METH_VARARGS, PyDoc_STR("Not implemented") },
 	{ "readlines", (PyCFunction)reader_readlines, METH_VARARGS, PyDoc_STR("Not implemented") },
 	{ "seekable", (PyCFunction)reader_seekable, METH_NOARGS,

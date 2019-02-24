@@ -148,6 +148,8 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdCompressionReader`` has gained a ``readinto(b)`` method for reading
+  compressed output into an existing buffer.
 * ``ZstdCompressionReader.read()`` now defaults to ``size=-1`` and accepts
   read sizes of ``-1`` and ``0``. The new behavior aligns with the documented
   behavior of ``io.RawIOBase``.

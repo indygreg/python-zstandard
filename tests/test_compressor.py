@@ -753,6 +753,38 @@ class TestCompressor_stream_reader(unittest.TestCase):
         reader = cctx.stream_reader(b'foo' * 1024)
         self.assertEqual(reader.readall(), frame)
 
+    def test_readinto(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b'foo')
+
+        reader = cctx.stream_reader(b'foo')
+        with self.assertRaises(Exception):
+            reader.readinto(b'foobar')
+
+        # readinto() with sufficiently large destination.
+        b = bytearray(1024)
+        reader = cctx.stream_reader(b'foo')
+        self.assertEqual(reader.readinto(b), len(foo))
+        self.assertEqual(b[0:len(foo)], foo)
+        self.assertEqual(reader.readinto(b), 0)
+        self.assertEqual(b[0:len(foo)], foo)
+
+        # readinto() with small reads.
+        b = bytearray(1024)
+        reader = cctx.stream_reader(b'foo', read_size=1)
+        self.assertEqual(reader.readinto(b), len(foo))
+        self.assertEqual(b[0:len(foo)], foo)
+
+        # Too small destination buffer.
+        b = bytearray(2)
+        reader = cctx.stream_reader(b'foo')
+        self.assertEqual(reader.readinto(b), 2)
+        self.assertEqual(b[:], foo[0:2])
+        self.assertEqual(reader.readinto(b), 2)
+        self.assertEqual(b[:], foo[2:4])
+        self.assertEqual(reader.readinto(b), 2)
+        self.assertEqual(b[:], foo[4:6])
+
 
 @make_cffi
 class TestCompressor_stream_writer(unittest.TestCase):
