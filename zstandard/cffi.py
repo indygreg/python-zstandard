@@ -887,6 +887,33 @@ class ZstdCompressionReader(object):
             self._in_buffer.size = len(self._source_buffer)
             self._in_buffer.pos = 0
 
+    def _compress_into_buffer(self, out_buffer):
+        if self._in_buffer.pos >= self._in_buffer.size:
+            return
+
+        old_pos = out_buffer.pos
+
+        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                           out_buffer, self._in_buffer,
+                                           lib.ZSTD_e_continue)
+
+        self._bytes_compressed += out_buffer.pos - old_pos
+
+        if self._in_buffer.pos == self._in_buffer.size:
+            self._in_buffer.src = ffi.NULL
+            self._in_buffer.pos = 0
+            self._in_buffer.size = 0
+            self._source_buffer = None
+
+            if not hasattr(self._source, 'read'):
+                self._finished_input = True
+
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('zstd compress error: %s',
+                            _zstd_error(zresult))
+
+        return out_buffer.pos and out_buffer.pos == out_buffer.size
+
     def read(self, size=-1):
         if self._closed:
             raise ValueError('stream is closed')
@@ -904,43 +931,14 @@ class ZstdCompressionReader(object):
         out_buffer.size = size
         out_buffer.pos = 0
 
-        def compress_input():
-            if self._in_buffer.pos >= self._in_buffer.size:
-                return
-
-            old_pos = out_buffer.pos
-
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               out_buffer, self._in_buffer,
-                                               lib.ZSTD_e_continue)
-
-            self._bytes_compressed += out_buffer.pos - old_pos
-
-            if self._in_buffer.pos == self._in_buffer.size:
-                self._in_buffer.src = ffi.NULL
-                self._in_buffer.pos = 0
-                self._in_buffer.size = 0
-                self._source_buffer = None
-
-                if not hasattr(self._source, 'read'):
-                    self._finished_input = True
-
-            if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s',
-                                _zstd_error(zresult))
-
-            if out_buffer.pos and out_buffer.pos == out_buffer.size:
-                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
-
-        result = compress_input()
-        if result:
-            return result
+        if self._compress_into_buffer(out_buffer):
+            return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         while not self._finished_input:
             self._read_input()
-            result = compress_input()
-            if result:
-                return result
+
+            if self._compress_into_buffer(out_buffer):
+                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
         # EOF
         old_pos = out_buffer.pos
@@ -959,6 +957,7 @@ class ZstdCompressionReader(object):
             self._finished_output = True
 
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
 
 class ZstdCompressor(object):
     def __init__(self, level=3, dict_data=None, compression_params=None,
