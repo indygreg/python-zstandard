@@ -346,15 +346,18 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             with self.assertRaisesRegexp(ValueError, 'stream is closed'):
                 reader.read(1)
 
-    def test_bad_read_size(self):
+    def test_read_sizes(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b'foo')
+
         dctx = zstd.ZstdDecompressor()
 
-        with dctx.stream_reader(b'foo') as reader:
-            with self.assertRaisesRegexp(ValueError, 'cannot read negative or size 0 amounts'):
-                reader.read(-1)
+        with dctx.stream_reader(foo) as reader:
+            with self.assertRaisesRegexp(ValueError, 'cannot read negative amounts less than -1'):
+                reader.read(-2)
 
-            with self.assertRaisesRegexp(ValueError, 'cannot read negative or size 0 amounts'):
-                reader.read(0)
+            self.assertEqual(reader.read(0), b'')
+            self.assertEqual(reader.read(), b'foo')
 
     def test_read_buffer(self):
         cctx = zstd.ZstdCompressor()
@@ -523,8 +526,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         reader = dctx.stream_reader(source)
 
         with reader:
-            with self.assertRaises(TypeError):
-                reader.read()
+            reader.read(0)
 
         with reader:
             with self.assertRaisesRegexp(ValueError, 'stream is closed'):

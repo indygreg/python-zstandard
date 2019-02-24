@@ -1722,16 +1722,22 @@ class ZstdDecompressionReader(object):
                 (out_buffer.pos == out_buffer.size or
                  zresult == 0 and not self._read_across_frames))
 
-    def read(self, size):
+    def read(self, size=-1):
         if self._closed:
             raise ValueError('stream is closed')
 
-        if self._finished_output:
+        if size < -1:
+            raise ValueError('cannot read negative amounts less than -1')
+
+        if size == -1:
+            # This is recursive. But it gets the job done.
+            return self.readall()
+
+        if self._finished_output or size == 0:
             return b''
 
-        if size < 1:
-            raise ValueError('cannot read negative or size 0 amounts')
-
+        # We /could/ call into readinto() here. But that introduces more
+        # overhead.
         dst_buffer = ffi.new('char[]', size)
         out_buffer = ffi.new('ZSTD_outBuffer *')
         out_buffer.dst = dst_buffer

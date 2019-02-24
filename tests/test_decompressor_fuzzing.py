@@ -46,9 +46,9 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         chunks = []
         with dctx.stream_reader(source, read_size=source_read_size) as reader:
             while True:
-                read_size = read_sizes.draw(strategies.integers(1, 131072))
+                read_size = read_sizes.draw(strategies.integers(-1, 131072))
                 chunk = reader.read(read_size)
-                if not chunk:
+                if not chunk and read_size:
                     break
 
                 chunks.append(chunk)
@@ -62,9 +62,12 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
                       level=strategies.integers(min_value=1, max_value=5),
                       streaming=strategies.booleans(),
                       source_read_size=strategies.integers(1, 1048576),
-                      read_size=strategies.integers(1, 131072))
+                      read_size=strategies.integers(-1, 131072))
     def test_stream_source_read_size(self, original, level, streaming,
                                      source_read_size, read_size):
+        if read_size == 0:
+            read_size = 1
+
         cctx = zstd.ZstdCompressor(level=level)
 
         if streaming:
@@ -83,7 +86,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         reader = dctx.stream_reader(source, read_size=source_read_size)
         while True:
             chunk = reader.read(read_size)
-            if not chunk:
+            if not chunk and read_size:
                 break
 
             chunks.append(chunk)
@@ -115,9 +118,9 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         with dctx.stream_reader(frame, read_size=source_read_size) as reader:
             while True:
-                read_size = read_sizes.draw(strategies.integers(1, 131072))
+                read_size = read_sizes.draw(strategies.integers(-1, 131072))
                 chunk = reader.read(read_size)
-                if not chunk:
+                if not chunk and read_size:
                     break
 
                 chunks.append(chunk)
@@ -131,9 +134,12 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
                       level=strategies.integers(min_value=1, max_value=5),
                       streaming=strategies.booleans(),
                       source_read_size=strategies.integers(1, 1048576),
-                      read_size=strategies.integers(1, 131072))
+                      read_size=strategies.integers(-1, 131072))
     def test_buffer_source_constant_read_size(self, original, level, streaming,
                                               source_read_size, read_size):
+        if read_size == 0:
+            read_size = -1
+
         cctx = zstd.ZstdCompressor(level=level)
 
         if streaming:
@@ -151,7 +157,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         reader = dctx.stream_reader(frame, read_size=source_read_size)
         while True:
             chunk = reader.read(read_size)
-            if not chunk:
+            if not chunk and read_size:
                 break
 
             chunks.append(chunk)
@@ -242,10 +248,10 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         chunks = []
 
         while True:
-            read_amount = read_sizes.draw(strategies.integers(1, 16384))
+            read_amount = read_sizes.draw(strategies.integers(-1, 16384))
             chunk = reader.read(read_amount)
 
-            if not chunk:
+            if not chunk and read_amount:
                 break
 
             chunks.append(chunk)

@@ -71,6 +71,10 @@ Other Actions Not Blocking Release
 Backwards Compatibility Nodes
 -----------------------------
 
+* ``ZstdDecompressor.read()`` now allows reading sizes of ``-1`` or ``0``
+  and defaults to ``-1``, per the documented behavior of
+  ``io.RawIOBase.read()``. Previously, we required an argument that was
+  a positive value.
 * The ``readline()``, ``readlines()``, ``__iter__``, and ``__next__`` methods
   of ``ZstdDecompressionReader()`` now raise ``io.UnsupportedOperation``
   instead of ``NotImplementedError``.
@@ -144,6 +148,9 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdDecompressionReader.read()`` now defaults to ``size=-1`` and accepts
+  read sizes of ``-1`` and ``0``. The new behavior aligns with the documented
+  behavior of ``io.RawIOBase``.
 * ``ZstdDecompressionReader()`` now implements ``readall()``. Previously, this
   method raised ``NotImplementedError``.
 * The ``readline()``, ``readlines()``, ``__iter__``, and ``__next__`` methods

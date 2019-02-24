@@ -228,17 +228,21 @@ static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyOb
 		return NULL;
 	}
 
-	if (self->finishedOutput) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|n", kwlist, &size)) {
+		return NULL;
+	}
+
+	if (size < -1) {
+		PyErr_SetString(PyExc_ValueError, "cannot read negative amounts less than -1");
+		return NULL;
+	}
+
+	if (size == -1) {
+		return PyObject_CallMethod((PyObject*)self, "readall", NULL);
+	}
+
+	if (self->finishedOutput || size == 0) {
 		return PyBytes_FromStringAndSize("", 0);
-	}
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n", kwlist, &size)) {
-		return NULL;
-	}
-
-	if (size < 1) {
-		PyErr_SetString(PyExc_ValueError, "cannot read negative or size 0 amounts");
-		return NULL;
 	}
 
 	result = PyBytes_FromStringAndSize(NULL, size);
