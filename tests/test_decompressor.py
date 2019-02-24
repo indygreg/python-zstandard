@@ -310,9 +310,6 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             with self.assertRaises(io.UnsupportedOperation):
                 reader.readlines()
 
-            with self.assertRaises(NotImplementedError):
-                reader.readall()
-
             with self.assertRaises(io.UnsupportedOperation):
                 iter(reader)
 
@@ -663,6 +660,15 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         reader = dctx.stream_reader(foo)
         self.assertEqual(reader.readinto(b), 2)
         self.assertEqual(b[:], b'fo')
+
+    def test_readall(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b'foo')
+
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(foo)
+
+        self.assertEqual(reader.readall(), b'foo')
 
     def test_read_lines(self):
         cctx = zstd.ZstdCompressor()

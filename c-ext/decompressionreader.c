@@ -374,8 +374,49 @@ finally:
 }
 
 static PyObject* reader_readall(PyObject* self) {
-	PyErr_SetNone(PyExc_NotImplementedError);
-	return NULL;
+	PyObject* chunks = NULL;
+	PyObject* empty = NULL;
+	PyObject* result = NULL;
+
+	/* Our strategy is to collect chunks into a list then join all the
+	 * chunks at the end. We could potentially use e.g. an io.BytesIO. But
+	 * this feels simple enough to implement and avoids potentially expensive
+	 * reallocations of large buffers.
+	 */
+	chunks = PyList_New(0);
+	if (NULL == chunks) {
+		return NULL;
+	}
+
+	while (1) {
+		PyObject* chunk = PyObject_CallMethod(self, "read", "i", 1048576);
+		if (NULL == chunk) {
+			Py_DECREF(chunks);
+			return NULL;
+		}
+
+		if (!PyBytes_Size(chunk)) {
+			break;
+		}
+
+		if (PyList_Append(chunks, chunk)) {
+			Py_DECREF(chunks);
+			return NULL;
+		}
+	}
+
+	empty = PyBytes_FromStringAndSize("", 0);
+	if (NULL == empty) {
+		Py_DECREF(chunks);
+		return NULL;
+	}
+
+	result = PyObject_CallMethod(empty, "join", "O", chunks);
+
+	Py_DECREF(empty);
+	Py_DECREF(chunks);
+
+	return result;
 }
 
 static PyObject* reader_readline(PyObject* self) {

@@ -160,6 +160,31 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      streaming=strategies.booleans(),
+                      source_read_size=strategies.integers(1, 1048576))
+    def test_stream_source_readall(self, original, level, streaming,
+                                         source_read_size):
+        cctx = zstd.ZstdCompressor(level=level)
+
+        if streaming:
+            source = io.BytesIO()
+            writer = cctx.stream_writer(source)
+            writer.write(original)
+            writer.flush(zstd.FLUSH_FRAME)
+            source.seek(0)
+        else:
+            frame = cctx.compress(original)
+            source = io.BytesIO(frame)
+
+        dctx = zstd.ZstdDecompressor()
+
+        data = dctx.stream_reader(source, read_size=source_read_size).readall()
+        self.assertEqual(data, original)
+
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),

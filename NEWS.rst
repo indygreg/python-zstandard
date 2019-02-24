@@ -144,6 +144,8 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdDecompressionReader()`` now implements ``readall()``. Previously, this
+  method raised ``NotImplementedError``.
 * The ``readline()``, ``readlines()``, ``__iter__``, and ``__next__`` methods
   of ``ZstdDecompressionReader()`` now raise ``io.UnsupportedOperation``
   instead of ``NotImplementedError``. This reflects a decision to never
