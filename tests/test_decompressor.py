@@ -664,6 +664,47 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertEqual(reader.readinto(b), 2)
         self.assertEqual(b[:], b'fo')
 
+    def test_read_lines(self):
+        cctx = zstd.ZstdCompressor()
+        source = b'\n'.join(('line %d' % i).encode('ascii') for i in range(1024))
+
+        frame = cctx.compress(source)
+
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(frame)
+        br = io.BufferedReader(reader)
+        tr = io.TextIOWrapper(br, encoding='utf-8')
+
+        lines = []
+        for line in tr:
+            lines.append(line.encode('utf-8'))
+
+        self.assertEqual(len(lines), 1024)
+        self.assertEqual(b''.join(lines), source)
+
+        reader = dctx.stream_reader(frame)
+        br = io.BufferedReader(reader)
+        tr = io.TextIOWrapper(br, encoding='utf-8')
+
+        lines = tr.readlines()
+        self.assertEqual(len(lines), 1024)
+        self.assertEqual(''.join(lines).encode('utf-8'), source)
+
+        reader = dctx.stream_reader(frame)
+        br = io.BufferedReader(reader)
+        tr = io.TextIOWrapper(br, encoding='utf-8')
+
+        lines = []
+        while True:
+            line = tr.readline()
+            if not line:
+                break
+
+            lines.append(line.encode('utf-8'))
+
+        self.assertEqual(len(lines), 1024)
+        self.assertEqual(b''.join(lines), source)
+
 
 @make_cffi
 class TestDecompressor_decompressobj(unittest.TestCase):
