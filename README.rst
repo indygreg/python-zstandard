@@ -706,11 +706,7 @@ to the stream::
    with open(path, 'rb') as fh:
        dctx = zstd.ZstdDecompressor()
        stream_reader = dctx.stream_reader(fh)
-       # BufferdReader is needed on some Python versions because we don't
-       # yet implement the entire ``io.BufferedIOBase`` interface. If things
-       # work without an ``io.BufferedReader``, you can safely remove it.
-       buffered_reader = io.BufferedReader(stream_reader)
-       text_stream = io.TextIOWrapper(buffered_reader, encoding='utf-8')
+       text_stream = io.TextIOWrapper(stream_reader, encoding='utf-8')
 
        for line in text_stream:
            ...

@@ -703,8 +703,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         reader = dctx.stream_reader(frame)
-        br = io.BufferedReader(reader)
-        tr = io.TextIOWrapper(br, encoding='utf-8')
+        tr = io.TextIOWrapper(reader, encoding='utf-8')
 
         lines = []
         for line in tr:
@@ -714,16 +713,14 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertEqual(b''.join(lines), source)
 
         reader = dctx.stream_reader(frame)
-        br = io.BufferedReader(reader)
-        tr = io.TextIOWrapper(br, encoding='utf-8')
+        tr = io.TextIOWrapper(reader, encoding='utf-8')
 
         lines = tr.readlines()
         self.assertEqual(len(lines), 1024)
         self.assertEqual(''.join(lines).encode('utf-8'), source)
 
         reader = dctx.stream_reader(frame)
-        br = io.BufferedReader(reader)
-        tr = io.TextIOWrapper(br, encoding='utf-8')
+        tr = io.TextIOWrapper(reader, encoding='utf-8')
 
         lines = []
         while True:
