@@ -866,6 +866,27 @@ class ZstdCompressionReader(object):
 
     next = __next__
 
+    def _read_input(self):
+        if self._finished_input:
+            return
+
+        if hasattr(self._source, 'read'):
+            data = self._source.read(self._read_size)
+
+            if not data:
+                self._finished_input = True
+                return
+
+            self._source_buffer = ffi.from_buffer(data)
+            self._in_buffer.src = self._source_buffer
+            self._in_buffer.size = len(self._source_buffer)
+            self._in_buffer.pos = 0
+        else:
+            self._source_buffer = ffi.from_buffer(self._source)
+            self._in_buffer.src = self._source_buffer
+            self._in_buffer.size = len(self._source_buffer)
+            self._in_buffer.pos = 0
+
     def read(self, size=-1):
         if self._closed:
             raise ValueError('stream is closed')
@@ -911,33 +932,12 @@ class ZstdCompressionReader(object):
             if out_buffer.pos and out_buffer.pos == out_buffer.size:
                 return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
-        def get_input():
-            if self._finished_input:
-                return
-
-            if hasattr(self._source, 'read'):
-                data = self._source.read(self._read_size)
-
-                if not data:
-                    self._finished_input = True
-                    return
-
-                self._source_buffer = ffi.from_buffer(data)
-                self._in_buffer.src = self._source_buffer
-                self._in_buffer.size = len(self._source_buffer)
-                self._in_buffer.pos = 0
-            else:
-                self._source_buffer = ffi.from_buffer(self._source)
-                self._in_buffer.src = self._source_buffer
-                self._in_buffer.size = len(self._source_buffer)
-                self._in_buffer.pos = 0
-
         result = compress_input()
         if result:
             return result
 
         while not self._finished_input:
-            get_input()
+            self._read_input()
             result = compress_input()
             if result:
                 return result
