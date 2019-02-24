@@ -927,11 +927,14 @@ class ZstdCompressionReader(object):
         if self._closed:
             raise ValueError('stream is closed')
 
-        if self._finished_output:
-            return b''
+        if size < -1:
+            raise ValueError('cannot read negative amounts less than -1')
 
-        if size < 1:
-            raise ValueError('cannot read negative or size 0 amounts')
+        if size == -1:
+            return self.readall()
+
+        if self._finished_output or size == 0:
+            return b''
 
         # Need a dedicated ref to dest buffer otherwise it gets collected.
         dst_buffer = ffi.new('char[]', size)

@@ -148,6 +148,9 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdCompressionReader.read()`` now defaults to ``size=-1`` and accepts
+  read sizes of ``-1`` and ``0``. The new behavior aligns with the documented
+  behavior of ``io.RawIOBase``.
 * ``ZstdCompressionReader`` now implements ``readall()``. Previously, this
   method raised ``NotImplementedError``.
 * ``ZstdDecompressionReader`` now implements ``read1()`` and ``readinto1()``.

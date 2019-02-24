@@ -20,6 +20,8 @@ from . common import (
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi
 class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       source_read_size=strategies.integers(1, 16384),
@@ -34,15 +36,17 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
                                 read_size=source_read_size) as reader:
             chunks = []
             while True:
-                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                read_size = read_sizes.draw(strategies.integers(-1, 16384))
                 chunk = reader.read(read_size)
-
-                if not chunk:
+                if not chunk and read_size:
                     break
+
                 chunks.append(chunk)
 
         self.assertEqual(b''.join(chunks), ref_frame)
 
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
     @hypothesis.given(original=strategies.sampled_from(random_input_data()),
                       level=strategies.integers(min_value=1, max_value=5),
                       source_read_size=strategies.integers(1, 16384),
@@ -58,10 +62,11 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
                                 read_size=source_read_size) as reader:
             chunks = []
             while True:
-                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                read_size = read_sizes.draw(strategies.integers(-1, 16384))
                 chunk = reader.read(read_size)
-                if not chunk:
+                if not chunk and read_size:
                     break
+
                 chunks.append(chunk)
 
         self.assertEqual(b''.join(chunks), ref_frame)
