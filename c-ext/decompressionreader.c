@@ -555,13 +555,17 @@ static PyObject* reader_readall(PyObject* self) {
 		}
 
 		if (!PyBytes_Size(chunk)) {
+			Py_DECREF(chunk);
 			break;
 		}
 
 		if (PyList_Append(chunks, chunk)) {
+			Py_DECREF(chunk);
 			Py_DECREF(chunks);
 			return NULL;
 		}
+
+		Py_DECREF(chunk);
 	}
 
 	empty = PyBytes_FromStringAndSize("", 0);
