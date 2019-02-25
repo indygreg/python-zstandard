@@ -1875,7 +1875,7 @@ class ZstdDecompressionReader(object):
                 self._finished_input = True
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('zstd decompress error: %s',
+            raise ZstdError('zstd decompress error: %s' %
                             _zstd_error(zresult))
 
         # Emit data if there is data AND either:
