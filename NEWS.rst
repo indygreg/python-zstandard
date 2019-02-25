@@ -57,6 +57,7 @@ Actions Blocking Release
   ``ZSTD_dParam_getBounds()`` APIs.
 * Consider controls over resetting compression contexts (session only, parameters,
   or session and parameters).
+* Actually use the CFFI backend in fuzzing tests.
 
 Other Actions Not Blocking Release
 ---------------------------------------
