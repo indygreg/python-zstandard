@@ -1400,6 +1400,9 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
     def test_invalid_inputs(self):
         dctx = zstd.ZstdDecompressor()
 
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
+
         with self.assertRaises(TypeError):
             dctx.multi_decompress_to_buffer(True)
 
@@ -1419,6 +1422,10 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         frames = [cctx.compress(d) for d in original]
 
         dctx = zstd.ZstdDecompressor()
+
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
+
         result = dctx.multi_decompress_to_buffer(frames)
 
         self.assertEqual(len(result), len(frames))
@@ -1440,6 +1447,10 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         sizes = struct.pack('=' + 'Q' * len(original), *map(len, original))
 
         dctx = zstd.ZstdDecompressor()
+
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
+
         result = dctx.multi_decompress_to_buffer(frames, decompressed_sizes=sizes)
 
         self.assertEqual(len(result), len(frames))
@@ -1455,6 +1466,9 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         frames = [cctx.compress(d) for d in original]
 
         dctx = zstd.ZstdDecompressor()
+
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
 
         segments = struct.pack('=QQQQ', 0, len(frames[0]), len(frames[0]), len(frames[1]))
         b = zstd.BufferWithSegments(b''.join(frames), segments)
@@ -1473,12 +1487,16 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         frames = [cctx.compress(d) for d in original]
         sizes = struct.pack('=' + 'Q' * len(original), *map(len, original))
 
+        dctx = zstd.ZstdDecompressor()
+
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
+
         segments = struct.pack('=QQQQQQ', 0, len(frames[0]),
                                len(frames[0]), len(frames[1]),
                                len(frames[0]) + len(frames[1]), len(frames[2]))
         b = zstd.BufferWithSegments(b''.join(frames), segments)
 
-        dctx = zstd.ZstdDecompressor()
         result = dctx.multi_decompress_to_buffer(b, decompressed_sizes=sizes)
 
         self.assertEqual(len(result), len(frames))
@@ -1498,10 +1516,14 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
             b'foo4' * 6,
         ]
 
+        if not hasattr(cctx, 'multi_compress_to_buffer'):
+            self.skipTest('multi_compress_to_buffer not available')
+
         frames = cctx.multi_compress_to_buffer(original)
 
         # Check round trip.
         dctx = zstd.ZstdDecompressor()
+
         decompressed = dctx.multi_decompress_to_buffer(frames, threads=3)
 
         self.assertEqual(len(decompressed), len(original))
@@ -1537,7 +1559,12 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         frames = [cctx.compress(s) for s in generate_samples()]
 
         dctx = zstd.ZstdDecompressor(dict_data=d)
+
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
+
         result = dctx.multi_decompress_to_buffer(frames)
+
         self.assertEqual([o.tobytes() for o in result], generate_samples())
 
     def test_multiple_threads(self):
@@ -1548,6 +1575,10 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         frames.extend(cctx.compress(b'y' * 64) for i in range(256))
 
         dctx = zstd.ZstdDecompressor()
+
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
+
         result = dctx.multi_decompress_to_buffer(frames, threads=-1)
 
         self.assertEqual(len(result), len(frames))
@@ -1562,6 +1593,9 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         frames[1] = frames[1][0:15] + b'extra' + frames[1][15:]
 
         dctx = zstd.ZstdDecompressor()
+
+        if not hasattr(dctx, 'multi_decompress_to_buffer'):
+            self.skipTest('multi_decompress_to_buffer not available')
 
         with self.assertRaisesRegexp(zstd.ZstdError,
                                      'error decompressing item 1: ('

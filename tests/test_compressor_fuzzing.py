@@ -607,6 +607,9 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
                                    write_checksum=True,
                                    **kwargs)
 
+        if not hasattr(cctx, 'multi_compress_to_buffer'):
+            self.skipTest('multi_compress_to_buffer not available')
+
         result = cctx.multi_compress_to_buffer(original, threads=-1)
 
         self.assertEqual(len(result), len(original))
