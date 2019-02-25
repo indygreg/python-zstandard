@@ -1075,6 +1075,53 @@ class ZstdCompressionReader(object):
 
         return out_buffer.pos
 
+    def readinto1(self, b):
+        if self._closed:
+            raise ValueError('stream is closed')
+
+        if self._finished_output:
+            return 0
+
+        # TODO use writable=True once we require CFFI >= 1.12.
+        dest_buffer = ffi.from_buffer(b)
+        ffi.memmove(b, b'', 0)
+
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = dest_buffer
+        out_buffer.size = len(dest_buffer)
+        out_buffer.pos = 0
+
+        self._compress_into_buffer(out_buffer)
+        if out_buffer.pos:
+            return out_buffer.pos
+
+        while not self._finished_input:
+            self._read_input()
+
+            if self._compress_into_buffer(out_buffer):
+                return out_buffer.pos
+
+            if out_buffer.pos and not self._finished_input:
+                return out_buffer.pos
+
+        # EOF.
+        old_pos = out_buffer.pos
+
+        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                           out_buffer, self._in_buffer,
+                                           lib.ZSTD_e_end)
+
+        self._bytes_compressed += out_buffer.pos - old_pos
+
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('error ending compression stream: %s' %
+                            _zstd_error(zresult))
+
+        if zresult == 0:
+            self._finished_output = True
+
+        return out_buffer.pos
+
 
 class ZstdCompressor(object):
     def __init__(self, level=3, dict_data=None, compression_params=None,

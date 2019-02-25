@@ -339,6 +339,121 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
         self.assertEqual(b''.join(chunks), ref_frame)
 
 
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      source_read_size=strategies.integers(1, 16384),
+                      read_size=strategies.integers(1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE))
+    def test_stream_source_readinto1(self, original, level, source_read_size,
+                                     read_size):
+        if read_size == 0:
+            read_size = -1
+
+        refctx = zstd.ZstdCompressor(level=level)
+        ref_frame = refctx.compress(original)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        with cctx.stream_reader(io.BytesIO(original), size=len(original),
+                                read_size=source_read_size) as reader:
+            chunks = []
+            while True:
+                b = bytearray(read_size)
+                count = reader.readinto1(b)
+
+                if not count:
+                    break
+
+                chunks.append(bytes(b[0:count]))
+
+        self.assertEqual(b''.join(chunks), ref_frame)
+
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      source_read_size=strategies.integers(1, 16384),
+                      read_size=strategies.integers(1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE))
+    def test_buffer_source_readinto1(self, original, level, source_read_size,
+                                     read_size):
+        if read_size == 0:
+            read_size = -1
+
+        refctx = zstd.ZstdCompressor(level=level)
+        ref_frame = refctx.compress(original)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        with cctx.stream_reader(original, size=len(original),
+                                read_size=source_read_size) as reader:
+            chunks = []
+            while True:
+                b = bytearray(read_size)
+                count = reader.readinto1(b)
+
+                if not count:
+                    break
+
+                chunks.append(bytes(b[0:count]))
+
+        self.assertEqual(b''.join(chunks), ref_frame)
+
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      source_read_size=strategies.integers(1, 16384),
+                      read_sizes=strategies.data())
+    def test_stream_source_readinto1_variance(self, original, level, source_read_size,
+                                              read_sizes):
+        refctx = zstd.ZstdCompressor(level=level)
+        ref_frame = refctx.compress(original)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        with cctx.stream_reader(io.BytesIO(original), size=len(original),
+                                read_size=source_read_size) as reader:
+            chunks = []
+            while True:
+                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                b = bytearray(read_size)
+                count = reader.readinto1(b)
+
+                if not count:
+                    break
+
+                chunks.append(bytes(b[0:count]))
+
+        self.assertEqual(b''.join(chunks), ref_frame)
+
+    @hypothesis.settings(
+        suppress_health_check=[hypothesis.HealthCheck.large_base_example])
+    @hypothesis.given(original=strategies.sampled_from(random_input_data()),
+                      level=strategies.integers(min_value=1, max_value=5),
+                      source_read_size=strategies.integers(1, 16384),
+                      read_sizes=strategies.data())
+    def test_buffer_source_readinto1_variance(self, original, level, source_read_size,
+                                              read_sizes):
+
+        refctx = zstd.ZstdCompressor(level=level)
+        ref_frame = refctx.compress(original)
+
+        cctx = zstd.ZstdCompressor(level=level)
+        with cctx.stream_reader(original, size=len(original),
+                                read_size=source_read_size) as reader:
+            chunks = []
+            while True:
+                read_size = read_sizes.draw(strategies.integers(1, 16384))
+                b = bytearray(read_size)
+                count = reader.readinto1(b)
+
+                if not count:
+                    break
+
+                chunks.append(bytes(b[0:count]))
+
+        self.assertEqual(b''.join(chunks), ref_frame)
+
+
+
 @unittest.skipUnless('ZSTD_SLOW_TESTS' in os.environ, 'ZSTD_SLOW_TESTS not set')
 @make_cffi
 class TestCompressor_stream_writer_fuzzing(unittest.TestCase):
