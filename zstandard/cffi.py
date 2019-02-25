@@ -970,6 +970,71 @@ class ZstdCompressionReader(object):
 
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
+    def read1(self, size=-1):
+        if self._closed:
+            raise ValueError('stream is closed')
+
+        if size < -1:
+            raise ValueError('cannot read negative amounts less than -1')
+
+        if self._finished_output or size == 0:
+            return b''
+
+        # -1 returns arbitrary number of bytes.
+        if size == -1:
+            size = COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+
+        dst_buffer = ffi.new('char[]', size)
+        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer.dst = dst_buffer
+        out_buffer.size = size
+        out_buffer.pos = 0
+
+        # read1() dictates that we can perform at most 1 call to the
+        # underlying stream to get input. However, we can't satisfy this
+        # restriction with compression because not all input generates output.
+        # It is possible to perform a block flush in order to ensure output.
+        # But this may not be desirable behavior. So we allow multiple read()
+        # to the underlying stream. But unlike read(), we stop once we have
+        # any output.
+
+        self._compress_into_buffer(out_buffer)
+        if out_buffer.pos:
+            return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
+        while not self._finished_input:
+            self._read_input()
+
+            # If we've filled the output buffer, return immediately.
+            if self._compress_into_buffer(out_buffer):
+                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
+            # If we've populated the output buffer and we're not at EOF,
+            # also return, as we've satisfied the read1() limits.
+            if out_buffer.pos and not self._finished_input:
+                return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
+            # Else if we're at EOS and we have room left in the buffer,
+            # fall through to below and try to add more data to the output.
+
+        # EOF.
+        old_pos = out_buffer.pos
+
+        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
+                                           out_buffer, self._in_buffer,
+                                           lib.ZSTD_e_end)
+
+        self._bytes_compressed += out_buffer.pos - old_pos
+
+        if lib.ZSTD_isError(zresult):
+            raise ZstdError('error ending compression stream: %s' %
+                            _zstd_error(zresult))
+
+        if zresult == 0:
+            self._finished_output = True
+
+        return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+
     def readinto(self, b):
         if self._closed:
             raise ValueError('stream is closed')

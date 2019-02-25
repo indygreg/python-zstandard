@@ -148,6 +148,8 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstdCompressionReader`` now implements ``read1()``. This is part of the
+  ``io.BufferedIOBase`` interface.
 * ``ZstdCompressionReader`` has gained a ``readinto(b)`` method for reading
   compressed output into an existing buffer.
 * ``ZstdCompressionReader.read()`` now defaults to ``size=-1`` and accepts

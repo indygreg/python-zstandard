@@ -785,6 +785,25 @@ class TestCompressor_stream_reader(unittest.TestCase):
         self.assertEqual(reader.readinto(b), 2)
         self.assertEqual(b[:], foo[4:6])
 
+    def test_read1(self):
+        cctx = zstd.ZstdCompressor()
+        foo = b''.join(cctx.read_to_iter(io.BytesIO(b'foo')))
+
+        b = OpCountingBytesIO(b'foo')
+        reader = cctx.stream_reader(b)
+
+        self.assertEqual(reader.read1(), foo)
+        self.assertEqual(b._read_count, 2)
+
+        b = OpCountingBytesIO(b'foo')
+        reader = cctx.stream_reader(b)
+
+        self.assertEqual(reader.read1(0), b'')
+        self.assertEqual(reader.read1(2), foo[0:2])
+        self.assertEqual(b._read_count, 2)
+        self.assertEqual(reader.read1(2), foo[2:4])
+        self.assertEqual(reader.read1(1024), foo[4:])
+
 
 @make_cffi
 class TestCompressor_stream_writer(unittest.TestCase):
