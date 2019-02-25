@@ -338,7 +338,7 @@ static PyObject* reader_read1(ZstdDecompressionReader* self, PyObject* args, PyO
 	}
 
 	if (size == -1) {
-		size = ZSTD_CStreamOutSize();
+		size = ZSTD_DStreamOutSize();
 	}
 
 	result = PyBytes_FromStringAndSize(NULL, size);
