@@ -141,6 +141,8 @@ Backwards Compatibility Nodes
 Bug Fixes
 ---------
 
+* CFFI backend could encounter a failure when sending an empty chunk into
+  ``ZstdDecompressionObj.decompress()``. The issue has been fixed.
 * CFFI backend could encounter an error when calling
   ``ZstdDecompressionReader.read()`` if there was data remaining in an
   internal buffer. The issue has been fixed. (#71)
@@ -148,6 +150,8 @@ Bug Fixes
 Changes
 -------
 
+* ``ZstDecompressionObj.decompress()`` now properly handles empty inputs in
+  the CFFI backend.
 * ``ZstdCompressionReader`` now implements ``read1()`` and ``readinto1()``.
   These are part of the ``io.BufferedIOBase`` interface.
 * ``ZstdCompressionReader`` has gained a ``readinto(b)`` method for reading

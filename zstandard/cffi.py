@@ -1705,6 +1705,10 @@ class ZstdDecompressionObj(object):
         out_buffer = ffi.new('ZSTD_outBuffer *')
 
         data_buffer = ffi.from_buffer(data)
+
+        if len(data_buffer) == 0:
+            return b''
+
         in_buffer.src = data_buffer
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
