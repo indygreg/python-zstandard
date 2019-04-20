@@ -12,7 +12,7 @@ from . common import (
 @make_cffi
 class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
-        self.assertEqual(zstd.ZSTD_VERSION, (1, 3, 8))
+        self.assertEqual(zstd.ZSTD_VERSION, (1, 4, 0))
 
         self.assertEqual(zstd.__version__, '0.12.0.dev0')
 
