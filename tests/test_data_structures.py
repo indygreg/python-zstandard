@@ -100,7 +100,7 @@ class TestCompressionParameters(unittest.TestCase):
                                            strategy=zstd.STRATEGY_DFAST)
 
         # 32-bit has slightly different values from 64-bit.
-        self.assertAlmostEqual(p.estimated_compression_context_size(), 1294072,
+        self.assertAlmostEqual(p.estimated_compression_context_size(), 1294144,
                                delta=250)
 
     def test_strategy(self):
