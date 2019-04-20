@@ -44,6 +44,7 @@ Actions Blocking Release
   zstd API.
 * Expose ``ZSTD_CLEVEL_DEFAULT`` constant.
 * Support ``ZSTD_p_forceAttachDict`` compression parameter.
+* Support ``ZSTD_c_literalCompressionMode `` compression parameter.
 * Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
   compression parameters.
 * Consider exposing ``ZSTDMT_toFlushNow()``.
@@ -65,6 +66,11 @@ Other Actions Not Blocking Release
 * Support for block compression APIs.
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
+
+0.12.0 (not yet released)
+=========================
+
+* Bundled zstandard library upgraded from 1.3.8 to 1.4.0.
 
 0.11.0 (released 2019-02-24)
 ============================
