@@ -11,7 +11,7 @@
 extern PyObject* ZstdError;
 
 int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, int value) {
-	size_t zresult = ZSTD_CCtxParam_setParameter(params, param, value);
+	size_t zresult = ZSTD_CCtxParams_setParameter(params, param, value);
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "unable to set compression context parameter: %s",
 			ZSTD_getErrorName(zresult));
@@ -25,11 +25,11 @@ int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, int value) {
 
 #define TRY_COPY_PARAMETER(source, dest, param) { \
 	int result; \
-	size_t zresult = ZSTD_CCtxParam_getParameter(source, param, &result); \
+	size_t zresult = ZSTD_CCtxParams_getParameter(source, param, &result); \
 	if (ZSTD_isError(zresult)) { \
 		return 1; \
 	} \
-	zresult = ZSTD_CCtxParam_setParameter(dest, param, result); \
+	zresult = ZSTD_CCtxParams_setParameter(dest, param, result); \
 	if (ZSTD_isError(zresult)) { \
 		return 1; \
 	} \
@@ -78,7 +78,7 @@ int reset_params(ZstdCompressionParametersObject* params) {
 }
 
 #define TRY_GET_PARAMETER(params, param, value) { \
-    size_t zresult = ZSTD_CCtxParam_getParameter(params, param, value); \
+    size_t zresult = ZSTD_CCtxParams_getParameter(params, param, value); \
     if (ZSTD_isError(zresult)) { \
         PyErr_Format(ZstdError, "unable to retrieve parameter: %s", ZSTD_getErrorName(zresult)); \
         return 1; \
@@ -436,7 +436,7 @@ static void ZstdCompressionParameters_dealloc(ZstdCompressionParametersObject* s
     int result; \
     size_t zresult; \
     ZstdCompressionParametersObject* p = (ZstdCompressionParametersObject*)(self); \
-    zresult = ZSTD_CCtxParam_getParameter(p->params, param, &result); \
+    zresult = ZSTD_CCtxParams_getParameter(p->params, param, &result); \
     if (ZSTD_isError(zresult)) { \
         PyErr_Format(ZstdError, "unable to get compression parameter: %s", \
             ZSTD_getErrorName(zresult)); \
