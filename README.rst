@@ -42,6 +42,19 @@ Packages are also uploaded to Anaconda Cloud at
 https://anaconda.org/indygreg/zstandard. See that URL for how to install
 this package with ``conda``.
 
+Legacy Format Support
+=====================
+
+To enable legacy zstd format support which is needed to handle files compressed
+with zstd < 1.0 you need to provide an installation option::
+
+   $ pip install zstandard --install-option="--legacy"
+
+and since pip 7.0 it is possible to have the following line in your
+requirements.txt::
+
+   zstandard --install-option="--legacy"
+
 Performance
 ===========
 
