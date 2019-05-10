@@ -66,6 +66,11 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.11.1 (not yet released)
+=========================
+
+* Fix memory leak in ``ZstdDecompressionReader.seek()`` (#82).
+
 0.11.0 (released 2019-02-24)
 ============================
 
