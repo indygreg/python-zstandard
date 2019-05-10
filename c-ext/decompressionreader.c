@@ -653,6 +653,8 @@ static PyObject* reader_seek(ZstdDecompressionReader* self, PyObject* args) {
 
 		readSize = PyBytes_GET_SIZE(readResult);
 
+		Py_CLEAR(readResult);
+
 		/* Empty read means EOF. */
 		if (!readSize) {
 			break;
