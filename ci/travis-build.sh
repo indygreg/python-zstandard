@@ -70,7 +70,7 @@ elif [ "${BUILDMODE}" = "manylinuxtest" ]; then
     mkdir /tmp/wheels
 
     wheel=$(resolve_wheel)
-    curl ${MANYLINUX_URL}/${wheel} > /tmp/wheels/${wheel}
+    curl --fail -sSL ${MANYLINUX_URL}/${wheel} > /tmp/wheels/${wheel}
 
     pip install /tmp/wheels/${wheel}
 
