@@ -70,6 +70,7 @@ Other Actions Not Blocking Release
 0.12.0 (not yet released)
 =========================
 
+* Fix memory leak in ``ZstdDecompressionReader.seek()`` (#82).
 * Bundled zstandard library upgraded from 1.3.8 to 1.4.0.
 
 0.11.0 (released 2019-02-24)
