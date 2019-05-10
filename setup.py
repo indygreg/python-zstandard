@@ -114,4 +114,5 @@ setup(
     ext_modules=extensions,
     test_suite="tests",
     install_requires=install_requires,
+    tests_require=["hypothesis"],
 )
