@@ -68,13 +68,13 @@ static int Decompressor_init(ZstdDecompressor* self, PyObject* args, PyObject* k
 	};
 
 	ZstdCompressionDict* dict = NULL;
-	size_t maxWindowSize = 0;
+	Py_ssize_t maxWindowSize = 0;
 	ZSTD_format_e format = ZSTD_f_zstd1;
 
 	self->dctx = NULL;
 	self->dict = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!II:ZstdDecompressor", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!nI:ZstdDecompressor", kwlist,
 		&ZstdCompressionDictType, &dict, &maxWindowSize, &format)) {
 		return -1;
 	}
