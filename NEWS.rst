@@ -73,6 +73,7 @@ Other Actions Not Blocking Release
 Bug Fixes
 ---------
 
+* Fix ``ZstdDecompressor.__init__`` on 64-bit big-endian systems (#91).
 * Fix memory leak in ``ZstdDecompressionReader.seek()`` (#82).
 
 Changes
