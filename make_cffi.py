@@ -29,6 +29,8 @@ SOURCES = ['zstd/%s' % p for p in (
     'compress/hist.c',
     'compress/huf_compress.c',
     'compress/zstd_compress.c',
+    'compress/zstd_compress_literals.c',
+    'compress/zstd_compress_sequences.c',
     'compress/zstd_double_fast.c',
     'compress/zstd_fast.c',
     'compress/zstd_lazy.c',
@@ -40,8 +42,8 @@ SOURCES = ['zstd/%s' % p for p in (
     'decompress/zstd_decompress.c',
     'decompress/zstd_decompress_block.c',
     'dictBuilder/cover.c',
-    'dictBuilder/fastcover.c',
     'dictBuilder/divsufsort.c',
+    'dictBuilder/fastcover.c',
     'dictBuilder/zdict.c',
 )]
 
