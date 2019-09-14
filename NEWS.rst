@@ -70,6 +70,14 @@ Other Actions Not Blocking Release
 0.12.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* Support for Python 3.4 has been dropped since Python 3.4 is no longer
+  a supported Python version upstream. (But it will likely continue to
+  work until Python 2.7 support is dropped and we port to Python 3.5+
+  APIs.)
+
 Bug Fixes
 ---------
 
@@ -89,7 +97,7 @@ Changes
 0.11.0 (released 2019-02-24)
 ============================
 
-Backwards Compatibility Nodes
+Backwards Compatibility Notes
 -----------------------------
 
 * ``ZstdDecompressor.read()`` now allows reading sizes of ``-1`` or ``0``

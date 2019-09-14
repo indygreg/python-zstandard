@@ -33,8 +33,6 @@ function make_manylinux_wheels {
 function resolve_wheel {
     if [ "${TRAVIS_PYTHON_VERSION}" = "2.7" ]; then
         pypart=cp27-cp27mu
-    elif [ "${TRAVIS_PYTHON_VERSION}" = "3.4" ]; then
-        pypart=cp34-cp34m
     elif [ "${TRAVIS_PYTHON_VERSION}" = "3.5" ]; then
         pypart=cp35-cp35m
     elif [ "${TRAVIS_PYTHON_VERSION}" = "3.6" ]; then

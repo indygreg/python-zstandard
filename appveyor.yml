@@ -17,21 +17,6 @@ environment:
       PYTHON_VERSION: "2.7.14"
       PYTHON_ARCH: "64"
 
-    # Python stopped producing MSIs after 3.4.4
-    # (https://bugs.python.org/issue31148). So we can't upgrade past
-    # that version.
-    - JOB: "3.4 32-bit"
-      TOXENV: "py34"
-      PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.4"
-      PYTHON_ARCH: "32"
-
-    - JOB: "3.4 64-bit"
-      TOXENV: "py34"
-      PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.4"
-      PYTHON_ARCH: "64"
-
     - JOB: "3.5 32-bit"
       TOXENV: "py35"
       PYTHON: "C:\\Python35"
