@@ -7,6 +7,7 @@ import zstandard as zstd
 from . common import (
     generate_samples,
     make_cffi,
+    random_input_data,
 )
 
 if sys.version_info[0] >= 3:
@@ -29,7 +30,7 @@ class TestTrainDictionary(unittest.TestCase):
             zstd.train_dictionary(8192, [u'foo'])
 
     def test_no_params(self):
-        d = zstd.train_dictionary(8192, generate_samples())
+        d = zstd.train_dictionary(8192, random_input_data())
         self.assertIsInstance(d.dict_id(), int_type)
 
         # The dictionary ID may be different across platforms.
