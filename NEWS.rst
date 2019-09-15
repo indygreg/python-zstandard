@@ -87,6 +87,7 @@ Bug Fixes
 Changes
 -------
 
+* Windows CI transitioned to Azure Pipelines (from AppVeyor).
 * Switched to ``pytest`` for running tests (from ``nose``).
 * Bundled zstandard library upgraded from 1.3.8 to 1.4.3.
 

@@ -15,7 +15,7 @@ The canonical home for this project lives in a Mercurial repository run by
 the author. For convenience, that repository is frequently synchronized to
 https://github.com/indygreg/python-zstandard.
 
-|  |ci-status| |win-ci-status|
+|  |pipelines-status| |ci-status|
 
 Requirements
 ============
@@ -1598,9 +1598,8 @@ their work, consider donating some money. Any amount is appreciated.
     :target: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gregory%2eszorc%40gmail%2ecom&lc=US&item_name=python%2dzstandard&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
     :alt: Donate via PayPal
 
+.. |pipelines-status| image:: https://dev.azure.com/gregoryszorc/python-zstandard/_apis/build/status/indygreg.python-zstandard?branchName=master
+    :target: https://dev.azure.com/gregoryszorc/python-zstandard/_apis/build/status/indygreg.python-zstandard?branchName=master
+
 .. |ci-status| image:: https://travis-ci.org/indygreg/python-zstandard.svg?branch=master
     :target: https://travis-ci.org/indygreg/python-zstandard
-
-.. |win-ci-status| image:: https://ci.appveyor.com/api/projects/status/github/indygreg/python-zstandard?svg=true
-    :target: https://ci.appveyor.com/project/indygreg/python-zstandard
-    :alt: Windows build status
