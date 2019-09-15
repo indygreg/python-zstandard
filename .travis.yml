@@ -109,13 +109,6 @@ matrix:
     - stage: test
       language: python
       os: linux
-      python: 3.4
-      env:
-        - BUILDMODE=manylinuxtest
-
-    - stage: test
-      language: python
-      os: linux
       python: 3.5
       env:
         - BUILDMODE=manylinuxtest
