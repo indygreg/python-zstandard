@@ -3,6 +3,7 @@ cffi
 colorama
 hypothesis
 pycparser
+pytest-azurepipelines
 pytest
 tox-travis
 wheel

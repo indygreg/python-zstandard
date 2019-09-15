@@ -1,0 +1,52 @@
+jobs:
+- job: ${{ parameters.name }}
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+  strategy:
+    matrix:
+      CPython2.7:
+        python_version: '2.7'
+      CPython3.5:
+        python_version: '3.5'
+      CPython3.6:
+        python_version: '3.6'
+      CPython3.7:
+        python_version: '3.7'
+
+  variables:
+    # Enable fuzzing tests, other expensive tests.
+    #ZSTD_SLOW_TESTS: '1'
+
+    # Make all compile warnings fatal.
+    ZSTD_WARNINGS_AS_ERRORS: '1'
+
+    # More thorough fuzzing coverage.
+    #HYPOTHESIS_PROFILE: ci
+
+  steps:
+  - script: choco install vcpython27 --yes
+    displayName: Install VC++ for Python 2.7
+    condition: and(eq(variables['python_version'], '2.7'), eq('${{ parameters.os }}', 'Windows'))
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python_version)'
+      addToPath: true
+      architecture: '${{ parameters.arch }}'
+
+  - script: |
+        python -m pip install pip==19.2.3
+        pip install --require-hashes -r ci/requirements.txt
+    displayName: 'Install dependencies'
+
+  - script: |
+      python setup.py develop bdist_wheel
+    displayName: Build
+
+  - script: |
+      pytest -v tests/
+    displayName: Test
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      path: $(System.DefaultWorkingDirectory)/dist

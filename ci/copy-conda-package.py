@@ -8,6 +8,7 @@ dest_dir = 'dist'
 if not os.path.exists(dest_dir):
     os.mkdir(dest_dir)
 
+print('scanning %s for packages' % build_dir)
 for p in os.listdir(build_dir):
     if not p.endswith('.tar.bz2'):
         continue
