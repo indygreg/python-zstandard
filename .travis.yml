@@ -56,14 +56,6 @@ matrix:
     - stage: build
       language: python
       os: linux
-      python: 3.6-dev
-      env:
-        - BUILDMODE=tox
-        - ARTIFACT_PATH=tox/3.6-dev
-
-    - stage: build
-      language: python
-      os: linux
       python: 3.7
       dist: xenial
       sudo: required
