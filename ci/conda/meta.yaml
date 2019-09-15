@@ -17,13 +17,13 @@ requirements:
 
 test:
   requires:
-    - nose
+    - pytest
 
   source_files:
     - tests/
 
   commands:
-    - nosetests -v
+    - pytest -v
 
 about:
   home: https://github.com/indygreg/python-zstandard

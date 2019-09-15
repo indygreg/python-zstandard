@@ -87,6 +87,7 @@ Bug Fixes
 Changes
 -------
 
+* Switched to ``pytest`` for running tests (from ``nose``).
 * Bundled zstandard library upgraded from 1.3.8 to 1.4.3.
 
 0.11.1 (released 2019-05-14)

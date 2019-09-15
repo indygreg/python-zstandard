@@ -72,7 +72,7 @@ elif [ "${BUILDMODE}" = "manylinuxtest" ]; then
 
     pip install /tmp/wheels/${wheel}
 
-    nosetests -v
+    pytest -v
 
 elif [ -n "${BUILDMODE}" ]; then
     echo "unknown BUILDMODE: ${BUILDMODE}"

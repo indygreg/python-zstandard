@@ -9,8 +9,8 @@ Build-Depends:
   python3-all-dev,
   python-hypothesis,
   python3-hypothesis,
-  python-nose,
-  python3-nose,
+  python-pytest,
+  python3-pytest,
   python-setuptools,
   python3-setuptools
 Standards-Version: 3.9.1
