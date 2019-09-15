@@ -46,9 +46,7 @@ function resolve_wheel {
     echo ${CURRENT_VERSION}-${pypart}-manylinux1_x86_64.whl
 }
 
-if [ "${BUILDMODE}" = "sdist" ]; then
-    python setup.py sdist
-elif [ "${BUILDMODE}" = "conda" ]; then
+if [ "${BUILDMODE}" = "conda" ]; then
     conda build ci/conda
     mkdir -p dist
     cp -av /home/travis/miniconda/conda-bld/*/*.tar.bz2 dist/

@@ -11,7 +11,6 @@ import requests
 BASE_URL = 'https://s3-us-west-2.amazonaws.com/python-zstandard/travis'
 
 PATHS = [
-    ('sdist', '.tar.gz'),
     ('manylinuxwheels', '-cp27-cp27m-manylinux1_i686.whl'),
     ('manylinuxwheels', '-cp27-cp27mu-manylinux1_i686.whl'),
     ('manylinuxwheels', '-cp34-cp34m-manylinux1_i686.whl'),
