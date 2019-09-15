@@ -24,7 +24,6 @@ function make_manylinux_wheels {
             -e "PYPATH=${pypath}" \
             -e "ZSTD_WARNINGS_AS_ERRORS=${ZSTD_WARNINGS_AS_ERRORS}" \
             -v `pwd`:/project \
-            -v `pwd`/dist:/output \
             ${image} \
             ${pre_command} /project/ci/build-manylinux-wheel.sh
     done

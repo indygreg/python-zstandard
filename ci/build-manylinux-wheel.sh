@@ -54,4 +54,4 @@ ${PYPATH}/bin/pip wheel -v /project -w /tmp/wheels --no-deps
 wheel=$(ls /tmp/wheels/*.whl)
 
 # Apply fixups.
-auditwheel repair ${wheel} -w /output
+auditwheel repair ${wheel} -w /project/dist

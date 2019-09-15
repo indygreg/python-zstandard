@@ -13,6 +13,64 @@ jobs:
     inputs:
       path: $(System.DefaultWorkingDirectory)/dist
 
+- job: ManyLinuxWheel
+  strategy:
+    matrix:
+      x64_2010_27m:
+        image: quay.io/pypa/manylinux2010_x86_64
+        py: cp27-cp27m
+      x64_2010_27mu:
+        image: quay.io/pypa/manylinux2010_x86_64
+        py: cp27-cp27mu
+      x64_2010_35:
+        image: quay.io/pypa/manylinux2010_x86_64
+        py: cp35-cp35m
+      x64_2010_36:
+        image: quay.io/pypa/manylinux2010_x86_64
+        py: cp36-cp36m
+      x64_2010_37:
+        image: quay.io/pypa/manylinux2010_x86_64
+        py: cp37-cp37m
+      x64_27m:
+        image: quay.io/pypa/manylinux1_x86_64
+        py: cp27-cp27m
+      x64_27mu:
+        image: quay.io/pypa/manylinux1_x86_64
+        py: cp27-cp27mu
+      x64_35:
+        image: quay.io/pypa/manylinux1_x86_64
+        py: cp35-cp35m
+      x64_36:
+        image: quay.io/pypa/manylinux1_x86_64
+        py: cp36-cp36m
+      x64_37:
+        image: quay.io/pypa/manylinux1_x86_64
+        py: cp37-cp37m
+      x86_27m:
+        image: quay.io/pypa/manylinux1_i686
+        py: cp27-cp27m
+      x86_27mu:
+        image: quay.io/pypa/manylinux1_i686
+        py: cp27-cp27mu
+      x86_35:
+        image: quay.io/pypa/manylinux1_i686
+        py: cp35-cp35m
+      x86_36:
+        image: quay.io/pypa/manylinux1_i686
+        py: cp36-cp36m
+      x86_37:
+        image: quay.io/pypa/manylinux1_i686
+        py: cp37-cp37m
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+    - script: |
+        docker run -e PYPATH=/opt/python/$(py) --rm -v `pwd`:/project $(image) /project/ci/build-manylinux-wheel.sh
+      displayName: Build Wheel
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: dist
+
 - template: azure-pipelines-template.yml
   parameters:
     name: Linux_x64
