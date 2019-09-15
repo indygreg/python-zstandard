@@ -121,7 +121,11 @@ def preprocess(path):
     os.close(fd)
 
     try:
-        process = subprocess.Popen(args + [input_file], stdout=subprocess.PIPE)
+        env = dict(os.environ)
+        if getattr(compiler, '_paths', None):
+            env['PATH'] = compiler._paths
+        process = subprocess.Popen(args + [input_file], stdout=subprocess.PIPE,
+                                   env=env)
         output = process.communicate()[0]
         ret = process.poll()
         if ret:
