@@ -62,4 +62,4 @@ else:
                       'cext, or cffi' % _module_policy)
 
 # Keep this in sync with python-zstandard.h.
-__version__ = '0.12.0'
+__version__ = '0.13.0.dev0'
