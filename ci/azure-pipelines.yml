@@ -111,6 +111,11 @@ jobs:
     vmImage: vs2017-win2016
     arch: x64
 
+- template: azure-pipelines-anaconda-linux-template.yml
+  parameters:
+    name: Linux_Anaconda
+    vmImage: ubuntu-16.04
+
 - template: azure-pipelines-anaconda-windows-template.yml
   parameters:
     name: Windows_Anaconda

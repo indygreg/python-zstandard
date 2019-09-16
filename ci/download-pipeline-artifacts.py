@@ -13,6 +13,7 @@ import requests
 URL = 'https://dev.azure.com/gregoryszorc/python-zstandard/_apis/build/builds/{build}/artifacts?api-version=4.1'
 
 FETCH_NAME_PREFIXES = (
+    'LinuxAnaconda',
     'MacOSWheel',
     'ManyLinuxWheel',
     'SourceDistribution',
