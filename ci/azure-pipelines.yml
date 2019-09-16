@@ -56,6 +56,33 @@ jobs:
       inputs:
         targetPath: dist
 
+- job: MacOSWheel
+  strategy:
+    matrix:
+      Python2.7:
+        cibw_build: cp27-*
+      Python3.5:
+        cibw_build: cp35-*
+      Python3.6:
+        cibw_build: cp36-*
+      Python3.7:
+        cibw_build: cp37-*
+  pool:
+    vmImage: macOS-10.14
+  variables:
+    CIBW_BUILD: variables['cibw_build']
+    CIBW_BUILD_VERBOSITY: '1'
+  steps:
+    - script: |
+        pip install --require-hashes -r ci/requirements.macoswheels.txt
+      displayName: Install Dependencies
+    - script: |
+        cibuildwheel --output-dir dist
+      displayName: Build
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: dist
+
 - template: azure-pipelines-template.yml
   parameters:
     name: Linux_x64
