@@ -79,8 +79,10 @@ ext_includes = [
 ]
 
 ext_sources = [
+    "zstd/common/error_private.c",
     "zstd/common/pool.c",
     "zstd/common/threading.c",
+    "zstd/common/zstd_common.c",
     "zstd.c",
     "c-ext/bufferutil.c",
     "c-ext/compressiondict.c",
