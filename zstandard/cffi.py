@@ -14,68 +14,67 @@ __all__ = [
     #'BufferSegments',
     #'BufferWithSegments',
     #'BufferWithSegmentsCollection',
-    'CompressionParameters',
-    'ZstdCompressionDict',
-    'ZstdCompressionParameters',
-    'ZstdCompressor',
-    'ZstdError',
-    'ZstdDecompressor',
-    'FrameParameters',
-    'estimate_decompression_context_size',
-    'frame_content_size',
-    'frame_header_size',
-    'get_frame_parameters',
-    'train_dictionary',
-
+    "CompressionParameters",
+    "ZstdCompressionDict",
+    "ZstdCompressionParameters",
+    "ZstdCompressor",
+    "ZstdError",
+    "ZstdDecompressor",
+    "FrameParameters",
+    "estimate_decompression_context_size",
+    "frame_content_size",
+    "frame_header_size",
+    "get_frame_parameters",
+    "train_dictionary",
     # Constants.
-    'FLUSH_BLOCK',
-    'FLUSH_FRAME',
-    'COMPRESSOBJ_FLUSH_FINISH',
-    'COMPRESSOBJ_FLUSH_BLOCK',
-    'ZSTD_VERSION',
-    'FRAME_HEADER',
-    'CONTENTSIZE_UNKNOWN',
-    'CONTENTSIZE_ERROR',
-    'MAX_COMPRESSION_LEVEL',
-    'COMPRESSION_RECOMMENDED_INPUT_SIZE',
-    'COMPRESSION_RECOMMENDED_OUTPUT_SIZE',
-    'DECOMPRESSION_RECOMMENDED_INPUT_SIZE',
-    'DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE',
-    'MAGIC_NUMBER',
-    'BLOCKSIZELOG_MAX',
-    'BLOCKSIZE_MAX',
-    'WINDOWLOG_MIN',
-    'WINDOWLOG_MAX',
-    'CHAINLOG_MIN',
-    'CHAINLOG_MAX',
-    'HASHLOG_MIN',
-    'HASHLOG_MAX',
-    'HASHLOG3_MAX',
-    'MINMATCH_MIN',
-    'MINMATCH_MAX',
-    'SEARCHLOG_MIN',
-    'SEARCHLOG_MAX',
-    'SEARCHLENGTH_MIN',
-    'SEARCHLENGTH_MAX',
-    'TARGETLENGTH_MIN',
-    'TARGETLENGTH_MAX',
-    'LDM_MINMATCH_MIN',
-    'LDM_MINMATCH_MAX',
-    'LDM_BUCKETSIZELOG_MAX',
-    'STRATEGY_FAST',
-    'STRATEGY_DFAST',
-    'STRATEGY_GREEDY',
-    'STRATEGY_LAZY',
-    'STRATEGY_LAZY2',
-    'STRATEGY_BTLAZY2',
-    'STRATEGY_BTOPT',
-    'STRATEGY_BTULTRA',
-    'STRATEGY_BTULTRA2',
-    'DICT_TYPE_AUTO',
-    'DICT_TYPE_RAWCONTENT',
-    'DICT_TYPE_FULLDICT',
-    'FORMAT_ZSTD1',
-    'FORMAT_ZSTD1_MAGICLESS',
+    "FLUSH_BLOCK",
+    "FLUSH_FRAME",
+    "COMPRESSOBJ_FLUSH_FINISH",
+    "COMPRESSOBJ_FLUSH_BLOCK",
+    "ZSTD_VERSION",
+    "FRAME_HEADER",
+    "CONTENTSIZE_UNKNOWN",
+    "CONTENTSIZE_ERROR",
+    "MAX_COMPRESSION_LEVEL",
+    "COMPRESSION_RECOMMENDED_INPUT_SIZE",
+    "COMPRESSION_RECOMMENDED_OUTPUT_SIZE",
+    "DECOMPRESSION_RECOMMENDED_INPUT_SIZE",
+    "DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE",
+    "MAGIC_NUMBER",
+    "BLOCKSIZELOG_MAX",
+    "BLOCKSIZE_MAX",
+    "WINDOWLOG_MIN",
+    "WINDOWLOG_MAX",
+    "CHAINLOG_MIN",
+    "CHAINLOG_MAX",
+    "HASHLOG_MIN",
+    "HASHLOG_MAX",
+    "HASHLOG3_MAX",
+    "MINMATCH_MIN",
+    "MINMATCH_MAX",
+    "SEARCHLOG_MIN",
+    "SEARCHLOG_MAX",
+    "SEARCHLENGTH_MIN",
+    "SEARCHLENGTH_MAX",
+    "TARGETLENGTH_MIN",
+    "TARGETLENGTH_MAX",
+    "LDM_MINMATCH_MIN",
+    "LDM_MINMATCH_MAX",
+    "LDM_BUCKETSIZELOG_MAX",
+    "STRATEGY_FAST",
+    "STRATEGY_DFAST",
+    "STRATEGY_GREEDY",
+    "STRATEGY_LAZY",
+    "STRATEGY_LAZY2",
+    "STRATEGY_BTLAZY2",
+    "STRATEGY_BTOPT",
+    "STRATEGY_BTULTRA",
+    "STRATEGY_BTULTRA2",
+    "DICT_TYPE_AUTO",
+    "DICT_TYPE_RAWCONTENT",
+    "DICT_TYPE_FULLDICT",
+    "FORMAT_ZSTD1",
+    "FORMAT_ZSTD1_MAGICLESS",
 ]
 
 import io
@@ -105,10 +104,14 @@ new_nonzero = ffi.new_allocator(should_clear_after_alloc=False)
 
 MAX_COMPRESSION_LEVEL = lib.ZSTD_maxCLevel()
 MAGIC_NUMBER = lib.ZSTD_MAGICNUMBER
-FRAME_HEADER = b'\x28\xb5\x2f\xfd'
+FRAME_HEADER = b"\x28\xb5\x2f\xfd"
 CONTENTSIZE_UNKNOWN = lib.ZSTD_CONTENTSIZE_UNKNOWN
 CONTENTSIZE_ERROR = lib.ZSTD_CONTENTSIZE_ERROR
-ZSTD_VERSION = (lib.ZSTD_VERSION_MAJOR, lib.ZSTD_VERSION_MINOR, lib.ZSTD_VERSION_RELEASE)
+ZSTD_VERSION = (
+    lib.ZSTD_VERSION_MAJOR,
+    lib.ZSTD_VERSION_MINOR,
+    lib.ZSTD_VERSION_RELEASE,
+)
 
 BLOCKSIZELOG_MAX = lib.ZSTD_BLOCKSIZELOG_MAX
 BLOCKSIZE_MAX = lib.ZSTD_BLOCKSIZE_MAX
@@ -165,9 +168,9 @@ def _cpu_count():
     # Linux.
     try:
         if sys.version_info[0] == 2:
-            return os.sysconf(b'SC_NPROCESSORS_ONLN')
+            return os.sysconf(b"SC_NPROCESSORS_ONLN")
         else:
-            return os.sysconf(u'SC_NPROCESSORS_ONLN')
+            return os.sysconf("SC_NPROCESSORS_ONLN")
     except (AttributeError, ValueError):
         pass
 
@@ -183,7 +186,8 @@ def _zstd_error(zresult):
     # Resolves to bytes on Python 2 and 3. We use the string for formatting
     # into error messages, which will be literal unicode. So convert it to
     # unicode.
-    return ffi.string(lib.ZSTD_getErrorName(zresult)).decode('utf-8')
+    return ffi.string(lib.ZSTD_getErrorName(zresult)).decode("utf-8")
+
 
 def _make_cctx_params(params):
     res = lib.ZSTD_createCCtxParams()
@@ -221,19 +225,20 @@ def _make_cctx_params(params):
 
     return res
 
+
 class ZstdCompressionParameters(object):
     @staticmethod
     def from_level(level, source_size=0, dict_size=0, **kwargs):
         params = lib.ZSTD_getCParams(level, source_size, dict_size)
 
         args = {
-            'window_log': 'windowLog',
-            'chain_log': 'chainLog',
-            'hash_log': 'hashLog',
-            'search_log': 'searchLog',
-            'min_match': 'minMatch',
-            'target_length': 'targetLength',
-            'compression_strategy': 'strategy',
+            "window_log": "windowLog",
+            "chain_log": "chainLog",
+            "hash_log": "hashLog",
+            "search_log": "searchLog",
+            "min_match": "minMatch",
+            "target_length": "targetLength",
+            "compression_strategy": "strategy",
         }
 
         for arg, attr in args.items():
@@ -242,14 +247,33 @@ class ZstdCompressionParameters(object):
 
         return ZstdCompressionParameters(**kwargs)
 
-    def __init__(self, format=0, compression_level=0, window_log=0, hash_log=0,
-                 chain_log=0, search_log=0, min_match=0, target_length=0,
-                 strategy=-1, compression_strategy=-1,
-                 write_content_size=1, write_checksum=0,
-                 write_dict_id=0, job_size=0, overlap_log=-1,
-                 overlap_size_log=-1, force_max_window=0, enable_ldm=0,
-                 ldm_hash_log=0, ldm_min_match=0, ldm_bucket_size_log=0,
-                 ldm_hash_rate_log=-1, ldm_hash_every_log=-1, threads=0):
+    def __init__(
+        self,
+        format=0,
+        compression_level=0,
+        window_log=0,
+        hash_log=0,
+        chain_log=0,
+        search_log=0,
+        min_match=0,
+        target_length=0,
+        strategy=-1,
+        compression_strategy=-1,
+        write_content_size=1,
+        write_checksum=0,
+        write_dict_id=0,
+        job_size=0,
+        overlap_log=-1,
+        overlap_size_log=-1,
+        force_max_window=0,
+        enable_ldm=0,
+        ldm_hash_log=0,
+        ldm_min_match=0,
+        ldm_bucket_size_log=0,
+        ldm_hash_rate_log=-1,
+        ldm_hash_every_log=-1,
+        threads=0,
+    ):
 
         params = lib.ZSTD_createCCtxParams()
         if params == ffi.NULL:
@@ -267,7 +291,9 @@ class ZstdCompressionParameters(object):
         _set_compression_parameter(params, lib.ZSTD_c_nbWorkers, threads)
 
         _set_compression_parameter(params, lib.ZSTD_c_format, format)
-        _set_compression_parameter(params, lib.ZSTD_c_compressionLevel, compression_level)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_compressionLevel, compression_level
+        )
         _set_compression_parameter(params, lib.ZSTD_c_windowLog, window_log)
         _set_compression_parameter(params, lib.ZSTD_c_hashLog, hash_log)
         _set_compression_parameter(params, lib.ZSTD_c_chainLog, chain_log)
@@ -276,7 +302,7 @@ class ZstdCompressionParameters(object):
         _set_compression_parameter(params, lib.ZSTD_c_targetLength, target_length)
 
         if strategy != -1 and compression_strategy != -1:
-            raise ValueError('cannot specify both compression_strategy and strategy')
+            raise ValueError("cannot specify both compression_strategy and strategy")
 
         if compression_strategy != -1:
             strategy = compression_strategy
@@ -284,13 +310,15 @@ class ZstdCompressionParameters(object):
             strategy = 0
 
         _set_compression_parameter(params, lib.ZSTD_c_strategy, strategy)
-        _set_compression_parameter(params, lib.ZSTD_c_contentSizeFlag, write_content_size)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_contentSizeFlag, write_content_size
+        )
         _set_compression_parameter(params, lib.ZSTD_c_checksumFlag, write_checksum)
         _set_compression_parameter(params, lib.ZSTD_c_dictIDFlag, write_dict_id)
         _set_compression_parameter(params, lib.ZSTD_c_jobSize, job_size)
 
         if overlap_log != -1 and overlap_size_log != -1:
-            raise ValueError('cannot specify both overlap_log and overlap_size_log')
+            raise ValueError("cannot specify both overlap_log and overlap_size_log")
 
         if overlap_size_log != -1:
             overlap_log = overlap_size_log
@@ -299,13 +327,19 @@ class ZstdCompressionParameters(object):
 
         _set_compression_parameter(params, lib.ZSTD_c_overlapLog, overlap_log)
         _set_compression_parameter(params, lib.ZSTD_c_forceMaxWindow, force_max_window)
-        _set_compression_parameter(params, lib.ZSTD_c_enableLongDistanceMatching, enable_ldm)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_enableLongDistanceMatching, enable_ldm
+        )
         _set_compression_parameter(params, lib.ZSTD_c_ldmHashLog, ldm_hash_log)
         _set_compression_parameter(params, lib.ZSTD_c_ldmMinMatch, ldm_min_match)
-        _set_compression_parameter(params, lib.ZSTD_c_ldmBucketSizeLog, ldm_bucket_size_log)
+        _set_compression_parameter(
+            params, lib.ZSTD_c_ldmBucketSizeLog, ldm_bucket_size_log
+        )
 
         if ldm_hash_rate_log != -1 and ldm_hash_every_log != -1:
-            raise ValueError('cannot specify both ldm_hash_rate_log and ldm_hash_every_log')
+            raise ValueError(
+                "cannot specify both ldm_hash_rate_log and ldm_hash_every_log"
+            )
 
         if ldm_hash_every_log != -1:
             ldm_hash_rate_log = ldm_hash_every_log
@@ -380,7 +414,9 @@ class ZstdCompressionParameters(object):
 
     @property
     def enable_ldm(self):
-        return _get_compression_parameter(self._params, lib.ZSTD_c_enableLongDistanceMatching)
+        return _get_compression_parameter(
+            self._params, lib.ZSTD_c_enableLongDistanceMatching
+        )
 
     @property
     def ldm_hash_log(self):
@@ -409,7 +445,9 @@ class ZstdCompressionParameters(object):
     def estimated_compression_context_size(self):
         return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self._params)
 
+
 CompressionParameters = ZstdCompressionParameters
+
 
 def estimate_decompression_context_size():
     return lib.ZSTD_estimateDCtxSize()
@@ -418,24 +456,25 @@ def estimate_decompression_context_size():
 def _set_compression_parameter(params, param, value):
     zresult = lib.ZSTD_CCtxParams_setParameter(params, param, value)
     if lib.ZSTD_isError(zresult):
-        raise ZstdError('unable to set compression context parameter: %s' %
-                        _zstd_error(zresult))
+        raise ZstdError(
+            "unable to set compression context parameter: %s" % _zstd_error(zresult)
+        )
 
 
 def _get_compression_parameter(params, param):
-    result = ffi.new('int *')
+    result = ffi.new("int *")
 
     zresult = lib.ZSTD_CCtxParams_getParameter(params, param, result)
     if lib.ZSTD_isError(zresult):
-        raise ZstdError('unable to get compression context parameter: %s' %
-                        _zstd_error(zresult))
+        raise ZstdError(
+            "unable to get compression context parameter: %s" % _zstd_error(zresult)
+        )
 
     return result[0]
 
 
 class ZstdCompressionWriter(object):
-    def __init__(self, compressor, writer, source_size, write_size,
-                 write_return_read):
+    def __init__(self, compressor, writer, source_size, write_size, write_return_read):
         self._compressor = compressor
         self._writer = writer
         self._write_size = write_size
@@ -444,24 +483,22 @@ class ZstdCompressionWriter(object):
         self._closed = False
         self._bytes_compressed = 0
 
-        self._dst_buffer = ffi.new('char[]', write_size)
-        self._out_buffer = ffi.new('ZSTD_outBuffer *')
+        self._dst_buffer = ffi.new("char[]", write_size)
+        self._out_buffer = ffi.new("ZSTD_outBuffer *")
         self._out_buffer.dst = self._dst_buffer
         self._out_buffer.size = len(self._dst_buffer)
         self._out_buffer.pos = 0
 
-        zresult = lib.ZSTD_CCtx_setPledgedSrcSize(compressor._cctx,
-                                                  source_size)
+        zresult = lib.ZSTD_CCtx_setPledgedSrcSize(compressor._cctx, source_size)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("error setting source size: %s" % _zstd_error(zresult))
 
     def __enter__(self):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if self._entered:
-            raise ZstdError('cannot __enter__ multiple times')
+            raise ZstdError("cannot __enter__ multiple times")
 
         self._entered = True
         return self
@@ -480,11 +517,11 @@ class ZstdCompressionWriter(object):
         return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)
 
     def fileno(self):
-        f = getattr(self._writer, 'fileno', None)
+        f = getattr(self._writer, "fileno", None)
         if f:
             return f()
         else:
-            raise OSError('fileno not available on underlying writer')
+            raise OSError("fileno not available on underlying writer")
 
     def close(self):
         if self._closed:
@@ -496,7 +533,7 @@ class ZstdCompressionWriter(object):
             self._closed = True
 
         # Call close() on underlying stream as well.
-        f = getattr(self._writer, 'close', None)
+        f = getattr(self._writer, "close", None)
         if f:
             f()
 
@@ -529,7 +566,7 @@ class ZstdCompressionWriter(object):
         return True
 
     def writelines(self, lines):
-        raise NotImplementedError('writelines() is not yet implemented')
+        raise NotImplementedError("writelines() is not yet implemented")
 
     def read(self, size=-1):
         raise io.UnsupportedOperation()
@@ -542,13 +579,13 @@ class ZstdCompressionWriter(object):
 
     def write(self, data):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         total_write = 0
 
         data_buffer = ffi.from_buffer(data)
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
         in_buffer.src = data_buffer
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
@@ -557,12 +594,11 @@ class ZstdCompressionWriter(object):
         out_buffer.pos = 0
 
         while in_buffer.pos < in_buffer.size:
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               out_buffer, in_buffer,
-                                               lib.ZSTD_e_continue)
+            zresult = lib.ZSTD_compressStream2(
+                self._compressor._cctx, out_buffer, in_buffer, lib.ZSTD_e_continue
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
             if out_buffer.pos:
                 self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
@@ -581,28 +617,27 @@ class ZstdCompressionWriter(object):
         elif flush_mode == FLUSH_FRAME:
             flush = lib.ZSTD_e_end
         else:
-            raise ValueError('unknown flush_mode: %r' % flush_mode)
+            raise ValueError("unknown flush_mode: %r" % flush_mode)
 
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         total_write = 0
 
         out_buffer = self._out_buffer
         out_buffer.pos = 0
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
         in_buffer.src = ffi.NULL
         in_buffer.size = 0
         in_buffer.pos = 0
 
         while True:
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               out_buffer, in_buffer,
-                                               flush)
+            zresult = lib.ZSTD_compressStream2(
+                self._compressor._cctx, out_buffer, in_buffer, flush
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
             if out_buffer.pos:
                 self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
@@ -622,10 +657,10 @@ class ZstdCompressionWriter(object):
 class ZstdCompressionObj(object):
     def compress(self, data):
         if self._finished:
-            raise ZstdError('cannot call compress() after compressor finished')
+            raise ZstdError("cannot call compress() after compressor finished")
 
         data_buffer = ffi.from_buffer(data)
-        source = ffi.new('ZSTD_inBuffer *')
+        source = ffi.new("ZSTD_inBuffer *")
         source.src = data_buffer
         source.size = len(data_buffer)
         source.pos = 0
@@ -633,26 +668,24 @@ class ZstdCompressionObj(object):
         chunks = []
 
         while source.pos < len(data):
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               self._out,
-                                               source,
-                                               lib.ZSTD_e_continue)
+            zresult = lib.ZSTD_compressStream2(
+                self._compressor._cctx, self._out, source, lib.ZSTD_e_continue
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
             if self._out.pos:
                 chunks.append(ffi.buffer(self._out.dst, self._out.pos)[:])
                 self._out.pos = 0
 
-        return b''.join(chunks)
+        return b"".join(chunks)
 
     def flush(self, flush_mode=COMPRESSOBJ_FLUSH_FINISH):
         if flush_mode not in (COMPRESSOBJ_FLUSH_FINISH, COMPRESSOBJ_FLUSH_BLOCK):
-            raise ValueError('flush mode not recognized')
+            raise ValueError("flush mode not recognized")
 
         if self._finished:
-            raise ZstdError('compressor object already finished')
+            raise ZstdError("compressor object already finished")
 
         if flush_mode == COMPRESSOBJ_FLUSH_BLOCK:
             z_flush_mode = lib.ZSTD_e_flush
@@ -660,11 +693,11 @@ class ZstdCompressionObj(object):
             z_flush_mode = lib.ZSTD_e_end
             self._finished = True
         else:
-            raise ZstdError('unhandled flush mode')
+            raise ZstdError("unhandled flush mode")
 
         assert self._out.pos == 0
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
         in_buffer.src = ffi.NULL
         in_buffer.size = 0
         in_buffer.pos = 0
@@ -672,13 +705,13 @@ class ZstdCompressionObj(object):
         chunks = []
 
         while True:
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               self._out,
-                                               in_buffer,
-                                               z_flush_mode)
+            zresult = lib.ZSTD_compressStream2(
+                self._compressor._cctx, self._out, in_buffer, z_flush_mode
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('error ending compression stream: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError(
+                    "error ending compression stream: %s" % _zstd_error(zresult)
+                )
 
             if self._out.pos:
                 chunks.append(ffi.buffer(self._out.dst, self._out.pos)[:])
@@ -687,19 +720,19 @@ class ZstdCompressionObj(object):
             if not zresult:
                 break
 
-        return b''.join(chunks)
+        return b"".join(chunks)
 
 
 class ZstdCompressionChunker(object):
     def __init__(self, compressor, chunk_size):
         self._compressor = compressor
-        self._out = ffi.new('ZSTD_outBuffer *')
-        self._dst_buffer = ffi.new('char[]', chunk_size)
+        self._out = ffi.new("ZSTD_outBuffer *")
+        self._dst_buffer = ffi.new("char[]", chunk_size)
         self._out.dst = self._dst_buffer
         self._out.size = chunk_size
         self._out.pos = 0
 
-        self._in = ffi.new('ZSTD_inBuffer *')
+        self._in = ffi.new("ZSTD_inBuffer *")
         self._in.src = ffi.NULL
         self._in.size = 0
         self._in.pos = 0
@@ -707,11 +740,13 @@ class ZstdCompressionChunker(object):
 
     def compress(self, data):
         if self._finished:
-            raise ZstdError('cannot call compress() after compression finished')
+            raise ZstdError("cannot call compress() after compression finished")
 
         if self._in.src != ffi.NULL:
-            raise ZstdError('cannot perform operation before consuming output '
-                            'from previous operation')
+            raise ZstdError(
+                "cannot perform operation before consuming output "
+                "from previous operation"
+            )
 
         data_buffer = ffi.from_buffer(data)
 
@@ -723,10 +758,9 @@ class ZstdCompressionChunker(object):
         self._in.pos = 0
 
         while self._in.pos < self._in.size:
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               self._out,
-                                               self._in,
-                                               lib.ZSTD_e_continue)
+            zresult = lib.ZSTD_compressStream2(
+                self._compressor._cctx, self._out, self._in, lib.ZSTD_e_continue
+            )
 
             if self._in.pos == self._in.size:
                 self._in.src = ffi.NULL
@@ -734,8 +768,7 @@ class ZstdCompressionChunker(object):
                 self._in.pos = 0
 
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
             if self._out.pos == self._out.size:
                 yield ffi.buffer(self._out.dst, self._out.pos)[:]
@@ -743,18 +776,19 @@ class ZstdCompressionChunker(object):
 
     def flush(self):
         if self._finished:
-            raise ZstdError('cannot call flush() after compression finished')
+            raise ZstdError("cannot call flush() after compression finished")
 
         if self._in.src != ffi.NULL:
-            raise ZstdError('cannot call flush() before consuming output from '
-                            'previous operation')
+            raise ZstdError(
+                "cannot call flush() before consuming output from " "previous operation"
+            )
 
         while True:
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               self._out, self._in,
-                                               lib.ZSTD_e_flush)
+            zresult = lib.ZSTD_compressStream2(
+                self._compressor._cctx, self._out, self._in, lib.ZSTD_e_flush
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s' % _zstd_error(zresult))
+                raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
             if self._out.pos:
                 yield ffi.buffer(self._out.dst, self._out.pos)[:]
@@ -765,18 +799,20 @@ class ZstdCompressionChunker(object):
 
     def finish(self):
         if self._finished:
-            raise ZstdError('cannot call finish() after compression finished')
+            raise ZstdError("cannot call finish() after compression finished")
 
         if self._in.src != ffi.NULL:
-            raise ZstdError('cannot call finish() before consuming output from '
-                            'previous operation')
+            raise ZstdError(
+                "cannot call finish() before consuming output from "
+                "previous operation"
+            )
 
         while True:
-            zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                               self._out, self._in,
-                                               lib.ZSTD_e_end)
+            zresult = lib.ZSTD_compressStream2(
+                self._compressor._cctx, self._out, self._in, lib.ZSTD_e_end
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd compress error: %s' % _zstd_error(zresult))
+                raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
             if self._out.pos:
                 yield ffi.buffer(self._out.dst, self._out.pos)[:]
@@ -798,13 +834,13 @@ class ZstdCompressionReader(object):
         self._finished_input = False
         self._finished_output = False
 
-        self._in_buffer = ffi.new('ZSTD_inBuffer *')
+        self._in_buffer = ffi.new("ZSTD_inBuffer *")
         # Holds a ref so backing bytes in self._in_buffer stay alive.
         self._source_buffer = None
 
     def __enter__(self):
         if self._entered:
-            raise ValueError('cannot __enter__ multiple times')
+            raise ValueError("cannot __enter__ multiple times")
 
         self._entered = True
         return self
@@ -833,10 +869,10 @@ class ZstdCompressionReader(object):
         raise io.UnsupportedOperation()
 
     def write(self, data):
-        raise OSError('stream is not writable')
+        raise OSError("stream is not writable")
 
     def writelines(self, ignored):
-        raise OSError('stream is not writable')
+        raise OSError("stream is not writable")
 
     def isatty(self):
         return False
@@ -865,7 +901,7 @@ class ZstdCompressionReader(object):
 
             chunks.append(chunk)
 
-        return b''.join(chunks)
+        return b"".join(chunks)
 
     def __iter__(self):
         raise io.UnsupportedOperation()
@@ -879,7 +915,7 @@ class ZstdCompressionReader(object):
         if self._finished_input:
             return
 
-        if hasattr(self._source, 'read'):
+        if hasattr(self._source, "read"):
             data = self._source.read(self._read_size)
 
             if not data:
@@ -902,9 +938,9 @@ class ZstdCompressionReader(object):
 
         old_pos = out_buffer.pos
 
-        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                           out_buffer, self._in_buffer,
-                                           lib.ZSTD_e_continue)
+        zresult = lib.ZSTD_compressStream2(
+            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_continue
+        )
 
         self._bytes_compressed += out_buffer.pos - old_pos
 
@@ -914,31 +950,30 @@ class ZstdCompressionReader(object):
             self._in_buffer.size = 0
             self._source_buffer = None
 
-            if not hasattr(self._source, 'read'):
+            if not hasattr(self._source, "read"):
                 self._finished_input = True
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('zstd compress error: %s',
-                            _zstd_error(zresult))
+            raise ZstdError("zstd compress error: %s", _zstd_error(zresult))
 
         return out_buffer.pos and out_buffer.pos == out_buffer.size
 
     def read(self, size=-1):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if size < -1:
-            raise ValueError('cannot read negative amounts less than -1')
+            raise ValueError("cannot read negative amounts less than -1")
 
         if size == -1:
             return self.readall()
 
         if self._finished_output or size == 0:
-            return b''
+            return b""
 
         # Need a dedicated ref to dest buffer otherwise it gets collected.
-        dst_buffer = ffi.new('char[]', size)
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        dst_buffer = ffi.new("char[]", size)
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dst_buffer
         out_buffer.size = size
         out_buffer.pos = 0
@@ -955,15 +990,14 @@ class ZstdCompressionReader(object):
         # EOF
         old_pos = out_buffer.pos
 
-        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                           out_buffer, self._in_buffer,
-                                           lib.ZSTD_e_end)
+        zresult = lib.ZSTD_compressStream2(
+            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+        )
 
         self._bytes_compressed += out_buffer.pos - old_pos
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error ending compression stream: %s',
-                            _zstd_error(zresult))
+            raise ZstdError("error ending compression stream: %s", _zstd_error(zresult))
 
         if zresult == 0:
             self._finished_output = True
@@ -972,20 +1006,20 @@ class ZstdCompressionReader(object):
 
     def read1(self, size=-1):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if size < -1:
-            raise ValueError('cannot read negative amounts less than -1')
+            raise ValueError("cannot read negative amounts less than -1")
 
         if self._finished_output or size == 0:
-            return b''
+            return b""
 
         # -1 returns arbitrary number of bytes.
         if size == -1:
             size = COMPRESSION_RECOMMENDED_OUTPUT_SIZE
 
-        dst_buffer = ffi.new('char[]', size)
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        dst_buffer = ffi.new("char[]", size)
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dst_buffer
         out_buffer.size = size
         out_buffer.pos = 0
@@ -1020,15 +1054,16 @@ class ZstdCompressionReader(object):
         # EOF.
         old_pos = out_buffer.pos
 
-        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                           out_buffer, self._in_buffer,
-                                           lib.ZSTD_e_end)
+        zresult = lib.ZSTD_compressStream2(
+            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+        )
 
         self._bytes_compressed += out_buffer.pos - old_pos
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error ending compression stream: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError(
+                "error ending compression stream: %s" % _zstd_error(zresult)
+            )
 
         if zresult == 0:
             self._finished_output = True
@@ -1037,15 +1072,15 @@ class ZstdCompressionReader(object):
 
     def readinto(self, b):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if self._finished_output:
             return 0
 
         # TODO use writable=True once we require CFFI >= 1.12.
         dest_buffer = ffi.from_buffer(b)
-        ffi.memmove(b, b'', 0)
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        ffi.memmove(b, b"", 0)
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dest_buffer
         out_buffer.size = len(dest_buffer)
         out_buffer.pos = 0
@@ -1060,15 +1095,14 @@ class ZstdCompressionReader(object):
 
         # EOF.
         old_pos = out_buffer.pos
-        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                           out_buffer, self._in_buffer,
-                                           lib.ZSTD_e_end)
+        zresult = lib.ZSTD_compressStream2(
+            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+        )
 
         self._bytes_compressed += out_buffer.pos - old_pos
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error ending compression stream: %s',
-                            _zstd_error(zresult))
+            raise ZstdError("error ending compression stream: %s", _zstd_error(zresult))
 
         if zresult == 0:
             self._finished_output = True
@@ -1077,16 +1111,16 @@ class ZstdCompressionReader(object):
 
     def readinto1(self, b):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if self._finished_output:
             return 0
 
         # TODO use writable=True once we require CFFI >= 1.12.
         dest_buffer = ffi.from_buffer(b)
-        ffi.memmove(b, b'', 0)
+        ffi.memmove(b, b"", 0)
 
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dest_buffer
         out_buffer.size = len(dest_buffer)
         out_buffer.pos = 0
@@ -1107,15 +1141,16 @@ class ZstdCompressionReader(object):
         # EOF.
         old_pos = out_buffer.pos
 
-        zresult = lib.ZSTD_compressStream2(self._compressor._cctx,
-                                           out_buffer, self._in_buffer,
-                                           lib.ZSTD_e_end)
+        zresult = lib.ZSTD_compressStream2(
+            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+        )
 
         self._bytes_compressed += out_buffer.pos - old_pos
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error ending compression stream: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError(
+                "error ending compression stream: %s" % _zstd_error(zresult)
+            )
 
         if zresult == 0:
             self._finished_output = True
@@ -1124,29 +1159,35 @@ class ZstdCompressionReader(object):
 
 
 class ZstdCompressor(object):
-    def __init__(self, level=3, dict_data=None, compression_params=None,
-                 write_checksum=None, write_content_size=None,
-                 write_dict_id=None, threads=0):
+    def __init__(
+        self,
+        level=3,
+        dict_data=None,
+        compression_params=None,
+        write_checksum=None,
+        write_content_size=None,
+        write_dict_id=None,
+        threads=0,
+    ):
         if level > lib.ZSTD_maxCLevel():
-            raise ValueError('level must be less than %d' % lib.ZSTD_maxCLevel())
+            raise ValueError("level must be less than %d" % lib.ZSTD_maxCLevel())
 
         if threads < 0:
             threads = _cpu_count()
 
         if compression_params and write_checksum is not None:
-            raise ValueError('cannot define compression_params and '
-                             'write_checksum')
+            raise ValueError("cannot define compression_params and " "write_checksum")
 
         if compression_params and write_content_size is not None:
-            raise ValueError('cannot define compression_params and '
-                             'write_content_size')
+            raise ValueError(
+                "cannot define compression_params and " "write_content_size"
+            )
 
         if compression_params and write_dict_id is not None:
-            raise ValueError('cannot define compression_params and '
-                             'write_dict_id')
+            raise ValueError("cannot define compression_params and " "write_dict_id")
 
         if compression_params and threads:
-            raise ValueError('cannot define compression_params and threads')
+            raise ValueError("cannot define compression_params and threads")
 
         if compression_params:
             self._params = _make_cctx_params(compression_params)
@@ -1160,27 +1201,24 @@ class ZstdCompressor(object):
 
             self._params = ffi.gc(params, lib.ZSTD_freeCCtxParams)
 
-            _set_compression_parameter(self._params,
-                                       lib.ZSTD_c_compressionLevel,
-                                       level)
+            _set_compression_parameter(self._params, lib.ZSTD_c_compressionLevel, level)
 
             _set_compression_parameter(
                 self._params,
                 lib.ZSTD_c_contentSizeFlag,
-                write_content_size if write_content_size is not None else 1)
+                write_content_size if write_content_size is not None else 1,
+            )
 
-            _set_compression_parameter(self._params,
-                                       lib.ZSTD_c_checksumFlag,
-                                       1 if write_checksum else 0)
+            _set_compression_parameter(
+                self._params, lib.ZSTD_c_checksumFlag, 1 if write_checksum else 0
+            )
 
-            _set_compression_parameter(self._params,
-                                       lib.ZSTD_c_dictIDFlag,
-                                       1 if write_dict_id else 0)
+            _set_compression_parameter(
+                self._params, lib.ZSTD_c_dictIDFlag, 1 if write_dict_id else 0
+            )
 
             if threads:
-                _set_compression_parameter(self._params,
-                                           lib.ZSTD_c_nbWorkers,
-                                           threads)
+                _set_compression_parameter(self._params, lib.ZSTD_c_nbWorkers, threads)
 
         cctx = lib.ZSTD_createCCtx()
         if cctx == ffi.NULL:
@@ -1194,15 +1232,16 @@ class ZstdCompressor(object):
         try:
             self._setup_cctx()
         finally:
-            self._cctx = ffi.gc(cctx, lib.ZSTD_freeCCtx,
-                                size=lib.ZSTD_sizeof_CCtx(cctx))
+            self._cctx = ffi.gc(
+                cctx, lib.ZSTD_freeCCtx, size=lib.ZSTD_sizeof_CCtx(cctx)
+            )
 
     def _setup_cctx(self):
-        zresult = lib.ZSTD_CCtx_setParametersUsingCCtxParams(self._cctx,
-                                                             self._params)
+        zresult = lib.ZSTD_CCtx_setParametersUsingCCtxParams(self._cctx, self._params)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('could not set compression parameters: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError(
+                "could not set compression parameters: %s" % _zstd_error(zresult)
+            )
 
         dict_data = self._dict_data
 
@@ -1211,12 +1250,17 @@ class ZstdCompressor(object):
                 zresult = lib.ZSTD_CCtx_refCDict(self._cctx, dict_data._cdict)
             else:
                 zresult = lib.ZSTD_CCtx_loadDictionary_advanced(
-                    self._cctx, dict_data.as_bytes(), len(dict_data),
-                    lib.ZSTD_dlm_byRef, dict_data._dict_type)
+                    self._cctx,
+                    dict_data.as_bytes(),
+                    len(dict_data),
+                    lib.ZSTD_dlm_byRef,
+                    dict_data._dict_type,
+                )
 
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('could not load compression dictionary: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError(
+                    "could not load compression dictionary: %s" % _zstd_error(zresult)
+                )
 
     def memory_size(self):
         return lib.ZSTD_sizeof_CCtx(self._cctx)
@@ -1227,15 +1271,14 @@ class ZstdCompressor(object):
         data_buffer = ffi.from_buffer(data)
 
         dest_size = lib.ZSTD_compressBound(len(data_buffer))
-        out = new_nonzero('char[]', dest_size)
+        out = new_nonzero("char[]", dest_size)
 
         zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, len(data_buffer))
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("error setting source size: %s" % _zstd_error(zresult))
 
-        out_buffer = ffi.new('ZSTD_outBuffer *')
-        in_buffer = ffi.new('ZSTD_inBuffer *')
+        out_buffer = ffi.new("ZSTD_outBuffer *")
+        in_buffer = ffi.new("ZSTD_inBuffer *")
 
         out_buffer.dst = out
         out_buffer.size = dest_size
@@ -1245,16 +1288,14 @@ class ZstdCompressor(object):
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
-        zresult = lib.ZSTD_compressStream2(self._cctx,
-                                           out_buffer,
-                                           in_buffer,
-                                           lib.ZSTD_e_end)
+        zresult = lib.ZSTD_compressStream2(
+            self._cctx, out_buffer, in_buffer, lib.ZSTD_e_end
+        )
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('cannot compress: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("cannot compress: %s" % _zstd_error(zresult))
         elif zresult:
-            raise ZstdError('unexpected partial frame flush')
+            raise ZstdError("unexpected partial frame flush")
 
         return ffi.buffer(out, out_buffer.pos)[:]
 
@@ -1266,12 +1307,11 @@ class ZstdCompressor(object):
 
         zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, size)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("error setting source size: %s" % _zstd_error(zresult))
 
         cobj = ZstdCompressionObj()
-        cobj._out = ffi.new('ZSTD_outBuffer *')
-        cobj._dst_buffer = ffi.new('char[]', COMPRESSION_RECOMMENDED_OUTPUT_SIZE)
+        cobj._out = ffi.new("ZSTD_outBuffer *")
+        cobj._dst_buffer = ffi.new("char[]", COMPRESSION_RECOMMENDED_OUTPUT_SIZE)
         cobj._out.dst = cobj._dst_buffer
         cobj._out.size = COMPRESSION_RECOMMENDED_OUTPUT_SIZE
         cobj._out.pos = 0
@@ -1288,19 +1328,23 @@ class ZstdCompressor(object):
 
         zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, size)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("error setting source size: %s" % _zstd_error(zresult))
 
         return ZstdCompressionChunker(self, chunk_size=chunk_size)
 
-    def copy_stream(self, ifh, ofh, size=-1,
-                    read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
-                    write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+    def copy_stream(
+        self,
+        ifh,
+        ofh,
+        size=-1,
+        read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ):
 
-        if not hasattr(ifh, 'read'):
-            raise ValueError('first argument must have a read() method')
-        if not hasattr(ofh, 'write'):
-            raise ValueError('second argument must have a write() method')
+        if not hasattr(ifh, "read"):
+            raise ValueError("first argument must have a read() method")
+        if not hasattr(ofh, "write"):
+            raise ValueError("second argument must have a write() method")
 
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
@@ -1309,13 +1353,12 @@ class ZstdCompressor(object):
 
         zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, size)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("error setting source size: %s" % _zstd_error(zresult))
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
+        out_buffer = ffi.new("ZSTD_outBuffer *")
 
-        dst_buffer = ffi.new('char[]', write_size)
+        dst_buffer = ffi.new("char[]", write_size)
         out_buffer.dst = dst_buffer
         out_buffer.size = write_size
         out_buffer.pos = 0
@@ -1334,13 +1377,11 @@ class ZstdCompressor(object):
             in_buffer.pos = 0
 
             while in_buffer.pos < in_buffer.size:
-                zresult = lib.ZSTD_compressStream2(self._cctx,
-                                                   out_buffer,
-                                                   in_buffer,
-                                                   lib.ZSTD_e_continue)
+                zresult = lib.ZSTD_compressStream2(
+                    self._cctx, out_buffer, in_buffer, lib.ZSTD_e_continue
+                )
                 if lib.ZSTD_isError(zresult):
-                    raise ZstdError('zstd compress error: %s' %
-                                    _zstd_error(zresult))
+                    raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
                 if out_buffer.pos:
                     ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -1349,13 +1390,13 @@ class ZstdCompressor(object):
 
         # We've finished reading. Flush the compressor.
         while True:
-            zresult = lib.ZSTD_compressStream2(self._cctx,
-                                               out_buffer,
-                                               in_buffer,
-                                               lib.ZSTD_e_end)
+            zresult = lib.ZSTD_compressStream2(
+                self._cctx, out_buffer, in_buffer, lib.ZSTD_e_end
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('error ending compression stream: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError(
+                    "error ending compression stream: %s" % _zstd_error(zresult)
+                )
 
             if out_buffer.pos:
                 ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -1367,8 +1408,9 @@ class ZstdCompressor(object):
 
         return total_read, total_write
 
-    def stream_reader(self, source, size=-1,
-                      read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE):
+    def stream_reader(
+        self, source, size=-1, read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE
+    ):
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
         try:
@@ -1381,40 +1423,48 @@ class ZstdCompressor(object):
 
         zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, size)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("error setting source size: %s" % _zstd_error(zresult))
 
         return ZstdCompressionReader(self, source, read_size)
 
-    def stream_writer(self, writer, size=-1,
-                 write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-                 write_return_read=False):
+    def stream_writer(
+        self,
+        writer,
+        size=-1,
+        write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        write_return_read=False,
+    ):
 
-        if not hasattr(writer, 'write'):
-            raise ValueError('must pass an object with a write() method')
+        if not hasattr(writer, "write"):
+            raise ValueError("must pass an object with a write() method")
 
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
         if size < 0:
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 
-        return ZstdCompressionWriter(self, writer, size, write_size,
-                                     write_return_read)
+        return ZstdCompressionWriter(self, writer, size, write_size, write_return_read)
 
     write_to = stream_writer
 
-    def read_to_iter(self, reader, size=-1,
-                     read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
-                     write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
-        if hasattr(reader, 'read'):
+    def read_to_iter(
+        self,
+        reader,
+        size=-1,
+        read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ):
+        if hasattr(reader, "read"):
             have_read = True
-        elif hasattr(reader, '__getitem__'):
+        elif hasattr(reader, "__getitem__"):
             have_read = False
             buffer_offset = 0
             size = len(reader)
         else:
-            raise ValueError('must pass an object with a read() method or '
-                             'conforms to buffer protocol')
+            raise ValueError(
+                "must pass an object with a read() method or "
+                "conforms to buffer protocol"
+            )
 
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
@@ -1423,17 +1473,16 @@ class ZstdCompressor(object):
 
         zresult = lib.ZSTD_CCtx_setPledgedSrcSize(self._cctx, size)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('error setting source size: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("error setting source size: %s" % _zstd_error(zresult))
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
+        out_buffer = ffi.new("ZSTD_outBuffer *")
 
         in_buffer.src = ffi.NULL
         in_buffer.size = 0
         in_buffer.pos = 0
 
-        dst_buffer = ffi.new('char[]', write_size)
+        dst_buffer = ffi.new("char[]", write_size)
         out_buffer.dst = dst_buffer
         out_buffer.size = write_size
         out_buffer.pos = 0
@@ -1449,7 +1498,7 @@ class ZstdCompressor(object):
             else:
                 remaining = len(reader) - buffer_offset
                 slice_size = min(remaining, read_size)
-                read_result = reader[buffer_offset:buffer_offset + slice_size]
+                read_result = reader[buffer_offset : buffer_offset + slice_size]
                 buffer_offset += slice_size
 
             # No new input data. Break out of the read loop.
@@ -1464,11 +1513,11 @@ class ZstdCompressor(object):
             in_buffer.pos = 0
 
             while in_buffer.pos < in_buffer.size:
-                zresult = lib.ZSTD_compressStream2(self._cctx, out_buffer, in_buffer,
-                                                   lib.ZSTD_e_continue)
+                zresult = lib.ZSTD_compressStream2(
+                    self._cctx, out_buffer, in_buffer, lib.ZSTD_e_continue
+                )
                 if lib.ZSTD_isError(zresult):
-                    raise ZstdError('zstd compress error: %s' %
-                                    _zstd_error(zresult))
+                    raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
                 if out_buffer.pos:
                     data = ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
@@ -1484,13 +1533,13 @@ class ZstdCompressor(object):
         # remains.
         while True:
             assert out_buffer.pos == 0
-            zresult = lib.ZSTD_compressStream2(self._cctx,
-                                               out_buffer,
-                                               in_buffer,
-                                               lib.ZSTD_e_end)
+            zresult = lib.ZSTD_compressStream2(
+                self._cctx, out_buffer, in_buffer, lib.ZSTD_e_end
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('error ending compression stream: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError(
+                    "error ending compression stream: %s" % _zstd_error(zresult)
+                )
 
             if out_buffer.pos:
                 data = ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
@@ -1522,7 +1571,7 @@ def frame_content_size(data):
     size = lib.ZSTD_getFrameContentSize(data_buffer, len(data_buffer))
 
     if size == lib.ZSTD_CONTENTSIZE_ERROR:
-        raise ZstdError('error when determining content size')
+        raise ZstdError("error when determining content size")
     elif size == lib.ZSTD_CONTENTSIZE_UNKNOWN:
         return -1
     else:
@@ -1534,24 +1583,23 @@ def frame_header_size(data):
 
     zresult = lib.ZSTD_frameHeaderSize(data_buffer, len(data_buffer))
     if lib.ZSTD_isError(zresult):
-        raise ZstdError('could not determine frame header size: %s' %
-                        _zstd_error(zresult))
+        raise ZstdError(
+            "could not determine frame header size: %s" % _zstd_error(zresult)
+        )
 
     return zresult
 
 
 def get_frame_parameters(data):
-    params = ffi.new('ZSTD_frameHeader *')
+    params = ffi.new("ZSTD_frameHeader *")
 
     data_buffer = ffi.from_buffer(data)
     zresult = lib.ZSTD_getFrameHeader(params, data_buffer, len(data_buffer))
     if lib.ZSTD_isError(zresult):
-        raise ZstdError('cannot get frame parameters: %s' %
-                        _zstd_error(zresult))
+        raise ZstdError("cannot get frame parameters: %s" % _zstd_error(zresult))
 
     if zresult:
-        raise ZstdError('not enough data for frame parameters; need %d bytes' %
-                        zresult)
+        raise ZstdError("not enough data for frame parameters; need %d bytes" % zresult)
 
     return FrameParameters(params[0])
 
@@ -1563,10 +1611,10 @@ class ZstdCompressionDict(object):
         self.k = k
         self.d = d
 
-        if dict_type not in (DICT_TYPE_AUTO, DICT_TYPE_RAWCONTENT,
-                             DICT_TYPE_FULLDICT):
-            raise ValueError('invalid dictionary load mode: %d; must use '
-                             'DICT_TYPE_* constants')
+        if dict_type not in (DICT_TYPE_AUTO, DICT_TYPE_RAWCONTENT, DICT_TYPE_FULLDICT):
+            raise ValueError(
+                "invalid dictionary load mode: %d; must use " "DICT_TYPE_* constants"
+            )
 
         self._dict_type = dict_type
         self._cdict = None
@@ -1582,16 +1630,15 @@ class ZstdCompressionDict(object):
 
     def precompute_compress(self, level=0, compression_params=None):
         if level and compression_params:
-            raise ValueError('must only specify one of level or '
-                             'compression_params')
+            raise ValueError("must only specify one of level or " "compression_params")
 
         if not level and not compression_params:
-            raise ValueError('must specify one of level or compression_params')
+            raise ValueError("must specify one of level or compression_params")
 
         if level:
             cparams = lib.ZSTD_getCParams(level, 0, len(self._data))
         else:
-            cparams = ffi.new('ZSTD_compressionParameters')
+            cparams = ffi.new("ZSTD_compressionParameters")
             cparams.chainLog = compression_params.chain_log
             cparams.hashLog = compression_params.hash_log
             cparams.minMatch = compression_params.min_match
@@ -1600,59 +1647,75 @@ class ZstdCompressionDict(object):
             cparams.targetLength = compression_params.target_length
             cparams.windowLog = compression_params.window_log
 
-        cdict = lib.ZSTD_createCDict_advanced(self._data, len(self._data),
-                                              lib.ZSTD_dlm_byRef,
-                                              self._dict_type,
-                                              cparams,
-                                              lib.ZSTD_defaultCMem)
+        cdict = lib.ZSTD_createCDict_advanced(
+            self._data,
+            len(self._data),
+            lib.ZSTD_dlm_byRef,
+            self._dict_type,
+            cparams,
+            lib.ZSTD_defaultCMem,
+        )
         if cdict == ffi.NULL:
-            raise ZstdError('unable to precompute dictionary')
+            raise ZstdError("unable to precompute dictionary")
 
-        self._cdict = ffi.gc(cdict, lib.ZSTD_freeCDict,
-                             size=lib.ZSTD_sizeof_CDict(cdict))
+        self._cdict = ffi.gc(
+            cdict, lib.ZSTD_freeCDict, size=lib.ZSTD_sizeof_CDict(cdict)
+        )
 
     @property
     def _ddict(self):
-        ddict = lib.ZSTD_createDDict_advanced(self._data, len(self._data),
-                                              lib.ZSTD_dlm_byRef,
-                                              self._dict_type,
-                                              lib.ZSTD_defaultCMem)
+        ddict = lib.ZSTD_createDDict_advanced(
+            self._data,
+            len(self._data),
+            lib.ZSTD_dlm_byRef,
+            self._dict_type,
+            lib.ZSTD_defaultCMem,
+        )
 
         if ddict == ffi.NULL:
-            raise ZstdError('could not create decompression dict')
+            raise ZstdError("could not create decompression dict")
 
-        ddict = ffi.gc(ddict, lib.ZSTD_freeDDict,
-                       size=lib.ZSTD_sizeof_DDict(ddict))
-        self.__dict__['_ddict'] = ddict
+        ddict = ffi.gc(ddict, lib.ZSTD_freeDDict, size=lib.ZSTD_sizeof_DDict(ddict))
+        self.__dict__["_ddict"] = ddict
 
         return ddict
 
-def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
-                     level=0, steps=0, threads=0):
+
+def train_dictionary(
+    dict_size,
+    samples,
+    k=0,
+    d=0,
+    notifications=0,
+    dict_id=0,
+    level=0,
+    steps=0,
+    threads=0,
+):
     if not isinstance(samples, list):
-        raise TypeError('samples must be a list')
+        raise TypeError("samples must be a list")
 
     if threads < 0:
         threads = _cpu_count()
 
     total_size = sum(map(len, samples))
 
-    samples_buffer = new_nonzero('char[]', total_size)
-    sample_sizes = new_nonzero('size_t[]', len(samples))
+    samples_buffer = new_nonzero("char[]", total_size)
+    sample_sizes = new_nonzero("size_t[]", len(samples))
 
     offset = 0
     for i, sample in enumerate(samples):
         if not isinstance(sample, bytes_type):
-            raise ValueError('samples must be bytes')
+            raise ValueError("samples must be bytes")
 
         l = len(sample)
         ffi.memmove(samples_buffer + offset, sample, l)
         offset += l
         sample_sizes[i] = l
 
-    dict_data = new_nonzero('char[]', dict_size)
+    dict_data = new_nonzero("char[]", dict_size)
 
-    dparams = ffi.new('ZDICT_cover_params_t *')[0]
+    dparams = ffi.new("ZDICT_cover_params_t *")[0]
     dparams.k = k
     dparams.d = d
     dparams.steps = steps
@@ -1661,34 +1724,51 @@ def train_dictionary(dict_size, samples, k=0, d=0, notifications=0, dict_id=0,
     dparams.zParams.dictID = dict_id
     dparams.zParams.compressionLevel = level
 
-    if (not dparams.k and not dparams.d and not dparams.steps
-        and not dparams.nbThreads and not dparams.zParams.notificationLevel
+    if (
+        not dparams.k
+        and not dparams.d
+        and not dparams.steps
+        and not dparams.nbThreads
+        and not dparams.zParams.notificationLevel
         and not dparams.zParams.dictID
-        and not dparams.zParams.compressionLevel):
+        and not dparams.zParams.compressionLevel
+    ):
         zresult = lib.ZDICT_trainFromBuffer(
-            ffi.addressof(dict_data), dict_size,
+            ffi.addressof(dict_data),
+            dict_size,
             ffi.addressof(samples_buffer),
-            ffi.addressof(sample_sizes, 0), len(samples))
+            ffi.addressof(sample_sizes, 0),
+            len(samples),
+        )
     elif dparams.steps or dparams.nbThreads:
         zresult = lib.ZDICT_optimizeTrainFromBuffer_cover(
-            ffi.addressof(dict_data), dict_size,
+            ffi.addressof(dict_data),
+            dict_size,
             ffi.addressof(samples_buffer),
-            ffi.addressof(sample_sizes, 0), len(samples),
-            ffi.addressof(dparams))
+            ffi.addressof(sample_sizes, 0),
+            len(samples),
+            ffi.addressof(dparams),
+        )
     else:
         zresult = lib.ZDICT_trainFromBuffer_cover(
-            ffi.addressof(dict_data), dict_size,
+            ffi.addressof(dict_data),
+            dict_size,
             ffi.addressof(samples_buffer),
-            ffi.addressof(sample_sizes, 0), len(samples),
-            dparams)
+            ffi.addressof(sample_sizes, 0),
+            len(samples),
+            dparams,
+        )
 
     if lib.ZDICT_isError(zresult):
-        msg = ffi.string(lib.ZDICT_getErrorName(zresult)).decode('utf-8')
-        raise ZstdError('cannot train dict: %s' % msg)
+        msg = ffi.string(lib.ZDICT_getErrorName(zresult)).decode("utf-8")
+        raise ZstdError("cannot train dict: %s" % msg)
 
-    return ZstdCompressionDict(ffi.buffer(dict_data, zresult)[:],
-                               dict_type=DICT_TYPE_FULLDICT,
-                               k=dparams.k, d=dparams.d)
+    return ZstdCompressionDict(
+        ffi.buffer(dict_data, zresult)[:],
+        dict_type=DICT_TYPE_FULLDICT,
+        k=dparams.k,
+        d=dparams.d,
+    )
 
 
 class ZstdDecompressionObj(object):
@@ -1699,21 +1779,21 @@ class ZstdDecompressionObj(object):
 
     def decompress(self, data):
         if self._finished:
-            raise ZstdError('cannot use a decompressobj multiple times')
+            raise ZstdError("cannot use a decompressobj multiple times")
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
+        out_buffer = ffi.new("ZSTD_outBuffer *")
 
         data_buffer = ffi.from_buffer(data)
 
         if len(data_buffer) == 0:
-            return b''
+            return b""
 
         in_buffer.src = data_buffer
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
-        dst_buffer = ffi.new('char[]', self._write_size)
+        dst_buffer = ffi.new("char[]", self._write_size)
         out_buffer.dst = dst_buffer
         out_buffer.size = len(dst_buffer)
         out_buffer.pos = 0
@@ -1721,11 +1801,11 @@ class ZstdDecompressionObj(object):
         chunks = []
 
         while True:
-            zresult = lib.ZSTD_decompressStream(self._decompressor._dctx,
-                                                out_buffer, in_buffer)
+            zresult = lib.ZSTD_decompressStream(
+                self._decompressor._dctx, out_buffer, in_buffer
+            )
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd decompressor error: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError("zstd decompressor error: %s" % _zstd_error(zresult))
 
             if zresult == 0:
                 self._finished = True
@@ -1734,13 +1814,14 @@ class ZstdDecompressionObj(object):
             if out_buffer.pos:
                 chunks.append(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
 
-            if (zresult == 0 or
-                    (in_buffer.pos == in_buffer.size and out_buffer.pos == 0)):
+            if zresult == 0 or (
+                in_buffer.pos == in_buffer.size and out_buffer.pos == 0
+            ):
                 break
 
             out_buffer.pos = 0
 
-        return b''.join(chunks)
+        return b"".join(chunks)
 
     def flush(self, length=0):
         pass
@@ -1757,13 +1838,13 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed = 0
         self._finished_input = False
         self._finished_output = False
-        self._in_buffer = ffi.new('ZSTD_inBuffer *')
+        self._in_buffer = ffi.new("ZSTD_inBuffer *")
         # Holds a ref to self._in_buffer.src.
         self._source_buffer = None
 
     def __enter__(self):
         if self._entered:
-            raise ValueError('cannot __enter__ multiple times')
+            raise ValueError("cannot __enter__ multiple times")
 
         self._entered = True
         return self
@@ -1824,7 +1905,7 @@ class ZstdDecompressionReader(object):
 
             chunks.append(chunk)
 
-        return b''.join(chunks)
+        return b"".join(chunks)
 
     def __iter__(self):
         raise io.UnsupportedOperation()
@@ -1844,7 +1925,7 @@ class ZstdDecompressionReader(object):
             return
 
         # Else populate the input buffer from our source.
-        if hasattr(self._source, 'read'):
+        if hasattr(self._source, "read"):
             data = self._source.read(self._read_size)
 
             if not data:
@@ -1866,8 +1947,9 @@ class ZstdDecompressionReader(object):
 
         Returns True if data in output buffer should be emitted.
         """
-        zresult = lib.ZSTD_decompressStream(self._decompressor._dctx,
-                                            out_buffer, self._in_buffer)
+        zresult = lib.ZSTD_decompressStream(
+            self._decompressor._dctx, out_buffer, self._in_buffer
+        )
 
         if self._in_buffer.pos == self._in_buffer.size:
             self._in_buffer.src = ffi.NULL
@@ -1875,38 +1957,39 @@ class ZstdDecompressionReader(object):
             self._in_buffer.size = 0
             self._source_buffer = None
 
-            if not hasattr(self._source, 'read'):
+            if not hasattr(self._source, "read"):
                 self._finished_input = True
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('zstd decompress error: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("zstd decompress error: %s" % _zstd_error(zresult))
 
         # Emit data if there is data AND either:
         # a) output buffer is full (read amount is satisfied)
         # b) we're at end of a frame and not in frame spanning mode
-        return (out_buffer.pos and
-                (out_buffer.pos == out_buffer.size or
-                 zresult == 0 and not self._read_across_frames))
+        return out_buffer.pos and (
+            out_buffer.pos == out_buffer.size
+            or zresult == 0
+            and not self._read_across_frames
+        )
 
     def read(self, size=-1):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if size < -1:
-            raise ValueError('cannot read negative amounts less than -1')
+            raise ValueError("cannot read negative amounts less than -1")
 
         if size == -1:
             # This is recursive. But it gets the job done.
             return self.readall()
 
         if self._finished_output or size == 0:
-            return b''
+            return b""
 
         # We /could/ call into readinto() here. But that introduces more
         # overhead.
-        dst_buffer = ffi.new('char[]', size)
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        dst_buffer = ffi.new("char[]", size)
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dst_buffer
         out_buffer.size = size
         out_buffer.pos = 0
@@ -1927,15 +2010,15 @@ class ZstdDecompressionReader(object):
 
     def readinto(self, b):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if self._finished_output:
             return 0
 
         # TODO use writable=True once we require CFFI >= 1.12.
         dest_buffer = ffi.from_buffer(b)
-        ffi.memmove(b, b'', 0)
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        ffi.memmove(b, b"", 0)
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dest_buffer
         out_buffer.size = len(dest_buffer)
         out_buffer.pos = 0
@@ -1956,20 +2039,20 @@ class ZstdDecompressionReader(object):
 
     def read1(self, size=-1):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if size < -1:
-            raise ValueError('cannot read negative amounts less than -1')
+            raise ValueError("cannot read negative amounts less than -1")
 
         if self._finished_output or size == 0:
-            return b''
+            return b""
 
         # -1 returns arbitrary number of bytes.
         if size == -1:
             size = DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE
 
-        dst_buffer = ffi.new('char[]', size)
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        dst_buffer = ffi.new("char[]", size)
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dst_buffer
         out_buffer.size = size
         out_buffer.pos = 0
@@ -1990,16 +2073,16 @@ class ZstdDecompressionReader(object):
 
     def readinto1(self, b):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if self._finished_output:
             return 0
 
         # TODO use writable=True once we require CFFI >= 1.12.
         dest_buffer = ffi.from_buffer(b)
-        ffi.memmove(b, b'', 0)
+        ffi.memmove(b, b"", 0)
 
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = dest_buffer
         out_buffer.size = len(dest_buffer)
         out_buffer.pos = 0
@@ -2016,33 +2099,31 @@ class ZstdDecompressionReader(object):
 
     def seek(self, pos, whence=os.SEEK_SET):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         read_amount = 0
 
         if whence == os.SEEK_SET:
             if pos < 0:
-                raise ValueError('cannot seek to negative position with SEEK_SET')
+                raise ValueError("cannot seek to negative position with SEEK_SET")
 
             if pos < self._bytes_decompressed:
-                raise ValueError('cannot seek zstd decompression stream '
-                                 'backwards')
+                raise ValueError("cannot seek zstd decompression stream " "backwards")
 
             read_amount = pos - self._bytes_decompressed
 
         elif whence == os.SEEK_CUR:
             if pos < 0:
-                raise ValueError('cannot seek zstd decompression stream '
-                                 'backwards')
+                raise ValueError("cannot seek zstd decompression stream " "backwards")
 
             read_amount = pos
         elif whence == os.SEEK_END:
-            raise ValueError('zstd decompression streams cannot be seeked '
-                             'with SEEK_END')
+            raise ValueError(
+                "zstd decompression streams cannot be seeked " "with SEEK_END"
+            )
 
         while read_amount:
-            result = self.read(min(read_amount,
-                                   DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE))
+            result = self.read(min(read_amount, DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE))
 
             if not result:
                 break
@@ -2050,6 +2131,7 @@ class ZstdDecompressionReader(object):
             read_amount -= len(result)
 
         return self._bytes_decompressed
+
 
 class ZstdDecompressionWriter(object):
     def __init__(self, decompressor, writer, write_size, write_return_read):
@@ -2064,10 +2146,10 @@ class ZstdDecompressionWriter(object):
 
     def __enter__(self):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         if self._entered:
-            raise ZstdError('cannot __enter__ multiple times')
+            raise ZstdError("cannot __enter__ multiple times")
 
         self._entered = True
 
@@ -2089,7 +2171,7 @@ class ZstdDecompressionWriter(object):
         finally:
             self._closed = True
 
-        f = getattr(self._writer, 'close', None)
+        f = getattr(self._writer, "close", None)
         if f:
             f()
 
@@ -2098,17 +2180,17 @@ class ZstdDecompressionWriter(object):
         return self._closed
 
     def fileno(self):
-        f = getattr(self._writer, 'fileno', None)
+        f = getattr(self._writer, "fileno", None)
         if f:
             return f()
         else:
-            raise OSError('fileno not available on underlying writer')
+            raise OSError("fileno not available on underlying writer")
 
     def flush(self):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
-        f = getattr(self._writer, 'flush', None)
+        f = getattr(self._writer, "flush", None)
         if f:
             return f()
 
@@ -2153,19 +2235,19 @@ class ZstdDecompressionWriter(object):
 
     def write(self, data):
         if self._closed:
-            raise ValueError('stream is closed')
+            raise ValueError("stream is closed")
 
         total_write = 0
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
+        out_buffer = ffi.new("ZSTD_outBuffer *")
 
         data_buffer = ffi.from_buffer(data)
         in_buffer.src = data_buffer
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
-        dst_buffer = ffi.new('char[]', self._write_size)
+        dst_buffer = ffi.new("char[]", self._write_size)
         out_buffer.dst = dst_buffer
         out_buffer.size = len(dst_buffer)
         out_buffer.pos = 0
@@ -2175,8 +2257,7 @@ class ZstdDecompressionWriter(object):
         while in_buffer.pos < in_buffer.size:
             zresult = lib.ZSTD_decompressStream(dctx, out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('zstd decompress error: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError("zstd decompress error: %s" % _zstd_error(zresult))
 
             if out_buffer.pos:
                 self._writer.write(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
@@ -2206,8 +2287,9 @@ class ZstdDecompressor(object):
         try:
             self._ensure_dctx()
         finally:
-            self._dctx = ffi.gc(dctx, lib.ZSTD_freeDCtx,
-                                size=lib.ZSTD_sizeof_DCtx(dctx))
+            self._dctx = ffi.gc(
+                dctx, lib.ZSTD_freeDCtx, size=lib.ZSTD_sizeof_DCtx(dctx)
+            )
 
     def memory_size(self):
         return lib.ZSTD_sizeof_DCtx(self._dctx)
@@ -2220,85 +2302,96 @@ class ZstdDecompressor(object):
         output_size = lib.ZSTD_getFrameContentSize(data_buffer, len(data_buffer))
 
         if output_size == lib.ZSTD_CONTENTSIZE_ERROR:
-            raise ZstdError('error determining content size from frame header')
+            raise ZstdError("error determining content size from frame header")
         elif output_size == 0:
-            return b''
+            return b""
         elif output_size == lib.ZSTD_CONTENTSIZE_UNKNOWN:
             if not max_output_size:
-                raise ZstdError('could not determine content size in frame header')
+                raise ZstdError("could not determine content size in frame header")
 
-            result_buffer = ffi.new('char[]', max_output_size)
+            result_buffer = ffi.new("char[]", max_output_size)
             result_size = max_output_size
             output_size = 0
         else:
-            result_buffer = ffi.new('char[]', output_size)
+            result_buffer = ffi.new("char[]", output_size)
             result_size = output_size
 
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = result_buffer
         out_buffer.size = result_size
         out_buffer.pos = 0
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
         in_buffer.src = data_buffer
         in_buffer.size = len(data_buffer)
         in_buffer.pos = 0
 
         zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('decompression error: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("decompression error: %s" % _zstd_error(zresult))
         elif zresult:
-            raise ZstdError('decompression error: did not decompress full frame')
+            raise ZstdError("decompression error: did not decompress full frame")
         elif output_size and out_buffer.pos != output_size:
-            raise ZstdError('decompression error: decompressed %d bytes; expected %d' %
-                            (zresult, output_size))
+            raise ZstdError(
+                "decompression error: decompressed %d bytes; expected %d"
+                % (zresult, output_size)
+            )
 
         return ffi.buffer(result_buffer, out_buffer.pos)[:]
 
-    def stream_reader(self, source, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
-                      read_across_frames=False):
+    def stream_reader(
+        self,
+        source,
+        read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+        read_across_frames=False,
+    ):
         self._ensure_dctx()
         return ZstdDecompressionReader(self, source, read_size, read_across_frames)
 
     def decompressobj(self, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
         if write_size < 1:
-            raise ValueError('write_size must be positive')
+            raise ValueError("write_size must be positive")
 
         self._ensure_dctx()
         return ZstdDecompressionObj(self, write_size=write_size)
 
-    def read_to_iter(self, reader, read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
-                     write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-                     skip_bytes=0):
+    def read_to_iter(
+        self,
+        reader,
+        read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        skip_bytes=0,
+    ):
         if skip_bytes >= read_size:
-            raise ValueError('skip_bytes must be smaller than read_size')
+            raise ValueError("skip_bytes must be smaller than read_size")
 
-        if hasattr(reader, 'read'):
+        if hasattr(reader, "read"):
             have_read = True
-        elif hasattr(reader, '__getitem__'):
+        elif hasattr(reader, "__getitem__"):
             have_read = False
             buffer_offset = 0
             size = len(reader)
         else:
-            raise ValueError('must pass an object with a read() method or '
-                             'conforms to buffer protocol')
+            raise ValueError(
+                "must pass an object with a read() method or "
+                "conforms to buffer protocol"
+            )
 
         if skip_bytes:
             if have_read:
                 reader.read(skip_bytes)
             else:
                 if skip_bytes > size:
-                    raise ValueError('skip_bytes larger than first input chunk')
+                    raise ValueError("skip_bytes larger than first input chunk")
 
                 buffer_offset = skip_bytes
 
         self._ensure_dctx()
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
+        out_buffer = ffi.new("ZSTD_outBuffer *")
 
-        dst_buffer = ffi.new('char[]', write_size)
+        dst_buffer = ffi.new("char[]", write_size)
         out_buffer.dst = dst_buffer
         out_buffer.size = len(dst_buffer)
         out_buffer.pos = 0
@@ -2311,7 +2404,7 @@ class ZstdDecompressor(object):
             else:
                 remaining = size - buffer_offset
                 slice_size = min(remaining, read_size)
-                read_result = reader[buffer_offset:buffer_offset + slice_size]
+                read_result = reader[buffer_offset : buffer_offset + slice_size]
                 buffer_offset += slice_size
 
             # No new input. Break out of read loop.
@@ -2330,8 +2423,7 @@ class ZstdDecompressor(object):
 
                 zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
-                    raise ZstdError('zstd decompress error: %s' %
-                                    _zstd_error(zresult))
+                    raise ZstdError("zstd decompress error: %s" % _zstd_error(zresult))
 
                 if out_buffer.pos:
                     data = ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
@@ -2348,30 +2440,37 @@ class ZstdDecompressor(object):
 
     read_from = read_to_iter
 
-    def stream_writer(self, writer, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-                      write_return_read=False):
-        if not hasattr(writer, 'write'):
-            raise ValueError('must pass an object with a write() method')
+    def stream_writer(
+        self,
+        writer,
+        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        write_return_read=False,
+    ):
+        if not hasattr(writer, "write"):
+            raise ValueError("must pass an object with a write() method")
 
-        return ZstdDecompressionWriter(self, writer, write_size,
-                                       write_return_read)
+        return ZstdDecompressionWriter(self, writer, write_size, write_return_read)
 
     write_to = stream_writer
 
-    def copy_stream(self, ifh, ofh,
-                    read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
-                    write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
-        if not hasattr(ifh, 'read'):
-            raise ValueError('first argument must have a read() method')
-        if not hasattr(ofh, 'write'):
-            raise ValueError('second argument must have a write() method')
+    def copy_stream(
+        self,
+        ifh,
+        ofh,
+        read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ):
+        if not hasattr(ifh, "read"):
+            raise ValueError("first argument must have a read() method")
+        if not hasattr(ofh, "write"):
+            raise ValueError("second argument must have a write() method")
 
         self._ensure_dctx()
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
+        out_buffer = ffi.new("ZSTD_outBuffer *")
 
-        dst_buffer = ffi.new('char[]', write_size)
+        dst_buffer = ffi.new("char[]", write_size)
         out_buffer.dst = dst_buffer
         out_buffer.size = write_size
         out_buffer.pos = 0
@@ -2394,8 +2493,9 @@ class ZstdDecompressor(object):
             while in_buffer.pos < in_buffer.size:
                 zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
                 if lib.ZSTD_isError(zresult):
-                    raise ZstdError('zstd decompressor error: %s' %
-                                    _zstd_error(zresult))
+                    raise ZstdError(
+                        "zstd decompressor error: %s" % _zstd_error(zresult)
+                    )
 
                 if out_buffer.pos:
                     ofh.write(ffi.buffer(out_buffer.dst, out_buffer.pos))
@@ -2408,48 +2508,47 @@ class ZstdDecompressor(object):
 
     def decompress_content_dict_chain(self, frames):
         if not isinstance(frames, list):
-            raise TypeError('argument must be a list')
+            raise TypeError("argument must be a list")
 
         if not frames:
-            raise ValueError('empty input chain')
+            raise ValueError("empty input chain")
 
         # First chunk should not be using a dictionary. We handle it specially.
         chunk = frames[0]
         if not isinstance(chunk, bytes_type):
-            raise ValueError('chunk 0 must be bytes')
+            raise ValueError("chunk 0 must be bytes")
 
         # All chunks should be zstd frames and should have content size set.
         chunk_buffer = ffi.from_buffer(chunk)
-        params = ffi.new('ZSTD_frameHeader *')
+        params = ffi.new("ZSTD_frameHeader *")
         zresult = lib.ZSTD_getFrameHeader(params, chunk_buffer, len(chunk_buffer))
         if lib.ZSTD_isError(zresult):
-            raise ValueError('chunk 0 is not a valid zstd frame')
+            raise ValueError("chunk 0 is not a valid zstd frame")
         elif zresult:
-            raise ValueError('chunk 0 is too small to contain a zstd frame')
+            raise ValueError("chunk 0 is too small to contain a zstd frame")
 
         if params.frameContentSize == lib.ZSTD_CONTENTSIZE_UNKNOWN:
-            raise ValueError('chunk 0 missing content size in frame')
+            raise ValueError("chunk 0 missing content size in frame")
 
         self._ensure_dctx(load_dict=False)
 
-        last_buffer = ffi.new('char[]', params.frameContentSize)
+        last_buffer = ffi.new("char[]", params.frameContentSize)
 
-        out_buffer = ffi.new('ZSTD_outBuffer *')
+        out_buffer = ffi.new("ZSTD_outBuffer *")
         out_buffer.dst = last_buffer
         out_buffer.size = len(last_buffer)
         out_buffer.pos = 0
 
-        in_buffer = ffi.new('ZSTD_inBuffer *')
+        in_buffer = ffi.new("ZSTD_inBuffer *")
         in_buffer.src = chunk_buffer
         in_buffer.size = len(chunk_buffer)
         in_buffer.pos = 0
 
         zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('could not decompress chunk 0: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("could not decompress chunk 0: %s" % _zstd_error(zresult))
         elif zresult:
-            raise ZstdError('chunk 0 did not decompress full frame')
+            raise ZstdError("chunk 0 did not decompress full frame")
 
         # Special case of chain length of 1
         if len(frames) == 1:
@@ -2459,19 +2558,19 @@ class ZstdDecompressor(object):
         while i < len(frames):
             chunk = frames[i]
             if not isinstance(chunk, bytes_type):
-                raise ValueError('chunk %d must be bytes' % i)
+                raise ValueError("chunk %d must be bytes" % i)
 
             chunk_buffer = ffi.from_buffer(chunk)
             zresult = lib.ZSTD_getFrameHeader(params, chunk_buffer, len(chunk_buffer))
             if lib.ZSTD_isError(zresult):
-                raise ValueError('chunk %d is not a valid zstd frame' % i)
+                raise ValueError("chunk %d is not a valid zstd frame" % i)
             elif zresult:
-                raise ValueError('chunk %d is too small to contain a zstd frame' % i)
+                raise ValueError("chunk %d is too small to contain a zstd frame" % i)
 
             if params.frameContentSize == lib.ZSTD_CONTENTSIZE_UNKNOWN:
-                raise ValueError('chunk %d missing content size in frame' % i)
+                raise ValueError("chunk %d missing content size in frame" % i)
 
-            dest_buffer = ffi.new('char[]', params.frameContentSize)
+            dest_buffer = ffi.new("char[]", params.frameContentSize)
 
             out_buffer.dst = dest_buffer
             out_buffer.size = len(dest_buffer)
@@ -2483,10 +2582,11 @@ class ZstdDecompressor(object):
 
             zresult = lib.ZSTD_decompressStream(self._dctx, out_buffer, in_buffer)
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('could not decompress chunk %d: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError(
+                    "could not decompress chunk %d: %s" % _zstd_error(zresult)
+                )
             elif zresult:
-                raise ZstdError('chunk %d did not decompress full frame' % i)
+                raise ZstdError("chunk %d did not decompress full frame" % i)
 
             last_buffer = dest_buffer
             i += 1
@@ -2497,19 +2597,19 @@ class ZstdDecompressor(object):
         lib.ZSTD_DCtx_reset(self._dctx, lib.ZSTD_reset_session_only)
 
         if self._max_window_size:
-            zresult = lib.ZSTD_DCtx_setMaxWindowSize(self._dctx,
-                                                     self._max_window_size)
+            zresult = lib.ZSTD_DCtx_setMaxWindowSize(self._dctx, self._max_window_size)
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('unable to set max window size: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError(
+                    "unable to set max window size: %s" % _zstd_error(zresult)
+                )
 
         zresult = lib.ZSTD_DCtx_setFormat(self._dctx, self._format)
         if lib.ZSTD_isError(zresult):
-            raise ZstdError('unable to set decoding format: %s' %
-                            _zstd_error(zresult))
+            raise ZstdError("unable to set decoding format: %s" % _zstd_error(zresult))
 
         if self._dict_data and load_dict:
             zresult = lib.ZSTD_DCtx_refDDict(self._dctx, self._dict_data._ddict)
             if lib.ZSTD_isError(zresult):
-                raise ZstdError('unable to reference prepared dictionary: %s' %
-                                _zstd_error(zresult))
+                raise ZstdError(
+                    "unable to reference prepared dictionary: %s" % _zstd_error(zresult)
+                )

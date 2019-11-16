@@ -16,33 +16,35 @@ def make_cffi(cls):
     # The module containing this class definition should
     # `import zstandard as zstd`. Otherwise things may blow up.
     mod = inspect.getmodule(cls)
-    if not hasattr(mod, 'zstd'):
+    if not hasattr(mod, "zstd"):
         raise Exception('test module does not contain "zstd" symbol')
 
-    if not hasattr(mod.zstd, 'backend'):
-        raise Exception('zstd symbol does not have "backend" attribute; did '
-                        'you `import zstandard as zstd`?')
+    if not hasattr(mod.zstd, "backend"):
+        raise Exception(
+            'zstd symbol does not have "backend" attribute; did '
+            "you `import zstandard as zstd`?"
+        )
 
     # If `import zstandard` already chose the cffi backend, there is nothing
     # for us to do: we only add the cffi variation if the default backend
     # is the C extension.
-    if mod.zstd.backend == 'cffi':
+    if mod.zstd.backend == "cffi":
         return cls
 
     old_env = dict(os.environ)
-    os.environ['PYTHON_ZSTANDARD_IMPORT_POLICY'] = 'cffi'
+    os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "cffi"
     try:
         try:
-            mod_info = imp.find_module('zstandard')
-            mod = imp.load_module('zstandard_cffi', *mod_info)
+            mod_info = imp.find_module("zstandard")
+            mod = imp.load_module("zstandard_cffi", *mod_info)
         except ImportError:
             return cls
     finally:
         os.environ.clear()
         os.environ.update(old_env)
 
-    if mod.backend != 'cffi':
-        raise Exception('got the zstandard %s backend instead of cffi' % mod.backend)
+    if mod.backend != "cffi":
+        raise Exception("got the zstandard %s backend instead of cffi" % mod.backend)
 
     # If CFFI version is available, dynamically construct test methods
     # that use it.
@@ -52,27 +54,31 @@ def make_cffi(cls):
         if not inspect.ismethod(fn) and not inspect.isfunction(fn):
             continue
 
-        if not fn.__name__.startswith('test_'):
+        if not fn.__name__.startswith("test_"):
             continue
 
-        name = '%s_cffi' % fn.__name__
+        name = "%s_cffi" % fn.__name__
 
         # Replace the "zstd" symbol with the CFFI module instance. Then copy
         # the function object and install it in a new attribute.
         if isinstance(fn, types.FunctionType):
             globs = dict(fn.__globals__)
-            globs['zstd'] = mod
-            new_fn = types.FunctionType(fn.__code__, globs, name,
-                                        fn.__defaults__, fn.__closure__)
+            globs["zstd"] = mod
+            new_fn = types.FunctionType(
+                fn.__code__, globs, name, fn.__defaults__, fn.__closure__
+            )
             new_method = new_fn
         else:
             globs = dict(fn.__func__.func_globals)
-            globs['zstd'] = mod
-            new_fn = types.FunctionType(fn.__func__.func_code, globs, name,
-                                        fn.__func__.func_defaults,
-                                        fn.__func__.func_closure)
-            new_method = types.UnboundMethodType(new_fn, fn.im_self,
-                                                 fn.im_class)
+            globs["zstd"] = mod
+            new_fn = types.FunctionType(
+                fn.__func__.func_code,
+                globs,
+                name,
+                fn.__func__.func_defaults,
+                fn.__func__.func_closure,
+            )
+            new_method = types.UnboundMethodType(new_fn, fn.im_self, fn.im_class)
 
         setattr(cls, name, new_method)
 
@@ -84,6 +90,7 @@ class NonClosingBytesIO(io.BytesIO):
 
     This allows us to access written data after close().
     """
+
     def __init__(self, *args, **kwargs):
         super(NonClosingBytesIO, self).__init__(*args, **kwargs)
         self._saved_buffer = None
@@ -135,7 +142,7 @@ def random_input_data():
         dirs[:] = list(sorted(dirs))
         for f in sorted(files):
             try:
-                with open(os.path.join(root, f), 'rb') as fh:
+                with open(os.path.join(root, f), "rb") as fh:
                     data = fh.read()
                     if data:
                         _source_files.append(data)
@@ -154,11 +161,11 @@ def random_input_data():
 
 def generate_samples():
     inputs = [
-        b'foo',
-        b'bar',
-        b'abcdef',
-        b'sometext',
-        b'baz',
+        b"foo",
+        b"bar",
+        b"abcdef",
+        b"sometext",
+        b"baz",
     ]
 
     samples = []
@@ -173,13 +180,12 @@ def generate_samples():
 
 if hypothesis:
     default_settings = hypothesis.settings(deadline=10000)
-    hypothesis.settings.register_profile('default', default_settings)
+    hypothesis.settings.register_profile("default", default_settings)
 
     ci_settings = hypothesis.settings(deadline=20000, max_examples=1000)
-    hypothesis.settings.register_profile('ci', ci_settings)
+    hypothesis.settings.register_profile("ci", ci_settings)
 
     expensive_settings = hypothesis.settings(deadline=None, max_examples=10000)
-    hypothesis.settings.register_profile('expensive', expensive_settings)
+    hypothesis.settings.register_profile("expensive", expensive_settings)
 
-    hypothesis.settings.load_profile(
-        os.environ.get('HYPOTHESIS_PROFILE', 'default'))
+    hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))

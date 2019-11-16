@@ -70,7 +70,10 @@ Other Actions Not Blocking Release
 0.13.0 (not yet released)
 =========================
 
-Nothing yet.
+Changes
+-------
+
+* Python code has been reformatted with black.
 
 0.12.0 (released 2019-09-15)
 ============================

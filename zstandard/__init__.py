@@ -28,38 +28,48 @@ import platform
 # defining a variable and `setup.py` could write the file with whatever
 # policy was specified at build time. Until someone needs it, we go with
 # the hacky but simple environment variable approach.
-_module_policy = os.environ.get('PYTHON_ZSTANDARD_IMPORT_POLICY', 'default')
+_module_policy = os.environ.get("PYTHON_ZSTANDARD_IMPORT_POLICY", "default")
 
-if _module_policy == 'default':
-    if platform.python_implementation() in ('CPython',):
+if _module_policy == "default":
+    if platform.python_implementation() in ("CPython",):
         from zstd import *
-        backend = 'cext'
-    elif platform.python_implementation() in ('PyPy',):
+
+        backend = "cext"
+    elif platform.python_implementation() in ("PyPy",):
         from .cffi import *
-        backend = 'cffi'
+
+        backend = "cffi"
     else:
         try:
             from zstd import *
-            backend = 'cext'
+
+            backend = "cext"
         except ImportError:
             from .cffi import *
-            backend = 'cffi'
-elif _module_policy == 'cffi_fallback':
+
+            backend = "cffi"
+elif _module_policy == "cffi_fallback":
     try:
         from zstd import *
-        backend = 'cext'
+
+        backend = "cext"
     except ImportError:
         from .cffi import *
-        backend = 'cffi'
-elif _module_policy == 'cext':
+
+        backend = "cffi"
+elif _module_policy == "cext":
     from zstd import *
-    backend = 'cext'
-elif _module_policy == 'cffi':
+
+    backend = "cext"
+elif _module_policy == "cffi":
     from .cffi import *
-    backend = 'cffi'
+
+    backend = "cffi"
 else:
-    raise ImportError('unknown module import policy: %s; use default, cffi_fallback, '
-                      'cext, or cffi' % _module_policy)
+    raise ImportError(
+        "unknown module import policy: %s; use default, cffi_fallback, "
+        "cext, or cffi" % _module_policy
+    )
 
 # Keep this in sync with python-zstandard.h.
-__version__ = '0.13.0.dev0'
+__version__ = "0.13.0.dev0"
