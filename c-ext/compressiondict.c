@@ -11,29 +11,17 @@
 extern PyObject* ZstdError;
 
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs) {
-	static char* kwlist[] = {
-		"dict_size",
-		"samples",
-		"k",
-		"d",
-		"notifications",
-		"dict_id",
-		"level",
-		"steps",
-		"threads",
-		NULL
-	};
-
 	size_t capacity;
 	PyObject* samples;
 	unsigned k = 0;
+	unsigned f = 0;
 	unsigned d = 0;
 	unsigned notifications = 0;
 	unsigned dictID = 0;
 	int level = 0;
 	unsigned steps = 0;
 	int threads = 0;
-	ZDICT_cover_params_t params;
+	ZDICT_fastCover_params_t params;
 	Py_ssize_t samplesLen;
 	Py_ssize_t i;
 	size_t samplesSize = 0;
@@ -43,11 +31,31 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	Py_ssize_t sampleSize;
 	void* dict = NULL;
 	size_t zresult;
+	float splitPoint = 0.;
 	ZstdCompressionDict* result = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IIIIiIi:train_dictionary",
-		kwlist, &capacity, &PyList_Type, &samples,
-		&k, &d, &notifications, &dictID, &level, &steps, &threads)) {
+	static char* kwlist[] = {
+		"dict_size",
+		"samples",
+		"k",
+		"d",
+		"f",
+		"notifications",
+		"dict_id",
+		"level",
+		"steps",
+		"threads",
+		NULL
+	};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IIIfIIiIi:train_dictionary",
+			kwlist,
+			&capacity, // n
+			&PyList_Type, &samples, // O!
+			&k, &d, &f, // III
+			&splitPoint, // f
+			&notifications, &dictID, &level, &steps, &threads// IIiIi
+		)) {
 		return NULL;
 	}
 
@@ -56,13 +64,49 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	}
 
 	memset(&params, 0, sizeof(params));
+	// default params are taken from https://github.com/facebook/zstd/blob/dev/programs/zstdcli.c
+	params.d = d ? d : 8;
+	params.f = f ? f : 20;
+	params.splitPoint = splitPoint ? splitPoint : 0.75;
+	params.accel = 1;
+	params.shrinkDict = 0;
+	params.shrinkDictMaxRegression = 1;
+	params.steps = steps? steps : 4;
 	params.k = k;
-	params.d = d;
-	params.steps = steps;
+	params.zParams.compressionLevel = level ? level : 19;
+	params.zParams.dictID = dictID ? dictID : 0;
 	params.nbThreads = threads;
 	params.zParams.notificationLevel = notifications;
-	params.zParams.dictID = dictID;
-	params.zParams.compressionLevel = level;
+	
+	// Parameters verification code is taken from https://github.com/facebook/zstd/blob/a880ca239b447968493dd2fed3850e766d6305cc/contrib/experimental_dict_builders/fastCover/fastCover.c#L214
+	// in fact we need that lib to pass its strings to us itself, but merging this will likely take long time
+	if (!params.k) {
+	}else{
+		if (params.d > params.k) {
+			PyErr_SetString(PyExc_ValueError, "d <= k");
+			return NULL;
+		}
+		if (params.k > capacity) {
+			PyErr_SetString(PyExc_ValueError, "k <= capacity");
+			return 0;
+		}
+	}
+	if (params.d != 6 && params.d != 8) {
+		PyErr_SetString(PyExc_ValueError, "d has to be 6 or 8");
+		return NULL;
+	}
+	if (params.f > 32) {
+		PyErr_SetString(PyExc_ValueError, "0 < f <= 32");
+		return NULL;
+	}
+	if (params.k > 110 * 1024) {
+		PyErr_SetString(PyExc_ValueError, "k <= 110 KB");
+		return NULL;
+	}
+	if (params.splitPoint <= 0 || params.splitPoint > 1) {
+		PyErr_SetString(PyExc_ValueError, "0 < splitPoint <= 1");
+		return NULL;
+	}
 
 	/* Figure out total size of input samples. */
 	samplesLen = PyList_Size(samples);
@@ -110,16 +154,16 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 		&& !params.zParams.notificationLevel && !params.zParams.dictID) {
 		zresult = ZDICT_trainFromBuffer(dict, capacity, sampleBuffer,
 			sampleSizes, (unsigned)samplesLen);
-	}
-	/* Use optimize mode if user controlled steps or threads explicitly. */
-	else if (params.steps || params.nbThreads) {
-		zresult = ZDICT_optimizeTrainFromBuffer_cover(dict, capacity,
-			sampleBuffer, sampleSizes, (unsigned)samplesLen, &params);
-	}
-	/* Non-optimize mode with explicit control. */
-	else {
-		zresult = ZDICT_trainFromBuffer_cover(dict, capacity,
-			sampleBuffer, sampleSizes, (unsigned)samplesLen, params);
+	}else{
+		if (params.steps || params.nbThreads) {
+			zresult = ZDICT_optimizeTrainFromBuffer_fastCover(dict, capacity,
+				sampleBuffer, sampleSizes, (unsigned)samplesLen, &params);
+		}
+		/* Non-optimize mode with explicit control. */
+		else {
+			zresult = ZDICT_trainFromBuffer_fastCover(dict, capacity,
+				sampleBuffer, sampleSizes, (unsigned)samplesLen, params);
+		}
 	}
 	Py_END_ALLOW_THREADS
 

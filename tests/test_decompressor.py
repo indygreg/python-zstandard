@@ -10,6 +10,7 @@ import zstandard as zstd
 
 from .common import (
     generate_samples,
+    get_optimal_dict_size_heuristically,
     make_cffi,
     NonClosingBytesIO,
     OpCountingBytesIO,
@@ -197,6 +198,10 @@ class TestDecompressor_decompress(TestCase):
             samples.append(b"foo" * 64)
             samples.append(b"bar" * 64)
             samples.append(b"foobar" * 64)
+            samples.append(b"qwert" * 64)
+            samples.append(b"yuiop" * 64)
+            samples.append(b"asdfg" * 64)
+            samples.append(b"hijkl" * 64)
 
         d = zstd.train_dictionary(8192, samples)
 
@@ -215,6 +220,10 @@ class TestDecompressor_decompress(TestCase):
             samples.append(b"foo" * 64)
             samples.append(b"bar" * 64)
             samples.append(b"foobar" * 64)
+            samples.append(b"qwert" * 64)
+            samples.append(b"yuiop" * 64)
+            samples.append(b"asdfg" * 64)
+            samples.append(b"hijkl" * 64)
 
         d = zstd.train_dictionary(8192, samples)
 
@@ -1653,7 +1662,9 @@ class TestDecompressor_multi_decompress_to_buffer(TestCase):
             self.assertEqual(decompressed[i].tobytes(), original[i])
 
     def test_dict(self):
-        d = zstd.train_dictionary(16384, generate_samples(), k=64, d=16)
+        samples = generate_samples()
+        optSize = get_optimal_dict_size_heuristically(samples)
+        d = zstd.train_dictionary(optSize, samples, k=64, d=8)
 
         cctx = zstd.ZstdCompressor(dict_data=d, level=1)
         frames = [cctx.compress(s) for s in generate_samples()]
@@ -1665,7 +1676,7 @@ class TestDecompressor_multi_decompress_to_buffer(TestCase):
 
         result = dctx.multi_decompress_to_buffer(frames)
 
-        self.assertEqual([o.tobytes() for o in result], generate_samples())
+        self.assertEqual([o.tobytes() for o in result], samples)
 
     def test_multiple_threads(self):
         cctx = zstd.ZstdCompressor()

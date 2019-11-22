@@ -72,7 +72,7 @@ extern "C" {
 /*------   Version   ------*/
 #define ZSTD_VERSION_MAJOR    1
 #define ZSTD_VERSION_MINOR    4
-#define ZSTD_VERSION_RELEASE  4
+#define ZSTD_VERSION_RELEASE  5
 
 #define ZSTD_VERSION_NUMBER  (ZSTD_VERSION_MAJOR *100*100 + ZSTD_VERSION_MINOR *100 + ZSTD_VERSION_RELEASE)
 ZSTDLIB_API unsigned ZSTD_versionNumber(void);   /**< to check runtime library version */
@@ -763,7 +763,7 @@ ZSTDLIB_API size_t ZSTD_freeDStream(ZSTD_DStream* zds);
 
 /* This function is redundant with the advanced API and equivalent to:
  *
- *     ZSTD_DCtx_reset(zds);
+ *     ZSTD_DCtx_reset(zds, ZSTD_reset_session_only);
  *     ZSTD_DCtx_refDDict(zds, NULL);
  */
 ZSTDLIB_API size_t ZSTD_initDStream(ZSTD_DStream* zds);
