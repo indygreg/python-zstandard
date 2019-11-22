@@ -89,13 +89,17 @@ def random_input_data():
     return _source_files
 
 
+def get_optimal_dict_size_heuristically(src):
+    return sum(len(ch) for ch in src) // 100
+
+
 def generate_samples():
     inputs = [
-        b"foo",
-        b"bar",
-        b"abcdef",
-        b"sometext",
-        b"baz",
+        b"foo" * 32,
+        b"bar" * 16,
+        b"abcdef" * 64,
+        b"sometext" * 128,
+        b"baz" * 512,
     ]
 
     samples = []

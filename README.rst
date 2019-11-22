@@ -1140,8 +1140,8 @@ on existing data::
 This takes a target dictionary size and list of bytes instances and creates and
 returns a ``ZstdCompressionDict``.
 
-The dictionary training mechanism is known as *cover*. More details about it are
-available in the paper *Effective Construction of Relative Lempel-Ziv
+The dictionary training mechanism is known as *cover*. More details about it
+are available in the paper *Effective Construction of Relative Lempel-Ziv
 Dictionaries* (authors: Liao, Petri, Moffat, Wirth).
 
 The cover algorithm takes parameters ``k` and ``d``. These are the
@@ -1156,17 +1156,13 @@ specified manually or ``train_dictionary()`` can try multiple values
 and pick the best one, where *best* means the smallest compressed data size.
 This later mode is called *optimization* mode.
 
-If none of ``k``, ``d``, ``steps``, ``threads``, ``level``, ``notifications``,
-or ``dict_id`` (basically anything from the underlying ``ZDICT_cover_params_t``
-struct) are defined, *optimization* mode is used with default parameter
-values.
+Under the hood, this function always calls
+``ZDICT_optimizeTrainFromBuffer_fastCover()``. See the corresponding C library
+documentation for more.
 
-If ``steps`` or ``threads`` are defined, then *optimization* mode is engaged
-with explicit control over those parameters. Specifying ``threads=0`` or
-``threads=1`` can be used to engage *optimization* mode if other parameters
-are not defined.
-
-Otherwise, non-*optimization* mode is used with the parameters specified.
+If neither ``steps`` nor ``threads`` is defined, defaults for ``d``, ``steps``,
+and ``level`` will be used that are equivalent with what
+``ZDICT_trainFromBuffer()`` would use.
 
 This function takes the following arguments:
 
@@ -1175,11 +1171,21 @@ dict_size
 samples
    A list of bytes holding samples the dictionary will be trained from.
 k
-   Parameter to cover algorithm defining the segment size. A reasonable range
-   is [16, 2048+].
+   Segment size : constraint: 0 < k : Reasonable range [16, 2048+]
 d
-   Parameter to cover algorithm defining the dmer size. A reasonable range is
-   [6, 16]. ``d`` must be less than or equal to ``k``.
+   dmer size : constraint: 0 < d <= k : Reasonable range [6, 16]
+f
+   log of size of frequency array : constraint: 0 < f <= 31 : 1 means
+   default(20)
+split_point
+   Percentage of samples used for training: Only used for optimization.
+   The first # samples * ``split_point`` samples will be used to training.
+   The last # samples * (1 - split_point) samples will be used for testing.
+   0 means default (0.75), 1.0 when all samples are used for both training
+   and testing.
+accel
+   Acceleration level: constraint: 0 < accel <= 10. Higher means faster
+   and less accurate, 0 means default(1).
 dict_id
    Integer dictionary ID for the produced dictionary. Default is 0, which uses
    a random value.

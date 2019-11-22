@@ -16,6 +16,9 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 		"samples",
 		"k",
 		"d",
+		"f",
+		"split_point",
+		"accel",
 		"notifications",
 		"dict_id",
 		"level",
@@ -28,12 +31,15 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	PyObject* samples;
 	unsigned k = 0;
 	unsigned d = 0;
+	unsigned f = 0;
+	double splitPoint = 0.0;
+	unsigned accel = 0;
 	unsigned notifications = 0;
 	unsigned dictID = 0;
 	int level = 0;
 	unsigned steps = 0;
 	int threads = 0;
-	ZDICT_cover_params_t params;
+	ZDICT_fastCover_params_t params;
 	Py_ssize_t samplesLen;
 	Py_ssize_t i;
 	size_t samplesSize = 0;
@@ -45,9 +51,11 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	size_t zresult;
 	ZstdCompressionDict* result = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IIIIiIi:train_dictionary",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "nO!|IIIdIIIiIi:train_dictionary",
 		kwlist, &capacity, &PyList_Type, &samples,
-		&k, &d, &notifications, &dictID, &level, &steps, &threads)) {
+		&k, &d, &f, &splitPoint, &accel,
+		&notifications, &dictID, &level, &steps, &threads
+	)) {
 		return NULL;
 	}
 
@@ -55,14 +63,25 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 		threads = cpu_count();
 	}
 
+	if (!steps && !threads) {
+		/* Defaults from ZDICT_trainFromBuffer() */
+		d = d ? d : 8;
+		steps = steps ? steps : 4;
+		level = level ? level : 3;
+	}
+
 	memset(&params, 0, sizeof(params));
 	params.k = k;
 	params.d = d;
+	params.f = f;
 	params.steps = steps;
 	params.nbThreads = threads;
-	params.zParams.notificationLevel = notifications;
-	params.zParams.dictID = dictID;
+	params.splitPoint = splitPoint;
+	params.accel = accel;
+
 	params.zParams.compressionLevel = level;
+	params.zParams.dictID = dictID;
+	params.zParams.notificationLevel = notifications;
 
 	/* Figure out total size of input samples. */
 	samplesLen = PyList_Size(samples);
@@ -104,23 +123,8 @@ ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* 
 	}
 
 	Py_BEGIN_ALLOW_THREADS
-	/* No parameters uses the default function, which will use default params
-	   and call ZDICT_optimizeTrainFromBuffer_cover under the hood. */
-	if (!params.k && !params.d && !params.zParams.compressionLevel
-		&& !params.zParams.notificationLevel && !params.zParams.dictID) {
-		zresult = ZDICT_trainFromBuffer(dict, capacity, sampleBuffer,
-			sampleSizes, (unsigned)samplesLen);
-	}
-	/* Use optimize mode if user controlled steps or threads explicitly. */
-	else if (params.steps || params.nbThreads) {
-		zresult = ZDICT_optimizeTrainFromBuffer_cover(dict, capacity,
-			sampleBuffer, sampleSizes, (unsigned)samplesLen, &params);
-	}
-	/* Non-optimize mode with explicit control. */
-	else {
-		zresult = ZDICT_trainFromBuffer_cover(dict, capacity,
-			sampleBuffer, sampleSizes, (unsigned)samplesLen, params);
-	}
+	zresult = ZDICT_optimizeTrainFromBuffer_fastCover(dict, capacity,
+		sampleBuffer, sampleSizes, (unsigned)samplesLen, &params);
 	Py_END_ALLOW_THREADS
 
 	if (ZDICT_isError(zresult)) {

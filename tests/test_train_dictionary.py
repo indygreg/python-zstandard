@@ -4,6 +4,7 @@ import zstandard as zstd
 
 from .common import (
     generate_samples,
+    get_optimal_dict_size_heuristically,
     random_input_data,
     TestCase,
 )
@@ -32,29 +33,40 @@ class TestTrainDictionary(TestCase):
         self.assertEqual(data[0:8], expected)
 
     def test_basic(self):
-        d = zstd.train_dictionary(8192, generate_samples(), k=64, d=16)
+        d = zstd.train_dictionary(8192, generate_samples(), k=500, d=8)
         self.assertIsInstance(d.dict_id(), int)
 
         data = d.as_bytes()
         self.assertEqual(data[0:4], b"\x37\xa4\x30\xec")
 
-        self.assertEqual(d.k, 64)
-        self.assertEqual(d.d, 16)
+        self.assertEqual(d.k, 500)
+        self.assertEqual(d.d, 8)
 
     def test_set_dict_id(self):
+        samples = generate_samples()
         d = zstd.train_dictionary(
-            8192, generate_samples(), k=64, d=16, dict_id=42
+            get_optimal_dict_size_heuristically(samples),
+            samples,
+            k=64,
+            d=8,
+            dict_id=42,
         )
         self.assertEqual(d.dict_id(), 42)
 
     def test_optimize(self):
+        samples = generate_samples()
         d = zstd.train_dictionary(
-            8192, generate_samples(), threads=-1, steps=1, d=16
+            get_optimal_dict_size_heuristically(samples),
+            samples,
+            threads=-1,
+            steps=1,
+            d=6,
+            notifications=2,
         )
 
         # This varies by platform.
         self.assertIn(d.k, (50, 2000))
-        self.assertEqual(d.d, 16)
+        self.assertEqual(d.d, 6)
 
 
 class TestCompressionDict(TestCase):
@@ -63,7 +75,10 @@ class TestCompressionDict(TestCase):
             zstd.ZstdCompressionDict(b"foo", dict_type=42)
 
     def test_bad_precompute_compress(self):
-        d = zstd.train_dictionary(8192, generate_samples(), k=64, d=16)
+        samples = generate_samples()
+        d = zstd.train_dictionary(
+            get_optimal_dict_size_heuristically(samples), samples, k=64, d=8
+        )
 
         with self.assertRaisesRegex(
             ValueError, "must specify one of level or "

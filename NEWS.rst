@@ -52,8 +52,6 @@ Actions Blocking Release
 * Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
   compression parameters.
 * Consider exposing ``ZSTDMT_toFlushNow()``.
-* Expose ``ZDICT_trainFromBuffer_fastCover()``,
-  ``ZDICT_optimizeTrainFromBuffer_fastCover``.
 * Expose ``ZSTD_Sequence`` struct and related ``ZSTD_getSequences()`` API.
 * Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
 * Consider a ``chunker()`` API for decompression.
@@ -80,11 +78,23 @@ Backwards Compatibility Notes
 
 * Support for Python 2.7 has been dropped. Python 3.5 is now the
   minimum required Python version. (#109)
+* ``train_dictionary()`` now uses the ``fastcover`` training mechanism
+  (as opposed to ``cover``). Some parameter values that worked with the old
+  mechanism may not work with the new one. e.g. ``d`` must be ``6`` or ``8``
+  if it is defined.
+* ``train_dictionary()`` now always calls
+  ``ZDICT_optimizeTrainFromBuffer_fastCover()`` instead of different APIs
+  depending on which arguments were passed.
 
 Changes
 -------
 
 * CI now properly uses the ``cffi`` backend when running all tests.
+* ``train_dictionary()`` has been rewritten to use the ``fastcover`` APIs
+  and to consistently call ``ZDICT_optimizeTrainFromBuffer_fastCover()``
+  instead of different C APIs depending on what arguments were passed.
+  The function also now accepts arguments ``f``, ``split_point``, and
+  ``accel``, which are parameters unique to ``fastcover``.
 
 0.14.0 (released 2020-06-13)
 ============================

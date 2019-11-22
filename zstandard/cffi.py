@@ -1784,6 +1784,9 @@ def train_dictionary(
     samples,
     k=0,
     d=0,
+    f=0,
+    split_point=0.0,
+    accel=0,
     notifications=0,
     dict_id=0,
     level=0,
@@ -1795,6 +1798,11 @@ def train_dictionary(
 
     if threads < 0:
         threads = _cpu_count()
+
+    if not steps and not threads:
+        d = d or 8
+        steps = steps or 4
+        level = level or 3
 
     total_size = sum(map(len, samples))
 
@@ -1813,49 +1821,26 @@ def train_dictionary(
 
     dict_data = new_nonzero("char[]", dict_size)
 
-    dparams = ffi.new("ZDICT_cover_params_t *")[0]
+    dparams = ffi.new("ZDICT_fastCover_params_t *")[0]
     dparams.k = k
     dparams.d = d
+    dparams.f = f
     dparams.steps = steps
     dparams.nbThreads = threads
+    dparams.splitPoint = split_point
+    dparams.accel = accel
     dparams.zParams.notificationLevel = notifications
     dparams.zParams.dictID = dict_id
     dparams.zParams.compressionLevel = level
 
-    if (
-        not dparams.k
-        and not dparams.d
-        and not dparams.steps
-        and not dparams.nbThreads
-        and not dparams.zParams.notificationLevel
-        and not dparams.zParams.dictID
-        and not dparams.zParams.compressionLevel
-    ):
-        zresult = lib.ZDICT_trainFromBuffer(
-            ffi.addressof(dict_data),
-            dict_size,
-            ffi.addressof(samples_buffer),
-            ffi.addressof(sample_sizes, 0),
-            len(samples),
-        )
-    elif dparams.steps or dparams.nbThreads:
-        zresult = lib.ZDICT_optimizeTrainFromBuffer_cover(
-            ffi.addressof(dict_data),
-            dict_size,
-            ffi.addressof(samples_buffer),
-            ffi.addressof(sample_sizes, 0),
-            len(samples),
-            ffi.addressof(dparams),
-        )
-    else:
-        zresult = lib.ZDICT_trainFromBuffer_cover(
-            ffi.addressof(dict_data),
-            dict_size,
-            ffi.addressof(samples_buffer),
-            ffi.addressof(sample_sizes, 0),
-            len(samples),
-            dparams,
-        )
+    zresult = lib.ZDICT_optimizeTrainFromBuffer_fastCover(
+        ffi.addressof(dict_data),
+        dict_size,
+        ffi.addressof(samples_buffer),
+        ffi.addressof(sample_sizes, 0),
+        len(samples),
+        ffi.addressof(dparams),
+    )
 
     if lib.ZDICT_isError(zresult):
         msg = ffi.string(lib.ZDICT_getErrorName(zresult)).decode("utf-8")
