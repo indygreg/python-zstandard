@@ -25,14 +25,14 @@ else:
 @make_cffi
 class TestFrameHeaderSize(unittest.TestCase):
     def test_empty(self):
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError,
             "could not determine frame header size: Src size " "is incorrect",
         ):
             zstd.frame_header_size(b"")
 
     def test_too_small(self):
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError,
             "could not determine frame header size: Src size " "is incorrect",
         ):
@@ -46,19 +46,19 @@ class TestFrameHeaderSize(unittest.TestCase):
 @make_cffi
 class TestFrameContentSize(unittest.TestCase):
     def test_empty(self):
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "error when determining content size"
         ):
             zstd.frame_content_size(b"")
 
     def test_too_small(self):
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "error when determining content size"
         ):
             zstd.frame_content_size(b"foob")
 
     def test_bad_frame(self):
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "error when determining content size"
         ):
             zstd.frame_content_size(b"invalid frame header")
@@ -95,7 +95,7 @@ class TestDecompressor_decompress(unittest.TestCase):
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "error determining content size from frame header"
         ):
             dctx.decompress(b"")
@@ -103,7 +103,7 @@ class TestDecompressor_decompress(unittest.TestCase):
     def test_invalid_input(self):
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "error determining content size from frame header"
         ):
             dctx.decompress(b"foobar")
@@ -130,7 +130,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         compressed = cctx.compress(b"foobar")
 
         dctx = zstd.ZstdDecompressor()
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "could not determine content size in frame header"
         ):
             dctx.decompress(compressed)
@@ -163,7 +163,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         self.assertEqual(decompressed, source)
 
         # Input size - 1 fails
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "decompression error: did not decompress full frame"
         ):
             dctx.decompress(compressed, max_output_size=len(source) - 1)
@@ -235,7 +235,7 @@ class TestDecompressor_decompress(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor(max_window_size=2 ** zstd.WINDOWLOG_MIN)
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "decompression error: Frame requires too much memory"
         ):
             dctx.decompress(frame, max_output_size=len(source))
@@ -308,7 +308,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with dctx.stream_reader(b"foo") as reader:
-            with self.assertRaisesRegexp(ValueError, "cannot __enter__ multiple times"):
+            with self.assertRaisesRegex(ValueError, "cannot __enter__ multiple times"):
                 with reader as reader2:
                     pass
 
@@ -355,7 +355,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         with dctx.stream_reader(b"foo") as reader:
             reader.close()
             self.assertTrue(reader.closed)
-            with self.assertRaisesRegexp(ValueError, "stream is closed"):
+            with self.assertRaisesRegex(ValueError, "stream is closed"):
                 reader.read(1)
 
     def test_read_sizes(self):
@@ -365,7 +365,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with dctx.stream_reader(foo) as reader:
-            with self.assertRaisesRegexp(
+            with self.assertRaisesRegex(
                 ValueError, "cannot read negative amounts less than -1"
             ):
                 reader.read(-2)
@@ -463,7 +463,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         self.assertTrue(reader.closed)
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             reader.read(10)
 
     def test_illegal_seeks(self):
@@ -473,34 +473,34 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with dctx.stream_reader(frame) as reader:
-            with self.assertRaisesRegexp(
+            with self.assertRaisesRegex(
                 ValueError, "cannot seek to negative position"
             ):
                 reader.seek(-1, os.SEEK_SET)
 
             reader.read(1)
 
-            with self.assertRaisesRegexp(
+            with self.assertRaisesRegex(
                 ValueError, "cannot seek zstd decompression stream backwards"
             ):
                 reader.seek(0, os.SEEK_SET)
 
-            with self.assertRaisesRegexp(
+            with self.assertRaisesRegex(
                 ValueError, "cannot seek zstd decompression stream backwards"
             ):
                 reader.seek(-1, os.SEEK_CUR)
 
-            with self.assertRaisesRegexp(
+            with self.assertRaisesRegex(
                 ValueError, "zstd decompression streams cannot be seeked with SEEK_END"
             ):
                 reader.seek(0, os.SEEK_END)
 
             reader.close()
 
-            with self.assertRaisesRegexp(ValueError, "stream is closed"):
+            with self.assertRaisesRegex(ValueError, "stream is closed"):
                 reader.seek(4, os.SEEK_SET)
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             reader.seek(0)
 
     def test_seek(self):
@@ -533,7 +533,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         reader.close()
         self.assertTrue(reader.closed)
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             reader.read(6)
 
     def test_read_after_error(self):
@@ -546,7 +546,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             reader.read(0)
 
         with reader:
-            with self.assertRaisesRegexp(ValueError, "stream is closed"):
+            with self.assertRaisesRegex(ValueError, "stream is closed"):
                 reader.read(100)
 
     def test_partial_read(self):
@@ -822,14 +822,14 @@ class TestDecompressor_decompressobj(unittest.TestCase):
         dobj = dctx.decompressobj()
         dobj.decompress(data)
 
-        with self.assertRaisesRegexp(zstd.ZstdError, "cannot use a decompressobj"):
+        with self.assertRaisesRegex(zstd.ZstdError, "cannot use a decompressobj"):
             dobj.decompress(data)
             self.assertIsNone(dobj.flush())
 
     def test_bad_write_size(self):
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(ValueError, "write_size must be positive"):
+        with self.assertRaisesRegex(ValueError, "write_size must be positive"):
             dctx.decompressobj(write_size=0)
 
     def test_write_size(self):
@@ -945,13 +945,13 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertTrue(writer.closed)
         self.assertTrue(buffer.closed)
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             writer.write(b"")
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             writer.flush()
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             with writer:
                 pass
 
@@ -1125,7 +1125,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
         # Buffer protocol works.
         dctx.read_to_iter(b"foobar")
 
-        with self.assertRaisesRegexp(ValueError, "must pass an object with a read"):
+        with self.assertRaisesRegex(ValueError, "must pass an object with a read"):
             b"".join(dctx.read_to_iter(True))
 
     def test_empty_input(self):
@@ -1146,11 +1146,11 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
 
         source = io.BytesIO(b"foobar")
         it = dctx.read_to_iter(source)
-        with self.assertRaisesRegexp(zstd.ZstdError, "Unknown frame descriptor"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Unknown frame descriptor"):
             next(it)
 
         it = dctx.read_to_iter(b"foobar")
-        with self.assertRaisesRegexp(zstd.ZstdError, "Unknown frame descriptor"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Unknown frame descriptor"):
             next(it)
 
     def test_empty_roundtrip(self):
@@ -1174,12 +1174,12 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
     def test_skip_bytes_too_large(self):
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "skip_bytes must be smaller than read_size"
         ):
             b"".join(dctx.read_to_iter(b"", skip_bytes=1, read_size=1))
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "skip_bytes larger than first input chunk"
         ):
             b"".join(dctx.read_to_iter(b"foobar", skip_bytes=10))
@@ -1321,7 +1321,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
         self.assertNotEqual(frame[0:4], b"\x28\xb5\x2f\xfd")
 
         dctx = zstd.ZstdDecompressor()
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "error determining content size from frame header"
         ):
             dctx.decompress(frame)
@@ -1342,26 +1342,26 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         with self.assertRaises(TypeError):
             dctx.decompress_content_dict_chain((b"foo", b"bar"))
 
-        with self.assertRaisesRegexp(ValueError, "empty input chain"):
+        with self.assertRaisesRegex(ValueError, "empty input chain"):
             dctx.decompress_content_dict_chain([])
 
-        with self.assertRaisesRegexp(ValueError, "chunk 0 must be bytes"):
+        with self.assertRaisesRegex(ValueError, "chunk 0 must be bytes"):
             dctx.decompress_content_dict_chain([u"foo"])
 
-        with self.assertRaisesRegexp(ValueError, "chunk 0 must be bytes"):
+        with self.assertRaisesRegex(ValueError, "chunk 0 must be bytes"):
             dctx.decompress_content_dict_chain([True])
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "chunk 0 is too small to contain a zstd frame"
         ):
             dctx.decompress_content_dict_chain([zstd.FRAME_HEADER])
 
-        with self.assertRaisesRegexp(ValueError, "chunk 0 is not a valid zstd frame"):
+        with self.assertRaisesRegex(ValueError, "chunk 0 is not a valid zstd frame"):
             dctx.decompress_content_dict_chain([b"foo" * 8])
 
         no_size = zstd.ZstdCompressor(write_content_size=False).compress(b"foo" * 64)
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "chunk 0 missing content size in frame"
         ):
             dctx.decompress_content_dict_chain([no_size])
@@ -1369,7 +1369,7 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         # Corrupt first frame.
         frame = zstd.ZstdCompressor().compress(b"foo" * 64)
         frame = frame[0:12] + frame[15:]
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "chunk 0 did not decompress full frame"
         ):
             dctx.decompress_content_dict_chain([frame])
@@ -1379,23 +1379,23 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
 
-        with self.assertRaisesRegexp(ValueError, "chunk 1 must be bytes"):
+        with self.assertRaisesRegex(ValueError, "chunk 1 must be bytes"):
             dctx.decompress_content_dict_chain([initial, u"foo"])
 
-        with self.assertRaisesRegexp(ValueError, "chunk 1 must be bytes"):
+        with self.assertRaisesRegex(ValueError, "chunk 1 must be bytes"):
             dctx.decompress_content_dict_chain([initial, None])
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "chunk 1 is too small to contain a zstd frame"
         ):
             dctx.decompress_content_dict_chain([initial, zstd.FRAME_HEADER])
 
-        with self.assertRaisesRegexp(ValueError, "chunk 1 is not a valid zstd frame"):
+        with self.assertRaisesRegex(ValueError, "chunk 1 is not a valid zstd frame"):
             dctx.decompress_content_dict_chain([initial, b"foo" * 8])
 
         no_size = zstd.ZstdCompressor(write_content_size=False).compress(b"foo" * 64)
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "chunk 1 missing content size in frame"
         ):
             dctx.decompress_content_dict_chain([initial, no_size])
@@ -1405,7 +1405,7 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         frame = cctx.compress(b"bar" * 64)
         frame = frame[0:12] + frame[15:]
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "chunk 1 did not decompress full frame"
         ):
             dctx.decompress_content_dict_chain([initial, frame])
@@ -1448,10 +1448,10 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         with self.assertRaises(TypeError):
             dctx.multi_decompress_to_buffer((1, 2))
 
-        with self.assertRaisesRegexp(TypeError, "item 0 not a bytes like object"):
+        with self.assertRaisesRegex(TypeError, "item 0 not a bytes like object"):
             dctx.multi_decompress_to_buffer([u"foo"])
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "could not determine decompressed size of item 0"
         ):
             dctx.multi_decompress_to_buffer([b"foobarbaz"])
@@ -1654,7 +1654,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         if not hasattr(dctx, "multi_decompress_to_buffer"):
             self.skipTest("multi_decompress_to_buffer not available")
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError,
             "error decompressing item 1: ("
             "Corrupted block|"
@@ -1662,7 +1662,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         ):
             dctx.multi_decompress_to_buffer(frames)
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError,
             "error decompressing item 1: ("
             "Corrupted block|"

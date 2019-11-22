@@ -325,12 +325,12 @@ class TestCompressor_compressobj(unittest.TestCase):
         cobj.compress(b"foo")
         cobj.flush()
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, r"cannot call compress\(\) after compressor"
         ):
             cobj.compress(b"foo")
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, "compressor object already finished"
         ):
             cobj.flush()
@@ -405,11 +405,11 @@ class TestCompressor_compressobj(unittest.TestCase):
         cctx = zstd.ZstdCompressor()
 
         cobj = cctx.compressobj(size=2)
-        with self.assertRaisesRegexp(zstd.ZstdError, "Src size is incorrect"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Src size is incorrect"):
             cobj.compress(b"foo")
 
         # Try another operation on this instance.
-        with self.assertRaisesRegexp(zstd.ZstdError, "Src size is incorrect"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Src size is incorrect"):
             cobj.compress(b"aa")
 
         # Try another operation on the compressor.
@@ -569,7 +569,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
         cctx = zstd.ZstdCompressor()
 
-        with self.assertRaisesRegexp(zstd.ZstdError, "Src size is incorrect"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Src size is incorrect"):
             cctx.copy_stream(source, dest, size=42)
 
         # Try another operation on this compressor.
@@ -584,7 +584,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
         cctx = zstd.ZstdCompressor()
 
         with cctx.stream_reader(b"foo") as reader:
-            with self.assertRaisesRegexp(ValueError, "cannot __enter__ multiple times"):
+            with self.assertRaisesRegex(ValueError, "cannot __enter__ multiple times"):
                 with reader as reader2:
                     pass
 
@@ -597,7 +597,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
         reader.close()
         self.assertTrue(reader.closed)
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             reader.read(1)
 
     def test_not_implemented(self):
@@ -642,7 +642,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
         with cctx.stream_reader(b"foo" * 60) as reader:
             reader.close()
             self.assertTrue(reader.closed)
-            with self.assertRaisesRegexp(ValueError, "stream is closed"):
+            with self.assertRaisesRegex(ValueError, "stream is closed"):
                 reader.read(10)
 
     def test_read_sizes(self):
@@ -650,7 +650,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
         foo = cctx.compress(b"foo")
 
         with cctx.stream_reader(b"foo") as reader:
-            with self.assertRaisesRegexp(
+            with self.assertRaisesRegex(
                 ValueError, "cannot read negative amounts less than -1"
             ):
                 reader.read(-2)
@@ -734,7 +734,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
             while reader.read(8192):
                 pass
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             reader.read(10)
 
     def test_bad_size(self):
@@ -743,7 +743,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
         source = io.BytesIO(b"foobar")
 
         with cctx.stream_reader(source, size=2) as reader:
-            with self.assertRaisesRegexp(zstd.ZstdError, "Src size is incorrect"):
+            with self.assertRaisesRegex(zstd.ZstdError, "Src size is incorrect"):
                 reader.read(10)
 
         # Try another compression operation.
@@ -921,13 +921,13 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertTrue(writer.closed)
         self.assertTrue(buffer.closed)
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             writer.write(b"foo")
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             writer.flush()
 
-        with self.assertRaisesRegexp(ValueError, "stream is closed"):
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
             with writer:
                 pass
 
@@ -1271,7 +1271,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         cctx = zstd.ZstdCompressor()
         dest = io.BytesIO()
         with cctx.stream_writer(dest) as compressor:
-            with self.assertRaisesRegexp(ValueError, "unknown flush_mode: 42"):
+            with self.assertRaisesRegex(ValueError, "unknown flush_mode: 42"):
                 compressor.flush(flush_mode=42)
 
     def test_multithreaded(self):
@@ -1299,7 +1299,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
         dest = io.BytesIO()
 
-        with self.assertRaisesRegexp(zstd.ZstdError, "Src size is incorrect"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Src size is incorrect"):
             with cctx.stream_writer(dest, size=2) as compressor:
                 compressor.write(b"foo")
 
@@ -1336,7 +1336,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         for chunk in cctx.read_to_iter(b"foobar"):
             pass
 
-        with self.assertRaisesRegexp(ValueError, "must pass an object with a read"):
+        with self.assertRaisesRegex(ValueError, "must pass an object with a read"):
             for chunk in cctx.read_to_iter(True):
                 pass
 
@@ -1436,7 +1436,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
 
         source = io.BytesIO(b"a" * 42)
 
-        with self.assertRaisesRegexp(zstd.ZstdError, "Src size is incorrect"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Src size is incorrect"):
             b"".join(cctx.read_to_iter(source, size=2))
 
         # Test another operation on errored compressor.
@@ -1600,7 +1600,7 @@ class TestCompressor_chunker(unittest.TestCase):
         list(chunker.compress(b"foo"))
         list(chunker.finish())
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, r"cannot call compress\(\) after compression finished"
         ):
             list(chunker.compress(b"foo"))
@@ -1612,7 +1612,7 @@ class TestCompressor_chunker(unittest.TestCase):
         list(chunker.compress(b"foo"))
         list(chunker.finish())
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, r"cannot call flush\(\) after compression finished"
         ):
             list(chunker.flush())
@@ -1624,7 +1624,7 @@ class TestCompressor_chunker(unittest.TestCase):
         list(chunker.compress(b"foo"))
         list(chunker.finish())
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             zstd.ZstdError, r"cannot call finish\(\) after compression finished"
         ):
             list(chunker.finish())
@@ -1643,7 +1643,7 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         with self.assertRaises(TypeError):
             cctx.multi_compress_to_buffer((1, 2))
 
-        with self.assertRaisesRegexp(TypeError, "item 0 not a bytes like object"):
+        with self.assertRaisesRegex(TypeError, "item 0 not a bytes like object"):
             cctx.multi_compress_to_buffer([u"foo"])
 
     def test_empty_input(self):
@@ -1652,10 +1652,10 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         if not hasattr(cctx, "multi_compress_to_buffer"):
             self.skipTest("multi_compress_to_buffer not available")
 
-        with self.assertRaisesRegexp(ValueError, "no source elements found"):
+        with self.assertRaisesRegex(ValueError, "no source elements found"):
             cctx.multi_compress_to_buffer([])
 
-        with self.assertRaisesRegexp(ValueError, "source elements are empty"):
+        with self.assertRaisesRegex(ValueError, "source elements are empty"):
             cctx.multi_compress_to_buffer([b"", b"", b""])
 
     def test_list_input(self):

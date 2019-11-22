@@ -18,7 +18,7 @@ class TestBufferWithSegments(unittest.TestCase):
             zstd.BufferWithSegments(b"foo")
 
         # Segments data should be a multiple of 16.
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "segments array size is not a multiple of 16"
         ):
             zstd.BufferWithSegments(b"foo", b"\x00\x00")
@@ -27,7 +27,7 @@ class TestBufferWithSegments(unittest.TestCase):
         if not hasattr(zstd, "BufferWithSegments"):
             self.skipTest("BufferWithSegments not available")
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "offset within segments array references memory"
         ):
             zstd.BufferWithSegments(b"foo", ss.pack(0, 4))
@@ -38,13 +38,13 @@ class TestBufferWithSegments(unittest.TestCase):
 
         b = zstd.BufferWithSegments(b"foo", ss.pack(0, 3))
 
-        with self.assertRaisesRegexp(IndexError, "offset must be non-negative"):
+        with self.assertRaisesRegex(IndexError, "offset must be non-negative"):
             test = b[-10]
 
-        with self.assertRaisesRegexp(IndexError, "offset must be less than 1"):
+        with self.assertRaisesRegex(IndexError, "offset must be less than 1"):
             test = b[1]
 
-        with self.assertRaisesRegexp(IndexError, "offset must be less than 1"):
+        with self.assertRaisesRegex(IndexError, "offset must be less than 1"):
             test = b[2]
 
     def test_single(self):
@@ -81,22 +81,22 @@ class TestBufferWithSegmentsCollection(unittest.TestCase):
         if not hasattr(zstd, "BufferWithSegmentsCollection"):
             self.skipTest("BufferWithSegmentsCollection not available")
 
-        with self.assertRaisesRegexp(ValueError, "must pass at least 1 argument"):
+        with self.assertRaisesRegex(ValueError, "must pass at least 1 argument"):
             zstd.BufferWithSegmentsCollection()
 
     def test_argument_validation(self):
         if not hasattr(zstd, "BufferWithSegmentsCollection"):
             self.skipTest("BufferWithSegmentsCollection not available")
 
-        with self.assertRaisesRegexp(TypeError, "arguments must be BufferWithSegments"):
+        with self.assertRaisesRegex(TypeError, "arguments must be BufferWithSegments"):
             zstd.BufferWithSegmentsCollection(None)
 
-        with self.assertRaisesRegexp(TypeError, "arguments must be BufferWithSegments"):
+        with self.assertRaisesRegex(TypeError, "arguments must be BufferWithSegments"):
             zstd.BufferWithSegmentsCollection(
                 zstd.BufferWithSegments(b"foo", ss.pack(0, 3)), None
             )
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "ZstdBufferWithSegments cannot be empty"
         ):
             zstd.BufferWithSegmentsCollection(zstd.BufferWithSegments(b"", b""))
@@ -133,10 +133,10 @@ class TestBufferWithSegmentsCollection(unittest.TestCase):
 
         c = zstd.BufferWithSegmentsCollection(b1, b2)
 
-        with self.assertRaisesRegexp(IndexError, "offset must be less than 3"):
+        with self.assertRaisesRegex(IndexError, "offset must be less than 3"):
             c[3]
 
-        with self.assertRaisesRegexp(IndexError, "offset must be less than 3"):
+        with self.assertRaisesRegex(IndexError, "offset must be less than 3"):
             c[4]
 
         self.assertEqual(c[0].tobytes(), b"foo")
