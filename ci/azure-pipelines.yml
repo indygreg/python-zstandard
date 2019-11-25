@@ -33,7 +33,7 @@ jobs:
         py: cp37-cp37m
       x64_2010_38:
         image: quay.io/pypa/manylinux2010_x86_64
-        py: cp38-cp38m
+        py: cp38-cp38
       x86_27m:
         image: quay.io/pypa/manylinux1_i686
         py: cp27-cp27m
@@ -51,7 +51,7 @@ jobs:
         py: cp37-cp37m
       x86_38:
         image: quay.io/pypa/manylinux1_i686
-        py: cp38-cp38m
+        py: cp38-cp38
   pool:
     vmImage: ubuntu-16.04
   steps:
