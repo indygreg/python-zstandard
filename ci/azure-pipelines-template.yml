@@ -12,6 +12,8 @@ jobs:
         python_version: '3.6'
       CPython3.7:
         python_version: '3.7'
+      CPython3.8:
+        python_version: '3.8'
 
   variables:
     # Enable fuzzing tests, other expensive tests.
