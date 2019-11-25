@@ -7,12 +7,6 @@
 bashlex==0.14 \
     --hash=sha256:5a92e0900b7a91de93a338b3fae651adc2b6a0e9656972b9e2ed3afd9c492ffd \
     # via cibuildwheel
-cibuildwheel==0.11.1 \
-    --hash=sha256:a3582bbc9d3c6f1efe9290c6dea1c07af1c8878b7c44805d738eb00fe46f9f9e \
-    --hash=sha256:cb18a8c58cea885af9886a3e246a18f7a2b00f1976cea811123dfdae319ff890
-enum34==1.1.6 \
-    --hash=sha256:2d81cbbe0e73112bdfe6ef8576f2238f2ba27dd0d55752a776c41d38b7da2850 \
-    --hash=sha256:644837f692e5f550741432dd3f223bbb9852018674981b1664e5dc339387588a \
-    --hash=sha256:6bd0f6ad48ec2aa117d3d141940d484deccda84d4fcd884f5c3d93c23ecd8c79 \
-    --hash=sha256:8ad8c4783bf61ded74527bffb48ed9b54166685e4230386a9ed9b1279e2df5b1 \
-    # via bashlex
+cibuildwheel==1.0.0 \
+    --hash=sha256:83cdaf39dec23ecbf356552649cd571d85b227c1677f5c425e536904e8dd4ea1 \
+    --hash=sha256:e17fe6caa2450e8523b14c3ca776b97d58ce70201ca9b30145a86c2063d565a1

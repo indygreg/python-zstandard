@@ -7,3 +7,4 @@ pytest-azurepipelines
 pytest
 tox-travis
 wheel
+importlib-metadata
