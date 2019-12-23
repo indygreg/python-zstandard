@@ -73,6 +73,7 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* Bundled zstandard library upgraded from 1.4.3 to 1.4.4.
 * Python code has been reformatted with black.
 
 0.12.0 (released 2019-09-15)
