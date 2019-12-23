@@ -3,10 +3,12 @@ import unittest
 
 import zstandard as zstd
 
+from .common import TestCase
+
 ss = struct.Struct("=QQ")
 
 
-class TestBufferWithSegments(unittest.TestCase):
+class TestBufferWithSegments(TestCase):
     def test_arguments(self):
         if not hasattr(zstd, "BufferWithSegments"):
             self.skipTest("BufferWithSegments not available")
@@ -76,7 +78,7 @@ class TestBufferWithSegments(unittest.TestCase):
         self.assertEqual(b[2].tobytes(), b"fooxy")
 
 
-class TestBufferWithSegmentsCollection(unittest.TestCase):
+class TestBufferWithSegmentsCollection(TestCase):
     def test_empty_constructor(self):
         if not hasattr(zstd, "BufferWithSegmentsCollection"):
             self.skipTest("BufferWithSegmentsCollection not available")

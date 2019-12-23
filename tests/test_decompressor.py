@@ -13,6 +13,7 @@ from .common import (
     make_cffi,
     NonClosingBytesIO,
     OpCountingBytesIO,
+    TestCase,
 )
 
 
@@ -23,7 +24,7 @@ else:
 
 
 @make_cffi
-class TestFrameHeaderSize(unittest.TestCase):
+class TestFrameHeaderSize(TestCase):
     def test_empty(self):
         with self.assertRaisesRegexp(
             zstd.ZstdError,
@@ -44,7 +45,7 @@ class TestFrameHeaderSize(unittest.TestCase):
 
 
 @make_cffi
-class TestFrameContentSize(unittest.TestCase):
+class TestFrameContentSize(TestCase):
     def test_empty(self):
         with self.assertRaisesRegexp(
             zstd.ZstdError, "error when determining content size"
@@ -83,7 +84,7 @@ class TestFrameContentSize(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor(unittest.TestCase):
+class TestDecompressor(TestCase):
     def test_memory_size(self):
         dctx = zstd.ZstdDecompressor()
 
@@ -91,7 +92,7 @@ class TestDecompressor(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor_decompress(unittest.TestCase):
+class TestDecompressor_decompress(TestCase):
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
 
@@ -242,7 +243,7 @@ class TestDecompressor_decompress(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor_copy_stream(unittest.TestCase):
+class TestDecompressor_copy_stream(TestCase):
     def test_no_read(self):
         source = object()
         dest = io.BytesIO()
@@ -303,7 +304,7 @@ class TestDecompressor_copy_stream(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor_stream_reader(unittest.TestCase):
+class TestDecompressor_stream_reader(TestCase):
     def test_context_manager(self):
         dctx = zstd.ZstdDecompressor()
 
@@ -782,7 +783,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor_decompressobj(unittest.TestCase):
+class TestDecompressor_decompressobj(TestCase):
     def test_simple(self):
         data = zstd.ZstdCompressor(level=1).compress(b"foobar")
 
@@ -853,7 +854,7 @@ def decompress_via_writer(data):
 
 
 @make_cffi
-class TestDecompressor_stream_writer(unittest.TestCase):
+class TestDecompressor_stream_writer(TestCase):
     def test_io_api(self):
         buffer = io.BytesIO()
         dctx = zstd.ZstdDecompressor()
@@ -1115,7 +1116,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor_read_to_iter(unittest.TestCase):
+class TestDecompressor_read_to_iter(TestCase):
     def test_type_validation(self):
         dctx = zstd.ZstdDecompressor()
 
@@ -1332,7 +1333,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
 
 
 @make_cffi
-class TestDecompressor_content_dict_chain(unittest.TestCase):
+class TestDecompressor_content_dict_chain(TestCase):
     def test_bad_inputs_simple(self):
         dctx = zstd.ZstdDecompressor()
 
@@ -1435,7 +1436,7 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
 
 
 # TODO enable for CFFI
-class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
+class TestDecompressor_multi_decompress_to_buffer(TestCase):
     def test_invalid_inputs(self):
         dctx = zstd.ZstdDecompressor()
 

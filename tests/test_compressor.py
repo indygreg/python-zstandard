@@ -13,6 +13,7 @@ from .common import (
     make_cffi,
     NonClosingBytesIO,
     OpCountingBytesIO,
+    TestCase,
 )
 
 
@@ -29,7 +30,7 @@ def multithreaded_chunk_size(level, source_size=0):
 
 
 @make_cffi
-class TestCompressor(unittest.TestCase):
+class TestCompressor(TestCase):
     def test_level_bounds(self):
         with self.assertRaises(ValueError):
             zstd.ZstdCompressor(level=23)
@@ -40,7 +41,7 @@ class TestCompressor(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_compress(unittest.TestCase):
+class TestCompressor_compress(TestCase):
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         result = cctx.compress(b"")
@@ -237,7 +238,7 @@ class TestCompressor_compress(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_compressobj(unittest.TestCase):
+class TestCompressor_compressobj(TestCase):
     def test_compressobj_empty(self):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         cobj = cctx.compressobj()
@@ -418,7 +419,7 @@ class TestCompressor_compressobj(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_copy_stream(unittest.TestCase):
+class TestCompressor_copy_stream(TestCase):
     def test_no_read(self):
         source = object()
         dest = io.BytesIO()
@@ -579,7 +580,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_stream_reader(unittest.TestCase):
+class TestCompressor_stream_reader(TestCase):
     def test_context_manager(self):
         cctx = zstd.ZstdCompressor()
 
@@ -833,7 +834,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_stream_writer(unittest.TestCase):
+class TestCompressor_stream_writer(TestCase):
     def test_io_api(self):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor()
@@ -1324,7 +1325,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_read_to_iter(unittest.TestCase):
+class TestCompressor_read_to_iter(TestCase):
     def test_type_validation(self):
         cctx = zstd.ZstdCompressor()
 
@@ -1444,7 +1445,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressor_chunker(unittest.TestCase):
+class TestCompressor_chunker(TestCase):
     def test_empty(self):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         chunker = cctx.chunker()
@@ -1630,7 +1631,7 @@ class TestCompressor_chunker(unittest.TestCase):
             list(chunker.finish())
 
 
-class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
+class TestCompressor_multi_compress_to_buffer(TestCase):
     def test_invalid_inputs(self):
         cctx = zstd.ZstdCompressor()
 

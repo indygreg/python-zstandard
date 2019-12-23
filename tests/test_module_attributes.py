@@ -4,11 +4,14 @@ import unittest
 
 import zstandard as zstd
 
-from .common import make_cffi
+from .common import (
+    make_cffi,
+    TestCase,
+)
 
 
 @make_cffi
-class TestModuleAttributes(unittest.TestCase):
+class TestModuleAttributes(TestCase):
     def test_version(self):
         self.assertEqual(zstd.ZSTD_VERSION, (1, 4, 4))
 

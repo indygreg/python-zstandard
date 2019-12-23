@@ -3,11 +3,17 @@ import inspect
 import io
 import os
 import types
+import unittest
 
 try:
     import hypothesis
 except ImportError:
     hypothesis = None
+
+
+class TestCase(unittest.TestCase):
+    if not getattr(unittest.TestCase, "assertRaisesRegex", False):
+        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 
 def make_cffi(cls):

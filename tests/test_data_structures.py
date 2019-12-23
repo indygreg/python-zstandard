@@ -3,11 +3,14 @@ import unittest
 
 import zstandard as zstd
 
-from .common import make_cffi
+from .common import (
+    make_cffi,
+    TestCase,
+)
 
 
 @make_cffi
-class TestCompressionParameters(unittest.TestCase):
+class TestCompressionParameters(TestCase):
     def test_bounds(self):
         zstd.ZstdCompressionParameters(
             window_log=zstd.WINDOWLOG_MIN,
@@ -147,7 +150,7 @@ class TestCompressionParameters(unittest.TestCase):
 
 
 @make_cffi
-class TestFrameParameters(unittest.TestCase):
+class TestFrameParameters(TestCase):
     def test_invalid_type(self):
         with self.assertRaises(TypeError):
             zstd.get_frame_parameters(None)

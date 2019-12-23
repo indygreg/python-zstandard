@@ -11,7 +11,10 @@ except ImportError:
 
 import zstandard as zstd
 
-from .common import make_cffi
+from .common import (
+    make_cffi,
+    TestCase,
+)
 
 
 s_windowlog = strategies.integers(
@@ -47,7 +50,7 @@ s_strategy = strategies.sampled_from(
 
 @make_cffi
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressionParametersHypothesis(unittest.TestCase):
+class TestCompressionParametersHypothesis(TestCase):
     @hypothesis.given(
         s_windowlog,
         s_chainlog,

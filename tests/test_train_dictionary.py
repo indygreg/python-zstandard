@@ -8,6 +8,7 @@ from .common import (
     generate_samples,
     make_cffi,
     random_input_data,
+    TestCase,
 )
 
 if sys.version_info[0] >= 3:
@@ -17,7 +18,7 @@ else:
 
 
 @make_cffi
-class TestTrainDictionary(unittest.TestCase):
+class TestTrainDictionary(TestCase):
     def test_no_args(self):
         with self.assertRaises(TypeError):
             zstd.train_dictionary()
@@ -62,7 +63,7 @@ class TestTrainDictionary(unittest.TestCase):
 
 
 @make_cffi
-class TestCompressionDict(unittest.TestCase):
+class TestCompressionDict(TestCase):
     def test_bad_mode(self):
         with self.assertRaisesRegexp(ValueError, "invalid dictionary load mode"):
             zstd.ZstdCompressionDict(b"foo", dict_type=42)
