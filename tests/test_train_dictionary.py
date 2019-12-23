@@ -65,16 +65,16 @@ class TestTrainDictionary(TestCase):
 @make_cffi
 class TestCompressionDict(TestCase):
     def test_bad_mode(self):
-        with self.assertRaisesRegexp(ValueError, "invalid dictionary load mode"):
+        with self.assertRaisesRegex(ValueError, "invalid dictionary load mode"):
             zstd.ZstdCompressionDict(b"foo", dict_type=42)
 
     def test_bad_precompute_compress(self):
         d = zstd.train_dictionary(8192, generate_samples(), k=64, d=16)
 
-        with self.assertRaisesRegexp(ValueError, "must specify one of level or "):
+        with self.assertRaisesRegex(ValueError, "must specify one of level or "):
             d.precompute_compress()
 
-        with self.assertRaisesRegexp(ValueError, "must only specify one of level or "):
+        with self.assertRaisesRegex(ValueError, "must only specify one of level or "):
             d.precompute_compress(
                 level=3, compression_params=zstd.CompressionParameters()
             )
@@ -88,5 +88,5 @@ class TestCompressionDict(TestCase):
         d = zstd.ZstdCompressionDict(
             b"dictcontent" * 64, dict_type=zstd.DICT_TYPE_FULLDICT
         )
-        with self.assertRaisesRegexp(zstd.ZstdError, "unable to precompute dictionary"):
+        with self.assertRaisesRegex(zstd.ZstdError, "unable to precompute dictionary"):
             d.precompute_compress(level=1)

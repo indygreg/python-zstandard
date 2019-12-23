@@ -113,7 +113,7 @@ class TestCompressionParameters(TestCase):
         )
 
     def test_strategy(self):
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "cannot specify both compression_strategy"
         ):
             zstd.ZstdCompressionParameters(strategy=0, compression_strategy=0)
@@ -125,7 +125,7 @@ class TestCompressionParameters(TestCase):
         self.assertEqual(p.compression_strategy, 3)
 
     def test_ldm_hash_rate_log(self):
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValueError, "cannot specify both ldm_hash_rate_log"
         ):
             zstd.ZstdCompressionParameters(ldm_hash_rate_log=8, ldm_hash_every_log=4)
@@ -137,7 +137,7 @@ class TestCompressionParameters(TestCase):
         self.assertEqual(p.ldm_hash_every_log, 16)
 
     def test_overlap_log(self):
-        with self.assertRaisesRegexp(ValueError, "cannot specify both overlap_log"):
+        with self.assertRaisesRegex(ValueError, "cannot specify both overlap_log"):
             zstd.ZstdCompressionParameters(overlap_log=1, overlap_size_log=9)
 
         p = zstd.ZstdCompressionParameters(overlap_log=2)
@@ -169,14 +169,14 @@ class TestFrameParameters(TestCase):
                     zstd.get_frame_parameters(u"foobarbaz")
 
     def test_invalid_input_sizes(self):
-        with self.assertRaisesRegexp(zstd.ZstdError, "not enough data for frame"):
+        with self.assertRaisesRegex(zstd.ZstdError, "not enough data for frame"):
             zstd.get_frame_parameters(b"")
 
-        with self.assertRaisesRegexp(zstd.ZstdError, "not enough data for frame"):
+        with self.assertRaisesRegex(zstd.ZstdError, "not enough data for frame"):
             zstd.get_frame_parameters(zstd.FRAME_HEADER)
 
     def test_invalid_frame(self):
-        with self.assertRaisesRegexp(zstd.ZstdError, "Unknown frame descriptor"):
+        with self.assertRaisesRegex(zstd.ZstdError, "Unknown frame descriptor"):
             zstd.get_frame_parameters(b"foobarbaz")
 
     def test_attributes(self):
