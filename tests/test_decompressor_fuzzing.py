@@ -22,7 +22,10 @@ from .common import (
 @make_cffi
 class TestDecompressor_stream_reader_fuzzing(TestCase):
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -103,7 +106,10 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), original)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -209,7 +215,10 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(data, original)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -248,7 +257,10 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), original)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -289,7 +301,10 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), original)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -321,7 +336,10 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
                 self.assertEqual(original[offset : offset + len(chunk)], chunk)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         originals=strategies.data(),

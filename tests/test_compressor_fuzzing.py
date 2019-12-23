@@ -82,7 +82,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -112,7 +115,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -202,7 +208,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -234,7 +243,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -327,7 +339,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -357,7 +372,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -456,7 +474,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -488,7 +509,10 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -571,7 +595,10 @@ class TestCompressor_copy_stream_fuzzing(TestCase):
 @make_cffi
 class TestCompressor_compressobj_fuzzing(TestCase):
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -601,7 +628,10 @@ class TestCompressor_compressobj_fuzzing(TestCase):
         self.assertEqual(b"".join(chunks), ref_frame)
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -715,7 +745,10 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(TestCase):
 @make_cffi
 class TestCompressor_chunker_fuzzing(TestCase):
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
@@ -749,7 +782,10 @@ class TestCompressor_chunker_fuzzing(TestCase):
         self.assertTrue(all(len(chunk) == chunk_size for chunk in chunks[:-1]))
 
     @hypothesis.settings(
-        suppress_health_check=[hypothesis.HealthCheck.large_base_example]
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
     )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
