@@ -386,7 +386,7 @@ class TestCompressor_compressobj(unittest.TestCase):
 
         compressed = b"".join(chunks)
 
-        self.assertEqual(len(compressed), 295)
+        self.assertEqual(len(compressed), 119)
 
     def test_frame_progression(self):
         cctx = zstd.ZstdCompressor()
@@ -541,7 +541,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         cctx = zstd.ZstdCompressor(threads=2, write_content_size=False)
         r, w = cctx.copy_stream(source, dest)
         self.assertEqual(r, 3145728)
-        self.assertEqual(w, 295)
+        self.assertEqual(w, 111)
 
         params = zstd.get_frame_parameters(dest.getvalue())
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
@@ -1282,7 +1282,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
             compressor.write(b"b" * 1048576)
             compressor.write(b"c" * 1048576)
 
-        self.assertEqual(len(dest.getvalue()), 295)
+        self.assertEqual(len(dest.getvalue()), 111)
 
     def test_tell(self):
         dest = io.BytesIO()
@@ -1429,7 +1429,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         cctx = zstd.ZstdCompressor(threads=2)
 
         compressed = b"".join(cctx.read_to_iter(source))
-        self.assertEqual(len(compressed), 295)
+        self.assertEqual(len(compressed), 111)
 
     def test_bad_size(self):
         cctx = zstd.ZstdCompressor()
