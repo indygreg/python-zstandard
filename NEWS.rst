@@ -73,6 +73,7 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* Official support for Python 3.8 has been added.
 * Bundled zstandard library upgraded from 1.4.3 to 1.4.4.
 * Python code has been reformatted with black.
 

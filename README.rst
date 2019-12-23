@@ -20,7 +20,7 @@ https://github.com/indygreg/python-zstandard.
 Requirements
 ============
 
-This extension is designed to run with Python 2.7, 3.4, 3.5, 3.6, and 3.7
+This extension is designed to run with Python 2.7, 3.5, 3.6, 3.7, and 3.8
 on common platforms (Linux, Windows, and OS X). On PyPy (both PyPy2 and PyPy3) we support version 6.0.0 and above. 
 x86 and x86_64 are well-tested on Windows. Only x86_64 is well-tested on Linux and macOS.
 
