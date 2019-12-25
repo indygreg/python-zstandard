@@ -115,6 +115,15 @@ def preprocess(path):
             ):
                 continue
 
+            # The preprocessor environment on Windows doesn't define include
+            # paths, so the #include of limits.h fails. We work around this
+            # by removing that import and defining INT_MAX ourselves. This is
+            # a bit hacky. But it gets the job done.
+            # TODO make limits.h work on Windows so we ensure INT_MAX is
+            # correct.
+            if l.startswith(b"#include <limits.h>"):
+                l = b"#define INT_MAX 2147483647\n"
+
             # ZSTDLIB_API may not be defined if we dropped zstd.h. It isn't
             # important so just filter it out.
             if l.startswith(b"ZSTDLIB_API"):
