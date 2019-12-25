@@ -386,6 +386,12 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 @make_cffi
 class TestDecompressor_stream_writer_fuzzing(TestCase):
+    @hypothesis.settings(
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
+    )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
@@ -415,6 +421,12 @@ class TestDecompressor_stream_writer_fuzzing(TestCase):
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 @make_cffi
 class TestDecompressor_copy_stream_fuzzing(TestCase):
+    @hypothesis.settings(
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
+    )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
@@ -437,6 +449,12 @@ class TestDecompressor_copy_stream_fuzzing(TestCase):
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 @make_cffi
 class TestDecompressor_decompressobj_fuzzing(TestCase):
+    @hypothesis.settings(
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
+    )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
