@@ -78,6 +78,8 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* CI now builds ``manylinux2010`` and ``manylinux2014`` binary wheels
+  instead of a mix of ``manylinux2010`` and ``manylinux1``.
 * Official support for Python 3.8 has been added.
 * Bundled zstandard library upgraded from 1.4.3 to 1.4.4.
 * Python code has been reformatted with black.
