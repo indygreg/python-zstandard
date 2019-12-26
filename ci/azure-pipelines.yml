@@ -19,14 +19,8 @@ jobs:
       x64_2010_27m:
         image: quay.io/pypa/manylinux2010_x86_64
         py: cp27-cp27m
-      x64_2014_27m:
-        image: quay.io/pypa/manylinux2014_x86_64
-        py: cp27-cp27m
       x64_2010_27mu:
         image: quay.io/pypa/manylinux2010_x86_64
-        py: cp27-cp27mu
-      x64_2014_27mu:
-        image: quay.io/pypa/manylinux2014_x86_64
         py: cp27-cp27mu
       x64_2010_35:
         image: quay.io/pypa/manylinux2010_x86_64
@@ -55,14 +49,8 @@ jobs:
       x86_2010_27m:
         image: quay.io/pypa/manylinux2010_i686
         py: cp27-cp27m
-      x86_2014_27m:
-        image: quay.io/pypa/manylinux2014_i686
-        py: cp27-cp27m
       x86_2010_27mu:
         image: quay.io/pypa/manylinux2010_i686
-        py: cp27-cp27mu
-      x86_2014_27mu:
-        image: quay.io/pypa/manylinux2014_i686
         py: cp27-cp27mu
       x86_2010_35:
         image: quay.io/pypa/manylinux2010_i686
