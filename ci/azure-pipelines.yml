@@ -34,22 +34,22 @@ jobs:
       x64_2010_38:
         image: quay.io/pypa/manylinux2010_x86_64
         py: cp38-cp38
-      x86_27m:
+      x86_2010_27m:
         image: quay.io/pypa/manylinux2010_i686
         py: cp27-cp27m
-      x86_27mu:
+      x86_2010_27mu:
         image: quay.io/pypa/manylinux2010_i686
         py: cp27-cp27mu
-      x86_35:
+      x86_2010_35:
         image: quay.io/pypa/manylinux2010_i686
         py: cp35-cp35m
-      x86_36:
+      x86_2010_36:
         image: quay.io/pypa/manylinux2010_i686
         py: cp36-cp36m
-      x86_37:
+      x86_2010_37:
         image: quay.io/pypa/manylinux2010_i686
         py: cp37-cp37m
-      x86_38:
+      x86_2010_38:
         image: quay.io/pypa/manylinux2010_i686
         py: cp38-cp38
   pool:
