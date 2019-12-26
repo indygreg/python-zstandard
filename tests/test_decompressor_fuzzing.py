@@ -480,6 +480,12 @@ class TestDecompressor_decompressobj_fuzzing(TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @hypothesis.settings(
+        suppress_health_check=[
+            hypothesis.HealthCheck.large_base_example,
+            hypothesis.HealthCheck.too_slow,
+        ]
+    )
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
