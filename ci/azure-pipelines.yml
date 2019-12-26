@@ -35,22 +35,22 @@ jobs:
         image: quay.io/pypa/manylinux2010_x86_64
         py: cp38-cp38
       x86_27m:
-        image: quay.io/pypa/manylinux1_i686
+        image: quay.io/pypa/manylinux2010_i686
         py: cp27-cp27m
       x86_27mu:
-        image: quay.io/pypa/manylinux1_i686
+        image: quay.io/pypa/manylinux2010_i686
         py: cp27-cp27mu
       x86_35:
-        image: quay.io/pypa/manylinux1_i686
+        image: quay.io/pypa/manylinux2010_i686
         py: cp35-cp35m
       x86_36:
-        image: quay.io/pypa/manylinux1_i686
+        image: quay.io/pypa/manylinux2010_i686
         py: cp36-cp36m
       x86_37:
-        image: quay.io/pypa/manylinux1_i686
+        image: quay.io/pypa/manylinux2010_i686
         py: cp37-cp37m
       x86_38:
-        image: quay.io/pypa/manylinux1_i686
+        image: quay.io/pypa/manylinux2010_i686
         py: cp38-cp38
   pool:
     vmImage: ubuntu-16.04
