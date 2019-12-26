@@ -43,13 +43,18 @@ Actions Blocking Release
 * Support modifying compression parameters mid operation when supported by
   zstd API.
 * Expose ``ZSTD_CLEVEL_DEFAULT`` constant.
+* Expose ``ZSTD_SRCSIZEHINT_{MIN,MAX}`` constants.
 * Support ``ZSTD_p_forceAttachDict`` compression parameter.
-* Support ``ZSTD_c_literalCompressionMode `` compression parameter.
+* Support ``ZSTD_dictForceLoad`` dictionary compression parameter.
+* Support ``ZSTD_c_targetCBlockSize`` compression parameter.
+* Support ``ZSTD_c_literalCompressionMode`` compression parameter.
+* Support ``ZSTD_c_srcSizeHint`` compression parameter.
 * Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
   compression parameters.
 * Consider exposing ``ZSTDMT_toFlushNow()``.
 * Expose ``ZDICT_trainFromBuffer_fastCover()``,
   ``ZDICT_optimizeTrainFromBuffer_fastCover``.
+* Expose ``ZSTD_Sequence`` struct and related ``ZSTD_getSequences()`` API.
 * Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
 * Consider a ``chunker()`` API for decompression.
 * Consider stats for ``chunker()`` API, including finding the last consumed
