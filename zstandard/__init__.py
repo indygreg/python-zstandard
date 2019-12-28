@@ -72,4 +72,4 @@ else:
     )
 
 # Keep this in sync with python-zstandard.h.
-__version__ = "0.13.0.dev0"
+__version__ = "0.13.0"
