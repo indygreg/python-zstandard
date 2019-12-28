@@ -75,6 +75,11 @@ Other Actions Not Blocking Release
 0.14.0 (not yet released)
 =========================
 
+Changes
+-------
+
+* ``setup.py`` is now executable.
+
 0.13.0 (released 2019-12-28)
 ============================
 
