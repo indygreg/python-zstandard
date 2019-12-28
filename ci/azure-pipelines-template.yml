@@ -46,7 +46,7 @@ jobs:
     displayName: Build
 
   - script: |
-      pytest -v tests/
+      pytest --numprocesses=auto -v tests/
     displayName: Test
 
   - task: PublishPipelineArtifact@1

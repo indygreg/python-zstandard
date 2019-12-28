@@ -78,6 +78,8 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* ``pytest-xdist`` ``pytest`` extension is now installed so tests can be
+  run in parallel.
 * CI now builds ``manylinux2010`` and ``manylinux2014`` binary wheels
   instead of a mix of ``manylinux2010`` and ``manylinux1``.
 * Official support for Python 3.8 has been added.
