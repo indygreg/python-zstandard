@@ -196,7 +196,9 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
         streaming=strategies.booleans(),
         source_read_size=strategies.integers(1, 1048576),
     )
-    def test_stream_source_readall(self, original, level, streaming, source_read_size):
+    def test_stream_source_readall(
+        self, original, level, streaming, source_read_size
+    ):
         cctx = zstd.ZstdCompressor(level=level)
 
         if streaming:
@@ -398,7 +400,9 @@ class TestDecompressor_stream_writer_fuzzing(TestCase):
         write_size=strategies.integers(min_value=1, max_value=8192),
         input_sizes=strategies.data(),
     )
-    def test_write_size_variance(self, original, level, write_size, input_sizes):
+    def test_write_size_variance(
+        self, original, level, write_size, input_sizes
+    ):
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -433,7 +437,9 @@ class TestDecompressor_copy_stream_fuzzing(TestCase):
         read_size=strategies.integers(min_value=1, max_value=8192),
         write_size=strategies.integers(min_value=1, max_value=8192),
     )
-    def test_read_write_size_variance(self, original, level, read_size, write_size):
+    def test_read_write_size_variance(
+        self, original, level, read_size, write_size
+    ):
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -441,7 +447,9 @@ class TestDecompressor_copy_stream_fuzzing(TestCase):
         dest = io.BytesIO()
 
         dctx = zstd.ZstdDecompressor()
-        dctx.copy_stream(source, dest, read_size=read_size, write_size=write_size)
+        dctx.copy_stream(
+            source, dest, read_size=read_size, write_size=write_size
+        )
 
         self.assertEqual(dest.getvalue(), original)
 
@@ -490,11 +498,14 @@ class TestDecompressor_decompressobj_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         write_size=strategies.integers(
-            min_value=1, max_value=4 * zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE
+            min_value=1,
+            max_value=4 * zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
         ),
         chunk_sizes=strategies.data(),
     )
-    def test_random_output_sizes(self, original, level, write_size, chunk_sizes):
+    def test_random_output_sizes(
+        self, original, level, write_size, chunk_sizes
+    ):
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -524,7 +535,9 @@ class TestDecompressor_read_to_iter_fuzzing(TestCase):
         read_size=strategies.integers(min_value=1, max_value=4096),
         write_size=strategies.integers(min_value=1, max_value=4096),
     )
-    def test_read_write_size_variance(self, original, level, read_size, write_size):
+    def test_read_write_size_variance(
+        self, original, level, read_size, write_size
+    ):
         cctx = zstd.ZstdCompressor(level=level)
         frame = cctx.compress(original)
 
@@ -532,7 +545,9 @@ class TestDecompressor_read_to_iter_fuzzing(TestCase):
 
         dctx = zstd.ZstdDecompressor()
         chunks = list(
-            dctx.read_to_iter(source, read_size=read_size, write_size=write_size)
+            dctx.read_to_iter(
+                source, read_size=read_size, write_size=write_size
+            )
         )
 
         self.assertEqual(b"".join(chunks), original)
@@ -542,7 +557,9 @@ class TestDecompressor_read_to_iter_fuzzing(TestCase):
 class TestDecompressor_multi_decompress_to_buffer_fuzzing(TestCase):
     @hypothesis.given(
         original=strategies.lists(
-            strategies.sampled_from(random_input_data()), min_size=1, max_size=1024
+            strategies.sampled_from(random_input_data()),
+            min_size=1,
+            max_size=1024,
         ),
         threads=strategies.integers(min_value=1, max_value=8),
         use_dict=strategies.booleans(),

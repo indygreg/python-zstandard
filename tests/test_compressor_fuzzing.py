@@ -28,9 +28,13 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(-1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            -1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
-    def test_stream_source_read(self, original, level, source_read_size, read_size):
+    def test_stream_source_read(
+        self, original, level, source_read_size, read_size
+    ):
         if read_size == 0:
             read_size = -1
 
@@ -58,9 +62,13 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(-1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            -1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
-    def test_buffer_source_read(self, original, level, source_read_size, read_size):
+    def test_buffer_source_read(
+        self, original, level, source_read_size, read_size
+    ):
         if read_size == 0:
             read_size = -1
 
@@ -155,9 +163,13 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
-    def test_stream_source_readinto(self, original, level, source_read_size, read_size):
+    def test_stream_source_readinto(
+        self, original, level, source_read_size, read_size
+    ):
         refctx = zstd.ZstdCompressor(level=level)
         ref_frame = refctx.compress(original)
 
@@ -184,9 +196,13 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
-    def test_buffer_source_readinto(self, original, level, source_read_size, read_size):
+    def test_buffer_source_readinto(
+        self, original, level, source_read_size, read_size
+    ):
 
         refctx = zstd.ZstdCompressor(level=level)
         ref_frame = refctx.compress(original)
@@ -285,9 +301,13 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(-1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            -1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
-    def test_stream_source_read1(self, original, level, source_read_size, read_size):
+    def test_stream_source_read1(
+        self, original, level, source_read_size, read_size
+    ):
         if read_size == 0:
             read_size = -1
 
@@ -315,9 +335,13 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(-1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            -1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
-    def test_buffer_source_read1(self, original, level, source_read_size, read_size):
+    def test_buffer_source_read1(
+        self, original, level, source_read_size, read_size
+    ):
         if read_size == 0:
             read_size = -1
 
@@ -412,7 +436,9 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
     def test_stream_source_readinto1(
         self, original, level, source_read_size, read_size
@@ -446,7 +472,9 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 16384),
-        read_size=strategies.integers(1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE),
+        read_size=strategies.integers(
+            1, zstd.COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+        ),
     )
     def test_buffer_source_readinto1(
         self, original, level, source_read_size, read_size
@@ -576,7 +604,9 @@ class TestCompressor_copy_stream_fuzzing(TestCase):
         read_size=strategies.integers(min_value=1, max_value=1048576),
         write_size=strategies.integers(min_value=1, max_value=1048576),
     )
-    def test_read_write_size_variance(self, original, level, read_size, write_size):
+    def test_read_write_size_variance(
+        self, original, level, read_size, write_size
+    ):
         refctx = zstd.ZstdCompressor(level=level)
         ref_frame = refctx.compress(original)
 
@@ -585,7 +615,11 @@ class TestCompressor_copy_stream_fuzzing(TestCase):
         dest = io.BytesIO()
 
         cctx.copy_stream(
-            source, dest, size=len(original), read_size=read_size, write_size=write_size
+            source,
+            dest,
+            size=len(original),
+            read_size=read_size,
+            write_size=write_size,
         )
 
         self.assertEqual(dest.getvalue(), ref_frame)
@@ -675,7 +709,9 @@ class TestCompressor_compressobj_fuzzing(TestCase):
         decompressed_chunks.append(dobj.decompress(chunk))
 
         self.assertEqual(
-            dctx.decompress(b"".join(compressed_chunks), max_output_size=len(original)),
+            dctx.decompress(
+                b"".join(compressed_chunks), max_output_size=len(original)
+            ),
             original,
         )
         self.assertEqual(b"".join(decompressed_chunks), original)
@@ -690,7 +726,9 @@ class TestCompressor_read_to_iter_fuzzing(TestCase):
         read_size=strategies.integers(min_value=1, max_value=4096),
         write_size=strategies.integers(min_value=1, max_value=4096),
     )
-    def test_read_write_size_variance(self, original, level, read_size, write_size):
+    def test_read_write_size_variance(
+        self, original, level, read_size, write_size
+    ):
         refcctx = zstd.ZstdCompressor(level=level)
         ref_frame = refcctx.compress(original)
 
@@ -699,7 +737,10 @@ class TestCompressor_read_to_iter_fuzzing(TestCase):
         cctx = zstd.ZstdCompressor(level=level)
         chunks = list(
             cctx.read_to_iter(
-                source, size=len(original), read_size=read_size, write_size=write_size
+                source,
+                size=len(original),
+                read_size=read_size,
+                write_size=write_size,
             )
         )
 
@@ -710,7 +751,9 @@ class TestCompressor_read_to_iter_fuzzing(TestCase):
 class TestCompressor_multi_compress_to_buffer_fuzzing(TestCase):
     @hypothesis.given(
         original=strategies.lists(
-            strategies.sampled_from(random_input_data()), min_size=1, max_size=1024
+            strategies.sampled_from(random_input_data()),
+            min_size=1,
+            max_size=1024,
         ),
         threads=strategies.integers(min_value=1, max_value=8),
         use_dict=strategies.booleans(),
@@ -776,7 +819,8 @@ class TestCompressor_chunker_fuzzing(TestCase):
         dctx = zstd.ZstdDecompressor()
 
         self.assertEqual(
-            dctx.decompress(b"".join(chunks), max_output_size=len(original)), original
+            dctx.decompress(b"".join(chunks), max_output_size=len(original)),
+            original,
         )
 
         self.assertTrue(all(len(chunk) == chunk_size for chunk in chunks[:-1]))
@@ -794,7 +838,9 @@ class TestCompressor_chunker_fuzzing(TestCase):
         input_sizes=strategies.data(),
         flushes=strategies.data(),
     )
-    def test_flush_block(self, original, level, chunk_size, input_sizes, flushes):
+    def test_flush_block(
+        self, original, level, chunk_size, input_sizes, flushes
+    ):
         cctx = zstd.ZstdCompressor(level=level)
         chunker = cctx.chunker(chunk_size=chunk_size)
 
@@ -830,7 +876,9 @@ class TestCompressor_chunker_fuzzing(TestCase):
         decompressed_chunks.append(dobj.decompress(b"".join(chunks)))
 
         self.assertEqual(
-            dctx.decompress(b"".join(compressed_chunks), max_output_size=len(original)),
+            dctx.decompress(
+                b"".join(compressed_chunks), max_output_size=len(original)
+            ),
             original,
         )
         self.assertEqual(b"".join(decompressed_chunks), original)

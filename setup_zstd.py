@@ -138,12 +138,16 @@ def get_c_extension(
     if not system_zstd:
         sources.update([os.path.join(actual_root, p) for p in zstd_sources])
         if support_legacy:
-            sources.update([os.path.join(actual_root, p) for p in zstd_sources_legacy])
+            sources.update(
+                [os.path.join(actual_root, p) for p in zstd_sources_legacy]
+            )
     sources = list(sources)
 
     include_dirs = set([os.path.join(actual_root, d) for d in ext_includes])
     if not system_zstd:
-        include_dirs.update([os.path.join(actual_root, d) for d in zstd_includes])
+        include_dirs.update(
+            [os.path.join(actual_root, d) for d in zstd_includes]
+        )
         if support_legacy:
             include_dirs.update(
                 [os.path.join(actual_root, d) for d in zstd_includes_legacy]

@@ -67,7 +67,8 @@ class TestBufferWithSegments(TestCase):
             self.skipTest("BufferWithSegments not available")
 
         b = zstd.BufferWithSegments(
-            b"foofooxfooxy", b"".join([ss.pack(0, 3), ss.pack(3, 4), ss.pack(7, 5)])
+            b"foofooxfooxy",
+            b"".join([ss.pack(0, 3), ss.pack(3, 4), ss.pack(7, 5)]),
         )
         self.assertEqual(len(b), 3)
         self.assertEqual(b.size, 12)
@@ -83,17 +84,23 @@ class TestBufferWithSegmentsCollection(TestCase):
         if not hasattr(zstd, "BufferWithSegmentsCollection"):
             self.skipTest("BufferWithSegmentsCollection not available")
 
-        with self.assertRaisesRegex(ValueError, "must pass at least 1 argument"):
+        with self.assertRaisesRegex(
+            ValueError, "must pass at least 1 argument"
+        ):
             zstd.BufferWithSegmentsCollection()
 
     def test_argument_validation(self):
         if not hasattr(zstd, "BufferWithSegmentsCollection"):
             self.skipTest("BufferWithSegmentsCollection not available")
 
-        with self.assertRaisesRegex(TypeError, "arguments must be BufferWithSegments"):
+        with self.assertRaisesRegex(
+            TypeError, "arguments must be BufferWithSegments"
+        ):
             zstd.BufferWithSegmentsCollection(None)
 
-        with self.assertRaisesRegex(TypeError, "arguments must be BufferWithSegments"):
+        with self.assertRaisesRegex(
+            TypeError, "arguments must be BufferWithSegments"
+        ):
             zstd.BufferWithSegmentsCollection(
                 zstd.BufferWithSegments(b"foo", ss.pack(0, 3)), None
             )

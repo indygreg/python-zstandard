@@ -52,7 +52,8 @@ SOURCES = [
 
 # Headers whose preprocessed output will be fed into cdef().
 HEADERS = [
-    os.path.join(HERE, "zstd", *p) for p in (("zstd.h",), ("dictBuilder", "zdict.h"),)
+    os.path.join(HERE, "zstd", *p)
+    for p in (("zstd.h",), ("dictBuilder", "zdict.h"),)
 ]
 
 INCLUDE_DIRS = [
@@ -139,7 +140,9 @@ def preprocess(path):
         env = dict(os.environ)
         if getattr(compiler, "_paths", None):
             env["PATH"] = compiler._paths
-        process = subprocess.Popen(args + [input_file], stdout=subprocess.PIPE, env=env)
+        process = subprocess.Popen(
+            args + [input_file], stdout=subprocess.PIPE, env=env
+        )
         output = process.communicate()[0]
         ret = process.poll()
         if ret:

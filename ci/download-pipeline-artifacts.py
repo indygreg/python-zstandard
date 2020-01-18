@@ -37,7 +37,9 @@ def download_artifacts(build: str, dest: pathlib.Path):
             continue
 
         print("downloading %s" % entry["resource"]["downloadUrl"])
-        zipdata = io.BytesIO(session.get(entry["resource"]["downloadUrl"]).content)
+        zipdata = io.BytesIO(
+            session.get(entry["resource"]["downloadUrl"]).content
+        )
 
         with zipfile.ZipFile(zipdata, "r") as zf:
             for name in zf.namelist():

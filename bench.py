@@ -137,7 +137,10 @@ def compress_multi_compress_to_buffer_buffer(chunks, zparams, threads):
 
 
 @bench(
-    "discrete", "multi_compress_to_buffer() w/ list input", threads_arg=True, cffi=False
+    "discrete",
+    "multi_compress_to_buffer() w/ list input",
+    threads_arg=True,
+    cffi=False,
 )
 def compress_multi_compress_to_buffer_list(chunks, zparams, threads):
     zctx = zstd.ZstdCompressor(compression_params=zparams)
@@ -283,21 +286,27 @@ def compress_content_dict_compress(chunks, zparams):
     zstd.ZstdCompressor(compression_params=zparams).compress(chunks[0])
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
-        zstd.ZstdCompressor(dict_data=d, compression_params=zparams).compress(chunk)
+        zstd.ZstdCompressor(dict_data=d, compression_params=zparams).compress(
+            chunk
+        )
 
 
 @bench("content-dict", "stream_writer()")
 def compress_content_dict_stream_writer(chunks, zparams, use_size=False):
     zctx = zstd.ZstdCompressor(compression_params=zparams)
     b = bio()
-    with zctx.stream_writer(b, size=len(chunks[0]) if use_size else -1) as compressor:
+    with zctx.stream_writer(
+        b, size=len(chunks[0]) if use_size else -1
+    ) as compressor:
         compressor.write(chunks[0])
 
     for i, chunk in enumerate(chunks[1:]):
         d = zstd.ZstdCompressionDict(chunks[i])
         b = bio()
         zctx = zstd.ZstdCompressor(dict_data=d, compression_params=zparams)
-        with zctx.stream_writer(b, size=len(chunk) if use_size else -1) as compressor:
+        with zctx.stream_writer(
+            b, size=len(chunk) if use_size else -1
+        ) as compressor:
             compressor.write(chunk)
 
 
@@ -353,7 +362,12 @@ def decompress_one_use(chunks, opts):
         zctx.decompress(chunk)
 
 
-@bench("discrete", "decompress() reuse zctx", require_content_size=True, simple=True)
+@bench(
+    "discrete",
+    "decompress() reuse zctx",
+    require_content_size=True,
+    simple=True,
+)
 def decompress_reuse(chunks, opts):
     zctx = zstd.ZstdDecompressor(**opts)
     for chunk in chunks:
@@ -557,7 +571,10 @@ def get_chunks(paths, limit_count, encoding, chunk_size=None):
 
             if chunk_size is not None:
                 chunks.extend(
-                    [data[i : i + chunk_size] for i in range(0, len(data), chunk_size)]
+                    [
+                        data[i : i + chunk_size]
+                        for i in range(0, len(data), chunk_size)
+                    ]
                 )
             else:
                 chunks.append(data)
@@ -627,7 +644,9 @@ def bench_discrete_zlib_compression(chunks, opts):
 def bench_discrete_zlib_decompression(chunks, total_size):
     for fn in get_benches("discrete", "decompress", zlib=True):
         results = timer(lambda: fn(chunks))
-        format_results(results, fn.title, "decompress discrete zlib", total_size)
+        format_results(
+            results, fn.title, "decompress discrete zlib", total_size
+        )
 
 
 def bench_discrete_compression(
@@ -658,7 +677,9 @@ def bench_discrete_compression(
                 offsets.write(s.pack(current_offset, len(chunk)))
                 current_offset += len(chunk)
 
-            chunks_arg = zstd.BufferWithSegments(b"".join(chunks), offsets.getvalue())
+            chunks_arg = zstd.BufferWithSegments(
+                b"".join(chunks), offsets.getvalue()
+            )
 
         results = timer(lambda: fn(chunks_arg, zparams, **kwargs))
         format_results(results, fn.title, prefix, total_size)
@@ -707,7 +728,9 @@ def bench_discrete_decompression(
             # Ideally we'd use array.array here. But Python 2 doesn't support the
             # Q format.
             s = struct.Struct("=Q")
-            kwargs["decompressed_sizes"] = b"".join(s.pack(len(c)) for c in orig_chunks)
+            kwargs["decompressed_sizes"] = b"".join(
+                s.pack(len(c)) for c in orig_chunks
+            )
 
         results = timer(lambda: fn(chunks_arg, dopts, **kwargs))
         format_results(results, fn.title, prefix, total_size)
@@ -767,7 +790,9 @@ if __name__ == "__main__":
 
     group = parser.add_argument_group("Compression Modes")
     group.add_argument(
-        "--discrete", action="store_true", help="Compress each input independently"
+        "--discrete",
+        action="store_true",
+        help="Compress each input independently",
     )
     group.add_argument(
         "--stream",
@@ -777,7 +802,8 @@ if __name__ == "__main__":
     group.add_argument(
         "--content-dict",
         action="store_true",
-        help="Compress each input using the previous as a " "content dictionary",
+        help="Compress each input using the previous as a "
+        "content dictionary",
     )
     group.add_argument(
         "--discrete-dict",
@@ -799,10 +825,14 @@ if __name__ == "__main__":
     group.add_argument(
         "--only-simple", action="store_true", help="Only run the simple APIs"
     )
-    group.add_argument("--zlib", action="store_true", help="Benchmark against zlib")
+    group.add_argument(
+        "--zlib", action="store_true", help="Benchmark against zlib"
+    )
 
     group = parser.add_argument_group("Compression Parameters")
-    group.add_argument("-l", "--level", type=int, default=3, help="Compression level")
+    group.add_argument(
+        "-l", "--level", type=int, default=3, help="Compression level"
+    )
     group.add_argument(
         "--no-write-size",
         action="store_true",
@@ -820,7 +850,9 @@ if __name__ == "__main__":
         help="Maximum size of trained dictionary",
     )
     group.add_argument(
-        "--enable-ldm", action="store_true", help="Enable long distance matching"
+        "--enable-ldm",
+        action="store_true",
+        help="Enable long distance matching",
     )
     group.add_argument(
         "--ldm-hash-log",
@@ -845,7 +877,10 @@ if __name__ == "__main__":
         help="Segment size parameter to COVER algorithm",
     )
     group.add_argument(
-        "--cover-d", type=int, default=0, help="Dmer size parameter to COVER algorithm"
+        "--cover-d",
+        type=int,
+        default=0,
+        help="Dmer size parameter to COVER algorithm",
     )
     group.add_argument(
         "--zlib-level", type=int, default=6, help="zlib compression level"
@@ -933,7 +968,9 @@ if __name__ == "__main__":
         # Always use all available threads in optimize mode.
         train_args["threads"] = -1
 
-        dict_data = zstd.train_dictionary(args.dict_size, training_chunks, **train_args)
+        dict_data = zstd.train_dictionary(
+            args.dict_size, training_chunks, **train_args
+        )
         print(
             "trained dictionary of size %d (wanted %d) (l=%d)"
             % (len(dict_data), args.dict_size, args.level)
@@ -964,7 +1001,9 @@ if __name__ == "__main__":
         ratios = []
         # Always use multiple threads here so we complete faster.
         if hasattr(zctx, "multi_compress_to_buffer"):
-            for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
+            for i, c in enumerate(
+                zctx.multi_compress_to_buffer(chunks, threads=-1)
+            ):
                 compressed_discrete.append(c.tobytes())
                 ratios.append(float(len(c)) / float(len(chunks[i])))
         else:
@@ -984,12 +1023,16 @@ if __name__ == "__main__":
 
     # Discrete dict mode is like discrete but trains a dictionary.
     if args.discrete_dict:
-        zctx = zstd.ZstdCompressor(dict_data=dict_data, compression_params=zparams)
+        zctx = zstd.ZstdCompressor(
+            dict_data=dict_data, compression_params=zparams
+        )
         compressed_discrete_dict = []
         ratios = []
 
         if hasattr(zctx, "multi_compress_to_buffer"):
-            for i, c in enumerate(zctx.multi_compress_to_buffer(chunks, threads=-1)):
+            for i, c in enumerate(
+                zctx.multi_compress_to_buffer(chunks, threads=-1)
+            ):
                 compressed_discrete_dict.append(c.tobytes())
                 ratios.append(float(len(c)) / float(len(chunks[i])))
         else:
@@ -1072,17 +1115,24 @@ if __name__ == "__main__":
 
     if not args.no_compression:
         if args.zlib and args.discrete:
-            bench_discrete_zlib_compression(chunks, {"zlib_level": args.zlib_level})
+            bench_discrete_zlib_compression(
+                chunks, {"zlib_level": args.zlib_level}
+            )
         if args.discrete:
             bench_discrete_compression(
                 chunks, zparams, batch_threads=args.batch_threads
             )
         if args.discrete_dict:
             bench_discrete_compression(
-                chunks, zparams, batch_threads=args.batch_threads, dict_data=dict_data
+                chunks,
+                zparams,
+                batch_threads=args.batch_threads,
+                dict_data=dict_data,
             )
         if args.zlib and args.stream:
-            bench_stream_zlib_compression(chunks, {"zlib_level": args.zlib_level})
+            bench_stream_zlib_compression(
+                chunks, {"zlib_level": args.zlib_level}
+            )
         if args.stream:
             bench_stream_compression(chunks, zparams)
         if args.content_dict:
@@ -1093,7 +1143,9 @@ if __name__ == "__main__":
 
     if not args.no_decompression:
         if args.zlib and args.discrete:
-            bench_discrete_zlib_decompression(compressed_discrete_zlib, orig_size)
+            bench_discrete_zlib_decompression(
+                compressed_discrete_zlib, orig_size
+            )
         if args.discrete:
             bench_discrete_decompression(
                 chunks,

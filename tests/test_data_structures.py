@@ -65,7 +65,9 @@ class TestCompressionParameters(TestCase):
         p = zstd.ZstdCompressionParameters(threads=4)
         self.assertEqual(p.threads, 4)
 
-        p = zstd.ZstdCompressionParameters(threads=2, job_size=1048576, overlap_log=6)
+        p = zstd.ZstdCompressionParameters(
+            threads=2, job_size=1048576, overlap_log=6
+        )
         self.assertEqual(p.threads, 2)
         self.assertEqual(p.job_size, 1048576)
         self.assertEqual(p.overlap_log, 6)
@@ -128,7 +130,9 @@ class TestCompressionParameters(TestCase):
         with self.assertRaisesRegex(
             ValueError, "cannot specify both ldm_hash_rate_log"
         ):
-            zstd.ZstdCompressionParameters(ldm_hash_rate_log=8, ldm_hash_every_log=4)
+            zstd.ZstdCompressionParameters(
+                ldm_hash_rate_log=8, ldm_hash_every_log=4
+            )
 
         p = zstd.ZstdCompressionParameters(ldm_hash_rate_log=8)
         self.assertEqual(p.ldm_hash_every_log, 8)
@@ -137,7 +141,9 @@ class TestCompressionParameters(TestCase):
         self.assertEqual(p.ldm_hash_every_log, 16)
 
     def test_overlap_log(self):
-        with self.assertRaisesRegex(ValueError, "cannot specify both overlap_log"):
+        with self.assertRaisesRegex(
+            ValueError, "cannot specify both overlap_log"
+        ):
             zstd.ZstdCompressionParameters(overlap_log=1, overlap_size_log=9)
 
         p = zstd.ZstdCompressionParameters(overlap_log=2)
@@ -169,10 +175,14 @@ class TestFrameParameters(TestCase):
                     zstd.get_frame_parameters(u"foobarbaz")
 
     def test_invalid_input_sizes(self):
-        with self.assertRaisesRegex(zstd.ZstdError, "not enough data for frame"):
+        with self.assertRaisesRegex(
+            zstd.ZstdError, "not enough data for frame"
+        ):
             zstd.get_frame_parameters(b"")
 
-        with self.assertRaisesRegex(zstd.ZstdError, "not enough data for frame"):
+        with self.assertRaisesRegex(
+            zstd.ZstdError, "not enough data for frame"
+        ):
             zstd.get_frame_parameters(zstd.FRAME_HEADER)
 
     def test_invalid_frame(self):
@@ -201,7 +211,9 @@ class TestFrameParameters(TestCase):
         self.assertTrue(params.has_checksum)
 
         # Upper 2 bits indicate content size.
-        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b"\x40\x00\xff\x00")
+        params = zstd.get_frame_parameters(
+            zstd.FRAME_HEADER + b"\x40\x00\xff\x00"
+        )
         self.assertEqual(params.content_size, 511)
         self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, 0)
@@ -215,7 +227,9 @@ class TestFrameParameters(TestCase):
         self.assertFalse(params.has_checksum)
 
         # Set multiple things.
-        params = zstd.get_frame_parameters(zstd.FRAME_HEADER + b"\x45\x40\x0f\x10\x00")
+        params = zstd.get_frame_parameters(
+            zstd.FRAME_HEADER + b"\x45\x40\x0f\x10\x00"
+        )
         self.assertEqual(params.content_size, 272)
         self.assertEqual(params.window_size, 262144)
         self.assertEqual(params.dict_id, 15)

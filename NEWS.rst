@@ -79,6 +79,7 @@ Changes
 -------
 
 * ``setup.py`` is now executable.
+* Python code reformatted with black using 80 character line lengths.
 
 0.13.0 (released 2019-12-28)
 ============================

@@ -87,7 +87,9 @@ with open("c-ext/python-zstandard.h", "r") as fh:
         break
 
 if not version:
-    raise Exception("could not resolve package version; " "this should never happen")
+    raise Exception(
+        "could not resolve package version; " "this should never happen"
+    )
 
 setup(
     name="zstandard",

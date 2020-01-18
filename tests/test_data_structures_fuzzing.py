@@ -23,7 +23,9 @@ s_windowlog = strategies.integers(
 s_chainlog = strategies.integers(
     min_value=zstd.CHAINLOG_MIN, max_value=zstd.CHAINLOG_MAX
 )
-s_hashlog = strategies.integers(min_value=zstd.HASHLOG_MIN, max_value=zstd.HASHLOG_MAX)
+s_hashlog = strategies.integers(
+    min_value=zstd.HASHLOG_MIN, max_value=zstd.HASHLOG_MAX
+)
 s_searchlog = strategies.integers(
     min_value=zstd.SEARCHLOG_MIN, max_value=zstd.SEARCHLOG_MAX
 )
@@ -61,7 +63,14 @@ class TestCompressionParametersHypothesis(TestCase):
         s_strategy,
     )
     def test_valid_init(
-        self, windowlog, chainlog, hashlog, searchlog, minmatch, targetlength, strategy
+        self,
+        windowlog,
+        chainlog,
+        hashlog,
+        searchlog,
+        minmatch,
+        targetlength,
+        strategy,
     ):
         zstd.ZstdCompressionParameters(
             window_log=windowlog,
@@ -83,7 +92,14 @@ class TestCompressionParametersHypothesis(TestCase):
         s_strategy,
     )
     def test_estimated_compression_context_size(
-        self, windowlog, chainlog, hashlog, searchlog, minmatch, targetlength, strategy
+        self,
+        windowlog,
+        chainlog,
+        hashlog,
+        searchlog,
+        minmatch,
+        targetlength,
+        strategy,
     ):
         if minmatch == zstd.MINMATCH_MIN and strategy in (
             zstd.STRATEGY_FAST,

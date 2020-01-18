@@ -50,7 +50,9 @@ def make_cffi(cls):
         os.environ.update(old_env)
 
     if mod.backend != "cffi":
-        raise Exception("got the zstandard %s backend instead of cffi" % mod.backend)
+        raise Exception(
+            "got the zstandard %s backend instead of cffi" % mod.backend
+        )
 
     # If CFFI version is available, dynamically construct test methods
     # that use it.
@@ -84,7 +86,9 @@ def make_cffi(cls):
                 fn.__func__.func_defaults,
                 fn.__func__.func_closure,
             )
-            new_method = types.UnboundMethodType(new_fn, fn.im_self, fn.im_class)
+            new_method = types.UnboundMethodType(
+                new_fn, fn.im_self, fn.im_class
+            )
 
         setattr(cls, name, new_method)
 
@@ -194,4 +198,6 @@ if hypothesis:
     expensive_settings = hypothesis.settings(deadline=None, max_examples=10000)
     hypothesis.settings.register_profile("expensive", expensive_settings)
 
-    hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))
+    hypothesis.settings.load_profile(
+        os.environ.get("HYPOTHESIS_PROFILE", "default")
+    )
