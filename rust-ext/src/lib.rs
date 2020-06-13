@@ -7,6 +7,10 @@
 use cpython::{py_module_initializer, PyModule, PyResult, Python};
 
 mod constants;
+mod exceptions;
+mod frame_parameters;
+
+use exceptions::ZstdError;
 
 const VERSION: &'static str = "0.15.0.dev0";
 
@@ -14,6 +18,8 @@ py_module_initializer!(zstandard_oxidized, |py, m| { init_module(py, m) });
 
 fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
     crate::constants::init_module(py, module)?;
+    crate::exceptions::init_module(py, module)?;
+    crate::frame_parameters::init_module(py, module)?;
 
     Ok(())
 }
