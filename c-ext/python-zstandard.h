@@ -16,8 +16,13 @@
 
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZDICT_STATIC_LINKING_ONLY
+
+#ifdef ZSTD_SINGLE_FILE
+#include <zstdlib.c>
+#else
 #include <zstd.h>
 #include <zdict.h>
+#endif
 
 /* Remember to change the string in zstandard/__init__ as well */
 #define PYTHON_ZSTANDARD_VERSION "0.15.0.dev0"

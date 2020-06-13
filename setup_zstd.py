@@ -13,74 +13,11 @@ import subprocess
 import sys
 
 
-zstd_sources = [
-    "zstd/common/debug.c",
-    "zstd/common/entropy_common.c",
-    "zstd/common/error_private.c",
-    "zstd/common/fse_decompress.c",
-    "zstd/common/pool.c",
-    "zstd/common/threading.c",
-    "zstd/common/xxhash.c",
-    "zstd/common/zstd_common.c",
-    "zstd/compress/fse_compress.c",
-    "zstd/compress/hist.c",
-    "zstd/compress/huf_compress.c",
-    "zstd/compress/zstd_compress_literals.c",
-    "zstd/compress/zstd_compress_sequences.c",
-    "zstd/compress/zstd_compress_superblock.c",
-    "zstd/compress/zstd_compress.c",
-    "zstd/compress/zstd_double_fast.c",
-    "zstd/compress/zstd_fast.c",
-    "zstd/compress/zstd_lazy.c",
-    "zstd/compress/zstd_ldm.c",
-    "zstd/compress/zstd_opt.c",
-    "zstd/compress/zstdmt_compress.c",
-    "zstd/decompress/huf_decompress.c",
-    "zstd/decompress/zstd_ddict.c",
-    "zstd/decompress/zstd_decompress.c",
-    "zstd/decompress/zstd_decompress_block.c",
-    "zstd/dictBuilder/cover.c",
-    "zstd/dictBuilder/divsufsort.c",
-    "zstd/dictBuilder/fastcover.c",
-    "zstd/dictBuilder/zdict.c",
-]
-
-zstd_sources_legacy = [
-    "zstd/deprecated/zbuff_common.c",
-    "zstd/deprecated/zbuff_compress.c",
-    "zstd/deprecated/zbuff_decompress.c",
-    "zstd/legacy/zstd_v01.c",
-    "zstd/legacy/zstd_v02.c",
-    "zstd/legacy/zstd_v03.c",
-    "zstd/legacy/zstd_v04.c",
-    "zstd/legacy/zstd_v05.c",
-    "zstd/legacy/zstd_v06.c",
-    "zstd/legacy/zstd_v07.c",
-]
-
-zstd_includes = [
-    "zstd",
-    "zstd/common",
-    "zstd/compress",
-    "zstd/decompress",
-    "zstd/dictBuilder",
-]
-
-zstd_includes_legacy = [
-    "zstd/deprecated",
-    "zstd/legacy",
-]
-
 ext_includes = [
     "c-ext",
-    "zstd/common",
 ]
 
 ext_sources = [
-    "zstd/common/error_private.c",
-    "zstd/common/pool.c",
-    "zstd/common/threading.c",
-    "zstd/common/zstd_common.c",
     "zstd.c",
 ]
 
@@ -117,25 +54,12 @@ def get_c_extension(
     actual_root = os.path.abspath(os.path.dirname(__file__))
     root = root or actual_root
 
-    sources = set([os.path.join(actual_root, p) for p in ext_sources])
-    if not system_zstd:
-        sources.update([os.path.join(actual_root, p) for p in zstd_sources])
-        if support_legacy:
-            sources.update(
-                [os.path.join(actual_root, p) for p in zstd_sources_legacy]
-            )
-    sources = sorted(sources)
+    sources = sorted(set([os.path.join(actual_root, p) for p in ext_sources]))
 
-    include_dirs = set([os.path.join(actual_root, d) for d in ext_includes])
+    include_dirs = [os.path.join(actual_root, d) for d in ext_includes]
+
     if not system_zstd:
-        include_dirs.update(
-            [os.path.join(actual_root, d) for d in zstd_includes]
-        )
-        if support_legacy:
-            include_dirs.update(
-                [os.path.join(actual_root, d) for d in zstd_includes_legacy]
-            )
-    include_dirs = sorted(include_dirs)
+        include_dirs.append(os.path.join(actual_root, "zstd"))
 
     depends = [os.path.join(actual_root, p) for p in zstd_depends]
 
@@ -154,9 +78,12 @@ def get_c_extension(
     else:
         raise Exception("unhandled compiler type: %s" % compiler.compiler_type)
 
-    extra_args = ["-DZSTD_MULTITHREAD"]
+    extra_args = []
 
-    if not system_zstd:
+    if system_zstd:
+        extra_args.append("-DZSTD_MULTITHREAD")
+    else:
+        extra_args.append("-DZSTD_SINGLE_FILE")
         extra_args.append("-DZSTDLIB_VISIBILITY=")
         extra_args.append("-DZDICTLIB_VISIBILITY=")
         extra_args.append("-DZSTDERRORLIB_VISIBILITY=")

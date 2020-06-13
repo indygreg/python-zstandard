@@ -7,7 +7,9 @@
 */
 
 #include "python-zstandard.h"
+#ifndef ZSTD_SINGLE_FILE
 #include "pool.h"
+#endif
 
 extern PyObject* ZstdError;
 

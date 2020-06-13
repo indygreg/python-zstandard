@@ -18,38 +18,7 @@ import tempfile
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 SOURCES = [
-    "zstd/%s" % p
-    for p in (
-        "common/debug.c",
-        "common/entropy_common.c",
-        "common/error_private.c",
-        "common/fse_decompress.c",
-        "common/pool.c",
-        "common/threading.c",
-        "common/xxhash.c",
-        "common/zstd_common.c",
-        "compress/fse_compress.c",
-        "compress/hist.c",
-        "compress/huf_compress.c",
-        "compress/zstd_compress.c",
-        "compress/zstd_compress_literals.c",
-        "compress/zstd_compress_sequences.c",
-        "compress/zstd_compress_superblock.c",
-        "compress/zstd_double_fast.c",
-        "compress/zstd_fast.c",
-        "compress/zstd_lazy.c",
-        "compress/zstd_ldm.c",
-        "compress/zstd_opt.c",
-        "compress/zstdmt_compress.c",
-        "decompress/huf_decompress.c",
-        "decompress/zstd_ddict.c",
-        "decompress/zstd_decompress.c",
-        "decompress/zstd_decompress_block.c",
-        "dictBuilder/cover.c",
-        "dictBuilder/fastcover.c",
-        "dictBuilder/divsufsort.c",
-        "dictBuilder/zdict.c",
-    )
+    "zstd/zstdlib.c",
 ]
 
 # Headers whose preprocessed output will be fed into cdef().
@@ -59,14 +28,8 @@ HEADERS = [
 ]
 
 INCLUDE_DIRS = [
-    os.path.join(HERE, d)
-    for d in (
-        "zstd",
-        "zstd/common",
-        "zstd/compress",
-        "zstd/decompress",
-        "zstd/dictBuilder",
-    )
+    os.path.join(HERE, "zstd"),
+    os.path.join(HERE, "zstd", "dictBuilder"),
 ]
 
 # cffi can't parse some of the primitives in zstd.h. So we invoke the
@@ -202,7 +165,6 @@ ffi.set_source(
 """,
     sources=SOURCES,
     include_dirs=INCLUDE_DIRS,
-    extra_compile_args=["-DZSTD_MULTITHREAD"],
 )
 
 DEFINE = re.compile(b"^\\#define ([a-zA-Z0-9_]+) ")
