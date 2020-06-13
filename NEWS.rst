@@ -76,14 +76,22 @@ Other Actions Not Blocking Release
 0.14.0 (not yet released)
 =========================
 
+Bug Fixes
+---------
+
+* Some internal fields of C structs are now explicitly initialized.
+  (Possible fix for #105.)
+* The ``make_cffi.py`` script used to build the CFFI bindings now
+  calls ``distutils.sysconfig.customize_compiler()`` so compiler
+  customizations (such as honoring the ``CC`` environment variable)
+  are performed. Patch by @Arfrever. (#103)
+
 Changes
 -------
 
 * Bundled zstandard library upgraded from 1.4.4 to 1.4.5.
 * ``setup.py`` is now executable.
 * Python code reformatted with black using 80 character line lengths.
-* Some internal fields of C structs are now explicitly initialized.
-  (Possible fix for #105.)
 
 0.13.0 (released 2019-12-28)
 ============================

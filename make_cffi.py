@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import cffi
 import distutils.ccompiler
+import distutils.sysconfig
 import os
 import re
 import subprocess
@@ -75,6 +76,10 @@ compiler = distutils.ccompiler.new_compiler()
 # Needed for MSVC.
 if hasattr(compiler, "initialize"):
     compiler.initialize()
+
+# This performs platform specific customizations, including honoring
+# environment variables like CC.
+distutils.sysconfig.customize_compiler(compiler)
 
 # Distutils doesn't set compiler.preprocessor, so invoke the preprocessor
 # manually.
