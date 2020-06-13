@@ -41,7 +41,18 @@ jobs:
 
   - script: |
       pytest --numprocesses=auto -v tests/
-    displayName: Test
+    displayName: Test C Backend
+
+  - script: |
+      PYTHON_ZSTANDARD_IMPORT_POLICY=cffi pytest --numprocesses=auto -v tests/
+    displayName: Test CFFI Backend (UNIX)
+    condition: ne('${{ parameters.os }}', 'Windows')
+
+  - script: |
+      set PYTHON_ZSTANDARD_IMPORT_POLICY=cffi
+      pytest --numprocesses=auto -v tests/
+    displayName: Test CFFI Backend (Windows)
+    condition: eq('${{ parameters.os }}', 'Windows')
 
   - task: PublishPipelineArtifact@1
     inputs:

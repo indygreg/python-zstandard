@@ -63,7 +63,6 @@ Actions Blocking Release
   ``ZSTD_dParam_getBounds()`` APIs.
 * Consider controls over resetting compression contexts (session only, parameters,
   or session and parameters).
-* Actually use the CFFI backend in fuzzing tests.
 * Consider exposing ``ZSTD_d_stableOutBuffer``.
 
 Other Actions Not Blocking Release
@@ -81,6 +80,11 @@ Backwards Compatibility Notes
 
 * Support for Python 2.7 has been dropped. Python 3.5 is now the
   minimum required Python version. (#109)
+
+Changes
+-------
+
+* CI now properly uses the ``cffi`` backend when running all tests.
 
 0.14.0 (released 2020-06-13)
 ============================
