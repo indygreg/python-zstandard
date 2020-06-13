@@ -1,6 +1,4 @@
 import struct
-import sys
-import unittest
 
 import zstandard as zstd
 
@@ -10,11 +8,6 @@ from .common import (
     random_input_data,
     TestCase,
 )
-
-if sys.version_info[0] >= 3:
-    int_type = int
-else:
-    int_type = long
 
 
 @make_cffi
@@ -32,7 +25,7 @@ class TestTrainDictionary(TestCase):
 
     def test_no_params(self):
         d = zstd.train_dictionary(8192, random_input_data())
-        self.assertIsInstance(d.dict_id(), int_type)
+        self.assertIsInstance(d.dict_id(), int)
 
         # The dictionary ID may be different across platforms.
         expected = b"\x37\xa4\x30\xec" + struct.pack("<I", d.dict_id())
@@ -42,7 +35,7 @@ class TestTrainDictionary(TestCase):
 
     def test_basic(self):
         d = zstd.train_dictionary(8192, generate_samples(), k=64, d=16)
-        self.assertIsInstance(d.dict_id(), int_type)
+        self.assertIsInstance(d.dict_id(), int)
 
         data = d.as_bytes()
         self.assertEqual(data[0:4], b"\x37\xa4\x30\xec")

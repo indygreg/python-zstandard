@@ -14,20 +14,14 @@ import io
 import os
 import random
 import struct
-import sys
 import time
 import zlib
 
 
-if sys.version_info[0] >= 3:
-    bio = io.BytesIO
-else:
-    import cStringIO
-
-    bio = cStringIO.StringIO
-
-
 import zstandard as zstd
+
+
+bio = io.BytesIO
 
 
 def timer(fn, miniter=3, minwall=3.0):

@@ -2,10 +2,8 @@ import hashlib
 import io
 import os
 import struct
-import sys
 import tarfile
 import tempfile
-import unittest
 
 import zstandard as zstd
 
@@ -15,12 +13,6 @@ from .common import (
     OpCountingBytesIO,
     TestCase,
 )
-
-
-if sys.version_info[0] >= 3:
-    next = lambda it: it.__next__()
-else:
-    next = lambda it: it.next()
 
 
 def multithreaded_chunk_size(level, source_size=0):

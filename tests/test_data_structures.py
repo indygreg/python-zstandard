@@ -1,6 +1,3 @@
-import sys
-import unittest
-
 import zstandard as zstd
 
 from .common import (
@@ -161,18 +158,8 @@ class TestFrameParameters(TestCase):
         with self.assertRaises(TypeError):
             zstd.get_frame_parameters(None)
 
-        # Python 3 doesn't appear to convert unicode to Py_buffer.
-        if sys.version_info[0] >= 3:
-            with self.assertRaises(TypeError):
-                zstd.get_frame_parameters(u"foobarbaz")
-        else:
-            # CPython will convert unicode to Py_buffer. But CFFI won't.
-            if zstd.backend == "cffi":
-                with self.assertRaises(TypeError):
-                    zstd.get_frame_parameters(u"foobarbaz")
-            else:
-                with self.assertRaises(zstd.ZstdError):
-                    zstd.get_frame_parameters(u"foobarbaz")
+        with self.assertRaises(TypeError):
+            zstd.get_frame_parameters(u"foobarbaz")
 
     def test_invalid_input_sizes(self):
         with self.assertRaisesRegex(

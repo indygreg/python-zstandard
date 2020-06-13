@@ -2,7 +2,6 @@ import io
 import os
 import random
 import struct
-import sys
 import tempfile
 import unittest
 
@@ -15,12 +14,6 @@ from .common import (
     OpCountingBytesIO,
     TestCase,
 )
-
-
-if sys.version_info[0] >= 3:
-    next = lambda it: it.__next__()
-else:
-    next = lambda it: it.next()
 
 
 @make_cffi

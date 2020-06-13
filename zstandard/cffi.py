@@ -79,19 +79,11 @@ __all__ = [
 
 import io
 import os
-import sys
 
 from _zstd_cffi import (
     ffi,
     lib,
 )
-
-if sys.version_info[0] == 2:
-    bytes_type = str
-    int_type = long
-else:
-    bytes_type = bytes
-    int_type = int
 
 
 COMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_CStreamInSize()
@@ -167,10 +159,7 @@ def _cpu_count():
 
     # Linux.
     try:
-        if sys.version_info[0] == 2:
-            return os.sysconf(b"SC_NPROCESSORS_ONLN")
-        else:
-            return os.sysconf("SC_NPROCESSORS_ONLN")
+        return os.sysconf("SC_NPROCESSORS_ONLN")
     except (AttributeError, ValueError):
         pass
 
@@ -1706,7 +1695,7 @@ def get_frame_parameters(data):
 
 class ZstdCompressionDict(object):
     def __init__(self, data, dict_type=DICT_TYPE_AUTO, k=0, d=0):
-        assert isinstance(data, bytes_type)
+        assert isinstance(data, bytes)
         self._data = data
         self.k = k
         self.d = d
@@ -1728,7 +1717,7 @@ class ZstdCompressionDict(object):
         return len(self._data)
 
     def dict_id(self):
-        return int_type(lib.ZDICT_getDictID(self._data, len(self._data)))
+        return int(lib.ZDICT_getDictID(self._data, len(self._data)))
 
     def as_bytes(self):
         return self._data
@@ -1814,7 +1803,7 @@ def train_dictionary(
 
     offset = 0
     for i, sample in enumerate(samples):
-        if not isinstance(sample, bytes_type):
+        if not isinstance(sample, bytes):
             raise ValueError("samples must be bytes")
 
         l = len(sample)
@@ -2654,7 +2643,7 @@ class ZstdDecompressor(object):
 
         # First chunk should not be using a dictionary. We handle it specially.
         chunk = frames[0]
-        if not isinstance(chunk, bytes_type):
+        if not isinstance(chunk, bytes):
             raise ValueError("chunk 0 must be bytes")
 
         # All chunks should be zstd frames and should have content size set.
@@ -2700,7 +2689,7 @@ class ZstdDecompressor(object):
         i = 1
         while i < len(frames):
             chunk = frames[i]
-            if not isinstance(chunk, bytes_type):
+            if not isinstance(chunk, bytes):
                 raise ValueError("chunk %d must be bytes" % i)
 
             chunk_buffer = ffi.from_buffer(chunk)
