@@ -47,10 +47,10 @@ class TestCompressor_compress(TestCase):
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         result = cctx.compress(b"")
-        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00")
+        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00")
         params = zstd.get_frame_parameters(result)
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 524288)
+        self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum, 0)
 
@@ -252,7 +252,7 @@ class TestCompressor_compressobj(TestCase):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         cobj = cctx.compressobj()
         self.assertEqual(cobj.compress(b""), b"")
-        self.assertEqual(cobj.flush(), b"\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00")
+        self.assertEqual(cobj.flush(), b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00")
 
     def test_input_types(self):
         expected = b"\x28\xb5\x2f\xfd\x00\x48\x19\x00\x00\x66\x6f\x6f"
@@ -457,7 +457,7 @@ class TestCompressor_copy_stream(TestCase):
         self.assertEqual(w, 9)
 
         self.assertEqual(
-            dest.getvalue(), b"\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00"
+            dest.getvalue(), b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00"
         )
 
     def test_large_data(self):
@@ -973,11 +973,11 @@ class TestCompressor_stream_writer(TestCase):
             compressor.write(b"")
 
         result = buffer.getvalue()
-        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00")
+        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00")
 
         params = zstd.get_frame_parameters(result)
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 524288)
+        self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
@@ -988,11 +988,11 @@ class TestCompressor_stream_writer(TestCase):
         self.assertEqual(buffer.getvalue(), b"")
         self.assertEqual(compressor.flush(zstd.FLUSH_FRAME), 9)
         result = buffer.getvalue()
-        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00")
+        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00")
 
         params = zstd.get_frame_parameters(result)
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 524288)
+        self.assertEqual(params.window_size, 1024)
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
@@ -1376,7 +1376,7 @@ class TestCompressor_read_to_iter(TestCase):
         chunks = list(it)
         self.assertEqual(len(chunks), 1)
         compressed = b"".join(chunks)
-        self.assertEqual(compressed, b"\x28\xb5\x2f\xfd\x00\x48\x01\x00\x00")
+        self.assertEqual(compressed, b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00")
 
         # And again with the buffer protocol.
         it = cctx.read_to_iter(b"")
@@ -1484,7 +1484,7 @@ class TestCompressor_chunker(TestCase):
 
         it = chunker.finish()
 
-        self.assertEqual(next(it), b"\x28\xb5\x2f\xfd\x00\x58\x01\x00\x00")
+        self.assertEqual(next(it), b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00")
 
         with self.assertRaises(StopIteration):
             next(it)

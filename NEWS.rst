@@ -64,6 +64,7 @@ Actions Blocking Release
 * Consider controls over resetting compression contexts (session only, parameters,
   or session and parameters).
 * Actually use the CFFI backend in fuzzing tests.
+* Consider exposing ``ZSTD_d_stableOutBuffer``.
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -78,6 +79,7 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* Bundled zstandard library upgraded from 1.4.4 to 1.4.5.
 * ``setup.py`` is now executable.
 * Python code reformatted with black using 80 character line lengths.
 
