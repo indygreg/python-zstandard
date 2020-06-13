@@ -14,7 +14,6 @@ Build-Depends:
   python-setuptools,
   python3-setuptools
 Standards-Version: 3.9.1
-X-Python-Version: >=2.7
 X-Python3-Version: >= 3.5
 Homepage: https://github.com/indygreg/python-zstandard
 Vcs-Browser: https://github.com/indygreg/python-zstandard.git

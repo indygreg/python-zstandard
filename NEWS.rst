@@ -76,6 +76,12 @@ Other Actions Not Blocking Release
 0.15.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* Support for Python 2.7 has been dropped. Python 3.5 is now the
+  minimum required Python version. (#109)
+
 0.14.0 (released 2020-06-13)
 ============================
 
