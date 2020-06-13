@@ -76,6 +76,15 @@ Other Actions Not Blocking Release
 0.14.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* This will likely be the final version supporting Python 2.7. Future
+  releases will likely only work on Python 3.5+. See #109 for more
+  context.
+* There is a significant possibility that future versions will use
+  Rust - instead of C - for compiled code. See #110 for more context.
+
 Bug Fixes
 ---------
 
