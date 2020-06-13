@@ -151,7 +151,7 @@ def random_input_data():
     for root, dirs, files in os.walk(os.path.dirname(__file__)):
         # We filter out __pycache__ because there is a race between another
         # process writing cache files and us reading them.
-        dirs[:] = list(sorted(d for d in dirs if d != '__pycache__'))
+        dirs[:] = list(sorted(d for d in dirs if d != "__pycache__"))
         for f in sorted(files):
             try:
                 with open(os.path.join(root, f), "rb") as fh:
