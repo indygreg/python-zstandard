@@ -16,78 +16,83 @@ import tempfile
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-SOURCES = ['zstd/%s' % p for p in (
-    'common/debug.c',
-    'common/entropy_common.c',
-    'common/error_private.c',
-    'common/fse_decompress.c',
-    'common/pool.c',
-    'common/threading.c',
-    'common/xxhash.c',
-    'common/zstd_common.c',
-    'compress/fse_compress.c',
-    'compress/hist.c',
-    'compress/huf_compress.c',
-    'compress/zstd_compress.c',
-    'compress/zstd_double_fast.c',
-    'compress/zstd_fast.c',
-    'compress/zstd_lazy.c',
-    'compress/zstd_ldm.c',
-    'compress/zstd_opt.c',
-    'compress/zstdmt_compress.c',
-    'decompress/huf_decompress.c',
-    'decompress/zstd_ddict.c',
-    'decompress/zstd_decompress.c',
-    'decompress/zstd_decompress_block.c',
-    'dictBuilder/cover.c',
-    'dictBuilder/fastcover.c',
-    'dictBuilder/divsufsort.c',
-    'dictBuilder/zdict.c',
-)]
+SOURCES = [
+    "zstd/%s" % p
+    for p in (
+        "common/debug.c",
+        "common/entropy_common.c",
+        "common/error_private.c",
+        "common/fse_decompress.c",
+        "common/pool.c",
+        "common/threading.c",
+        "common/xxhash.c",
+        "common/zstd_common.c",
+        "compress/fse_compress.c",
+        "compress/hist.c",
+        "compress/huf_compress.c",
+        "compress/zstd_compress.c",
+        "compress/zstd_compress_literals.c",
+        "compress/zstd_compress_sequences.c",
+        "compress/zstd_double_fast.c",
+        "compress/zstd_fast.c",
+        "compress/zstd_lazy.c",
+        "compress/zstd_ldm.c",
+        "compress/zstd_opt.c",
+        "compress/zstdmt_compress.c",
+        "decompress/huf_decompress.c",
+        "decompress/zstd_ddict.c",
+        "decompress/zstd_decompress.c",
+        "decompress/zstd_decompress_block.c",
+        "dictBuilder/cover.c",
+        "dictBuilder/fastcover.c",
+        "dictBuilder/divsufsort.c",
+        "dictBuilder/zdict.c",
+    )
+]
 
 # Headers whose preprocessed output will be fed into cdef().
-HEADERS = [os.path.join(HERE, 'zstd', *p) for p in (
-    ('zstd.h',),
-    ('dictBuilder', 'zdict.h'),
-)]
+HEADERS = [
+    os.path.join(HERE, "zstd", *p)
+    for p in (("zstd.h",), ("dictBuilder", "zdict.h"),)
+]
 
-INCLUDE_DIRS = [os.path.join(HERE, d) for d in (
-    'zstd',
-    'zstd/common',
-    'zstd/compress',
-    'zstd/decompress',
-    'zstd/dictBuilder',
-)]
+INCLUDE_DIRS = [
+    os.path.join(HERE, d)
+    for d in (
+        "zstd",
+        "zstd/common",
+        "zstd/compress",
+        "zstd/decompress",
+        "zstd/dictBuilder",
+    )
+]
 
 # cffi can't parse some of the primitives in zstd.h. So we invoke the
 # preprocessor and feed its output into cffi.
 compiler = distutils.ccompiler.new_compiler()
 
 # Needed for MSVC.
-if hasattr(compiler, 'initialize'):
+if hasattr(compiler, "initialize"):
     compiler.initialize()
 
 # Distutils doesn't set compiler.preprocessor, so invoke the preprocessor
 # manually.
-if compiler.compiler_type == 'unix':
-    args = list(compiler.executables['compiler'])
-    args.extend([
-        '-E',
-        '-DZSTD_STATIC_LINKING_ONLY',
-        '-DZDICT_STATIC_LINKING_ONLY',
-    ])
-elif compiler.compiler_type == 'msvc':
+if compiler.compiler_type == "unix":
+    args = list(compiler.executables["compiler"])
+    args.extend(
+        ["-E", "-DZSTD_STATIC_LINKING_ONLY", "-DZDICT_STATIC_LINKING_ONLY",]
+    )
+elif compiler.compiler_type == "msvc":
     args = [compiler.cc]
-    args.extend([
-        '/EP',
-        '/DZSTD_STATIC_LINKING_ONLY',
-        '/DZDICT_STATIC_LINKING_ONLY',
-    ])
+    args.extend(
+        ["/EP", "/DZSTD_STATIC_LINKING_ONLY", "/DZDICT_STATIC_LINKING_ONLY",]
+    )
 else:
-    raise Exception('unsupported compiler type: %s' % compiler.compiler_type)
+    raise Exception("unsupported compiler type: %s" % compiler.compiler_type)
+
 
 def preprocess(path):
-    with open(path, 'rb') as fh:
+    with open(path, "rb") as fh:
         lines = []
         it = iter(fh)
 
@@ -102,28 +107,46 @@ def preprocess(path):
             # We define ZSTD_STATIC_LINKING_ONLY, which is redundant with the inline
             # #define in zstdmt_compress.h and results in a compiler warning. So drop
             # the inline #define.
-            if l.startswith((b'#include <stddef.h>',
-                             b'#include "zstd.h"',
-                             b'#define ZSTD_STATIC_LINKING_ONLY')):
+            if l.startswith(
+                (
+                    b"#include <stddef.h>",
+                    b'#include "zstd.h"',
+                    b"#define ZSTD_STATIC_LINKING_ONLY",
+                )
+            ):
                 continue
+
+            # The preprocessor environment on Windows doesn't define include
+            # paths, so the #include of limits.h fails. We work around this
+            # by removing that import and defining INT_MAX ourselves. This is
+            # a bit hacky. But it gets the job done.
+            # TODO make limits.h work on Windows so we ensure INT_MAX is
+            # correct.
+            if l.startswith(b"#include <limits.h>"):
+                l = b"#define INT_MAX 2147483647\n"
 
             # ZSTDLIB_API may not be defined if we dropped zstd.h. It isn't
             # important so just filter it out.
-            if l.startswith(b'ZSTDLIB_API'):
-                l = l[len(b'ZSTDLIB_API '):]
+            if l.startswith(b"ZSTDLIB_API"):
+                l = l[len(b"ZSTDLIB_API ") :]
 
             lines.append(l)
 
-    fd, input_file = tempfile.mkstemp(suffix='.h')
-    os.write(fd, b''.join(lines))
+    fd, input_file = tempfile.mkstemp(suffix=".h")
+    os.write(fd, b"".join(lines))
     os.close(fd)
 
     try:
-        process = subprocess.Popen(args + [input_file], stdout=subprocess.PIPE)
+        env = dict(os.environ)
+        if getattr(compiler, "_paths", None):
+            env["PATH"] = compiler._paths
+        process = subprocess.Popen(
+            args + [input_file], stdout=subprocess.PIPE, env=env
+        )
         output = process.communicate()[0]
         ret = process.poll()
         if ret:
-            raise Exception('preprocessor exited with error')
+            raise Exception("preprocessor exited with error")
 
         return output
     finally:
@@ -135,16 +158,16 @@ def normalize_output(output):
     for line in output.splitlines():
         # CFFI's parser doesn't like __attribute__ on UNIX compilers.
         if line.startswith(b'__attribute__ ((visibility ("default"))) '):
-            line = line[len(b'__attribute__ ((visibility ("default"))) '):]
+            line = line[len(b'__attribute__ ((visibility ("default"))) ') :]
 
-        if line.startswith(b'__attribute__((deprecated('):
+        if line.startswith(b"__attribute__((deprecated("):
             continue
-        elif b'__declspec(deprecated(' in line:
+        elif b"__declspec(deprecated(" in line:
             continue
 
         lines.append(line)
 
-    return b'\n'.join(lines)
+    return b"\n".join(lines)
 
 
 ffi = cffi.FFI()
@@ -153,18 +176,22 @@ ffi = cffi.FFI()
 # *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
 # when cffi uses the function. Since we statically link against zstd, even
 # if we use the deprecated functions it shouldn't be a huge problem.
-ffi.set_source('_zstd_cffi', '''
+ffi.set_source(
+    "_zstd_cffi",
+    """
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
 #define ZDICT_STATIC_LINKING_ONLY
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
 #include <zdict.h>
-''', sources=SOURCES,
-     include_dirs=INCLUDE_DIRS,
-     extra_compile_args=['-DZSTD_MULTITHREAD'])
+""",
+    sources=SOURCES,
+    include_dirs=INCLUDE_DIRS,
+    extra_compile_args=["-DZSTD_MULTITHREAD"],
+)
 
-DEFINE = re.compile(b'^\\#define ([a-zA-Z0-9_]+) ')
+DEFINE = re.compile(b"^\\#define ([a-zA-Z0-9_]+) ")
 
 sources = []
 
@@ -175,27 +202,27 @@ for header in HEADERS:
 
     # #define's are effectively erased as part of going through preprocessor.
     # So perform a manual pass to re-add those to the cdef source.
-    with open(header, 'rb') as fh:
+    with open(header, "rb") as fh:
         for line in fh:
             line = line.strip()
             m = DEFINE.match(line)
             if not m:
                 continue
 
-            if m.group(1) == b'ZSTD_STATIC_LINKING_ONLY':
+            if m.group(1) == b"ZSTD_STATIC_LINKING_ONLY":
                 continue
 
             # The parser doesn't like some constants with complex values.
-            if m.group(1) in (b'ZSTD_LIB_VERSION', b'ZSTD_VERSION_STRING'):
+            if m.group(1) in (b"ZSTD_LIB_VERSION", b"ZSTD_VERSION_STRING"):
                 continue
 
             # The ... is magic syntax by the cdef parser to resolve the
             # value at compile time.
-            sources.append(m.group(0) + b' ...')
+            sources.append(m.group(0) + b" ...")
 
-cdeflines = b'\n'.join(sources).splitlines()
+cdeflines = b"\n".join(sources).splitlines()
 cdeflines = [l for l in cdeflines if l.strip()]
-ffi.cdef(b'\n'.join(cdeflines).decode('latin1'))
+ffi.cdef(b"\n".join(cdeflines).decode("latin1"))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ffi.compile()

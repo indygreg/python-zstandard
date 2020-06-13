@@ -6,9 +6,9 @@ Once you have the source code, the extension can be built via setup.py::
 
    $ python setup.py build_ext
 
-We recommend testing with ``nose``::
+We recommend testing with ``pytest``::
 
-   $ nosetests
+   $ pytest
 
 A Tox configuration is present to test against multiple Python versions::
 

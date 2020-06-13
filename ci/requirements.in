@@ -1,7 +1,10 @@
 cibuildwheel
 cffi
-nose
+colorama
 hypothesis
 pycparser
+pytest-azurepipelines
+pytest-xdist
+pytest
 tox-travis
 wheel

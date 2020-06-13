@@ -43,13 +43,18 @@ Actions Blocking Release
 * Support modifying compression parameters mid operation when supported by
   zstd API.
 * Expose ``ZSTD_CLEVEL_DEFAULT`` constant.
+* Expose ``ZSTD_SRCSIZEHINT_{MIN,MAX}`` constants.
 * Support ``ZSTD_p_forceAttachDict`` compression parameter.
-* Support ``ZSTD_c_literalCompressionMode `` compression parameter.
+* Support ``ZSTD_dictForceLoad`` dictionary compression parameter.
+* Support ``ZSTD_c_targetCBlockSize`` compression parameter.
+* Support ``ZSTD_c_literalCompressionMode`` compression parameter.
+* Support ``ZSTD_c_srcSizeHint`` compression parameter.
 * Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
   compression parameters.
 * Consider exposing ``ZSTDMT_toFlushNow()``.
 * Expose ``ZDICT_trainFromBuffer_fastCover()``,
   ``ZDICT_optimizeTrainFromBuffer_fastCover``.
+* Expose ``ZSTD_Sequence`` struct and related ``ZSTD_getSequences()`` API.
 * Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
 * Consider a ``chunker()`` API for decompression.
 * Consider stats for ``chunker()`` API, including finding the last consumed
@@ -67,15 +72,62 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
-0.12.0 (not yet released)
+0.14.0 (not yet released)
 =========================
 
-* Bundled zstandard library upgraded from 1.3.8 to 1.4.0.
+Changes
+-------
+
+* ``setup.py`` is now executable.
+* Python code reformatted with black using 80 character line lengths.
+
+0.13.0 (released 2019-12-28)
+============================
+
+Changes
+-------
+
+* ``pytest-xdist`` ``pytest`` extension is now installed so tests can be
+  run in parallel.
+* CI now builds ``manylinux2010`` and ``manylinux2014`` binary wheels
+  instead of a mix of ``manylinux2010`` and ``manylinux1``.
+* Official support for Python 3.8 has been added.
+* Bundled zstandard library upgraded from 1.4.3 to 1.4.4.
+* Python code has been reformatted with black.
+
+0.12.0 (released 2019-09-15)
+============================
+
+Backwards Compatibility Notes
+-----------------------------
+
+* Support for Python 3.4 has been dropped since Python 3.4 is no longer
+  a supported Python version upstream. (But it will likely continue to
+  work until Python 2.7 support is dropped and we port to Python 3.5+
+  APIs.)
+
+Bug Fixes
+---------
+
+* Fix ``ZstdDecompressor.__init__`` on 64-bit big-endian systems (#91).
+* Fix memory leak in ``ZstdDecompressionReader.seek()`` (#82).
+
+Changes
+-------
+
+* CI transitioned to Azure Pipelines (from AppVeyor and Travis CI).
+* Switched to ``pytest`` for running tests (from ``nose``).
+* Bundled zstandard library upgraded from 1.3.8 to 1.4.3.
+
+0.11.1 (released 2019-05-14)
+============================
+
+* Fix memory leak in ``ZstdDecompressionReader.seek()`` (#82).
 
 0.11.0 (released 2019-02-24)
 ============================
 
-Backwards Compatibility Nodes
+Backwards Compatibility Notes
 -----------------------------
 
 * ``ZstdDecompressor.read()`` now allows reading sizes of ``-1`` or ``0``
