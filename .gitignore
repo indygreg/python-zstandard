@@ -7,6 +7,7 @@
 .tox
 build/
 dist/
+target/
 venv/
 venv3/
 zstandard.egg-info/
