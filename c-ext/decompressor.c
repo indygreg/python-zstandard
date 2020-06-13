@@ -591,6 +591,9 @@ static ZstdDecompressionReader* Decompressor_stream_reader(ZstdDecompressor* sel
 		return NULL;
 	}
 
+	result->entered = 0;
+	result->closed = 0;
+
 	if (PyObject_HasAttrString(source, "read")) {
 		result->reader = source;
 		Py_INCREF(source);
@@ -660,6 +663,9 @@ static ZstdDecompressionWriter* Decompressor_stream_writer(ZstdDecompressor* sel
 	if (!result) {
 		return NULL;
 	}
+
+	result->entered = 0;
+	result->closed = 0;
 
 	result->decompressor = self;
 	Py_INCREF(result->decompressor);

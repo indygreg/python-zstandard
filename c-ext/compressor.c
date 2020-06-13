@@ -497,6 +497,9 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		return NULL;
 	}
 
+	result->entered = 0;
+	result->closed = 0;
+
 	if (PyObject_HasAttrString(source, "read")) {
 		result->reader = source;
 		Py_INCREF(source);
@@ -828,6 +831,9 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 	if (!result) {
 		return NULL;
 	}
+
+	result->entered = 0;
+	result->closed = 0;
 
 	result->output.dst = PyMem_Malloc(outSize);
 	if (!result->output.dst) {
