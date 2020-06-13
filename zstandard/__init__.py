@@ -57,6 +57,10 @@ elif _module_policy == "cffi_fallback":
         from .cffi import *
 
         backend = "cffi"
+elif _module_policy == "rust":
+    from zstandard_oxidized import *
+
+    backend = "rust"
 elif _module_policy == "cext":
     from zstd import *
 
