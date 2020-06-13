@@ -40,11 +40,7 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 		return NULL;
 	}
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:compress",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:compress",
-#endif
 		kwlist, &source)) {
 		return NULL;
 	}

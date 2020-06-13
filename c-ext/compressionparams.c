@@ -282,25 +282,17 @@ ZstdCompressionParametersObject* CompressionParameters_from_level(PyObject* unde
 
 	sourceSize = PyDict_GetItemString(kwargs, "source_size");
 	if (sourceSize) {
-#if PY_MAJOR_VERSION >= 3
 		iSourceSize = PyLong_AsUnsignedLongLong(sourceSize);
 		if (iSourceSize == (unsigned PY_LONG_LONG)(-1)) {
 			goto cleanup;
 		}
-#else
-		iSourceSize = PyInt_AsUnsignedLongLongMask(sourceSize);
-#endif
 
 		PyDict_DelItemString(kwargs, "source_size");
 	}
 
 	dictSize = PyDict_GetItemString(kwargs, "dict_size");
 	if (dictSize) {
-#if PY_MAJOR_VERSION >= 3
 		iDictSize = PyLong_AsSsize_t(dictSize);
-#else
-		iDictSize = PyInt_AsSsize_t(dictSize);
-#endif
 		if (iDictSize == -1) {
 			goto cleanup;
 		}

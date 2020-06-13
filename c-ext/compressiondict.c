@@ -191,11 +191,7 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args, P
 	self->cdict = NULL;
 	self->ddict = NULL;
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|I:ZstdCompressionDict",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|I:ZstdCompressionDict",
-#endif
 		kwlist, &source, &dictType)) {
 		return -1;
 	}

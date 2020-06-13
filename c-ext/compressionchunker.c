@@ -208,11 +208,7 @@ static ZstdCompressionChunkerIterator* ZstdCompressionChunker_compress(ZstdCompr
 		return NULL;
 	}
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:compress",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:compress",
-#endif
 		kwlist, &self->inBuffer)) {
 		return NULL;
 	}

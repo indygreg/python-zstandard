@@ -66,11 +66,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	PyObject* res;
 	Py_ssize_t totalWrite = 0;
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:write",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:write",
-#endif
 		kwlist, &source)) {
 		return NULL;
 	}
@@ -111,11 +107,7 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 		}
 
 		if (output.pos) {
-#if PY_MAJOR_VERSION >= 3
 			res = PyObject_CallMethod(self->writer, "write", "y#",
-#else
-			res = PyObject_CallMethod(self->writer, "write", "s#",
-#endif
 				output.dst, output.pos);
 			Py_XDECREF(res);
 			totalWrite += output.pos;

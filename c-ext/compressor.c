@@ -401,11 +401,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 			}
 
 			if (output.pos) {
-#if PY_MAJOR_VERSION >= 3
 				writeResult = PyObject_CallMethod(dest, "write", "y#",
-#else
-				writeResult = PyObject_CallMethod(dest, "write", "s#",
-#endif
 					output.dst, output.pos);
 				Py_XDECREF(writeResult);
 				totalWrite += output.pos;
@@ -432,11 +428,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		}
 
 		if (output.pos) {
-#if PY_MAJOR_VERSION >= 3
 			writeResult = PyObject_CallMethod(dest, "write", "y#",
-#else
-			writeResult = PyObject_CallMethod(dest, "write", "s#",
-#endif
 				output.dst, output.pos);
 			totalWrite += output.pos;
 			Py_XDECREF(writeResult);
@@ -565,11 +557,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	ZSTD_outBuffer outBuffer;
 	ZSTD_inBuffer inBuffer;
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|O:compress",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|O:compress",
-#endif
 		kwlist, &source)) {
 		return NULL;
 	}

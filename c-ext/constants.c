@@ -22,11 +22,7 @@ void constants_module_init(PyObject* mod) {
 	PyObject* zstdVersion;
 	PyObject* frameHeader;
 
-#if PY_MAJOR_VERSION >= 3
 	version = PyUnicode_FromString(PYTHON_ZSTANDARD_VERSION);
-#else
-	version = PyString_FromString(PYTHON_ZSTANDARD_VERSION);
-#endif
 	PyModule_AddObject(mod, "__version__", version);
 
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);

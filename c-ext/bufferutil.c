@@ -63,11 +63,7 @@ static int BufferWithSegments_init(ZstdBufferWithSegments* self, PyObject* args,
 
 	memset(&self->parent, 0, sizeof(self->parent));
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*y*:BufferWithSegments",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*s*:BufferWithSegments",
-#endif
 		kwlist, &self->parent, &segments)) {
 		return -1;
 	}
@@ -209,7 +205,6 @@ static ZstdBufferSegment* BufferWithSegments_item(ZstdBufferWithSegments* self, 
 	return result;
 }
 
-#if PY_MAJOR_VERSION >= 3
 static int BufferWithSegments_getbuffer(ZstdBufferWithSegments* self, Py_buffer* view, int flags) {
 	if (self->dataSize > PY_SSIZE_T_MAX) {
 		view->obj = NULL;
@@ -219,30 +214,6 @@ static int BufferWithSegments_getbuffer(ZstdBufferWithSegments* self, Py_buffer*
 
 	return PyBuffer_FillInfo(view, (PyObject*)self, self->data, (Py_ssize_t)self->dataSize, 1, flags);
 }
-#else
-static Py_ssize_t BufferWithSegments_getreadbuffer(ZstdBufferWithSegments* self, Py_ssize_t segment, void **ptrptr) {
-	if (segment != 0) {
-		PyErr_SetString(PyExc_ValueError, "segment number must be 0");
-		return -1;
-	}
-
-	if (self->dataSize > PY_SSIZE_T_MAX) {
-		PyErr_SetString(PyExc_ValueError, "buffer is too large for this platform");
-		return -1;
-	}
-
-	*ptrptr = self->data;
-	return (Py_ssize_t)self->dataSize;
-}
-
-static Py_ssize_t BufferWithSegments_getsegcount(ZstdBufferWithSegments* self, Py_ssize_t* len) {
-	if (len) {
-		*len = 1;
-	}
-
-	return 1;
-}
-#endif
 
 PyDoc_STRVAR(BufferWithSegments_tobytes__doc__,
 "Obtain a bytes instance for this buffer.\n"
@@ -287,15 +258,8 @@ static PySequenceMethods BufferWithSegments_sq = {
 };
 
 static PyBufferProcs BufferWithSegments_as_buffer = {
-#if PY_MAJOR_VERSION >= 3
 	(getbufferproc)BufferWithSegments_getbuffer, /* bf_getbuffer */
 	0 /* bf_releasebuffer */
-#else
-	(readbufferproc)BufferWithSegments_getreadbuffer, /* bf_getreadbuffer */
-	0, /* bf_getwritebuffer */
-	(segcountproc)BufferWithSegments_getsegcount, /* bf_getsegcount */
-	0 /* bf_getcharbuffer */
-#endif
 };
 
 static PyMethodDef BufferWithSegments_methods[] = {
@@ -362,42 +326,15 @@ static void BufferSegments_dealloc(ZstdBufferSegments* self) {
 	PyObject_Del(self);
 }
 
-#if PY_MAJOR_VERSION >= 3
 static int BufferSegments_getbuffer(ZstdBufferSegments* self, Py_buffer* view, int flags) {
 	return PyBuffer_FillInfo(view, (PyObject*)self,
 		(void*)self->segments, self->segmentCount * sizeof(BufferSegment),
 		1, flags);
 }
-#else
-static Py_ssize_t BufferSegments_getreadbuffer(ZstdBufferSegments* self, Py_ssize_t segment, void **ptrptr) {
-	if (segment != 0) {
-		PyErr_SetString(PyExc_ValueError, "segment number must be 0");
-		return -1;
-	}
-
-	*ptrptr = (void*)self->segments;
-	return self->segmentCount * sizeof(BufferSegment);
-}
-
-static Py_ssize_t BufferSegments_getsegcount(ZstdBufferSegments* self, Py_ssize_t* len) {
-	if (len) {
-		*len = 1;
-	}
-
-	return 1;
-}
-#endif
 
 static PyBufferProcs BufferSegments_as_buffer = {
-#if PY_MAJOR_VERSION >= 3
 	(getbufferproc)BufferSegments_getbuffer,
 	0
-#else
-	(readbufferproc)BufferSegments_getreadbuffer,
-	0,
-	(segcountproc)BufferSegments_getsegcount,
-	0
-#endif
 };
 
 PyTypeObject ZstdBufferSegmentsType = {
@@ -454,30 +391,10 @@ static Py_ssize_t BufferSegment_length(ZstdBufferSegment* self) {
 	return self->dataSize;
 }
 
-#if PY_MAJOR_VERSION >= 3
 static int BufferSegment_getbuffer(ZstdBufferSegment* self, Py_buffer* view, int flags) {
 	return PyBuffer_FillInfo(view, (PyObject*)self,
 		self->data, self->dataSize, 1, flags);
 }
-#else
-static Py_ssize_t BufferSegment_getreadbuffer(ZstdBufferSegment* self, Py_ssize_t segment, void **ptrptr) {
-	if (segment != 0) {
-		PyErr_SetString(PyExc_ValueError, "segment number must be 0");
-		return -1;
-	}
-
-	*ptrptr = self->data;
-	return self->dataSize;
-}
-
-static Py_ssize_t BufferSegment_getsegcount(ZstdBufferSegment* self, Py_ssize_t* len) {
-	if (len) {
-		*len = 1;
-	}
-
-	return 1;
-}
-#endif
 
 PyDoc_STRVAR(BufferSegment_tobytes__doc__,
 "Obtain a bytes instance for this segment.\n"
@@ -499,15 +416,8 @@ static PySequenceMethods BufferSegment_sq = {
 };
 
 static PyBufferProcs BufferSegment_as_buffer = {
-#if PY_MAJOR_VERSION >= 3
 	(getbufferproc)BufferSegment_getbuffer,
 	0
-#else
-	(readbufferproc)BufferSegment_getreadbuffer,
-	0,
-	(segcountproc)BufferSegment_getsegcount,
-	0
-#endif
 };
 
 static PyMethodDef BufferSegment_methods[] = {

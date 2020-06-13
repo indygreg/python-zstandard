@@ -46,11 +46,7 @@ static PyObject* frame_content_size(PyObject* self, PyObject* args, PyObject* kw
 	PyObject* result = NULL;
 	unsigned long long size;
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:frame_content_size",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:frame_content_size",
-#endif
 		kwlist, &source)) {
 		return NULL;
 	}
@@ -95,11 +91,7 @@ static PyObject* frame_header_size(PyObject* self, PyObject* args, PyObject* kwa
 	PyObject* result = NULL;
 	size_t zresult;
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:frame_header_size",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:frame_header_size",
-#endif
 		kwlist, &source)) {
 		return NULL;
 	}
@@ -239,7 +231,6 @@ void zstd_module_init(PyObject* m) {
 #  define PYTHON_ZSTD_VISIBILITY
 #endif
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef zstd_module = {
 	PyModuleDef_HEAD_INIT,
 	"zstd",
@@ -259,14 +250,6 @@ PYTHON_ZSTD_VISIBILITY PyMODINIT_FUNC PyInit_zstd(void) {
 	}
 	return m;
 }
-#else
-PYTHON_ZSTD_VISIBILITY PyMODINIT_FUNC initzstd(void) {
-	PyObject *m = Py_InitModule3("zstd", zstd_methods, zstd_doc);
-	if (m) {
-		zstd_module_init(m);
-	}
-}
-#endif
 
 /* Attempt to resolve the number of CPUs in the system. */
 int cpu_count() {

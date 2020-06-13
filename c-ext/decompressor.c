@@ -240,11 +240,7 @@ static PyObject* Decompressor_copy_stream(ZstdDecompressor* self, PyObject* args
 			}
 
 			if (output.pos) {
-#if PY_MAJOR_VERSION >= 3
 				writeResult = PyObject_CallMethod(dest, "write", "y#",
-#else
-				writeResult = PyObject_CallMethod(dest, "write", "s#",
-#endif
 					output.dst, output.pos);
 
 				Py_XDECREF(writeResult);
@@ -313,11 +309,7 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 	ZSTD_outBuffer outBuffer;
 	ZSTD_inBuffer inBuffer;
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*|n:decompress",
-#endif
 		kwlist, &source, &maxOutputSize)) {
 		return NULL;
 	}
@@ -1535,11 +1527,7 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 
 	memset(&frameSizes, 0, sizeof(frameSizes));
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|y*i:multi_decompress_to_buffer",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|s*i:multi_decompress_to_buffer",
-#endif
 		kwlist, &frames, &frameSizes, &threads)) {
 		return NULL;
 	}

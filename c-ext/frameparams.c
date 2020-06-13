@@ -24,11 +24,7 @@ FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyOb
 	FrameParametersObject* result = NULL;
 	size_t zresult;
 
-#if PY_MAJOR_VERSION >= 3
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:get_frame_parameters",
-#else
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:get_frame_parameters",
-#endif
 		kwlist, &source)) {
 		return NULL;
 	}
