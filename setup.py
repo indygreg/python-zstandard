@@ -12,6 +12,11 @@ import os
 import sys
 from setuptools import setup
 
+
+if sys.version_info[0:2] < (3, 5):
+    print("Python 3.5+ is required", file=sys.stderr)
+    sys.exit(1)
+
 # Need change in 1.10 for ffi.from_buffer() to handle all buffer types
 # (like memoryview).
 # Need feature in 1.11 for ffi.gc() to declare size of objects so we avoid
@@ -100,12 +105,12 @@ setup(
     author="Gregory Szorc",
     author_email="gregory.szorc@gmail.com",
     license="BSD",
+    python_requires=">=3.5",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: C",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
