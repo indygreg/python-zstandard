@@ -85,6 +85,8 @@ Bug Fixes
   calls ``distutils.sysconfig.customize_compiler()`` so compiler
   customizations (such as honoring the ``CC`` environment variable)
   are performed. Patch by @Arfrever. (#103)
+* The ``make_cffi.py`` script now sets ``LC_ALL=C`` when invoking
+  the preprocessor in an attempt to normalize output to ASCII. (#95)
 
 Changes
 -------

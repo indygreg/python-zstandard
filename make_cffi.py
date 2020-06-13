@@ -144,6 +144,11 @@ def preprocess(path):
 
     try:
         env = dict(os.environ)
+        # cffi attempts to decode source as ascii. And the preprocessor
+        # may insert non-ascii for some annotations. So try to force
+        # ascii output via LC_ALL.
+        env["LC_ALL"] = "C"
+
         if getattr(compiler, "_paths", None):
             env["PATH"] = compiler._paths
         process = subprocess.Popen(
