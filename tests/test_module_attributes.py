@@ -15,7 +15,7 @@ class TestModuleAttributes(TestCase):
     def test_version(self):
         self.assertEqual(zstd.ZSTD_VERSION, (1, 4, 5))
 
-        self.assertEqual(zstd.__version__, "0.14.0")
+        self.assertEqual(zstd.__version__, "0.15.0.dev0")
 
     def test_constants(self):
         self.assertEqual(zstd.MAX_COMPRESSION_LEVEL, 22)
