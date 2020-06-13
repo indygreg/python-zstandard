@@ -4,8 +4,6 @@ jobs:
     vmImage: ${{ parameters.vmImage }}
   strategy:
     matrix:
-      CPython2.7:
-        python_version: '2.7'
       CPython3.5:
         python_version: '3.5'
       CPython3.6:
@@ -26,10 +24,6 @@ jobs:
     HYPOTHESIS_PROFILE: ci
 
   steps:
-  - script: choco install vcpython27 --yes
-    displayName: Install VC++ for Python 2.7
-    condition: and(eq(variables['python_version'], '2.7'), eq('${{ parameters.os }}', 'Windows'))
-
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python_version)'

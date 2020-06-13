@@ -16,12 +16,6 @@ jobs:
 - job: ManyLinuxWheel
   strategy:
     matrix:
-      x64_2010_27m:
-        image: quay.io/pypa/manylinux2010_x86_64
-        py: cp27-cp27m
-      x64_2010_27mu:
-        image: quay.io/pypa/manylinux2010_x86_64
-        py: cp27-cp27mu
       x64_2010_35:
         image: quay.io/pypa/manylinux2010_x86_64
         py: cp35-cp35m
@@ -46,12 +40,6 @@ jobs:
       x64_2014_38:
         image: quay.io/pypa/manylinux2014_x86_64
         py: cp38-cp38
-      x86_2010_27m:
-        image: quay.io/pypa/manylinux2010_i686
-        py: cp27-cp27m
-      x86_2010_27mu:
-        image: quay.io/pypa/manylinux2010_i686
-        py: cp27-cp27mu
       x86_2010_35:
         image: quay.io/pypa/manylinux2010_i686
         py: cp35-cp35m
@@ -89,8 +77,6 @@ jobs:
 - job: MacOSWheel
   strategy:
     matrix:
-      Python2.7:
-        cibw_build: cp27-*
       Python3.5:
         cibw_build: cp35-*
       Python3.6:

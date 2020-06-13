@@ -4,8 +4,6 @@ jobs:
     vmImage: ${{ parameters.vmImage }}
   strategy:
     matrix:
-      Python2.7:
-        python_version: '2.7'
       Python3.5:
         python_version: '3.5'
       Python3.6:
@@ -26,10 +24,6 @@ jobs:
     HYPOTHESIS_PROFILE: ci
 
   steps:
-  - script: choco install vcpython27 --yes
-    displayName: Install VC++ for Python 2.7
-    condition: eq(variables['python_version'], '2.7')
-
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
