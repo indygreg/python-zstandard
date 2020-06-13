@@ -1,12 +1,8 @@
 import zstandard as zstd
 
-from .common import (
-    make_cffi,
-    TestCase,
-)
+from .common import TestCase
 
 
-@make_cffi
 class TestCompressionParameters(TestCase):
     def test_bounds(self):
         zstd.ZstdCompressionParameters(
@@ -152,7 +148,6 @@ class TestCompressionParameters(TestCase):
         self.assertEqual(p.overlap_size_log, 4)
 
 
-@make_cffi
 class TestFrameParameters(TestCase):
     def test_invalid_type(self):
         with self.assertRaises(TypeError):

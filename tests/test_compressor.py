@@ -8,7 +8,6 @@ import tempfile
 import zstandard as zstd
 
 from .common import (
-    make_cffi,
     NonClosingBytesIO,
     OpCountingBytesIO,
     TestCase,
@@ -23,7 +22,6 @@ def multithreaded_chunk_size(level, source_size=0):
     return 1 << (params.window_log + 2)
 
 
-@make_cffi
 class TestCompressor(TestCase):
     def test_level_bounds(self):
         with self.assertRaises(ValueError):
@@ -34,7 +32,6 @@ class TestCompressor(TestCase):
         self.assertGreater(cctx.memory_size(), 100)
 
 
-@make_cffi
 class TestCompressor_compress(TestCase):
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
@@ -238,7 +235,6 @@ class TestCompressor_compress(TestCase):
         )
 
 
-@make_cffi
 class TestCompressor_compressobj(TestCase):
     def test_compressobj_empty(self):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
@@ -421,7 +417,6 @@ class TestCompressor_compressobj(TestCase):
         cctx.compress(b"foobar")
 
 
-@make_cffi
 class TestCompressor_copy_stream(TestCase):
     def test_no_read(self):
         source = object()
@@ -586,7 +581,6 @@ class TestCompressor_copy_stream(TestCase):
         cctx.copy_stream(source, dest)
 
 
-@make_cffi
 class TestCompressor_stream_reader(TestCase):
     def test_context_manager(self):
         cctx = zstd.ZstdCompressor()
@@ -844,7 +838,6 @@ class TestCompressor_stream_reader(TestCase):
         self.assertEqual(reader.read1(1024), foo[4:])
 
 
-@make_cffi
 class TestCompressor_stream_writer(TestCase):
     def test_io_api(self):
         buffer = io.BytesIO()
@@ -1341,7 +1334,6 @@ class TestCompressor_stream_writer(TestCase):
                     self.assertEqual(member.name, "test_compressor.py")
 
 
-@make_cffi
 class TestCompressor_read_to_iter(TestCase):
     def test_type_validation(self):
         cctx = zstd.ZstdCompressor()
@@ -1463,7 +1455,6 @@ class TestCompressor_read_to_iter(TestCase):
         b"".join(cctx.read_to_iter(source))
 
 
-@make_cffi
 class TestCompressor_chunker(TestCase):
     def test_empty(self):
         cctx = zstd.ZstdCompressor(write_content_size=False)

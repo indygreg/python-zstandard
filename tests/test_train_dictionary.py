@@ -4,13 +4,11 @@ import zstandard as zstd
 
 from .common import (
     generate_samples,
-    make_cffi,
     random_input_data,
     TestCase,
 )
 
 
-@make_cffi
 class TestTrainDictionary(TestCase):
     def test_no_args(self):
         with self.assertRaises(TypeError):
@@ -59,7 +57,6 @@ class TestTrainDictionary(TestCase):
         self.assertEqual(d.d, 16)
 
 
-@make_cffi
 class TestCompressionDict(TestCase):
     def test_bad_mode(self):
         with self.assertRaisesRegex(ValueError, "invalid dictionary load mode"):

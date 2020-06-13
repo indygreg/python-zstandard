@@ -9,14 +9,12 @@ import zstandard as zstd
 
 from .common import (
     generate_samples,
-    make_cffi,
     NonClosingBytesIO,
     OpCountingBytesIO,
     TestCase,
 )
 
 
-@make_cffi
 class TestFrameHeaderSize(TestCase):
     def test_empty(self):
         with self.assertRaisesRegex(
@@ -37,7 +35,6 @@ class TestFrameHeaderSize(TestCase):
         self.assertEqual(zstd.frame_header_size(b"long enough but no magic"), 6)
 
 
-@make_cffi
 class TestFrameContentSize(TestCase):
     def test_empty(self):
         with self.assertRaisesRegex(
@@ -76,7 +73,6 @@ class TestFrameContentSize(TestCase):
         self.assertEqual(zstd.frame_content_size(frame), 6)
 
 
-@make_cffi
 class TestDecompressor(TestCase):
     def test_memory_size(self):
         dctx = zstd.ZstdDecompressor()
@@ -84,7 +80,6 @@ class TestDecompressor(TestCase):
         self.assertGreater(dctx.memory_size(), 100)
 
 
-@make_cffi
 class TestDecompressor_decompress(TestCase):
     def test_empty_input(self):
         dctx = zstd.ZstdDecompressor()
@@ -240,7 +235,6 @@ class TestDecompressor_decompress(TestCase):
             dctx.decompress(frame, max_output_size=len(source))
 
 
-@make_cffi
 class TestDecompressor_copy_stream(TestCase):
     def test_no_read(self):
         source = object()
@@ -303,7 +297,6 @@ class TestDecompressor_copy_stream(TestCase):
         self.assertEqual(dest._write_count, len(dest.getvalue()))
 
 
-@make_cffi
 class TestDecompressor_stream_reader(TestCase):
     def test_context_manager(self):
         dctx = zstd.ZstdDecompressor()
@@ -787,7 +780,6 @@ class TestDecompressor_stream_reader(TestCase):
         self.assertEqual(b"".join(lines), source)
 
 
-@make_cffi
 class TestDecompressor_decompressobj(TestCase):
     def test_simple(self):
         data = zstd.ZstdCompressor(level=1).compress(b"foobar")
@@ -860,7 +852,6 @@ def decompress_via_writer(data):
     return buffer.getvalue()
 
 
-@make_cffi
 class TestDecompressor_stream_writer(TestCase):
     def test_io_api(self):
         buffer = io.BytesIO()
@@ -1122,7 +1113,6 @@ class TestDecompressor_stream_writer(TestCase):
         self.assertEqual(dest._write_count, len(dest.getvalue()))
 
 
-@make_cffi
 class TestDecompressor_read_to_iter(TestCase):
     def test_type_validation(self):
         dctx = zstd.ZstdDecompressor()
@@ -1348,7 +1338,6 @@ class TestDecompressor_read_to_iter(TestCase):
         self.assertEqual(res, b"foobar")
 
 
-@make_cffi
 class TestDecompressor_content_dict_chain(TestCase):
     def test_bad_inputs_simple(self):
         dctx = zstd.ZstdDecompressor()

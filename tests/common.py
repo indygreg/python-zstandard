@@ -1,8 +1,5 @@
-import imp
-import inspect
 import io
 import os
-import types
 import unittest
 
 try:
@@ -14,85 +11,6 @@ except ImportError:
 class TestCase(unittest.TestCase):
     if not getattr(unittest.TestCase, "assertRaisesRegex", False):
         assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
-
-
-def make_cffi(cls):
-    """Decorator to add CFFI versions of each test method."""
-
-    # The module containing this class definition should
-    # `import zstandard as zstd`. Otherwise things may blow up.
-    mod = inspect.getmodule(cls)
-    if not hasattr(mod, "zstd"):
-        raise Exception('test module does not contain "zstd" symbol')
-
-    if not hasattr(mod.zstd, "backend"):
-        raise Exception(
-            'zstd symbol does not have "backend" attribute; did '
-            "you `import zstandard as zstd`?"
-        )
-
-    # If `import zstandard` already chose the cffi backend, there is nothing
-    # for us to do: we only add the cffi variation if the default backend
-    # is the C extension.
-    if mod.zstd.backend == "cffi":
-        return cls
-
-    old_env = dict(os.environ)
-    os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "cffi"
-    try:
-        try:
-            mod_info = imp.find_module("zstandard")
-            mod = imp.load_module("zstandard_cffi", *mod_info)
-        except ImportError:
-            return cls
-    finally:
-        os.environ.clear()
-        os.environ.update(old_env)
-
-    if mod.backend != "cffi":
-        raise Exception(
-            "got the zstandard %s backend instead of cffi" % mod.backend
-        )
-
-    # If CFFI version is available, dynamically construct test methods
-    # that use it.
-
-    for attr in dir(cls):
-        fn = getattr(cls, attr)
-        if not inspect.ismethod(fn) and not inspect.isfunction(fn):
-            continue
-
-        if not fn.__name__.startswith("test_"):
-            continue
-
-        name = "%s_cffi" % fn.__name__
-
-        # Replace the "zstd" symbol with the CFFI module instance. Then copy
-        # the function object and install it in a new attribute.
-        if isinstance(fn, types.FunctionType):
-            globs = dict(fn.__globals__)
-            globs["zstd"] = mod
-            new_fn = types.FunctionType(
-                fn.__code__, globs, name, fn.__defaults__, fn.__closure__
-            )
-            new_method = new_fn
-        else:
-            globs = dict(fn.__func__.func_globals)
-            globs["zstd"] = mod
-            new_fn = types.FunctionType(
-                fn.__func__.func_code,
-                globs,
-                name,
-                fn.__func__.func_defaults,
-                fn.__func__.func_closure,
-            )
-            new_method = types.UnboundMethodType(
-                new_fn, fn.im_self, fn.im_class
-            )
-
-        setattr(cls, name, new_method)
-
-    return cls
 
 
 class NonClosingBytesIO(io.BytesIO):

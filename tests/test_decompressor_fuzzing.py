@@ -11,7 +11,6 @@ except ImportError:
 import zstandard as zstd
 
 from .common import (
-    make_cffi,
     NonClosingBytesIO,
     random_input_data,
     TestCase,
@@ -19,7 +18,6 @@ from .common import (
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-@make_cffi
 class TestDecompressor_stream_reader_fuzzing(TestCase):
     @hypothesis.settings(
         suppress_health_check=[
@@ -386,7 +384,6 @@ class TestDecompressor_stream_reader_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-@make_cffi
 class TestDecompressor_stream_writer_fuzzing(TestCase):
     @hypothesis.settings(
         suppress_health_check=[
@@ -423,7 +420,6 @@ class TestDecompressor_stream_writer_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-@make_cffi
 class TestDecompressor_copy_stream_fuzzing(TestCase):
     @hypothesis.settings(
         suppress_health_check=[
@@ -455,7 +451,6 @@ class TestDecompressor_copy_stream_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-@make_cffi
 class TestDecompressor_decompressobj_fuzzing(TestCase):
     @hypothesis.settings(
         suppress_health_check=[
@@ -527,7 +522,6 @@ class TestDecompressor_decompressobj_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-@make_cffi
 class TestDecompressor_read_to_iter_fuzzing(TestCase):
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
