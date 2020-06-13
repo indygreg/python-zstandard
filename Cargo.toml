@@ -12,6 +12,14 @@ name = "zstandard_oxidized"
 crate-type = ["cdylib"]
 path = "rust-ext/src/lib.rs"
 
+[dependencies.zstd-safe]
+version = "2.0.4"
+features = ["experimental"]
+
+[dependencies.zstd-sys]
+version = "1.4.16"
+features = ["experimental"]
+
 [dependencies.cpython]
 version = "0.5"
 features = ["extension-module"]
