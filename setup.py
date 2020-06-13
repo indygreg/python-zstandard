@@ -46,6 +46,9 @@ import setup_zstd
 SUPPORT_LEGACY = False
 SYSTEM_ZSTD = False
 WARNINGS_AS_ERRORS = False
+C_BACKEND = True
+CFFI_BACKEND = True
+RUST_BACKEND = False
 
 if os.environ.get("ZSTD_WARNINGS_AS_ERRORS", ""):
     WARNINGS_AS_ERRORS = True
@@ -62,20 +65,38 @@ if "--warnings-as-errors" in sys.argv:
     WARNINGS_AS_ERRORS = True
     sys.argv.remove("--warning-as-errors")
 
+if "--no-c-backend" in sys.argv:
+    C_BACKEND = False
+    sys.argv.remove("--no-c-backend")
+
+if "--no-cffi-backend" in sys.argv:
+    CFFI_BACKEND = False
+    sys.argv.remove("--no-cffi-backend")
+
+if "--rust-backend" in sys.argv:
+    RUST_BACKEND = True
+    sys.argv.remove("--rust-backend")
+
 # Code for obtaining the Extension instance is in its own module to
 # facilitate reuse in other projects.
-extensions = [
-    setup_zstd.get_c_extension(
-        name="zstd",
-        support_legacy=SUPPORT_LEGACY,
-        system_zstd=SYSTEM_ZSTD,
-        warnings_as_errors=WARNINGS_AS_ERRORS,
-    ),
-]
+extensions = []
+
+if C_BACKEND:
+    extensions.append(
+        setup_zstd.get_c_extension(
+            name="zstd",
+            support_legacy=SUPPORT_LEGACY,
+            system_zstd=SYSTEM_ZSTD,
+            warnings_as_errors=WARNINGS_AS_ERRORS,
+        )
+    )
+
+if RUST_BACKEND:
+    extensions.append(setup_zstd.get_rust_extension())
 
 install_requires = []
 
-if cffi:
+if CFFI_BACKEND and cffi:
     import make_cffi
 
     extensions.append(make_cffi.ffi.distutils_extension())
@@ -119,6 +140,7 @@ setup(
     keywords="zstandard zstd compression",
     packages=["zstandard"],
     ext_modules=extensions,
+    cmdclass={"build_ext": setup_zstd.RustBuildExt},
     test_suite="tests",
     install_requires=install_requires,
     tests_require=["hypothesis"],

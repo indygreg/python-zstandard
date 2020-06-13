@@ -5,9 +5,12 @@
 # of the BSD license. See the LICENSE file for details.
 
 import distutils.ccompiler
+import distutils.command.build_ext
+import distutils.extension
 import os
-
-from distutils.extension import Extension
+import shutil
+import subprocess
+import sys
 
 
 zstd_sources = [
@@ -201,7 +204,7 @@ def get_c_extension(
     depends = [os.path.relpath(p, root) for p in depends]
 
     # TODO compile with optimizations.
-    return Extension(
+    return distutils.extension.Extension(
         name,
         sources,
         include_dirs=include_dirs,
@@ -209,3 +212,63 @@ def get_c_extension(
         extra_compile_args=extra_args,
         libraries=libraries,
     )
+
+
+class RustExtension(distutils.extension.Extension):
+    def __init__(self, name, root):
+        super().__init__(name, [])
+
+        self.root = root
+
+        self.depends.extend(
+            [
+                os.path.join(root, "Cargo.toml"),
+                os.path.join(root, "rust-ext", "src", "lib.rs"),
+            ]
+        )
+
+    def build(self, build_dir, get_ext_path_fn):
+        env = os.environ.copy()
+        env["PYTHON_SYS_EXECUTABLE"] = sys.executable
+
+        args = [
+            "cargo",
+            "build",
+            "--release",
+            "--target-dir",
+            str(build_dir),
+        ]
+
+        subprocess.run(args, env=env, cwd=self.root, check=True)
+
+        dest_path = get_ext_path_fn(self.name)
+
+        if os.name == "nt":
+            rust_lib_filename = "%s.dll" % self.name
+        elif sys.platform == "darwin":
+            rust_lib_filename = "lib%s.dylib" % self.name
+        else:
+            rust_lib_filename = "lib%s.so" % self.name
+
+        rust_lib = os.path.join(build_dir, "release", rust_lib_filename)
+        os.makedirs(os.path.dirname(rust_lib), exist_ok=True)
+
+        shutil.copy2(rust_lib, dest_path)
+
+
+class RustBuildExt(distutils.command.build_ext.build_ext):
+    def build_extension(self, ext):
+        if isinstance(ext, RustExtension):
+            ext.build(
+                build_dir=os.path.abspath(self.build_temp),
+                get_ext_path_fn=self.get_ext_fullpath,
+            )
+        else:
+            super().build_extension(ext)
+
+
+def get_rust_extension(root=None,):
+    actual_root = os.path.abspath(os.path.dirname(__file__))
+    root = root or actual_root
+
+    return RustExtension("zstandard_oxidized", root)
