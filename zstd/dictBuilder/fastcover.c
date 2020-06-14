@@ -222,30 +222,37 @@ static int FASTCOVER_checkParameters(ZDICT_cover_params_t parameters,
                                      unsigned accel) {
   /* k, d, and f are required parameters */
   if (parameters.d == 0 || parameters.k == 0) {
+    DISPLAYLEVEL(1, "d or k is 0\n");
     return 0;
   }
   /* d has to be 6 or 8 */
   if (parameters.d != 6 && parameters.d != 8) {
+    DISPLAYLEVEL(1, "d is not 6 or 8\n");
     return 0;
   }
   /* k <= maxDictSize */
   if (parameters.k > maxDictSize) {
+    DISPLAYLEVEL(1, "k > maxDictSize\n");
     return 0;
   }
   /* d <= k */
   if (parameters.d > parameters.k) {
+    DISPLAYLEVEL(1, "d > k\n");
     return 0;
   }
   /* 0 < f <= FASTCOVER_MAX_F*/
   if (f > FASTCOVER_MAX_F || f == 0) {
+    DISPLAYLEVEL(1, "f not in range\n");
     return 0;
   }
   /* 0 < splitPoint <= 1 */
   if (parameters.splitPoint <= 0 || parameters.splitPoint > 1) {
+    DISPLAYLEVEL(1, "splitPoint not in range\n");
     return 0;
   }
   /* 0 < accel <= 10 */
   if (accel > 10 || accel == 0) {
+    DISPLAYLEVEL(1, "accel not in range\n");
     return 0;
   }
   return 1;
