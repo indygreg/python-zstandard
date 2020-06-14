@@ -12,13 +12,22 @@ name = "zstandard_oxidized"
 crate-type = ["cdylib"]
 path = "rust-ext/src/lib.rs"
 
+[dependencies]
+libc = "0.2"
+num_cpus = "1"
+python3-sys = "0.5"
+
 [dependencies.zstd-safe]
-version = "2.0.4"
-features = ["experimental"]
+#version = "2.0.4"
+git = "https://github.com/gyscos/zstd-rs.git"
+rev = "65369fc477346223fe7ec2fecfdcb7e22e6ce0a9"
+features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.zstd-sys]
-version = "1.4.16"
-features = ["experimental"]
+#version = "1.4.16"
+git = "https://github.com/gyscos/zstd-rs.git"
+rev = "65369fc477346223fe7ec2fecfdcb7e22e6ce0a9"
+features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.cpython]
 version = "0.5"
