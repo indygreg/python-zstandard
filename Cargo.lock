@@ -227,7 +227,7 @@ checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
 [[package]]
 name = "zstd-safe"
 version = "2.0.4+zstd.1.4.5"
-source = "git+https://github.com/gyscos/zstd-rs.git?rev=65369fc477346223fe7ec2fecfdcb7e22e6ce0a9#65369fc477346223fe7ec2fecfdcb7e22e6ce0a9"
+source = "git+https://github.com/indygreg/zstd-rs.git?rev=2f70a50ac5eddc716d356694de9ed46f6b6b37bb#2f70a50ac5eddc716d356694de9ed46f6b6b37bb"
 dependencies = [
  "libc",
  "zstd-sys",
@@ -236,7 +236,7 @@ dependencies = [
 [[package]]
 name = "zstd-sys"
 version = "1.4.16+zstd.1.4.5"
-source = "git+https://github.com/gyscos/zstd-rs.git?rev=65369fc477346223fe7ec2fecfdcb7e22e6ce0a9#65369fc477346223fe7ec2fecfdcb7e22e6ce0a9"
+source = "git+https://github.com/indygreg/zstd-rs.git?rev=2f70a50ac5eddc716d356694de9ed46f6b6b37bb#2f70a50ac5eddc716d356694de9ed46f6b6b37bb"
 dependencies = [
  "cc",
  "glob",

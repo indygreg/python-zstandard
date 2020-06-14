@@ -12,6 +12,59 @@ use cpython::{
 };
 use libc::c_int;
 
+/// Resolve the value of a compression context parameter.
+pub(crate) fn get_cctx_parameter(
+    py: Python,
+    params: *mut zstd_sys::ZSTD_CCtx_params,
+    param: zstd_sys::ZSTD_cParameter,
+) -> Result<libc::c_int, PyErr> {
+    let mut value: libc::c_int = 0;
+
+    let zresult =
+        unsafe { zstd_sys::ZSTD_CCtxParams_getParameter(params, param, &mut value as *mut _) };
+
+    if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+        Err(ZstdError::from_message(
+            py,
+            format!(
+                "unable to retrieve parameter: {}",
+                zstd_safe::get_error_name(zresult)
+            )
+            .as_ref(),
+        ))
+    } else {
+        Ok(value)
+    }
+}
+
+// Surely there is a better way...
+pub(crate) fn int_to_strategy(py: Python, value: u32) -> Result<zstd_sys::ZSTD_strategy, PyErr> {
+    if zstd_sys::ZSTD_strategy::ZSTD_fast as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_fast)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_dfast as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_dfast)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_greedy as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_greedy)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_lazy as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_lazy)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_lazy2 as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_lazy2)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_btlazy2 as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_btlazy2)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_btopt as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_btopt)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_btultra as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_btultra)
+    } else if zstd_sys::ZSTD_strategy::ZSTD_btultra2 as u32 == value {
+        Ok(zstd_sys::ZSTD_strategy::ZSTD_btultra2)
+    } else {
+        Err(PyErr::new::<ValueError, _>(
+            py,
+            "unknown compression strategy",
+        ))
+    }
+}
+
 unsafe extern "C" fn destroy_cctx_params(o: *mut python3_sys::PyObject) {
     let ptr =
         python3_sys::PyCapsule_GetPointer(o, std::ptr::null()) as *mut zstd_sys::ZSTD_CCtx_params;
@@ -19,7 +72,7 @@ unsafe extern "C" fn destroy_cctx_params(o: *mut python3_sys::PyObject) {
     zstd_sys::ZSTD_freeCCtxParams(ptr);
 }
 
-py_class!(class ZstdCompressionParameters |py| {
+py_class!(pub class ZstdCompressionParameters |py| {
     data params: PyCapsule;
 
     @classmethod def from_level(cls, *args, **kwargs) -> PyResult<PyObject> {
@@ -130,6 +183,17 @@ py_class!(class ZstdCompressionParameters |py| {
 });
 
 impl ZstdCompressionParameters {
+    pub(crate) fn get_raw_parameters(&self, py: Python) -> *mut zstd_sys::ZSTD_CCtx_params {
+        let capsule: &PyCapsule = self.params(py);
+
+        let params = unsafe {
+            python3_sys::PyCapsule_GetPointer(capsule.as_object().as_ptr(), std::ptr::null())
+                as *mut zstd_sys::ZSTD_CCtx_params
+        };
+
+        params
+    }
+
     fn from_level_impl(py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<PyObject> {
         if args.len(py) != 1 {
             return Err(PyErr::new::<TypeError, _>(
@@ -249,12 +313,7 @@ impl ZstdCompressionParameters {
 
     /// Set parameters from a dictionary of options.
     fn set_parameters(&self, py: Python, kwargs: &PyDict) -> PyResult<()> {
-        let capsule: &PyCapsule = self.params(py);
-
-        let params = unsafe {
-            python3_sys::PyCapsule_GetPointer(capsule.as_object().as_ptr(), std::ptr::null())
-                as *mut zstd_sys::ZSTD_CCtx_params
-        };
+        let params = self.get_raw_parameters(py);
 
         unsafe {
             zstd_sys::ZSTD_CCtxParams_reset(params);
@@ -449,12 +508,7 @@ impl ZstdCompressionParameters {
     }
 
     fn get_parameter(&self, py: Python, param: zstd_sys::ZSTD_cParameter) -> PyResult<PyObject> {
-        let capsule: &PyCapsule = self.params(py);
-
-        let params = unsafe {
-            python3_sys::PyCapsule_GetPointer(capsule.as_object().as_ptr(), std::ptr::null())
-                as *mut zstd_sys::ZSTD_CCtx_params
-        };
+        let params = self.get_raw_parameters(py);
 
         let mut value: c_int = 0;
 

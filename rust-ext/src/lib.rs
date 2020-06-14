@@ -6,6 +6,7 @@
 
 use cpython::{py_module_initializer, PyModule, PyResult, Python};
 
+mod compression_dict;
 mod compression_parameters;
 mod compressor;
 mod constants;
@@ -19,6 +20,7 @@ const VERSION: &'static str = "0.15.0.dev0";
 py_module_initializer!(zstandard_oxidized, |py, m| { init_module(py, m) });
 
 fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
+    crate::compression_dict::init_module(py, module)?;
     crate::compression_parameters::init_module(py, module)?;
     crate::compressor::init_module(py, module)?;
     crate::constants::init_module(py, module)?;
