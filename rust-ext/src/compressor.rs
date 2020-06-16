@@ -4,6 +4,8 @@
 // This software may be modified and distributed under the terms
 // of the BSD license. See the LICENSE file for details.
 
+use crate::compression_dict::ZstdCompressionDict;
+use crate::compression_parameters::ZstdCompressionParameters;
 use cpython::exc::ValueError;
 use cpython::{py_class, PyErr, PyModule, PyObject, PyResult, Python, PythonObject};
 
@@ -11,8 +13,8 @@ py_class!(class ZstdCompressor |py| {
     def __new__(
         _cls,
         level: i32 = 3,
-        dict_data: Option<PyObject> = None,
-        compression_params: Option<PyObject> = None,
+        dict_data: Option<ZstdCompressionDict> = None,
+        compression_params: Option<ZstdCompressionParameters> = None,
         write_checksum: Option<bool> = None,
         write_content_size: Option<bool> = None,
         write_dict_id: Option<bool> = None,
@@ -35,8 +37,8 @@ impl ZstdCompressor {
     fn new_impl(
         py: Python,
         level: i32,
-        _dict_data: Option<PyObject>,
-        _compression_params: Option<PyObject>,
+        _dict_data: Option<ZstdCompressionDict>,
+        _compression_params: Option<ZstdCompressionParameters>,
         _write_checksum: Option<bool>,
         _write_content_size: Option<bool>,
         _write_dict_id: Option<bool>,

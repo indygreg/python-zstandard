@@ -32,7 +32,7 @@ unsafe impl<'a> Send for CDict<'a> {}
 unsafe impl<'a> Sync for CDict<'a> {}
 
 /// Holds state for a ZstdCompressionDict.
-struct DictState {
+pub struct DictState {
     /// Internal format of dictionary data.
     content_type: zstd_sys::ZSTD_dictContentType_e,
     /// Raw dictionary data.
@@ -47,7 +47,7 @@ struct DictState {
     cdict: Option<CDict<'static>>,
 }
 
-py_class!(class ZstdCompressionDict |py| {
+py_class!(pub class ZstdCompressionDict |py| {
     data state: RefCell<DictState>;
 
     def __new__(_cls, data: PyObject, dict_type: Option<u32> = None
