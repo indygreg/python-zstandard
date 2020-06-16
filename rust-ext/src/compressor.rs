@@ -4,8 +4,8 @@
 // This software may be modified and distributed under the terms
 // of the BSD license. See the LICENSE file for details.
 
-use crate::ZstdError;
-use cpython::{py_class, PyModule, PyObject, PyResult, Python, PythonObject};
+use cpython::exc::ValueError;
+use cpython::{py_class, PyErr, PyModule, PyObject, PyResult, Python, PythonObject};
 
 py_class!(class ZstdCompressor |py| {
     def __new__(
@@ -43,13 +43,12 @@ impl ZstdCompressor {
         _threads: Option<i32>,
     ) -> PyResult<PyObject> {
         if level > zstd_safe::max_c_level() {
-            return Err(ZstdError::from_message(
+            return Err(PyErr::new::<ValueError, _>(
                 py,
                 format!(
                     "level must be less than {}",
-                    zstd_safe::max_c_level() as i32
-                )
-                .as_ref(),
+                    zstd_safe::max_c_level() as i32 + 1
+                ),
             ));
         }
 
