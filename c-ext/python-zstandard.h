@@ -6,6 +6,9 @@
 * of the BSD license. See the LICENSE file for details.
 */
 
+#ifndef PYTHON_ZSTANDARD_H
+#define PYTHON_ZSTANDARD_H
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "structmember.h"
@@ -357,3 +360,5 @@ Py_ssize_t BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection*
 int cpu_count(void);
 size_t roundpow2(size_t);
 int safe_pybytes_resize(PyObject** obj, Py_ssize_t size);
+
+#endif
