@@ -956,12 +956,12 @@ typedef struct {
 } DecompressorDestBuffer;
 
 typedef enum {
-	WorkerError_none = 0,
-	WorkerError_zstd = 1,
-	WorkerError_memory = 2,
-	WorkerError_sizeMismatch = 3,
-	WorkerError_unknownSize = 4,
-} WorkerError;
+	DecompressorWorkerError_none = 0,
+	DecompressorWorkerError_zstd = 1,
+	DecompressorWorkerError_memory = 2,
+	DecompressorWorkerError_sizeMismatch = 3,
+	DecompressorWorkerError_unknownSize = 4,
+} DecompressorWorkerError;
 
 typedef struct {
 	/* Source records and length */
@@ -982,7 +982,7 @@ typedef struct {
 	/* Item that error occurred on. */
 	Py_ssize_t errorOffset;
 	/* If an error occurred. */
-	WorkerError error;
+	DecompressorWorkerError error;
 	/* result from zstd decompression operation */
 	size_t zresult;
 } WorkerState;
@@ -1007,7 +1007,7 @@ static void decompress_worker(WorkerState* state) {
 	/* We could get here due to the way work is allocated. Ideally we wouldn't
 	   get here. But that would require a bit of a refactor in the caller. */
 	if (state->totalSourceSize > SIZE_MAX) {
-		state->error = WorkerError_memory;
+		state->error = DecompressorWorkerError_memory;
 		state->errorOffset = 0;
 		return;
 	}
@@ -1033,13 +1033,13 @@ static void decompress_worker(WorkerState* state) {
 			decompressedSize = ZSTD_getFrameContentSize(fp->sourceData, fp->sourceSize);
 
 			if (ZSTD_CONTENTSIZE_ERROR == decompressedSize) {
-				state->error = WorkerError_unknownSize;
+				state->error = DecompressorWorkerError_unknownSize;
 				state->errorOffset = frameIndex;
 				return;
 			}
 			else if (ZSTD_CONTENTSIZE_UNKNOWN == decompressedSize) {
 				if (state->requireOutputSizes) {
-					state->error = WorkerError_unknownSize;
+					state->error = DecompressorWorkerError_unknownSize;
 					state->errorOffset = frameIndex;
 					return;
 				}
@@ -1049,7 +1049,7 @@ static void decompress_worker(WorkerState* state) {
 			}
 
 			if (decompressedSize > SIZE_MAX) {
-				state->error = WorkerError_memory;
+				state->error = DecompressorWorkerError_memory;
 				state->errorOffset = frameIndex;
 				return;
 			}
@@ -1062,7 +1062,7 @@ static void decompress_worker(WorkerState* state) {
 
 	state->destBuffers = calloc(1, sizeof(DecompressorDestBuffer));
 	if (NULL == state->destBuffers) {
-		state->error = WorkerError_memory;
+		state->error = DecompressorWorkerError_memory;
 		return;
 	}
 
@@ -1080,7 +1080,7 @@ static void decompress_worker(WorkerState* state) {
 
 	destBuffer->dest = malloc(allocationSize);
 	if (NULL == destBuffer->dest) {
-		state->error = WorkerError_memory;
+		state->error = DecompressorWorkerError_memory;
 		return;
 	}
 
@@ -1089,7 +1089,7 @@ static void decompress_worker(WorkerState* state) {
 	destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 	if (NULL == destBuffer->segments) {
 		/* Caller will free state->dest as part of cleanup. */
-		state->error = WorkerError_memory;
+		state->error = DecompressorWorkerError_memory;
 		return;
 	}
 
@@ -1118,7 +1118,7 @@ static void decompress_worker(WorkerState* state) {
 			if (destAvailable) {
 				tmpBuf = realloc(destBuffer->dest, destOffset);
 				if (NULL == tmpBuf) {
-					state->error = WorkerError_memory;
+					state->error = DecompressorWorkerError_memory;
 					return;
 				}
 
@@ -1130,7 +1130,7 @@ static void decompress_worker(WorkerState* state) {
 			tmpBuf = realloc(destBuffer->segments,
 				(frameIndex - currentBufferStartIndex) * sizeof(BufferSegment));
 			if (NULL == tmpBuf) {
-				state->error = WorkerError_memory;
+				state->error = DecompressorWorkerError_memory;
 				return;
 			}
 
@@ -1140,7 +1140,7 @@ static void decompress_worker(WorkerState* state) {
 			/* Grow space for new DestBuffer. */
 			tmpBuf = realloc(state->destBuffers, (state->destCount + 1) * sizeof(DecompressorDestBuffer));
 			if (NULL == tmpBuf) {
-				state->error = WorkerError_memory;
+				state->error = DecompressorWorkerError_memory;
 				return;
 			}
 
@@ -1160,7 +1160,7 @@ static void decompress_worker(WorkerState* state) {
 
 			destBuffer->dest = malloc(allocationSize);
 			if (NULL == destBuffer->dest) {
-				state->error = WorkerError_memory;
+				state->error = DecompressorWorkerError_memory;
 				return;
 			}
 
@@ -1171,7 +1171,7 @@ static void decompress_worker(WorkerState* state) {
 
 			destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 			if (NULL == destBuffer->segments) {
-				state->error = WorkerError_memory;
+				state->error = DecompressorWorkerError_memory;
 				return;
 			}
 
@@ -1191,13 +1191,13 @@ static void decompress_worker(WorkerState* state) {
 
 		zresult = ZSTD_decompressStream(state->dctx, &outBuffer, &inBuffer);
 		if (ZSTD_isError(zresult)) {
-			state->error = WorkerError_zstd;
+			state->error = DecompressorWorkerError_zstd;
 			state->zresult = zresult;
 			state->errorOffset = frameIndex;
 			return;
 		}
 		else if (zresult || outBuffer.pos != decompressedSize) {
-			state->error = WorkerError_sizeMismatch;
+			state->error = DecompressorWorkerError_sizeMismatch;
 			state->zresult = outBuffer.pos;
 			state->errorOffset = frameIndex;
 			return;
@@ -1213,7 +1213,7 @@ static void decompress_worker(WorkerState* state) {
 	if (destBuffer->destSize > destOffset) {
 		tmpBuf = realloc(destBuffer->dest, destOffset);
 		if (NULL == tmpBuf) {
-			state->error = WorkerError_memory;
+			state->error = DecompressorWorkerError_memory;
 			return;
 		}
 
@@ -1362,28 +1362,28 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 	for (i = 0; i < threadCount; i++) {
 		switch (workerStates[i].error) {
-		case WorkerError_none:
+		case DecompressorWorkerError_none:
 			break;
 
-		case WorkerError_zstd:
+		case DecompressorWorkerError_zstd:
 			PyErr_Format(ZstdError, "error decompressing item %zd: %s",
 				workerStates[i].errorOffset, ZSTD_getErrorName(workerStates[i].zresult));
 			errored = 1;
 			break;
 
-		case WorkerError_memory:
+		case DecompressorWorkerError_memory:
 			PyErr_NoMemory();
 			errored = 1;
 			break;
 
-		case WorkerError_sizeMismatch:
+		case DecompressorWorkerError_sizeMismatch:
 			PyErr_Format(ZstdError, "error decompressing item %zd: decompressed %zu bytes; expected %zu",
 				workerStates[i].errorOffset, workerStates[i].zresult,
 				framePointers[workerStates[i].errorOffset].destSize);
 			errored = 1;
 			break;
 
-		case WorkerError_unknownSize:
+		case DecompressorWorkerError_unknownSize:
 			PyErr_Format(PyExc_ValueError, "could not determine decompressed size of item %zd",
 				workerStates[i].errorOffset);
 			errored = 1;

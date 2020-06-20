@@ -916,11 +916,11 @@ typedef struct {
 } CompressorDestBuffer;
 
 typedef enum {
-	WorkerError_none = 0,
-	WorkerError_zstd = 1,
-	WorkerError_no_memory = 2,
-	WorkerError_nospace = 3,
-} WorkerError;
+	CompressorWorkerError_none = 0,
+	CompressorWorkerError_zstd = 1,
+	CompressorWorkerError_no_memory = 2,
+	CompressorWorkerError_nospace = 3,
+} CompressorWorkerError;
 
 /**
  * Holds state for an individual worker performing multi_compress_to_buffer work.
@@ -941,7 +941,7 @@ typedef struct {
 	Py_ssize_t destCount;
 
 	/* Error tracking. */
-	WorkerError error;
+	CompressorWorkerError error;
 	size_t zresult;
 	Py_ssize_t errorOffset;
 } WorkerState;
@@ -985,7 +985,7 @@ static void compress_worker(WorkerState* state) {
 
 	state->destBuffers = calloc(1, sizeof(CompressorDestBuffer));
 	if (NULL == state->destBuffers) {
-		state->error = WorkerError_no_memory;
+		state->error = CompressorWorkerError_no_memory;
 		return;
 	}
 
@@ -997,7 +997,7 @@ static void compress_worker(WorkerState* state) {
 	 */
 	destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 	if (NULL == destBuffer->segments) {
-		state->error = WorkerError_no_memory;
+		state->error = CompressorWorkerError_no_memory;
 		return;
 	}
 
@@ -1015,7 +1015,7 @@ static void compress_worker(WorkerState* state) {
 
 	destBuffer->dest = malloc(allocationSize);
 	if (NULL == destBuffer->dest) {
-		state->error = WorkerError_no_memory;
+		state->error = CompressorWorkerError_no_memory;
 		return;
 	}
 
@@ -1044,7 +1044,7 @@ static void compress_worker(WorkerState* state) {
 			if (destAvailable) {
 				newDest = realloc(destBuffer->dest, destOffset);
 				if (NULL == newDest) {
-					state->error = WorkerError_no_memory;
+					state->error = CompressorWorkerError_no_memory;
 					return;
 				}
 
@@ -1056,7 +1056,7 @@ static void compress_worker(WorkerState* state) {
 			newDest = realloc(destBuffer->segments,
 				(inputOffset - currentBufferStartOffset + 1) * sizeof(BufferSegment));
 			if (NULL == newDest) {
-				state->error = WorkerError_no_memory;
+				state->error = CompressorWorkerError_no_memory;
 				return;
 			}
 
@@ -1067,7 +1067,7 @@ static void compress_worker(WorkerState* state) {
 			/* TODO consider over-allocating so we don't do this every time. */
 			newDest = realloc(state->destBuffers, (state->destCount + 1) * sizeof(CompressorDestBuffer));
 			if (NULL == newDest) {
-				state->error = WorkerError_no_memory;
+				state->error = CompressorWorkerError_no_memory;
 				return;
 			}
 
@@ -1092,7 +1092,7 @@ static void compress_worker(WorkerState* state) {
 
 			destBuffer->dest = malloc(allocationSize);
 			if (NULL == destBuffer->dest) {
-				state->error = WorkerError_no_memory;
+				state->error = CompressorWorkerError_no_memory;
 				return;
 			}
 
@@ -1102,7 +1102,7 @@ static void compress_worker(WorkerState* state) {
 
 			destBuffer->segments = calloc(remainingItems, sizeof(BufferSegment));
 			if (NULL == destBuffer->segments) {
-				state->error = WorkerError_no_memory;
+				state->error = CompressorWorkerError_no_memory;
 				return;
 			}
 
@@ -1122,7 +1122,7 @@ static void compress_worker(WorkerState* state) {
 
 		zresult = ZSTD_CCtx_setPledgedSrcSize(state->cctx, sourceSize);
 		if (ZSTD_isError(zresult)) {
-			state->error = WorkerError_zstd;
+			state->error = CompressorWorkerError_zstd;
 			state->zresult = zresult;
 			state->errorOffset = inputOffset;
 			break;
@@ -1130,13 +1130,13 @@ static void compress_worker(WorkerState* state) {
 
 		zresult = ZSTD_compressStream2(state->cctx, &opOutBuffer, &opInBuffer, ZSTD_e_end);
 		if (ZSTD_isError(zresult)) {
-			state->error = WorkerError_zstd;
+			state->error = CompressorWorkerError_zstd;
 			state->zresult = zresult;
 			state->errorOffset = inputOffset;
 			break;
 		}
 		else if (zresult) {
-			state->error = WorkerError_nospace;
+			state->error = CompressorWorkerError_nospace;
 			state->errorOffset = inputOffset;
 			break;
 		}
@@ -1151,7 +1151,7 @@ static void compress_worker(WorkerState* state) {
 	if (destBuffer->destSize > destOffset) {
 		newDest = realloc(destBuffer->dest, destOffset);
 		if (NULL == newDest) {
-			state->error = WorkerError_no_memory;
+			state->error = CompressorWorkerError_no_memory;
 			return;
 		}
 
@@ -1303,18 +1303,18 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 
 	for (i = 0; i < threadCount; i++) {
 		switch (workerStates[i].error) {
-		case WorkerError_no_memory:
+		case CompressorWorkerError_no_memory:
 			PyErr_NoMemory();
 			errored = 1;
 			break;
 
-		case WorkerError_zstd:
+		case CompressorWorkerError_zstd:
 			PyErr_Format(ZstdError, "error compressing item %zd: %s",
 				workerStates[i].errorOffset, ZSTD_getErrorName(workerStates[i].zresult));
 			errored = 1;
 			break;
 
-		case WorkerError_nospace:
+		case CompressorWorkerError_nospace:
 			PyErr_Format(ZstdError, "error compressing item %zd: not enough space in output",
 				workerStates[i].errorOffset);
 			errored = 1;
