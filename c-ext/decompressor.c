@@ -953,7 +953,7 @@ typedef struct {
 	Py_ssize_t destSize;
 	BufferSegment* segments;
 	Py_ssize_t segmentsSize;
-} DestBuffer;
+} DecompressorDestBuffer;
 
 typedef enum {
 	WorkerError_none = 0,
@@ -976,7 +976,7 @@ typedef struct {
 	int requireOutputSizes;
 
 	/* Output storage. */
-	DestBuffer* destBuffers;
+	DecompressorDestBuffer* destBuffers;
 	Py_ssize_t destCount;
 
 	/* Item that error occurred on. */
@@ -989,7 +989,7 @@ typedef struct {
 
 static void decompress_worker(WorkerState* state) {
 	size_t allocationSize;
-	DestBuffer* destBuffer;
+	DecompressorDestBuffer* destBuffer;
 	Py_ssize_t frameIndex;
 	Py_ssize_t localOffset = 0;
 	Py_ssize_t currentBufferStartIndex = state->startOffset;
@@ -1060,7 +1060,7 @@ static void decompress_worker(WorkerState* state) {
 		totalOutputSize += fp->destSize;
 	}
 
-	state->destBuffers = calloc(1, sizeof(DestBuffer));
+	state->destBuffers = calloc(1, sizeof(DecompressorDestBuffer));
 	if (NULL == state->destBuffers) {
 		state->error = WorkerError_memory;
 		return;
@@ -1138,7 +1138,7 @@ static void decompress_worker(WorkerState* state) {
 			destBuffer->segmentsSize = frameIndex - currentBufferStartIndex;
 
 			/* Grow space for new DestBuffer. */
-			tmpBuf = realloc(state->destBuffers, (state->destCount + 1) * sizeof(DestBuffer));
+			tmpBuf = realloc(state->destBuffers, (state->destCount + 1) * sizeof(DecompressorDestBuffer));
 			if (NULL == tmpBuf) {
 				state->error = WorkerError_memory;
 				return;
@@ -1150,7 +1150,7 @@ static void decompress_worker(WorkerState* state) {
 			destBuffer = &state->destBuffers[state->destCount - 1];
 
 			/* Don't take any chances will non-NULL pointers. */
-			memset(destBuffer, 0, sizeof(DestBuffer));
+			memset(destBuffer, 0, sizeof(DecompressorDestBuffer));
 
 			allocationSize = roundpow2((size_t)state->totalSourceSize);
 
@@ -1422,7 +1422,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 		WorkerState* state = &workerStates[i];
 
 		for (bufferIndex = 0; bufferIndex < state->destCount; bufferIndex++) {
-			DestBuffer* destBuffer = &state->destBuffers[bufferIndex];
+			DecompressorDestBuffer* destBuffer = &state->destBuffers[bufferIndex];
 
 			bws = BufferWithSegments_FromMemory(destBuffer->dest, destBuffer->destSize,
 				destBuffer->segments, destBuffer->segmentsSize);

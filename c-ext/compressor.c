@@ -913,7 +913,7 @@ typedef struct {
 	Py_ssize_t destSize;
 	BufferSegment* segments;
 	Py_ssize_t segmentsSize;
-} DestBuffer;
+} CompressorDestBuffer;
 
 typedef enum {
 	WorkerError_none = 0,
@@ -937,7 +937,7 @@ typedef struct {
 	unsigned long long totalSourceSize;
 
 	/* Result storage. */
-	DestBuffer* destBuffers;
+	CompressorDestBuffer* destBuffers;
 	Py_ssize_t destCount;
 
 	/* Error tracking. */
@@ -956,7 +956,7 @@ static void compress_worker(WorkerState* state) {
 	size_t boundSize;
 	Py_ssize_t destOffset = 0;
 	DataSource* sources = state->sources;
-	DestBuffer* destBuffer;
+	CompressorDestBuffer* destBuffer;
 
 	assert(!state->destBuffers);
 	assert(0 == state->destCount);
@@ -983,7 +983,7 @@ static void compress_worker(WorkerState* state) {
 
 	state->destCount = 1;
 
-	state->destBuffers = calloc(1, sizeof(DestBuffer));
+	state->destBuffers = calloc(1, sizeof(CompressorDestBuffer));
 	if (NULL == state->destBuffers) {
 		state->error = WorkerError_no_memory;
 		return;
@@ -1065,7 +1065,7 @@ static void compress_worker(WorkerState* state) {
 
 			/* Grow space for new struct. */
 			/* TODO consider over-allocating so we don't do this every time. */
-			newDest = realloc(state->destBuffers, (state->destCount + 1) * sizeof(DestBuffer));
+			newDest = realloc(state->destBuffers, (state->destCount + 1) * sizeof(CompressorDestBuffer));
 			if (NULL == newDest) {
 				state->error = WorkerError_no_memory;
 				return;
@@ -1077,7 +1077,7 @@ static void compress_worker(WorkerState* state) {
 			destBuffer = &state->destBuffers[state->destCount - 1];
 
 			/* Don't take any chances with non-NULL pointers. */
-			memset(destBuffer, 0, sizeof(DestBuffer));
+			memset(destBuffer, 0, sizeof(CompressorDestBuffer));
 
 			/**
 			 * We could dynamically update allocation size based on work done so far.
@@ -1352,7 +1352,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 		WorkerState* state = &workerStates[i];
 
 		for (j = 0; j < state->destCount; j++) {
-			DestBuffer* destBuffer = &state->destBuffers[j];
+			CompressorDestBuffer* destBuffer = &state->destBuffers[j];
 			buffer = BufferWithSegments_FromMemory(destBuffer->dest, destBuffer->destSize,
 				destBuffer->segments, destBuffer->segmentsSize);
 
