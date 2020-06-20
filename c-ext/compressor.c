@@ -617,7 +617,7 @@ finally:
 	return output;
 }
 
-PyDoc_STRVAR(ZstdCompressionObj__doc__,
+PyDoc_STRVAR(ZstdCompressor_CompressionObj__doc__,
 "compressobj()\n"
 "\n"
 "Return an object exposing ``compress(data)`` and ``flush()`` methods.\n"
@@ -1587,7 +1587,7 @@ static PyMethodDef ZstdCompressor_methods[] = {
 	{ "compress", (PyCFunction)ZstdCompressor_compress,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_compress__doc__ },
 	{ "compressobj", (PyCFunction)ZstdCompressor_compressobj,
-	METH_VARARGS | METH_KEYWORDS, ZstdCompressionObj__doc__ },
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_CompressionObj__doc__ },
 	{ "copy_stream", (PyCFunction)ZstdCompressor_copy_stream,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_copy_stream__doc__ },
 	{ "stream_reader", (PyCFunction)ZstdCompressor_stream_reader,
