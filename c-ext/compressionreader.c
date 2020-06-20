@@ -10,7 +10,7 @@
 
 extern PyObject* ZstdError;
 
-static void set_unsupported_operation(void) {
+static void compressionreader_set_unsupported_operation(void) {
 	PyObject* iomod;
 	PyObject* exc;
 
@@ -30,7 +30,7 @@ static void set_unsupported_operation(void) {
 	Py_DECREF(iomod);
 }
 
-static void reader_dealloc(ZstdCompressionReader* self) {
+static void compressionreader_dealloc(ZstdCompressionReader* self) {
 	Py_XDECREF(self->compressor);
 	Py_XDECREF(self->reader);
 
@@ -42,7 +42,7 @@ static void reader_dealloc(ZstdCompressionReader* self) {
 	PyObject_Del(self);
 }
 
-static ZstdCompressionReader* reader_enter(ZstdCompressionReader* self) {
+static ZstdCompressionReader* compressionreader_enter(ZstdCompressionReader* self) {
 	if (self->entered) {
 		PyErr_SetString(PyExc_ValueError, "cannot __enter__ multiple times");
 		return NULL;
@@ -54,7 +54,7 @@ static ZstdCompressionReader* reader_enter(ZstdCompressionReader* self) {
 	return self;
 }
 
-static PyObject* reader_exit(ZstdCompressionReader* self, PyObject* args) {
+static PyObject* compressionreader_exit(ZstdCompressionReader* self, PyObject* args) {
 	PyObject* exc_type;
 	PyObject* exc_value;
 	PyObject* exc_tb;
@@ -78,52 +78,52 @@ static PyObject* reader_exit(ZstdCompressionReader* self, PyObject* args) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_readable(ZstdCompressionReader* self) {
+static PyObject* compressionreader_readable(ZstdCompressionReader* self) {
 	Py_RETURN_TRUE;
 }
 
-static PyObject* reader_writable(ZstdCompressionReader* self) {
+static PyObject* compressionreader_writable(ZstdCompressionReader* self) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_seekable(ZstdCompressionReader* self) {
+static PyObject* compressionreader_seekable(ZstdCompressionReader* self) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_readline(PyObject* self, PyObject* args) {
-	set_unsupported_operation();
+static PyObject* compressionreader_readline(PyObject* self, PyObject* args) {
+	compressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_readlines(PyObject* self, PyObject* args) {
-	set_unsupported_operation();
+static PyObject* compressionreader_readlines(PyObject* self, PyObject* args) {
+	compressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_write(PyObject* self, PyObject* args) {
+static PyObject* compressionreader_write(PyObject* self, PyObject* args) {
 	PyErr_SetString(PyExc_OSError, "stream is not writable");
 	return NULL;
 }
 
-static PyObject* reader_writelines(PyObject* self, PyObject* args) {
+static PyObject* compressionreader_writelines(PyObject* self, PyObject* args) {
 	PyErr_SetString(PyExc_OSError, "stream is not writable");
 	return NULL;
 }
 
-static PyObject* reader_isatty(PyObject* self) {
+static PyObject* compressionreader_isatty(PyObject* self) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_flush(PyObject* self) {
+static PyObject* compressionreader_flush(PyObject* self) {
 	Py_RETURN_NONE;
 }
 
-static PyObject* reader_close(ZstdCompressionReader* self) {
+static PyObject* compressionreader_close(ZstdCompressionReader* self) {
 	self->closed = 1;
 	Py_RETURN_NONE;
 }
 
-static PyObject* reader_tell(ZstdCompressionReader* self) {
+static PyObject* compressionreader_tell(ZstdCompressionReader* self) {
 	/* TODO should this raise OSError since stream isn't seekable? */
 	return PyLong_FromUnsignedLongLong(self->bytesCompressed);
 }
@@ -218,7 +218,7 @@ int compress_input(ZstdCompressionReader* self, ZSTD_outBuffer* output) {
     }
 }
 
-static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObject* kwargs) {
+static PyObject* compressionreader_read(ZstdCompressionReader* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"size",
 		NULL
@@ -332,7 +332,7 @@ readinput:
 	return result;
 }
 
-static PyObject* reader_read1(ZstdCompressionReader* self, PyObject* args, PyObject* kwargs) {
+static PyObject* compressionreader_read1(ZstdCompressionReader* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"size",
 		NULL
@@ -461,7 +461,7 @@ finally:
 	return result;
 }
 
-static PyObject* reader_readall(PyObject* self) {
+static PyObject* compressionreader_readall(PyObject* self) {
 	PyObject* chunks = NULL;
 	PyObject* empty = NULL;
 	PyObject* result = NULL;
@@ -511,7 +511,7 @@ static PyObject* reader_readall(PyObject* self) {
 	return result;
 }
 
-static PyObject* reader_readinto(ZstdCompressionReader* self, PyObject* args) {
+static PyObject* compressionreader_readinto(ZstdCompressionReader* self, PyObject* args) {
 	Py_buffer dest;
 	ZSTD_outBuffer output;
 	int readResult, compressResult;
@@ -610,7 +610,7 @@ finally:
 	return result;
 }
 
-static PyObject* reader_readinto1(ZstdCompressionReader* self, PyObject* args) {
+static PyObject* compressionreader_readinto1(ZstdCompressionReader* self, PyObject* args) {
 	Py_buffer dest;
 	PyObject* result = NULL;
 	ZSTD_outBuffer output;
@@ -722,46 +722,46 @@ finally:
 	return result;
 }
 
-static PyObject* reader_iter(PyObject* self) {
-	set_unsupported_operation();
+static PyObject* compressionreader_iter(PyObject* self) {
+	compressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_iternext(PyObject* self) {
-	set_unsupported_operation();
+static PyObject* compressionreader_iternext(PyObject* self) {
+	compressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyMethodDef reader_methods[] = {
-	{ "__enter__", (PyCFunction)reader_enter, METH_NOARGS,
+static PyMethodDef compressionreader_methods[] = {
+	{ "__enter__", (PyCFunction)compressionreader_enter, METH_NOARGS,
 	PyDoc_STR("Enter a compression context") },
-	{ "__exit__", (PyCFunction)reader_exit, METH_VARARGS,
+	{ "__exit__", (PyCFunction)compressionreader_exit, METH_VARARGS,
 	PyDoc_STR("Exit a compression context") },
-	{ "close", (PyCFunction)reader_close, METH_NOARGS,
+	{ "close", (PyCFunction)compressionreader_close, METH_NOARGS,
 	PyDoc_STR("Close the stream so it cannot perform any more operations") },
-	{ "flush", (PyCFunction)reader_flush, METH_NOARGS, PyDoc_STR("no-ops") },
-	{ "isatty", (PyCFunction)reader_isatty, METH_NOARGS, PyDoc_STR("Returns False") },
-	{ "readable", (PyCFunction)reader_readable, METH_NOARGS,
+	{ "flush", (PyCFunction)compressionreader_flush, METH_NOARGS, PyDoc_STR("no-ops") },
+	{ "isatty", (PyCFunction)compressionreader_isatty, METH_NOARGS, PyDoc_STR("Returns False") },
+	{ "readable", (PyCFunction)compressionreader_readable, METH_NOARGS,
 	PyDoc_STR("Returns True") },
-	{ "read", (PyCFunction)reader_read, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("read compressed data") },
-	{ "read1", (PyCFunction)reader_read1, METH_VARARGS | METH_KEYWORDS, NULL },
-	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
-	{ "readinto", (PyCFunction)reader_readinto, METH_VARARGS, NULL },
-	{ "readinto1", (PyCFunction)reader_readinto1, METH_VARARGS, NULL },
-	{ "readline", (PyCFunction)reader_readline, METH_VARARGS, PyDoc_STR("Not implemented") },
-	{ "readlines", (PyCFunction)reader_readlines, METH_VARARGS, PyDoc_STR("Not implemented") },
-	{ "seekable", (PyCFunction)reader_seekable, METH_NOARGS,
+	{ "read", (PyCFunction)compressionreader_read, METH_VARARGS | METH_KEYWORDS, PyDoc_STR("read compressed data") },
+	{ "read1", (PyCFunction)compressionreader_read1, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readall", (PyCFunction)compressionreader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
+	{ "readinto", (PyCFunction)compressionreader_readinto, METH_VARARGS, NULL },
+	{ "readinto1", (PyCFunction)compressionreader_readinto1, METH_VARARGS, NULL },
+	{ "readline", (PyCFunction)compressionreader_readline, METH_VARARGS, PyDoc_STR("Not implemented") },
+	{ "readlines", (PyCFunction)compressionreader_readlines, METH_VARARGS, PyDoc_STR("Not implemented") },
+	{ "seekable", (PyCFunction)compressionreader_seekable, METH_NOARGS,
 	PyDoc_STR("Returns False") },
-	{ "tell", (PyCFunction)reader_tell, METH_NOARGS,
+	{ "tell", (PyCFunction)compressionreader_tell, METH_NOARGS,
 	PyDoc_STR("Returns current number of bytes compressed") },
-	{ "writable", (PyCFunction)reader_writable, METH_NOARGS,
+	{ "writable", (PyCFunction)compressionreader_writable, METH_NOARGS,
 	PyDoc_STR("Returns False") },
-	{ "write", reader_write, METH_VARARGS, PyDoc_STR("Raises OSError") },
-	{ "writelines", reader_writelines, METH_VARARGS, PyDoc_STR("Not implemented") },
+	{ "write", compressionreader_write, METH_VARARGS, PyDoc_STR("Raises OSError") },
+	{ "writelines", compressionreader_writelines, METH_VARARGS, PyDoc_STR("Not implemented") },
 	{ NULL, NULL }
 };
 
-static PyMemberDef reader_members[] = {
+static PyMemberDef compressionreader_members[] = {
 	{ "closed", T_BOOL, offsetof(ZstdCompressionReader, closed),
 	  READONLY, "whether stream is closed" },
 	{ NULL }
@@ -772,7 +772,7 @@ PyTypeObject ZstdCompressionReaderType = {
 	"zstd.ZstdCompressionReader", /* tp_name */
 	sizeof(ZstdCompressionReader), /* tp_basicsize */
 	0, /* tp_itemsize */
-	(destructor)reader_dealloc, /* tp_dealloc */
+	(destructor)compressionreader_dealloc, /* tp_dealloc */
 	0, /* tp_print */
 	0, /* tp_getattr */
 	0, /* tp_setattr */
@@ -793,10 +793,10 @@ PyTypeObject ZstdCompressionReaderType = {
 	0, /* tp_clear */
 	0, /* tp_richcompare */
 	0, /* tp_weaklistoffset */
-	reader_iter, /* tp_iter */
-	reader_iternext, /* tp_iternext */
-	reader_methods, /* tp_methods */
-	reader_members, /* tp_members */
+	compressionreader_iter, /* tp_iter */
+	compressionreader_iternext, /* tp_iternext */
+	compressionreader_methods, /* tp_methods */
+	compressionreader_members, /* tp_members */
 	0, /* tp_getset */
 	0, /* tp_base */
 	0, /* tp_dict */

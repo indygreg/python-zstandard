@@ -10,7 +10,7 @@
 
 extern PyObject* ZstdError;
 
-static void set_unsupported_operation(void) {
+static void decompressionreader_set_unsupported_operation(void) {
 	PyObject* iomod;
 	PyObject* exc;
 
@@ -30,7 +30,7 @@ static void set_unsupported_operation(void) {
 	Py_DECREF(iomod);
 }
 
-static void reader_dealloc(ZstdDecompressionReader* self) {
+static void decompressionreader_dealloc(ZstdDecompressionReader* self) {
 	Py_XDECREF(self->decompressor);
 	Py_XDECREF(self->reader);
 
@@ -41,7 +41,7 @@ static void reader_dealloc(ZstdDecompressionReader* self) {
 	PyObject_Del(self);
 }
 
-static ZstdDecompressionReader* reader_enter(ZstdDecompressionReader* self) {
+static ZstdDecompressionReader* decompressionreader_enter(ZstdDecompressionReader* self) {
 	if (self->entered) {
 		PyErr_SetString(PyExc_ValueError, "cannot __enter__ multiple times");
 		return NULL;
@@ -53,7 +53,7 @@ static ZstdDecompressionReader* reader_enter(ZstdDecompressionReader* self) {
 	return self;
 }
 
-static PyObject* reader_exit(ZstdDecompressionReader* self, PyObject* args) {
+static PyObject* decompressionreader_exit(ZstdDecompressionReader* self, PyObject* args) {
 	PyObject* exc_type;
 	PyObject* exc_value;
 	PyObject* exc_tb;
@@ -77,28 +77,28 @@ static PyObject* reader_exit(ZstdDecompressionReader* self, PyObject* args) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_readable(PyObject* self) {
+static PyObject* decompressionreader_readable(PyObject* self) {
 	Py_RETURN_TRUE;
 }
 
-static PyObject* reader_writable(PyObject* self) {
+static PyObject* decompressionreader_writable(PyObject* self) {
 	Py_RETURN_FALSE;
 }
 
-static PyObject* reader_seekable(PyObject* self) {
+static PyObject* decompressionreader_seekable(PyObject* self) {
 	Py_RETURN_TRUE;
 }
 
-static PyObject* reader_close(ZstdDecompressionReader* self) {
+static PyObject* decompressionreader_close(ZstdDecompressionReader* self) {
 	self->closed = 1;
 	Py_RETURN_NONE;
 }
 
-static PyObject* reader_flush(PyObject* self) {
+static PyObject* decompressionreader_flush(PyObject* self) {
 	Py_RETURN_NONE;
 }
 
-static PyObject* reader_isatty(PyObject* self) {
+static PyObject* decompressionreader_isatty(PyObject* self) {
 	Py_RETURN_FALSE;
 }
 
@@ -210,7 +210,7 @@ int decompress_input(ZstdDecompressionReader* self, ZSTD_outBuffer* output) {
 	return 0;
 }
 
-static PyObject* reader_read(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
+static PyObject* decompressionreader_read(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"size",
 		NULL
@@ -307,7 +307,7 @@ readinput:
 	return result;
 }
 
-static PyObject* reader_read1(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
+static PyObject* decompressionreader_read1(ZstdDecompressionReader* self, PyObject* args, PyObject* kwargs) {
 	static char* kwlist[] = {
 		"size",
 		NULL
@@ -396,7 +396,7 @@ static PyObject* reader_read1(ZstdDecompressionReader* self, PyObject* args, PyO
 	return result;
 }
 
-static PyObject* reader_readinto(ZstdDecompressionReader* self, PyObject* args) {
+static PyObject* decompressionreader_readinto(ZstdDecompressionReader* self, PyObject* args) {
 	Py_buffer dest;
 	ZSTD_outBuffer output;
 	int decompressResult, readResult;
@@ -467,7 +467,7 @@ finally:
 	return result;
 }
 
-static PyObject* reader_readinto1(ZstdDecompressionReader* self, PyObject* args) {
+static PyObject* decompressionreader_readinto1(ZstdDecompressionReader* self, PyObject* args) {
 	Py_buffer dest;
 	ZSTD_outBuffer output;
 	PyObject* result = NULL;
@@ -532,7 +532,7 @@ finally:
 	return result;
 }
 
-static PyObject* reader_readall(PyObject* self) {
+static PyObject* decompressionreader_readall(PyObject* self) {
 	PyObject* chunks = NULL;
 	PyObject* empty = NULL;
 	PyObject* result = NULL;
@@ -582,17 +582,17 @@ static PyObject* reader_readall(PyObject* self) {
 	return result;
 }
 
-static PyObject* reader_readline(PyObject* self) {
-	set_unsupported_operation();
+static PyObject* decompressionreader_readline(PyObject* self) {
+	decompressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_readlines(PyObject* self) {
-	set_unsupported_operation();
+static PyObject* decompressionreader_readlines(PyObject* self) {
+	decompressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_seek(ZstdDecompressionReader* self, PyObject* args) {
+static PyObject* decompressionreader_seek(ZstdDecompressionReader* self, PyObject* args) {
 	Py_ssize_t pos;
 	int whence = 0;
 	unsigned long long readAmount = 0;
@@ -666,64 +666,64 @@ static PyObject* reader_seek(ZstdDecompressionReader* self, PyObject* args) {
 	return PyLong_FromUnsignedLongLong(self->bytesDecompressed);
 }
 
-static PyObject* reader_tell(ZstdDecompressionReader* self) {
+static PyObject* decompressionreader_tell(ZstdDecompressionReader* self) {
 	/* TODO should this raise OSError since stream isn't seekable? */
 	return PyLong_FromUnsignedLongLong(self->bytesDecompressed);
 }
 
-static PyObject* reader_write(PyObject* self, PyObject* args) {
-	set_unsupported_operation();
+static PyObject* decompressionreader_write(PyObject* self, PyObject* args) {
+	decompressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_writelines(PyObject* self, PyObject* args) {
-	set_unsupported_operation();
+static PyObject* decompressionreader_writelines(PyObject* self, PyObject* args) {
+	decompressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_iter(PyObject* self) {
-	set_unsupported_operation();
+static PyObject* decompressionreader_iter(PyObject* self) {
+	decompressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyObject* reader_iternext(PyObject* self) {
-	set_unsupported_operation();
+static PyObject* decompressionreader_iternext(PyObject* self) {
+	decompressionreader_set_unsupported_operation();
 	return NULL;
 }
 
-static PyMethodDef reader_methods[] = {
-	{ "__enter__", (PyCFunction)reader_enter, METH_NOARGS,
+static PyMethodDef decompressionreader_methods[] = {
+	{ "__enter__", (PyCFunction)decompressionreader_enter, METH_NOARGS,
 	PyDoc_STR("Enter a compression context") },
-	{ "__exit__", (PyCFunction)reader_exit, METH_VARARGS,
+	{ "__exit__", (PyCFunction)decompressionreader_exit, METH_VARARGS,
 	PyDoc_STR("Exit a compression context") },
-	{ "close", (PyCFunction)reader_close, METH_NOARGS,
+	{ "close", (PyCFunction)decompressionreader_close, METH_NOARGS,
 	PyDoc_STR("Close the stream so it cannot perform any more operations") },
-	{ "flush", (PyCFunction)reader_flush, METH_NOARGS, PyDoc_STR("no-ops") },
-	{ "isatty", (PyCFunction)reader_isatty, METH_NOARGS, PyDoc_STR("Returns False") },
-	{ "readable", (PyCFunction)reader_readable, METH_NOARGS,
+	{ "flush", (PyCFunction)decompressionreader_flush, METH_NOARGS, PyDoc_STR("no-ops") },
+	{ "isatty", (PyCFunction)decompressionreader_isatty, METH_NOARGS, PyDoc_STR("Returns False") },
+	{ "readable", (PyCFunction)decompressionreader_readable, METH_NOARGS,
 	PyDoc_STR("Returns True") },
-	{ "read", (PyCFunction)reader_read, METH_VARARGS | METH_KEYWORDS,
+	{ "read", (PyCFunction)decompressionreader_read, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("read compressed data") },
-	{ "read1", (PyCFunction)reader_read1, METH_VARARGS | METH_KEYWORDS,
+	{ "read1", (PyCFunction)decompressionreader_read1, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("read compressed data") },
-	{ "readinto", (PyCFunction)reader_readinto, METH_VARARGS, NULL },
-	{ "readinto1", (PyCFunction)reader_readinto1, METH_VARARGS, NULL },
-	{ "readall", (PyCFunction)reader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
-	{ "readline", (PyCFunction)reader_readline, METH_NOARGS, PyDoc_STR("Not implemented") },
-	{ "readlines", (PyCFunction)reader_readlines, METH_NOARGS, PyDoc_STR("Not implemented") },
-	{ "seek", (PyCFunction)reader_seek, METH_VARARGS, PyDoc_STR("Seek the stream") },
-	{ "seekable", (PyCFunction)reader_seekable, METH_NOARGS,
+	{ "readinto", (PyCFunction)decompressionreader_readinto, METH_VARARGS, NULL },
+	{ "readinto1", (PyCFunction)decompressionreader_readinto1, METH_VARARGS, NULL },
+	{ "readall", (PyCFunction)decompressionreader_readall, METH_NOARGS, PyDoc_STR("Not implemented") },
+	{ "readline", (PyCFunction)decompressionreader_readline, METH_NOARGS, PyDoc_STR("Not implemented") },
+	{ "readlines", (PyCFunction)decompressionreader_readlines, METH_NOARGS, PyDoc_STR("Not implemented") },
+	{ "seek", (PyCFunction)decompressionreader_seek, METH_VARARGS, PyDoc_STR("Seek the stream") },
+	{ "seekable", (PyCFunction)decompressionreader_seekable, METH_NOARGS,
 	PyDoc_STR("Returns True") },
-	{ "tell", (PyCFunction)reader_tell, METH_NOARGS,
+	{ "tell", (PyCFunction)decompressionreader_tell, METH_NOARGS,
 	PyDoc_STR("Returns current number of bytes compressed") },
-	{ "writable", (PyCFunction)reader_writable, METH_NOARGS,
+	{ "writable", (PyCFunction)decompressionreader_writable, METH_NOARGS,
 	PyDoc_STR("Returns False") },
-	{ "write", (PyCFunction)reader_write, METH_VARARGS, PyDoc_STR("unsupported operation") },
-	{ "writelines", (PyCFunction)reader_writelines, METH_VARARGS, PyDoc_STR("unsupported operation") },
+	{ "write", (PyCFunction)decompressionreader_write, METH_VARARGS, PyDoc_STR("unsupported operation") },
+	{ "writelines", (PyCFunction)decompressionreader_writelines, METH_VARARGS, PyDoc_STR("unsupported operation") },
 	{ NULL, NULL }
 };
 
-static PyMemberDef reader_members[] = {
+static PyMemberDef decompressionreader_members[] = {
 	{ "closed", T_BOOL, offsetof(ZstdDecompressionReader, closed),
 	  READONLY, "whether stream is closed" },
 	{ NULL }
@@ -734,7 +734,7 @@ PyTypeObject ZstdDecompressionReaderType = {
 	"zstd.ZstdDecompressionReader", /* tp_name */
 	sizeof(ZstdDecompressionReader), /* tp_basicsize */
 	0, /* tp_itemsize */
-	(destructor)reader_dealloc, /* tp_dealloc */
+	(destructor)decompressionreader_dealloc, /* tp_dealloc */
 	0, /* tp_print */
 	0, /* tp_getattr */
 	0, /* tp_setattr */
@@ -755,10 +755,10 @@ PyTypeObject ZstdDecompressionReaderType = {
 	0, /* tp_clear */
 	0, /* tp_richcompare */
 	0, /* tp_weaklistoffset */
-	reader_iter, /* tp_iter */
-	reader_iternext, /* tp_iternext */
-	reader_methods, /* tp_methods */
-	reader_members, /* tp_members */
+	decompressionreader_iter, /* tp_iter */
+	decompressionreader_iternext, /* tp_iternext */
+	decompressionreader_methods, /* tp_methods */
+	decompressionreader_members, /* tp_members */
 	0, /* tp_getset */
 	0, /* tp_base */
 	0, /* tp_dict */
