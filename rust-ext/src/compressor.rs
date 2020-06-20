@@ -7,8 +7,9 @@
 use crate::compression_dict::ZstdCompressionDict;
 use crate::compression_parameters::{CCtxParams, ZstdCompressionParameters};
 use crate::ZstdError;
+use cpython::buffer::PyBuffer;
 use cpython::exc::ValueError;
-use cpython::{py_class, PyErr, PyModule, PyObject, PyResult, Python, PythonObject};
+use cpython::{py_class, PyBytes, PyErr, PyModule, PyObject, PyResult, Python, PythonObject};
 use std::cell::RefCell;
 use std::marker::PhantomData;
 
@@ -23,6 +24,7 @@ impl<'a> Drop for CCtx<'a> {
 }
 
 unsafe impl<'a> Send for CCtx<'a> {}
+unsafe impl<'a> Sync for CCtx<'a> {}
 
 impl<'a> CCtx<'a> {
     fn new() -> Result<Self, &'static str> {
@@ -47,6 +49,67 @@ impl<'a> CCtx<'a> {
 
     pub fn memory_size(&self) -> usize {
         unsafe { zstd_sys::ZSTD_sizeof_CCtx(self.0 as *const _) }
+    }
+
+    pub fn reset(&self) -> usize {
+        unsafe {
+            zstd_sys::ZSTD_CCtx_reset(
+                self.0,
+                zstd_sys::ZSTD_ResetDirective::ZSTD_reset_session_only,
+            )
+        }
+    }
+
+    pub fn set_pledged_source_size(&self, size: u64) -> Result<(), &'static str> {
+        let zresult = unsafe { zstd_sys::ZSTD_CCtx_setPledgedSrcSize(self.0, size) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn compress(&self, source: &[u8]) -> Result<Vec<u8>, &'static str> {
+        self.reset();
+
+        let dest_len = unsafe { zstd_sys::ZSTD_compressBound(source.len()) };
+
+        let mut dest: Vec<u8> = Vec::with_capacity(dest_len);
+
+        self.set_pledged_source_size(dest_len as _)?;
+
+        let mut in_buffer = zstd_sys::ZSTD_inBuffer {
+            src: source.as_ptr() as *const _,
+            size: source.len(),
+            pos: 0,
+        };
+
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: dest.as_mut_ptr() as *mut _,
+            size: dest.capacity(),
+            pos: 0,
+        };
+
+        // By avoiding ZSTD_compress(), we don't necessarily write out content
+        // size. This means the parameters to control frame parameters are honored.
+        let zresult = unsafe {
+            zstd_sys::ZSTD_compressStream2(
+                self.0,
+                &mut out_buffer as *mut _,
+                &mut in_buffer as *mut _,
+                zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
+            )
+        };
+
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else if zresult > 0 {
+            Err("unexpected partial frame flush")
+        } else {
+            unsafe { dest.set_len(out_buffer.pos) }
+
+            Ok(dest)
+        }
     }
 }
 
@@ -98,6 +161,10 @@ py_class!(class ZstdCompressor |py| {
 
     def memory_size(&self) -> PyResult<usize> {
         Ok(self.state(py).borrow().cctx.memory_size())
+    }
+
+    def compress(&self, data: PyObject) -> PyResult<PyBytes> {
+        self.compress_impl(py, data)
     }
 });
 
@@ -204,6 +271,34 @@ impl ZstdCompressor {
         state.setup_cctx(py)?;
 
         Ok(ZstdCompressor::create_instance(py, RefCell::new(state))?.into_object())
+    }
+
+    fn compress_impl(&self, py: Python, data: PyObject) -> PyResult<PyBytes> {
+        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
+
+        let buffer = PyBuffer::get(py, &data)?;
+
+        if !buffer.is_c_contiguous() || buffer.dimensions() > 1 {
+            return Err(ZstdError::from_message(
+                py,
+                "data buffer should be contiguous and have at most one dimension",
+            ));
+        }
+
+        let source: &[u8] =
+            unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const _, buffer.len_bytes()) };
+
+        let cctx = &state.cctx;
+
+        // TODO implement 0 copy via Py_SIZE().
+        let data = py.allow_threads(|| cctx.compress(source)).or_else(|msg| {
+            Err(ZstdError::from_message(
+                py,
+                format!("cannot compress: {}", msg).as_ref(),
+            ))
+        })?;
+
+        Ok(PyBytes::new(py, &data))
     }
 }
 
