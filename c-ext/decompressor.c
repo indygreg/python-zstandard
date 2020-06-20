@@ -985,9 +985,9 @@ typedef struct {
 	DecompressorWorkerError error;
 	/* result from zstd decompression operation */
 	size_t zresult;
-} WorkerState;
+} DecompressorWorkerState;
 
-static void decompress_worker(WorkerState* state) {
+static void decompress_worker(DecompressorWorkerState* state) {
 	size_t allocationSize;
 	DecompressorDestBuffer* destBuffer;
 	Py_ssize_t frameIndex;
@@ -1236,7 +1236,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 	Py_ssize_t currentThread = 0;
 	Py_ssize_t workerStartOffset = 0;
 	POOL_ctx* pool = NULL;
-	WorkerState* workerStates = NULL;
+	DecompressorWorkerState* workerStates = NULL;
 	unsigned long long bytesPerWorker;
 
 	/* Caller should normalize 0 and negative values to 1 or larger. */
@@ -1257,13 +1257,13 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 	/* If threadCount==1, we don't start a thread pool. But we do leverage the
 	   same API for dispatching work. */
-	workerStates = PyMem_Malloc(threadCount * sizeof(WorkerState));
+	workerStates = PyMem_Malloc(threadCount * sizeof(DecompressorWorkerState));
 	if (NULL == workerStates) {
 		PyErr_NoMemory();
 		goto finally;
 	}
 
-	memset(workerStates, 0, threadCount * sizeof(WorkerState));
+	memset(workerStates, 0, threadCount * sizeof(DecompressorWorkerState));
 
 	if (threadCount > 1) {
 		pool = POOL_create(threadCount, 1);
@@ -1419,7 +1419,7 @@ ZstdBufferWithSegmentsCollection* decompress_from_framesources(ZstdDecompressor*
 
 	for (i = 0; i < threadCount; i++) {
 		Py_ssize_t bufferIndex;
-		WorkerState* state = &workerStates[i];
+		DecompressorWorkerState* state = &workerStates[i];
 
 		for (bufferIndex = 0; bufferIndex < state->destCount; bufferIndex++) {
 			DecompressorDestBuffer* destBuffer = &state->destBuffers[bufferIndex];
@@ -1453,7 +1453,7 @@ finally:
 	if (workerStates) {
 		for (i = 0; i < threadCount; i++) {
 			Py_ssize_t bufferIndex;
-			WorkerState* state = &workerStates[i];
+			DecompressorWorkerState* state = &workerStates[i];
 
 			if (state->dctx) {
 				ZSTD_freeDCtx(state->dctx);

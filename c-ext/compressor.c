@@ -944,9 +944,9 @@ typedef struct {
 	CompressorWorkerError error;
 	size_t zresult;
 	Py_ssize_t errorOffset;
-} WorkerState;
+} CompressorWorkerState;
 
-static void compress_worker(WorkerState* state) {
+static void compress_worker(CompressorWorkerState* state) {
 	Py_ssize_t inputOffset = state->startOffset;
 	Py_ssize_t remainingItems = state->endOffset - state->startOffset + 1;
 	Py_ssize_t currentBufferStartOffset = state->startOffset;
@@ -1164,7 +1164,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	DataSources* sources, Py_ssize_t threadCount) {
 	unsigned long long bytesPerWorker;
 	POOL_ctx* pool = NULL;
-	WorkerState* workerStates = NULL;
+	CompressorWorkerState* workerStates = NULL;
 	Py_ssize_t i;
 	unsigned long long workerBytes = 0;
 	Py_ssize_t workerStartOffset = 0;
@@ -1187,13 +1187,13 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 	/* TODO lower thread count when input size is too small and threads would add
 	overhead. */
 
-	workerStates = PyMem_Malloc(threadCount * sizeof(WorkerState));
+	workerStates = PyMem_Malloc(threadCount * sizeof(CompressorWorkerState));
 	if (NULL == workerStates) {
 		PyErr_NoMemory();
 		goto finally;
 	}
 
-	memset(workerStates, 0, threadCount * sizeof(WorkerState));
+	memset(workerStates, 0, threadCount * sizeof(CompressorWorkerState));
 
 	if (threadCount > 1) {
 		pool = POOL_create(threadCount, 1);
@@ -1336,7 +1336,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 
 	segmentsCount = 0;
 	for (i = 0; i < threadCount; i++) {
-		WorkerState* state = &workerStates[i];
+		CompressorWorkerState* state = &workerStates[i];
 		segmentsCount += state->destCount;
 	}
 
@@ -1349,7 +1349,7 @@ ZstdBufferWithSegmentsCollection* compress_from_datasources(ZstdCompressor* comp
 
 	for (i = 0; i < threadCount; i++) {
 		Py_ssize_t j;
-		WorkerState* state = &workerStates[i];
+		CompressorWorkerState* state = &workerStates[i];
 
 		for (j = 0; j < state->destCount; j++) {
 			CompressorDestBuffer* destBuffer = &state->destBuffers[j];
@@ -1388,7 +1388,7 @@ finally:
 		Py_ssize_t j;
 
 		for (i = 0; i < threadCount; i++) {
-			WorkerState state = workerStates[i];
+			CompressorWorkerState state = workerStates[i];
 
 			if (state.cctx) {
 				ZSTD_freeCCtx(state.cctx);
