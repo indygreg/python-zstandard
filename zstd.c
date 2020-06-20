@@ -18,6 +18,23 @@
 
 #include "python-zstandard.h"
 
+#include "bufferutil.c"
+#include "compressionchunker.c"
+#include "compressiondict.c"
+#include "compressionparams.c"
+#include "compressionreader.c"
+#include "compressionwriter.c"
+#include "compressobj.c"
+#include "compressor.c"
+#include "compressoriterator.c"
+#include "constants.c"
+#include "decompressionreader.c"
+#include "decompressionwriter.c"
+#include "decompressobj.c"
+#include "decompressor.c"
+#include "decompressoriterator.c"
+#include "frameparams.c"
+
 PyObject *ZstdError;
 
 PyDoc_STRVAR(estimate_decompression_context_size__doc__,

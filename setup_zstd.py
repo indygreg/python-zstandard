@@ -82,22 +82,6 @@ ext_sources = [
     "zstd/common/threading.c",
     "zstd/common/zstd_common.c",
     "zstd.c",
-    "c-ext/bufferutil.c",
-    "c-ext/compressiondict.c",
-    "c-ext/compressobj.c",
-    "c-ext/compressor.c",
-    "c-ext/compressoriterator.c",
-    "c-ext/compressionchunker.c",
-    "c-ext/compressionparams.c",
-    "c-ext/compressionreader.c",
-    "c-ext/compressionwriter.c",
-    "c-ext/constants.c",
-    "c-ext/decompressobj.c",
-    "c-ext/decompressor.c",
-    "c-ext/decompressoriterator.c",
-    "c-ext/decompressionreader.c",
-    "c-ext/decompressionwriter.c",
-    "c-ext/frameparams.c",
 ]
 
 zstd_depends = [
