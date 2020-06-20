@@ -5,12 +5,150 @@
 // of the BSD license. See the LICENSE file for details.
 
 use crate::ZstdError;
-use cpython::exc::{TypeError, ValueError};
+use cpython::exc::{MemoryError, TypeError, ValueError};
 use cpython::{
     py_class, py_class_prop_getter, PyCapsule, PyDict, PyErr, PyModule, PyObject, PyResult,
     PyTuple, Python, PythonObject, ToPyObject,
 };
 use libc::c_int;
+use std::marker::PhantomData;
+
+/// Safe wrapper for ZSTD_CCtx_params instances.
+pub(crate) struct CCtxParams<'a>(*mut zstd_sys::ZSTD_CCtx_params, PhantomData<&'a ()>);
+
+impl<'a> Drop for CCtxParams<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            zstd_sys::ZSTD_freeCCtxParams(self.0);
+        }
+    }
+}
+
+unsafe impl<'a> Send for CCtxParams<'a> {}
+unsafe impl<'a> Sync for CCtxParams<'a> {}
+
+impl<'a> CCtxParams<'a> {
+    pub(crate) unsafe fn get_raw_ptr(&self) -> *mut zstd_sys::ZSTD_CCtx_params {
+        self.0
+    }
+}
+
+impl<'a> CCtxParams<'a> {
+    pub fn create(py: Python) -> Result<Self, PyErr> {
+        let params = unsafe { zstd_sys::ZSTD_createCCtxParams() };
+        if params.is_null() {
+            return Err(PyErr::new::<MemoryError, _>(
+                py,
+                "unable to create ZSTD_CCtx_params",
+            ));
+        }
+        Ok(CCtxParams(params, PhantomData))
+    }
+
+    pub fn set_parameter(
+        &self,
+        py: Python,
+        param: zstd_sys::ZSTD_cParameter,
+        value: i32,
+    ) -> PyResult<()> {
+        let zresult = unsafe { zstd_sys::ZSTD_CCtxParams_setParameter(self.0, param, value) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(ZstdError::from_message(
+                py,
+                format!(
+                    "unable to set compression context parameter: {}",
+                    zstd_safe::get_error_name(zresult)
+                )
+                .as_ref(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn apply_compression_parameter(
+        &self,
+        py: Python,
+        params: &ZstdCompressionParameters,
+        param: zstd_sys::ZSTD_cParameter,
+    ) -> PyResult<()> {
+        let value = params.get_raw_parameter(py, param)?;
+        self.set_parameter(py, param, value)
+    }
+
+    pub fn apply_compression_parameters(
+        &self,
+        py: Python,
+        params: &ZstdCompressionParameters,
+    ) -> PyResult<()> {
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_nbWorkers)?;
+        // ZSTD_c_format.
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_experimentalParam2,
+        )?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_compressionLevel,
+        )?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_windowLog)?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_hashLog)?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_chainLog)?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_searchLog)?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_minMatch)?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_targetLength,
+        )?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_strategy)?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_contentSizeFlag,
+        )?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_checksumFlag,
+        )?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_dictIDFlag)?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_jobSize)?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_overlapLog)?;
+        // ZSTD_c_forceMaxWindow
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_experimentalParam3,
+        )?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_overlapLog)?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_enableLongDistanceMatching,
+        )?;
+        self.apply_compression_parameter(py, params, zstd_sys::ZSTD_cParameter::ZSTD_c_ldmHashLog)?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_ldmMinMatch,
+        )?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_ldmBucketSizeLog,
+        )?;
+        self.apply_compression_parameter(
+            py,
+            params,
+            zstd_sys::ZSTD_cParameter::ZSTD_c_ldmHashRateLog,
+        )?;
+
+        Ok(())
+    }
+}
 
 /// Resolve the value of a compression context parameter.
 pub(crate) fn get_cctx_parameter(
@@ -65,7 +203,7 @@ pub(crate) fn int_to_strategy(py: Python, value: u32) -> Result<zstd_sys::ZSTD_s
     }
 }
 
-unsafe extern "C" fn destroy_cctx_params(o: *mut python3_sys::PyObject) {
+pub(crate) unsafe extern "C" fn destroy_cctx_params(o: *mut python3_sys::PyObject) {
     let ptr =
         python3_sys::PyCapsule_GetPointer(o, std::ptr::null()) as *mut zstd_sys::ZSTD_CCtx_params;
 
@@ -507,7 +645,11 @@ impl ZstdCompressionParameters {
         Ok(())
     }
 
-    fn get_parameter(&self, py: Python, param: zstd_sys::ZSTD_cParameter) -> PyResult<PyObject> {
+    pub(crate) fn get_raw_parameter(
+        &self,
+        py: Python,
+        param: zstd_sys::ZSTD_cParameter,
+    ) -> PyResult<c_int> {
         let params = self.get_raw_parameters(py);
 
         let mut value: c_int = 0;
@@ -525,6 +667,12 @@ impl ZstdCompressionParameters {
                 .as_ref(),
             ));
         }
+
+        Ok(value)
+    }
+
+    fn get_parameter(&self, py: Python, param: zstd_sys::ZSTD_cParameter) -> PyResult<PyObject> {
+        let value = self.get_raw_parameter(py, param)?;
 
         Ok(value.into_py_object(py).into_object())
     }

@@ -222,6 +222,41 @@ impl ZstdCompressionDict {
 
         Ok(py.None())
     }
+
+    pub(crate) fn load_into_cctx(
+        &self,
+        py: Python,
+        cctx: *mut zstd_sys::ZSTD_CCtx,
+    ) -> PyResult<()> {
+        let state: std::cell::Ref<DictState> = self.state(py).borrow();
+
+        let zresult = if let Some(cdict) = &state.cdict {
+            unsafe { zstd_sys::ZSTD_CCtx_refCDict(cctx, cdict.0) }
+        } else {
+            unsafe {
+                zstd_sys::ZSTD_CCtx_loadDictionary_advanced(
+                    cctx,
+                    state.data.as_ptr() as *const _,
+                    state.data.len(),
+                    zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
+                    state.content_type,
+                )
+            }
+        };
+
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(ZstdError::from_message(
+                py,
+                format!(
+                    "could not load compression dictionary: {}",
+                    zstd_safe::get_error_name(zresult)
+                )
+                .as_ref(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 fn train_dictionary(
