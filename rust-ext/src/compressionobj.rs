@@ -69,12 +69,17 @@ impl ZstdCompressionObj {
         // TODO consider collecting chunks and joining
         // TODO try to use zero copy into return value.
         let mut compressed = Vec::new();
+        let write_size = zstd_safe::cstream_out_size();
 
         let cctx = &state.cctx;
         while !source.is_empty() {
             let result = py
                 .allow_threads(|| {
-                    cctx.compress_chunk(source, zstd_sys::ZSTD_EndDirective::ZSTD_e_continue)
+                    cctx.compress_chunk(
+                        source,
+                        zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
+                        write_size,
+                    )
                 })
                 .or_else(|msg| {
                     Err(ZstdError::from_message(
@@ -114,6 +119,7 @@ impl ZstdCompressionObj {
             state.finished = true;
         }
 
+        let write_size = zstd_safe::cstream_out_size();
         let cctx = &state.cctx;
 
         // TODO avoid extra buffer copy.
@@ -121,7 +127,7 @@ impl ZstdCompressionObj {
 
         loop {
             let (chunk, _, call_again) = py
-                .allow_threads(|| cctx.compress_chunk(&[], flush_mode))
+                .allow_threads(|| cctx.compress_chunk(&[], flush_mode, write_size))
                 .or_else(|msg| {
                     Err(ZstdError::from_message(
                         py,

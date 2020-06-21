@@ -10,7 +10,9 @@ use crate::compressionobj::ZstdCompressionObj;
 use crate::ZstdError;
 use cpython::buffer::PyBuffer;
 use cpython::exc::ValueError;
-use cpython::{py_class, PyBytes, PyErr, PyModule, PyObject, PyResult, Python, PythonObject};
+use cpython::{
+    py_class, ObjectProtocol, PyBytes, PyErr, PyModule, PyObject, PyResult, Python, PythonObject,
+};
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -126,6 +128,7 @@ impl<'a> CCtx<'a> {
         &self,
         source: &'a [u8],
         end_mode: zstd_sys::ZSTD_EndDirective,
+        output_size: usize,
     ) -> Result<(Vec<u8>, &'a [u8], bool), &'static str> {
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
             src: source.as_ptr() as *const _,
@@ -133,7 +136,7 @@ impl<'a> CCtx<'a> {
             pos: 0,
         };
 
-        let mut dest: Vec<u8> = Vec::with_capacity(zstd_safe::cstream_out_size());
+        let mut dest: Vec<u8> = Vec::with_capacity(output_size);
 
         let mut out_buffer = zstd_sys::ZSTD_outBuffer {
             dst: dest.as_mut_ptr() as *mut _,
@@ -224,6 +227,17 @@ py_class!(class ZstdCompressor |py| {
 
     def compressobj(&self, size: Option<u64> = None) -> PyResult<ZstdCompressionObj> {
         self.compressobj_impl(py, size)
+    }
+
+    def copy_stream(
+        &self,
+        ifh: PyObject,
+        ofh: PyObject,
+        size: Option<u64> = None,
+        read_size: Option<usize> = None,
+        write_size: Option<usize> = None
+    ) -> PyResult<(usize, usize)> {
+        self.copy_stream_impl(py, ifh, ofh, size, read_size, write_size)
     }
 });
 
@@ -391,6 +405,133 @@ impl ZstdCompressor {
         })?;
 
         ZstdCompressionObj::new(py, state.cctx.clone())
+    }
+
+    fn copy_stream_impl(
+        &self,
+        py: Python,
+        source: PyObject,
+        dest: PyObject,
+        source_size: Option<u64>,
+        read_size: Option<usize>,
+        write_size: Option<usize>,
+    ) -> PyResult<(usize, usize)> {
+        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
+
+        let source_size = if let Some(source_size) = source_size {
+            source_size
+        } else {
+            zstd_safe::CONTENTSIZE_UNKNOWN
+        };
+
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
+
+        if !source.hasattr(py, "read")? {
+            return Err(PyErr::new::<ValueError, _>(
+                py,
+                "first argument must have a read() method",
+            ));
+        }
+
+        if !dest.hasattr(py, "write")? {
+            return Err(PyErr::new::<ValueError, _>(
+                py,
+                "second argument must have a write() method",
+            ));
+        }
+
+        state.cctx.reset();
+        state
+            .cctx
+            .set_pledged_source_size(source_size)
+            .or_else(|msg| {
+                Err(ZstdError::from_message(
+                    py,
+                    format!("error setting source size: {}", msg).as_ref(),
+                ))
+            })?;
+
+        let mut total_read = 0;
+        let mut total_write = 0;
+
+        loop {
+            // Try to read from source stream.
+            let read_object = source
+                .call_method(py, "read", (read_size,), None)
+                .or_else(|_| Err(ZstdError::from_message(py, "could not read() from source")))?;
+
+            let read_bytes = read_object.cast_into::<PyBytes>(py)?;
+            let read_data = read_bytes.data(py);
+
+            // If no data was read we are at EOF.
+            if read_data.len() == 0 {
+                break;
+            }
+
+            total_read += read_data.len();
+
+            // Send data to compressor.
+
+            let mut source = read_data;
+            let cctx = &state.cctx;
+
+            while !source.is_empty() {
+                let result = py
+                    .allow_threads(|| {
+                        cctx.compress_chunk(
+                            source,
+                            zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
+                            write_size,
+                        )
+                    })
+                    .or_else(|msg| {
+                        Err(ZstdError::from_message(
+                            py,
+                            format!("zstd compress error: {}", msg).as_ref(),
+                        ))
+                    })?;
+
+                source = result.1;
+
+                let chunk = &result.0;
+
+                if !chunk.is_empty() {
+                    // TODO avoid buffer copy.
+                    let data = PyBytes::new(py, chunk);
+                    dest.call_method(py, "write", (data,), None)?;
+                    total_write += chunk.len();
+                }
+            }
+        }
+
+        // We've finished reading. Now flush the compressor stream.
+        loop {
+            let result = state
+                .cctx
+                .compress_chunk(&[], zstd_sys::ZSTD_EndDirective::ZSTD_e_end, write_size)
+                .or_else(|msg| {
+                    Err(ZstdError::from_message(
+                        py,
+                        format!("error ending compression stream: {}", msg).as_ref(),
+                    ))
+                })?;
+
+            let chunk = &result.0;
+
+            if !chunk.is_empty() {
+                // TODO avoid buffer copy.
+                let data = PyBytes::new(py, &chunk);
+                dest.call_method(py, "write", (&data,), None)?;
+                total_write += chunk.len();
+            }
+
+            if !result.2 {
+                break;
+            }
+        }
+
+        Ok((total_read, total_write))
     }
 }
 
