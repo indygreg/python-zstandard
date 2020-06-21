@@ -6,14 +6,16 @@
 
 use crate::compression_dict::ZstdCompressionDict;
 use crate::compression_parameters::{CCtxParams, ZstdCompressionParameters};
+use crate::compressionobj::ZstdCompressionObj;
 use crate::ZstdError;
 use cpython::buffer::PyBuffer;
 use cpython::exc::ValueError;
 use cpython::{py_class, PyBytes, PyErr, PyModule, PyObject, PyResult, Python, PythonObject};
 use std::cell::RefCell;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
-pub(crate) struct CCtx<'a>(*mut zstd_sys::ZSTD_CCtx, PhantomData<&'a ()>);
+pub struct CCtx<'a>(*mut zstd_sys::ZSTD_CCtx, PhantomData<&'a ()>);
 
 impl<'a> Drop for CCtx<'a> {
     fn drop(&mut self) {
@@ -69,6 +71,10 @@ impl<'a> CCtx<'a> {
         }
     }
 
+    pub fn get_frame_progression(&self) -> zstd_sys::ZSTD_frameProgression {
+        unsafe { zstd_sys::ZSTD_getFrameProgression(self.0) }
+    }
+
     pub fn compress(&self, source: &[u8]) -> Result<Vec<u8>, &'static str> {
         self.reset();
 
@@ -111,13 +117,58 @@ impl<'a> CCtx<'a> {
             Ok(dest)
         }
     }
+
+    /// Compress input data as part of a stream.
+    ///
+    /// Returns a tuple of the emitted compressed data, a slice of unconsumed input,
+    /// and whether there is more work to be done.
+    pub fn compress_chunk(
+        &self,
+        source: &'a [u8],
+        end_mode: zstd_sys::ZSTD_EndDirective,
+    ) -> Result<(Vec<u8>, &'a [u8], bool), &'static str> {
+        let mut in_buffer = zstd_sys::ZSTD_inBuffer {
+            src: source.as_ptr() as *const _,
+            size: source.len() as _,
+            pos: 0,
+        };
+
+        let mut dest: Vec<u8> = Vec::with_capacity(zstd_safe::cstream_out_size());
+
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: dest.as_mut_ptr() as *mut _,
+            size: dest.capacity(),
+            pos: 0,
+        };
+
+        let zresult = unsafe {
+            zstd_sys::ZSTD_compressStream2(
+                self.0,
+                &mut out_buffer as *mut _,
+                &mut in_buffer as *mut _,
+                end_mode,
+            )
+        };
+
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            return Err(zstd_safe::get_error_name(zresult));
+        }
+
+        unsafe {
+            dest.set_len(out_buffer.pos);
+        }
+
+        let remaining = &source[in_buffer.pos..source.len()];
+
+        Ok((dest, remaining, zresult != 0))
+    }
 }
 
 struct CompressorState<'params, 'cctx> {
     threads: i32,
     dict: Option<ZstdCompressionDict>,
     params: CCtxParams<'params>,
-    cctx: CCtx<'cctx>,
+    cctx: Arc<CCtx<'cctx>>,
 }
 
 impl<'params, 'cctx> CompressorState<'params, 'cctx> {
@@ -163,8 +214,16 @@ py_class!(class ZstdCompressor |py| {
         Ok(self.state(py).borrow().cctx.memory_size())
     }
 
+    def frame_progression(&self) -> PyResult<(usize, usize, usize)> {
+        self.frame_progression_impl(py)
+    }
+
     def compress(&self, data: PyObject) -> PyResult<PyBytes> {
         self.compress_impl(py, data)
+    }
+
+    def compressobj(&self, size: Option<u64> = None) -> PyResult<ZstdCompressionObj> {
+        self.compressobj_impl(py, size)
     }
 });
 
@@ -195,7 +254,7 @@ impl ZstdCompressor {
             threads
         };
 
-        let cctx = CCtx::new().or_else(|msg| Err(PyErr::new::<ZstdError, _>(py, msg)))?;
+        let cctx = Arc::new(CCtx::new().or_else(|msg| Err(PyErr::new::<ZstdError, _>(py, msg)))?);
         let params = CCtxParams::create(py)?;
 
         if let Some(ref compression_params) = compression_params {
@@ -273,6 +332,18 @@ impl ZstdCompressor {
         Ok(ZstdCompressor::create_instance(py, RefCell::new(state))?.into_object())
     }
 
+    fn frame_progression_impl(&self, py: Python) -> PyResult<(usize, usize, usize)> {
+        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
+
+        let progression = state.cctx.get_frame_progression();
+
+        Ok((
+            progression.ingested as usize,
+            progression.consumed as usize,
+            progression.produced as usize,
+        ))
+    }
+
     fn compress_impl(&self, py: Python, data: PyObject) -> PyResult<PyBytes> {
         let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
 
@@ -299,6 +370,27 @@ impl ZstdCompressor {
         })?;
 
         Ok(PyBytes::new(py, &data))
+    }
+
+    fn compressobj_impl(&self, py: Python, size: Option<u64>) -> PyResult<ZstdCompressionObj> {
+        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
+
+        state.cctx.reset();
+
+        let size = if let Some(size) = size {
+            size
+        } else {
+            zstd_safe::CONTENTSIZE_UNKNOWN
+        };
+
+        state.cctx.set_pledged_source_size(size).or_else(|msg| {
+            Err(ZstdError::from_message(
+                py,
+                format!("error setting source size: {}", msg).as_ref(),
+            ))
+        })?;
+
+        ZstdCompressionObj::new(py, state.cctx.clone())
     }
 }
 

@@ -8,6 +8,7 @@ use cpython::{py_module_initializer, PyModule, PyResult, Python};
 
 mod compression_dict;
 mod compression_parameters;
+mod compressionobj;
 mod compressor;
 mod constants;
 mod exceptions;

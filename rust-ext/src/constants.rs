@@ -6,6 +6,9 @@
 
 use cpython::{PyBytes, PyModule, PyResult, Python};
 
+pub(crate) const COMPRESSOBJ_FLUSH_FINISH: i32 = 0;
+pub(crate) const COMPRESSOBJ_FLUSH_BLOCK: i32 = 1;
+
 pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
     module.add(py, "__version", super::VERSION)?;
     module.add(py, "__doc__", "Rust backend for zstandard bindings")?;
@@ -13,8 +16,8 @@ pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
     module.add(py, "FLUSH_BLOCK", 0)?;
     module.add(py, "FLUSH_FRAME", 1)?;
 
-    module.add(py, "COMPRESSOBJ_FLUSH_FINISH", 0)?;
-    module.add(py, "COMPRESSOBJ_FLUSH_BLOCK", 1)?;
+    module.add(py, "COMPRESSOBJ_FLUSH_FINISH", COMPRESSOBJ_FLUSH_FINISH)?;
+    module.add(py, "COMPRESSOBJ_FLUSH_BLOCK", COMPRESSOBJ_FLUSH_BLOCK)?;
 
     module.add(
         py,
