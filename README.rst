@@ -18,5 +18,5 @@ For usage documentation, see https://python-zstandard.readthedocs.org/.
 
 |  |ci-status|
 
-.. |ci-status| image:: https://dev.azure.com/gregoryszorc/python-zstandard/_apis/build/status/indygreg.python-zstandard?branchName=master
-    :target: https://dev.azure.com/gregoryszorc/python-zstandard/_apis/build/status/indygreg.python-zstandard?branchName=master
+.. |ci-status| image:: https://dev.azure.com/gregoryszorc/python-zstandard/_apis/build/status/indygreg.python-zstandard?branchName=main
+    :target: https://dev.azure.com/gregoryszorc/python-zstandard/_apis/build/status/indygreg.python-zstandard?branchName=main
