@@ -1,3 +1,5 @@
+.. _concepts:
+
 ========
 Concepts
 ========
@@ -12,7 +14,7 @@ Zstandard Frames and Compression Format
 
 Compressed zstandard data almost always exists within a container called a
 *frame*. (For the technically curious, see the
-`specification <https://github.com/facebook/zstd/blob/3bee41a70eaf343fbcae3637b3f6edbe52f35ed8/doc/zstd_compression_format.md>_.)
+`specification <https://github.com/facebook/zstd/blob/3bee41a70eaf343fbcae3637b3f6edbe52f35ed8/doc/zstd_compression_format.md>`_.)
 
 The frame contains a header and optional trailer. The header contains a
 magic number to self-identify as a zstd frame and a description of the

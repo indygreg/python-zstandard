@@ -6,6 +6,7 @@
 .hypothesis/
 .tox
 build/
+docs/_build/
 dist/
 target/
 venv/
