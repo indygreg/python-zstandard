@@ -89,6 +89,8 @@ Backwards Compatibility Notes
 Changes
 -------
 
+* Fix a memory-leak in stream_reader decompressor when reader is closed before
+  reading everything.
 * CI now properly uses the ``cffi`` backend when running all tests.
 * ``train_dictionary()`` has been rewritten to use the ``fastcover`` APIs
   and to consistently call ``ZDICT_optimizeTrainFromBuffer_fastCover()``
