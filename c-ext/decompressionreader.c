@@ -38,6 +38,8 @@ static void decompressionreader_dealloc(ZstdDecompressionReader* self) {
 		PyBuffer_Release(&self->buffer);
 	}
 
+	Py_CLEAR(self->readResult);
+
 	PyObject_Del(self);
 }
 

@@ -86,6 +86,12 @@ Backwards Compatibility Notes
   ``ZDICT_optimizeTrainFromBuffer_fastCover()`` instead of different APIs
   depending on which arguments were passed.
 
+Bug Fixes
+---------
+
+* Fix a memory leak in ``stream_reader`` decompressor when reader is closed
+  before reading everything. (Patch by Pierre Fersing.)
+
 Changes
 -------
 
