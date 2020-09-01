@@ -1053,7 +1053,7 @@ class TestCompressor_stream_writer(TestCase):
         d = zstd.train_dictionary(8192, samples)
 
         h = hashlib.sha1(d.as_bytes()).hexdigest()
-        self.assertEqual(h, "7a2e59a876db958f74257141045af8f912e00d4e")
+        self.assertEqual(h, "c868872dce972622a48625e859cee6cdd356cad4")
 
         buffer = NonClosingBytesIO()
         cctx = zstd.ZstdCompressor(level=9, dict_data=d)
@@ -1071,7 +1071,7 @@ class TestCompressor_stream_writer(TestCase):
         self.assertFalse(params.has_checksum)
 
         h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, "0a7c05635061f58039727cdbe76388c6f4cfef06")
+        self.assertEqual(h, "9df9d20de6f2e00b9d53fe40a1e8a538a675100d")
 
         source = b"foo" + b"bar" + (b"foo" * 16384)
 

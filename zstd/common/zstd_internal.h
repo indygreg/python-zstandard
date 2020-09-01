@@ -231,7 +231,7 @@ static void ZSTD_copy8(void* dst, const void* src) {
 #ifdef __aarch64__
     vst1_u8((uint8_t*)dst, vld1_u8((const uint8_t*)src));
 #else
-    memcpy(dst, src, 8);
+    ZSTD_memcpy(dst, src, 8);
 #endif
 }
 
@@ -240,7 +240,7 @@ static void ZSTD_copy16(void* dst, const void* src) {
 #ifdef __aarch64__
     vst1q_u8((uint8_t*)dst, vld1q_u8((const uint8_t*)src));
 #else
-    memcpy(dst, src, 16);
+    ZSTD_memcpy(dst, src, 16);
 #endif
 }
 #define COPY16(d,s) { ZSTD_copy16(d,s); d+=16; s+=16; }
@@ -255,13 +255,13 @@ typedef enum {
 } ZSTD_overlap_e;
 
 /*! ZSTD_wildcopy() :
- *  Custom version of memcpy(), can over read/write up to WILDCOPY_OVERLENGTH bytes (if length==0)
+ *  Custom version of ZSTD_memcpy(), can over read/write up to WILDCOPY_OVERLENGTH bytes (if length==0)
  *  @param ovtype controls the overlap detection
  *         - ZSTD_no_overlap: The source and destination are guaranteed to be at least WILDCOPY_VECLEN bytes apart.
  *         - ZSTD_overlap_src_before_dst: The src and dst may overlap, but they MUST be at least 8 bytes apart.
  *           The src buffer must be before the dst buffer.
  */
-MEM_STATIC FORCE_INLINE_ATTR 
+MEM_STATIC FORCE_INLINE_ATTR
 void ZSTD_wildcopy(void* dst, const void* src, ptrdiff_t length, ZSTD_overlap_e const ovtype)
 {
     ptrdiff_t diff = (BYTE*)dst - (const BYTE*)src;
@@ -284,14 +284,16 @@ void ZSTD_wildcopy(void* dst, const void* src, ptrdiff_t length, ZSTD_overlap_e 
          * one COPY16() in the first call. Then, do two calls per loop since
          * at that point it is more likely to have a high trip count.
          */
-#ifndef __aarch64__
+#ifdef __aarch64__
         do {
             COPY16(op, ip);
         }
         while (op < oend);
 #else
-        COPY16(op, ip);
-        if (op >= oend) return;
+        ZSTD_copy16(op, ip);
+        if (16 >= length) return;
+        op += 16;
+        ip += 16;
         do {
             COPY16(op, ip);
             COPY16(op, ip);
@@ -305,7 +307,7 @@ MEM_STATIC size_t ZSTD_limitCopy(void* dst, size_t dstCapacity, const void* src,
 {
     size_t const length = MIN(dstCapacity, srcSize);
     if (length > 0) {
-        memcpy(dst, src, length);
+        ZSTD_memcpy(dst, src, length);
     }
     return length;
 }
@@ -384,9 +386,9 @@ const seqStore_t* ZSTD_getSeqStore(const ZSTD_CCtx* ctx);   /* compress & dictBu
 void ZSTD_seqToCodes(const seqStore_t* seqStorePtr);   /* compress, dictBuilder, decodeCorpus (shouldn't get its definition from here) */
 
 /* custom memory allocation functions */
-void* ZSTD_malloc(size_t size, ZSTD_customMem customMem);
-void* ZSTD_calloc(size_t size, ZSTD_customMem customMem);
-void ZSTD_free(void* ptr, ZSTD_customMem customMem);
+void* ZSTD_customMalloc(size_t size, ZSTD_customMem customMem);
+void* ZSTD_customCalloc(size_t size, ZSTD_customMem customMem);
+void ZSTD_customFree(void* ptr, ZSTD_customMem customMem);
 
 
 MEM_STATIC U32 ZSTD_highbit32(U32 val)   /* compress, dictBuilder, decodeCorpus */
@@ -394,8 +396,12 @@ MEM_STATIC U32 ZSTD_highbit32(U32 val)   /* compress, dictBuilder, decodeCorpus 
     assert(val != 0);
     {
 #   if defined(_MSC_VER)   /* Visual */
-        unsigned long r=0;
-        return _BitScanReverse(&r, val) ? (unsigned)r : 0;
+#       if STATIC_BMI2 == 1
+            return _lzcnt_u32(val)^31;
+#       else
+            unsigned long r=0;
+            return _BitScanReverse(&r, val) ? (unsigned)r : 0;
+#       endif
 #   elif defined(__GNUC__) && (__GNUC__ >= 3)   /* GCC Intrinsic */
         return __builtin_clz (val) ^ 31;
 #   elif defined(__ICCARM__)    /* IAR Intrinsic */
