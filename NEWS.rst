@@ -95,6 +95,15 @@ Changes
   instead of different C APIs depending on what arguments were passed.
   The function also now accepts arguments ``f``, ``split_point``, and
   ``accel``, which are parameters unique to ``fastcover``.
+* CI now tests and builds wheels for Python 3.9.
+
+0.14.1 (released 2020-12-05)
+============================
+
+Changes
+-------
+
+* Python 3.9 wheels are now provided.
 
 0.14.0 (released 2020-06-13)
 ============================
