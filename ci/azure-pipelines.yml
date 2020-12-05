@@ -46,6 +46,12 @@ jobs:
       x64_2014_38:
         image: quay.io/pypa/manylinux2014_x86_64
         py: cp38-cp38
+      x64_2010_39:
+        image: quay.io/pypa/manylinux2010_x86_64
+        py: cp39-cp39
+      x64_2014_39:
+        image: quay.io/pypa/manylinux2014_x86_64
+        py: cp39-cp39
       x86_2010_27m:
         image: quay.io/pypa/manylinux2010_i686
         py: cp27-cp27m
@@ -76,6 +82,12 @@ jobs:
       x86_2014_38:
         image: quay.io/pypa/manylinux2014_i686
         py: cp38-cp38
+      x86_2010_39:
+        image: quay.io/pypa/manylinux2010_i686
+        py: cp39-cp39
+      x86_2014_39:
+        image: quay.io/pypa/manylinux2014_i686
+        py: cp39-cp39
   pool:
     vmImage: ubuntu-18.04
   steps:
@@ -99,12 +111,17 @@ jobs:
         cibw_build: cp37-*
       Python3.8:
         cibw_build: cp38-*
+      Python3.9:
+        cibw_build: cp39-*
   pool:
     vmImage: macOS-10.14
   variables:
     CIBW_BUILD: variables['cibw_build']
     CIBW_BUILD_VERBOSITY: '1'
   steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.8'
     - script: |
         pip install --require-hashes -r ci/requirements.macoswheels.txt
       displayName: Install Dependencies

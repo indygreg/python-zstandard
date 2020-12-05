@@ -7,12 +7,15 @@
 bashlex==0.14 \
     --hash=sha256:5a92e0900b7a91de93a338b3fae651adc2b6a0e9656972b9e2ed3afd9c492ffd \
     # via cibuildwheel
-cibuildwheel==1.1.0 \
-    --hash=sha256:5e9ffbd9ff8e27ab63b941e81fa030251d7d7577784b636a0d9f045e99212484 \
-    --hash=sha256:a86481df8cc043766a0cd5e1e6d39fead446f418d9c7b4b87595c4a9770341db
-enum34==1.1.6 \
-    --hash=sha256:2d81cbbe0e73112bdfe6ef8576f2238f2ba27dd0d55752a776c41d38b7da2850 \
-    --hash=sha256:644837f692e5f550741432dd3f223bbb9852018674981b1664e5dc339387588a \
-    --hash=sha256:6bd0f6ad48ec2aa117d3d141940d484deccda84d4fcd884f5c3d93c23ecd8c79 \
-    --hash=sha256:8ad8c4783bf61ded74527bffb48ed9b54166685e4230386a9ed9b1279e2df5b1 \
-    # via bashlex
+certifi==2020.11.8 \
+    --hash=sha256:1f422849db327d534e3d0c5f02a263458c3955ec0aae4ff09b95f195c59f4edd \
+    --hash=sha256:f05def092c44fbf25834a51509ef6e631dc19765ab8a57b4e7ab85531f0a9cf4 \
+    # via cibuildwheel
+cibuildwheel==1.7.1 \
+    --hash=sha256:9c84a1cb9f03dd76c5d6e35960bcd261d1e897e446225dbd9b7c8efa2737dabe \
+    --hash=sha256:bd1ad64bf4a3cfca4b55f35a79ce2c8db5b509d3c687ab097c3e7c39722b906c \
+    # via -r ci/requirements.macoswheels.in
+toml==0.10.2 \
+    --hash=sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b \
+    --hash=sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f \
+    # via cibuildwheel
