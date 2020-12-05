@@ -73,6 +73,14 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.14.1 (released 2020-12-05)
+============================
+
+Changes
+-------
+
+* Python 3.9 wheels are now provided.
+
 0.14.0 (released 2020-06-13)
 ============================
 
