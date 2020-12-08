@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Wheel
         run: |
-          docker run -e PYPATH=/opt/python/${{ matrix.py }} --rm -v `pwd`:/project ${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
+          docker run -e PYPATH=/opt/python/${{ matrix.py }} -e ZSTD_WARNINGS_AS_ERRORS=1 --rm -v `pwd`:/project ${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
 
       - name: Upload Wheel
         uses: actions/upload-artifact@v2
@@ -42,6 +42,7 @@ jobs:
     env:
       CIBW_BUILD: ${{ matrix.py }}
       CIBW_BUILD_VERBOSITY: '1'
+      ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -57,6 +58,43 @@ jobs:
       - name: Build Wheel
         run: |
           cibuildwheel --output-dir dist
+
+      - name: Upload Wheel
+        uses: actions/upload-artifact@v2
+        with:
+          path: dist
+
+  windows:
+    strategy:
+      matrix:
+        py:
+          - '3.5'
+          - '3.6'
+          - '3.7'
+          - '3.8'
+          - '3.9'
+        arch:
+          - 'x86'
+          - 'x64'
+    runs-on: 'windows-2019'
+    env:
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+          architecture: ${{ matrix.arch }}
+
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          pip install --require-hashes -r ci/requirements.txt
+
+      - name: Build Wheel
+        run: |
+          python setup.py bdist_wheel
 
       - name: Upload Wheel
         uses: actions/upload-artifact@v2

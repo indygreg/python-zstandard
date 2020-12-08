@@ -38,7 +38,7 @@ jobs:
     displayName: 'Install dependencies'
 
   - script: |
-      python setup.py develop bdist_wheel
+      python setup.py develop
     displayName: Build
 
   - script: |
@@ -55,7 +55,3 @@ jobs:
       pytest --numprocesses=auto -v tests/
     displayName: Test CFFI Backend (Windows)
     condition: eq('${{ parameters.os }}', 'Windows')
-
-  - task: PublishPipelineArtifact@1
-    inputs:
-      path: $(System.DefaultWorkingDirectory)/dist
