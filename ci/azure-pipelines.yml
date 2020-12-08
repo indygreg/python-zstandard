@@ -1,18 +1,4 @@
 jobs:
-- job: Source_Distribution
-  pool:
-    vmImage: ubuntu-18.04
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: 3.7
-  - script: |
-        python setup.py sdist
-    displayName: Build
-  - task: PublishPipelineArtifact@1
-    inputs:
-      path: $(System.DefaultWorkingDirectory)/dist
-
 - template: azure-pipelines-anaconda-linux-template.yml
   parameters:
     name: Linux_Anaconda

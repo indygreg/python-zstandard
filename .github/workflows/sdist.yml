@@ -1,0 +1,22 @@
+on:
+  - push
+  - pull_request
+jobs:
+  sdist:
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - uses: actions/checkout@v2
+
+      - name: Build sdist
+        run: |
+          python setup.py sdist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v2
+        with:
+          path: dist
