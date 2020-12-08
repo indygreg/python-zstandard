@@ -13,34 +13,6 @@ jobs:
     inputs:
       path: $(System.DefaultWorkingDirectory)/dist
 
-- template: azure-pipelines-template.yml
-  parameters:
-    name: Linux_x64
-    os: Linux
-    vmImage: ubuntu-18.04
-    arch: x64
-
-- template: azure-pipelines-template.yml
-  parameters:
-    name: macOS_x64
-    os: macOS
-    vmImage: macOS-10.14
-    arch: x64
-
-- template: azure-pipelines-template.yml
-  parameters:
-    name: Windows_x86
-    os: Windows
-    vmImage: vs2017-win2016
-    arch: x86
-
-- template: azure-pipelines-template.yml
-  parameters:
-    name: Windows_x64
-    os: Windows
-    vmImage: vs2017-win2016
-    arch: x64
-
 - template: azure-pipelines-anaconda-linux-template.yml
   parameters:
     name: Linux_Anaconda

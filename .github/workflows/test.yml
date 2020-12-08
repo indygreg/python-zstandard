@@ -1,0 +1,60 @@
+on:
+  - push
+  - pull_request
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'ubuntu-20.04'
+          - 'macos-10.15'
+          - 'windows-2019'
+        py:
+          - '3.5'
+          - '3.6'
+          - '3.7'
+          - '3.8'
+          - '3.9'
+        arch:
+          - 'x86'
+          - 'x64'
+        exclude:
+          - os: 'ubuntu-20.04'
+            arch: 'x86'
+          - os: 'macos-10.15'
+            arch: 'x86'
+    runs-on: ${{ matrix.os }}
+    env:
+      # Enable fuzzing tests, other expensive tests.
+      ZSTD_SLOW_TESTS: '1'
+      # Make all compile warnings fatal.
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+      # More thorough fuzzing coverage.
+      HYPOTHESIS_PROFILE: 'ci'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+          architecture: ${{ matrix.arch }}
+
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          pip install --require-hashes -r ci/requirements.txt
+
+      - name: Build
+        run: |
+          python setup.py develop
+
+      - name: Test C Backend
+        run: |
+          pytest --numprocesses=auto -v tests/
+
+      - name: Test CFFI Backend
+        env:
+          PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
+        run: |
+          pytest --numprocesses=auto -v tests/
