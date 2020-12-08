@@ -1,0 +1,92 @@
+on:
+  - push
+  - pull_request
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        py:
+          - '3.5'
+          - '3.6'
+          - '3.7'
+    runs-on: 'ubuntu-20.04'
+    env:
+      # Enable fuzzing tests, other expensive tests.
+      ZSTD_SLOW_TESTS: '1'
+      # Make all compile warnings fatal.
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+      # More thorough fuzzing coverage.
+      HYPOTHESIS_PROFILE: 'ci'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+
+      - uses: actions/checkout@v2
+
+      - name: Create Anaconda Environment
+        run: |
+          $CONDA/bin/conda create --yes --quiet --name env python=${{ matrix.py }}
+
+      - name: Install Dependencies
+        run: |
+          source $CONDA/bin/activate env
+          $CONDA/bin/conda install --yes --quiet --name env conda-build pip
+          pip install --require-hashes -r ci/requirements.txt
+
+      - name: Build and Test
+        run: |
+          source $CONDA/bin/activate env
+          $CONDA/bin/conda build ci/conda
+          python ci/copy-conda-package.py
+
+      - name: Upload Package
+        uses: actions/upload-artifact@v2
+        with:
+          path: dist
+
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        py:
+          - '3.5'
+          - '3.6'
+          - '3.7'
+          - '3.8'
+    runs-on: 'windows-2019'
+    env:
+      # Enable fuzzing tests, other expensive tests.
+      ZSTD_SLOW_TESTS: '1'
+      # Make all compile warnings fatal.
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+      # More thorough fuzzing coverage.
+      HYPOTHESIS_PROFILE: 'ci'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+
+      - uses: actions/checkout@v2
+
+      - name: Create Anaconda Environment
+        run: |
+          C:\Miniconda\condabin\conda.bat create --yes --quiet --name env python=${{ matrix.py }}
+
+      - name: Install Dependencies
+        run: |
+          C:\Miniconda\condabin\conda.bat install --yes --quiet --name env conda-build pip
+          C:\Miniconda\envs\env\python.exe -m pip install --user --require-hashes -r ci/requirements.txt
+
+      - name: Build and Test
+        run: |
+          C:\Miniconda\envs\env\Scripts\conda-build.exe ci/conda
+          C:\Miniconda\envs\env\python.exe ci/copy-conda-package.py
+
+      - name: Upload Package
+        uses: actions/upload-artifact@v2
+        with:
+          path: dist
