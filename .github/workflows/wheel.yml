@@ -19,12 +19,44 @@ jobs:
     runs-on: 'ubuntu-20.04'
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
       - name: Build Wheel
         run: |
           docker run -e PYPATH=/opt/python/${{ matrix.py }} --rm -v `pwd`:/project ${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
+
+      - name: Upload Wheel
+        uses: actions/upload-artifact@v2
+        with:
+          path: dist
+
+  macos:
+    strategy:
+      matrix:
+        py:
+          - 'cp35-*'
+          - 'cp36-*'
+          - 'cp37-*'
+          - 'cp38-*'
+          - 'cp39-*'
+    runs-on: 'macos-10.15'
+    env:
+      CIBW_BUILD: ${{ matrix.py }}
+      CIBW_BUILD_VERBOSITY: '1'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          pip install --require-hashes -r ci/requirements.macoswheels.txt
+
+      - name: Build Wheel
+        run: |
+          cibuildwheel --output-dir dist
 
       - name: Upload Wheel
         uses: actions/upload-artifact@v2
