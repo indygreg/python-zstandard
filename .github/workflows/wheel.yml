@@ -1,0 +1,32 @@
+on:
+  - push
+  - pull_request
+jobs:
+  linux:
+    strategy:
+      matrix:
+        image:
+          - 'quay.io/pypa/manylinux2010_i686'
+          - 'quay.io/pypa/manylinux2010_x86_64'
+          - 'quay.io/pypa/manylinux2014_i686'
+          - 'quay.io/pypa/manylinux2014_x86_64'
+        py:
+          - 'cp35-cp35m'
+          - 'cp36-cp36m'
+          - 'cp37-cp37m'
+          - 'cp38-cp38'
+          - 'cp39-cp39'
+    runs-on: 'ubuntu-20.04'
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Build Wheel
+        run: |
+          docker run -e PYPATH=/opt/python/${{ matrix.py }} --rm -v `pwd`:/project ${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
+
+      - name: Upload Wheel
+        uses: actions/upload-artifact@v2
+        with:
+          path: dist
