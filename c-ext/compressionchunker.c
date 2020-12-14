@@ -344,12 +344,12 @@ PyTypeObject ZstdCompressionChunkerType = {
 };
 
 void compressionchunker_module_init(PyObject* module) {
-	Py_TYPE(&ZstdCompressionChunkerIteratorType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressionChunkerIteratorType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressionChunkerIteratorType) < 0) {
 		return;
 	}
 
-	Py_TYPE(&ZstdCompressionChunkerType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressionChunkerType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressionChunkerType) < 0) {
 		return;
 	}

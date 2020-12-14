@@ -548,7 +548,7 @@ PyTypeObject ZstdCompressionParametersType = {
 };
 
 void compressionparams_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdCompressionParametersType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressionParametersType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressionParametersType) < 0) {
 		return;
 	}

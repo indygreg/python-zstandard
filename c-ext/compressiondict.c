@@ -400,7 +400,7 @@ PyTypeObject ZstdCompressionDictType = {
 };
 
 void compressiondict_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdCompressionDictType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressionDictType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressionDictType) < 0) {
 		return;
 	}

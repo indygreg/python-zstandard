@@ -774,7 +774,7 @@ PyTypeObject ZstdDecompressionReaderType = {
 void decompressionreader_module_init(PyObject* mod) {
 	/* TODO make reader a sub-class of io.RawIOBase */
 
-	Py_TYPE(&ZstdDecompressionReaderType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdDecompressionReaderType, &PyType_Type);
 	if (PyType_Ready(&ZstdDecompressionReaderType) < 0) {
 		return;
 	}

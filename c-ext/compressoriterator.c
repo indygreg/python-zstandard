@@ -228,7 +228,7 @@ PyTypeObject ZstdCompressorIteratorType = {
 };
 
 void compressoriterator_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdCompressorIteratorType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressorIteratorType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressorIteratorType) < 0) {
 		return;
 	}
