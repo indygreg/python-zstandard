@@ -245,7 +245,7 @@ PyTypeObject ZstdCompressionObjType = {
 };
 
 void compressobj_module_init(PyObject* module) {
-	Py_TYPE(&ZstdCompressionObjType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressionObjType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressionObjType) < 0) {
 		return;
 	}

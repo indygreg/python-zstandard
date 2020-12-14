@@ -353,7 +353,7 @@ PyTypeObject ZstdCompressionWriterType = {
 };
 
 void compressionwriter_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdCompressionWriterType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressionWriterType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressionWriterType) < 0) {
 		return;
 	}

@@ -280,7 +280,7 @@ PyTypeObject ZstdDecompressionWriterType = {
 };
 
 void decompressionwriter_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdDecompressionWriterType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdDecompressionWriterType, &PyType_Type);
 	if (PyType_Ready(&ZstdDecompressionWriterType) < 0) {
 		return;
 	}

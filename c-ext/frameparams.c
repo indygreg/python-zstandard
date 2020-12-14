@@ -124,7 +124,7 @@ PyTypeObject FrameParametersType = {
 };
 
 void frameparams_module_init(PyObject* mod) {
-	Py_TYPE(&FrameParametersType) = &PyType_Type;
+	Py_SET_TYPE(&FrameParametersType, &PyType_Type);
 	if (PyType_Ready(&FrameParametersType) < 0) {
 		return;
 	}

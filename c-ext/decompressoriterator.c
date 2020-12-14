@@ -242,7 +242,7 @@ PyTypeObject ZstdDecompressorIteratorType = {
 };
 
 void decompressoriterator_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdDecompressorIteratorType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdDecompressorIteratorType, &PyType_Type);
 	if (PyType_Ready(&ZstdDecompressorIteratorType) < 0) {
 		return;
 	}
