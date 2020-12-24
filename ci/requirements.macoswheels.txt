@@ -4,16 +4,16 @@
 #
 #    pip-compile --generate-hashes --output-file=ci/requirements.macoswheels.txt ci/requirements.macoswheels.in
 #
-bashlex==0.14 \
-    --hash=sha256:5a92e0900b7a91de93a338b3fae651adc2b6a0e9656972b9e2ed3afd9c492ffd \
+bashlex==0.15 \
+    --hash=sha256:fe539cf9eba046f60a8d32eda2a28e9dccdd06cb4b9f5089ec658348ea53a6dd \
     # via cibuildwheel
-certifi==2020.11.8 \
-    --hash=sha256:1f422849db327d534e3d0c5f02a263458c3955ec0aae4ff09b95f195c59f4edd \
-    --hash=sha256:f05def092c44fbf25834a51509ef6e631dc19765ab8a57b4e7ab85531f0a9cf4 \
+certifi==2020.12.5 \
+    --hash=sha256:1a4995114262bffbc2413b159f2a1a480c969de6e6eb13ee966d470af86af59c \
+    --hash=sha256:719a74fb9e33b9bd44cc7f3a8d94bc35e4049deebe19ba7d8e108280cfd59830 \
     # via cibuildwheel
-cibuildwheel==1.7.1 \
-    --hash=sha256:9c84a1cb9f03dd76c5d6e35960bcd261d1e897e446225dbd9b7c8efa2737dabe \
-    --hash=sha256:bd1ad64bf4a3cfca4b55f35a79ce2c8db5b509d3c687ab097c3e7c39722b906c \
+cibuildwheel==1.7.2 \
+    --hash=sha256:894abe607b84d0185a338793afa6b69b664b5690431cf29932a03b88233eff3a \
+    --hash=sha256:fb6a8af4017ae5d8598722257ba18e5fde7a2b909f95846f4d77596350271d90 \
     # via -r ci/requirements.macoswheels.in
 toml==0.10.2 \
     --hash=sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b \
