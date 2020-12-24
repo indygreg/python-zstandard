@@ -26,10 +26,6 @@ bindings. If it isn't present, the CFFI bindings won't be built.
 To create a virtualenv with all development dependencies, do something
 like the following::
 
-  # Python 2
-  $ virtualenv venv
-
-  # Python 3
   $ python3 -m venv venv
 
   $ source venv/bin/activate
