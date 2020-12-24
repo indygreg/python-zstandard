@@ -1,10 +1,12 @@
 import io
 import os
 
+from typing import List
+
 try:
-    import hypothesis
+    import hypothesis  # type: ignore
 except ImportError:
-    hypothesis = None
+    hypothesis = None  # type: ignore
 
 
 class NonClosingBytesIO(io.BytesIO):
@@ -48,7 +50,7 @@ class OpCountingBytesIO(NonClosingBytesIO):
         return super(OpCountingBytesIO, self).write(data)
 
 
-_source_files = []
+_source_files = []  # type: List[bytes]
 
 
 def random_input_data():
