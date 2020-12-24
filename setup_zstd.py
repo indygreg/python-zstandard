@@ -86,6 +86,7 @@ ext_sources = [
 
 zstd_depends = [
     "c-ext/python-zstandard.h",
+    "c-ext/pythoncapi_compat.h",
 ]
 
 
