@@ -1,5 +1,4 @@
 import struct
-import unittest
 
 import zstandard as zstd
 
