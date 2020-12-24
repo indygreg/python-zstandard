@@ -121,10 +121,6 @@ pyparsing==2.4.7 \
     --hash=sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1 \
     --hash=sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b \
     # via packaging
-pytest-azurepipelines==0.8.0 \
-    --hash=sha256:38b841a90e88d1966715966d7ea35619ed710386138a6a0b8fb5954c991ca4f1 \
-    --hash=sha256:944ae2c0790b792d123aa7312fe307bc35214dd26531728923ae5085a1d1feab \
-    # via -r ci/requirements.in
 pytest-forked==1.3.0 \
     --hash=sha256:6aa9ac7e00ad1a539c41bec6d21011332de671e938c7637378ec9710204e37ca \
     --hash=sha256:dc4147784048e70ef5d437951728825a131b81714b398d5d52f17c7c144d8815 \
@@ -136,7 +132,7 @@ pytest-xdist==2.2.0 \
 pytest==6.1.2 \
     --hash=sha256:4288fed0d9153d9646bfcdf0c0428197dba1ecb27a33bb6e031d002fa88653fe \
     --hash=sha256:c0a7e94a8cdbc5422a51ccdad8e6f1024795939cc89159a0ae7f0b316ad3823e \
-    # via -r ci/requirements.in, pytest-azurepipelines, pytest-forked, pytest-xdist
+    # via -r ci/requirements.in, pytest-forked, pytest-xdist
 six==1.15.0 \
     --hash=sha256:30639c035cdb23534cd4aa2dd52c3bf48f06e5f4a941509c8bafd8ce11080259 \
     --hash=sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced \

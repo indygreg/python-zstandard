@@ -5,7 +5,6 @@ cffi
 colorama
 hypothesis
 pycparser
-pytest-azurepipelines
 pytest-xdist
 pytest
 tox-travis
