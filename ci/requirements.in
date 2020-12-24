@@ -7,5 +7,4 @@ hypothesis
 pycparser
 pytest-xdist
 pytest
-tox-travis
 wheel
