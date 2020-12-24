@@ -95,6 +95,7 @@ Bug Fixes
 Changes
 -------
 
+* Added Python typing stub file for the ``zstandard`` module. (#120)
 * The ``make_cffi.py`` script should now respect the ``CC`` environment
   variable for locating the compiler. (#103)
 * CI now properly uses the ``cffi`` backend when running all tests.

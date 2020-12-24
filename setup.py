@@ -140,6 +140,7 @@ setup(
     ],
     keywords="zstandard zstd compression",
     packages=["zstandard"],
+    package_data={"zstandard": ["__init__.pyi", "py.typed"],},
     ext_modules=extensions,
     cmdclass={"build_ext": setup_zstd.RustBuildExt},
     test_suite="tests",
