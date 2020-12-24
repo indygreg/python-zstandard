@@ -4,6 +4,7 @@ cibuildwheel
 cffi
 colorama
 hypothesis
+mypy
 pycparser
 pytest-xdist
 pytest
