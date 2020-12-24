@@ -39,7 +39,7 @@ class OpCountingBytesIO(NonClosingBytesIO):
         self._flush_count = 0
         self._read_count = 0
         self._write_count = 0
-        return super(OpCountingBytesIO, self).__init__(*args, **kwargs)
+        super(OpCountingBytesIO, self).__init__(*args, **kwargs)
 
     def flush(self):
         self._flush_count += 1
