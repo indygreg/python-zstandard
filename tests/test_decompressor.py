@@ -37,7 +37,7 @@ class TestFrameHeaderSize(TestCase):
 
 
 class TestFrameContentSize(TestCase):
-    def test_empty(self):
+    def test_empty_input(self):
         with self.assertRaisesRegex(
             zstd.ZstdError, "error when determining content size"
         ):
