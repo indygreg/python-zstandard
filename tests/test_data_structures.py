@@ -1,9 +1,9 @@
+import unittest
+
 import zstandard as zstd
 
-from .common import TestCase
 
-
-class TestCompressionParameters(TestCase):
+class TestCompressionParameters(unittest.TestCase):
     def test_bounds(self):
         zstd.ZstdCompressionParameters(
             window_log=zstd.WINDOWLOG_MIN,
@@ -148,7 +148,7 @@ class TestCompressionParameters(TestCase):
         self.assertEqual(p.overlap_size_log, 4)
 
 
-class TestFrameParameters(TestCase):
+class TestFrameParameters(unittest.TestCase):
     def test_invalid_type(self):
         with self.assertRaises(TypeError):
             zstd.get_frame_parameters(None)

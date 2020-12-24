@@ -9,8 +9,6 @@ except ImportError:
 
 import zstandard as zstd
 
-from .common import TestCase
-
 
 s_windowlog = strategies.integers(
     min_value=zstd.WINDOWLOG_MIN, max_value=zstd.WINDOWLOG_MAX
@@ -46,7 +44,7 @@ s_strategy = strategies.sampled_from(
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressionParametersHypothesis(TestCase):
+class TestCompressionParametersHypothesis(unittest.TestCase):
     @hypothesis.given(
         s_windowlog,
         s_chainlog,

@@ -13,12 +13,11 @@ import zstandard as zstd
 from .common import (
     NonClosingBytesIO,
     random_input_data,
-    TestCase,
 )
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressor_stream_reader_fuzzing(TestCase):
+class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[hypothesis.HealthCheck.large_base_example]
     )
@@ -572,7 +571,7 @@ class TestCompressor_stream_reader_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressor_stream_writer_fuzzing(TestCase):
+class TestCompressor_stream_writer_fuzzing(unittest.TestCase):
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
@@ -593,7 +592,7 @@ class TestCompressor_stream_writer_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressor_copy_stream_fuzzing(TestCase):
+class TestCompressor_copy_stream_fuzzing(unittest.TestCase):
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
@@ -622,7 +621,7 @@ class TestCompressor_copy_stream_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressor_compressobj_fuzzing(TestCase):
+class TestCompressor_compressobj_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -713,7 +712,7 @@ class TestCompressor_compressobj_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressor_read_to_iter_fuzzing(TestCase):
+class TestCompressor_read_to_iter_fuzzing(unittest.TestCase):
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
@@ -742,7 +741,7 @@ class TestCompressor_read_to_iter_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressor_multi_compress_to_buffer_fuzzing(TestCase):
+class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
     @hypothesis.given(
         original=strategies.lists(
             strategies.sampled_from(random_input_data()),
@@ -779,7 +778,7 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
-class TestCompressor_chunker_fuzzing(TestCase):
+class TestCompressor_chunker_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,

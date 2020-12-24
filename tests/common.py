@@ -1,16 +1,10 @@
 import io
 import os
-import unittest
 
 try:
     import hypothesis
 except ImportError:
     hypothesis = None
-
-
-class TestCase(unittest.TestCase):
-    if not getattr(unittest.TestCase, "assertRaisesRegex", False):
-        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 
 class NonClosingBytesIO(io.BytesIO):

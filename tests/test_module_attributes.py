@@ -1,11 +1,9 @@
-from __future__ import unicode_literals
+import unittest
 
 import zstandard as zstd
 
-from .common import TestCase
 
-
-class TestModuleAttributes(TestCase):
+class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
         self.assertEqual(zstd.ZSTD_VERSION, (1, 4, 5))
 

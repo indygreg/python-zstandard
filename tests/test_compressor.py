@@ -4,13 +4,13 @@ import os
 import struct
 import tarfile
 import tempfile
+import unittest
 
 import zstandard as zstd
 
 from .common import (
     NonClosingBytesIO,
     OpCountingBytesIO,
-    TestCase,
 )
 
 
@@ -22,7 +22,7 @@ def multithreaded_chunk_size(level, source_size=0):
     return 1 << (params.window_log + 2)
 
 
-class TestCompressor(TestCase):
+class TestCompressor(unittest.TestCase):
     def test_level_bounds(self):
         with self.assertRaises(ValueError):
             zstd.ZstdCompressor(level=23)
@@ -32,7 +32,7 @@ class TestCompressor(TestCase):
         self.assertGreater(cctx.memory_size(), 100)
 
 
-class TestCompressor_compress(TestCase):
+class TestCompressor_compress(unittest.TestCase):
     def test_compress_empty(self):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         result = cctx.compress(b"")
@@ -235,7 +235,7 @@ class TestCompressor_compress(TestCase):
         )
 
 
-class TestCompressor_compressobj(TestCase):
+class TestCompressor_compressobj(unittest.TestCase):
     def test_compressobj_empty(self):
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         cobj = cctx.compressobj()
@@ -417,7 +417,7 @@ class TestCompressor_compressobj(TestCase):
         cctx.compress(b"foobar")
 
 
-class TestCompressor_copy_stream(TestCase):
+class TestCompressor_copy_stream(unittest.TestCase):
     def test_no_read(self):
         source = object()
         dest = io.BytesIO()
@@ -581,7 +581,7 @@ class TestCompressor_copy_stream(TestCase):
         cctx.copy_stream(source, dest)
 
 
-class TestCompressor_stream_reader(TestCase):
+class TestCompressor_stream_reader(unittest.TestCase):
     def test_context_manager(self):
         cctx = zstd.ZstdCompressor()
 
@@ -838,7 +838,7 @@ class TestCompressor_stream_reader(TestCase):
         self.assertEqual(reader.read1(1024), foo[4:])
 
 
-class TestCompressor_stream_writer(TestCase):
+class TestCompressor_stream_writer(unittest.TestCase):
     def test_io_api(self):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor()
@@ -1334,7 +1334,7 @@ class TestCompressor_stream_writer(TestCase):
                     self.assertEqual(member.name, "test_compressor.py")
 
 
-class TestCompressor_read_to_iter(TestCase):
+class TestCompressor_read_to_iter(unittest.TestCase):
     def test_type_validation(self):
         cctx = zstd.ZstdCompressor()
 
@@ -1455,7 +1455,7 @@ class TestCompressor_read_to_iter(TestCase):
         b"".join(cctx.read_to_iter(source))
 
 
-class TestCompressor_chunker(TestCase):
+class TestCompressor_chunker(unittest.TestCase):
     def test_empty(self):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         chunker = cctx.chunker()
@@ -1645,7 +1645,7 @@ class TestCompressor_chunker(TestCase):
             list(chunker.finish())
 
 
-class TestCompressor_multi_compress_to_buffer(TestCase):
+class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
     def test_invalid_inputs(self):
         cctx = zstd.ZstdCompressor()
 

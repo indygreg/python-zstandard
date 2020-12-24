@@ -1,4 +1,5 @@
 import struct
+import unittest
 
 import zstandard as zstd
 
@@ -6,11 +7,10 @@ from .common import (
     generate_samples,
     get_optimal_dict_size_heuristically,
     random_input_data,
-    TestCase,
 )
 
 
-class TestTrainDictionary(TestCase):
+class TestTrainDictionary(unittest.TestCase):
     def test_no_args(self):
         with self.assertRaises(TypeError):
             zstd.train_dictionary()
@@ -69,7 +69,7 @@ class TestTrainDictionary(TestCase):
         self.assertEqual(d.d, 6)
 
 
-class TestCompressionDict(TestCase):
+class TestCompressionDict(unittest.TestCase):
     def test_bad_mode(self):
         with self.assertRaisesRegex(ValueError, "invalid dictionary load mode"):
             zstd.ZstdCompressionDict(b"foo", dict_type=42)
