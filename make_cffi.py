@@ -84,7 +84,8 @@ distutils.sysconfig.customize_compiler(compiler)
 # Distutils doesn't set compiler.preprocessor, so invoke the preprocessor
 # manually.
 if compiler.compiler_type == "unix":
-    args = list(compiler.executables["compiler"])
+    # Using .compiler respects the CC environment variable.
+    args = [compiler.compiler[0]]
     args.extend(
         ["-E", "-DZSTD_STATIC_LINKING_ONLY", "-DZDICT_STATIC_LINKING_ONLY",]
     )

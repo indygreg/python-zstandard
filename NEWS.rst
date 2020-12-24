@@ -95,6 +95,8 @@ Bug Fixes
 Changes
 -------
 
+* The ``make_cffi.py`` script should now respect the ``CC`` environment
+  variable for locating the compiler. (#103)
 * CI now properly uses the ``cffi`` backend when running all tests.
 * ``train_dictionary()`` has been rewritten to use the ``fastcover`` APIs
   and to consistently call ``ZDICT_optimizeTrainFromBuffer_fastCover()``
