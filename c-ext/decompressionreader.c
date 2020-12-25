@@ -417,12 +417,6 @@ static PyObject* decompressionreader_readinto(ZstdDecompressionReader* self, PyO
 		return NULL;
 	}
 
-	if (!PyBuffer_IsContiguous(&dest, 'C') || dest.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"destination buffer should be contiguous and have at most one dimension");
-	    goto finally;
-	}
-
 	output.dst = dest.buf;
 	output.size = dest.len;
 	output.pos = 0;
@@ -485,12 +479,6 @@ static PyObject* decompressionreader_readinto1(ZstdDecompressionReader* self, Py
 
 	if (!PyArg_ParseTuple(args, "w*:readinto1", &dest)) {
 		return NULL;
-	}
-
-	if (!PyBuffer_IsContiguous(&dest, 'C') || dest.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"destination buffer should be contiguous and have at most one dimension");
-	    goto finally;
 	}
 
 	output.dst = dest.buf;

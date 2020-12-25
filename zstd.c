@@ -68,12 +68,6 @@ static PyObject* frame_content_size(PyObject* self, PyObject* args, PyObject* kw
 		return NULL;
 	}
 
-	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"data buffer should be contiguous and have at most one dimension");
-		goto finally;
-	}
-
 	size = ZSTD_getFrameContentSize(source.buf, source.len);
 
 	if (size == ZSTD_CONTENTSIZE_ERROR) {
@@ -86,7 +80,6 @@ static PyObject* frame_content_size(PyObject* self, PyObject* args, PyObject* kw
 		result = PyLong_FromUnsignedLongLong(size);
 	}
 
-finally:
 	PyBuffer_Release(&source);
 
 	return result;
@@ -113,12 +106,6 @@ static PyObject* frame_header_size(PyObject* self, PyObject* args, PyObject* kwa
 		return NULL;
 	}
 
-	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"data buffer should be contiguous and have at most one dimension");
-		goto finally;
-	}
-
 	zresult = ZSTD_frameHeaderSize(source.buf, source.len);
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "could not determine frame header size: %s",
@@ -127,8 +114,6 @@ static PyObject* frame_header_size(PyObject* self, PyObject* args, PyObject* kwa
 	else {
 		result = PyLong_FromSize_t(zresult);
 	}
-
-finally:
 
 	PyBuffer_Release(&source);
 

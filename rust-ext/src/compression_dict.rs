@@ -88,13 +88,6 @@ impl ZstdCompressionDict {
     fn new_impl(py: Python, data: PyObject, dict_type: Option<u32>) -> PyResult<PyObject> {
         let buffer = PyBuffer::get(py, &data)?;
 
-        if !buffer.is_c_contiguous() || buffer.dimensions() > 1 {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
-                "data buffer should be contiguous and have at most one dimension",
-            ));
-        }
-
         let dict_type = if dict_type == Some(zstd_sys::ZSTD_dictContentType_e::ZSTD_dct_auto as u32)
         {
             Ok(zstd_sys::ZSTD_dictContentType_e::ZSTD_dct_auto)

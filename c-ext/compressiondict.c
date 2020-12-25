@@ -200,12 +200,6 @@ static int ZstdCompressionDict_init(ZstdCompressionDict* self, PyObject* args, P
 		return -1;
 	}
 
-	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"data buffer should be contiguous and have at most one dimension");
-		goto finally;
-	}
-
 	if (dictType != ZSTD_dct_auto && dictType != ZSTD_dct_rawContent
 		&& dictType != ZSTD_dct_fullDict) {
 		PyErr_Format(PyExc_ValueError,

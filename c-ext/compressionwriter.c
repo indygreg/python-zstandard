@@ -85,12 +85,6 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 		return NULL;
 	}
 
-	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"data buffer should be contiguous and have at most one dimension");
-		goto finally;
-	}
-
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
 		return NULL;

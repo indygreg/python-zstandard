@@ -104,10 +104,6 @@ Many Python types implement the buffer protocol. These include ``bytes``
 (``str`` on Python 2), ``bytearray``, ``array.array``, ``io.BytesIO``,
 ``mmap.mmap``, and ``memoryview``.
 
-``python-zstandard`` APIs that accept objects conforming to the buffer
-protocol require that the buffer is *C contiguous*. This is usually the
-case.
-
 Requiring Output Sizes for Non-Streaming Decompression APIs
 ===========================================================
 

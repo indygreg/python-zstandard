@@ -68,16 +68,6 @@ static int BufferWithSegments_init(ZstdBufferWithSegments* self, PyObject* args,
 		return -1;
 	}
 
-	if (!PyBuffer_IsContiguous(&self->parent, 'C') || self->parent.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError, "data buffer should be contiguous and have a single dimension");
-		goto except;
-	}
-
-	if (!PyBuffer_IsContiguous(&segments, 'C') || segments.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError, "segments buffer should be contiguous and have a single dimension");
-		goto except;
-	}
-
 	if (segments.len % sizeof(BufferSegment)) {
 		PyErr_Format(PyExc_ValueError, "segments array size is not a multiple of %zu",
 			sizeof(BufferSegment));

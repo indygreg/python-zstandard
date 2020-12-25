@@ -55,13 +55,6 @@ impl ZstdCompressionObj {
 
         let buffer = PyBuffer::get(py, &data)?;
 
-        if !buffer.is_c_contiguous() || buffer.dimensions() > 1 {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
-                "data buffer should be contiguous and have at most one dimension",
-            ));
-        }
-
         let mut source = unsafe {
             std::slice::from_raw_parts::<u8>(buffer.buf_ptr() as *const _, buffer.len_bytes())
         };

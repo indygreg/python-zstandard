@@ -213,13 +213,6 @@ static ZstdCompressionChunkerIterator* ZstdCompressionChunker_compress(ZstdCompr
 		return NULL;
 	}
 
-	if (!PyBuffer_IsContiguous(&self->inBuffer, 'C') || self->inBuffer.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"data buffer should be contiguous and have at most one dimension");
-		PyBuffer_Release(&self->inBuffer);
-		return NULL;
-	}
-
 	result = (ZstdCompressionChunkerIterator*)PyObject_CallObject((PyObject*)&ZstdCompressionChunkerIteratorType, NULL);
 	if (!result) {
 		PyBuffer_Release(&self->inBuffer);

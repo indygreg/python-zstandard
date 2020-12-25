@@ -95,6 +95,11 @@ Bug Fixes
 Changes
 -------
 
+* ``PyBuffer`` instances are no longer checked to be C contiguous and
+  have a single dimension. The former was redundant with what
+  ``PyArg_ParseTuple()`` already did and the latter is not necessary
+  in practice because very few extension modules create buffers with
+  more than 1 dimension. (#124)
 * Added Python typing stub file for the ``zstandard`` module. (#120)
 * The ``make_cffi.py`` script should now respect the ``CC`` environment
   variable for locating the compiler. (#103)

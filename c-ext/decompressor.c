@@ -314,12 +314,6 @@ PyObject* Decompressor_decompress(ZstdDecompressor* self, PyObject* args, PyObje
 		return NULL;
 	}
 
-	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"data buffer should be contiguous and have at most one dimension");
-		goto finally;
-	}
-
 	if (ensure_dctx(self, 1)) {
 		goto finally;
 	}
@@ -1533,11 +1527,6 @@ static ZstdBufferWithSegmentsCollection* Decompressor_multi_decompress_to_buffer
 	}
 
 	if (frameSizes.buf) {
-		if (!PyBuffer_IsContiguous(&frameSizes, 'C') || frameSizes.ndim > 1) {
-			PyErr_SetString(PyExc_ValueError, "decompressed_sizes buffer should be contiguous and have a single dimension");
-			goto finally;
-		}
-
 		frameSizesP = (unsigned long long*)frameSizes.buf;
 	}
 
