@@ -176,6 +176,8 @@ def normalize_output(output):
             continue
         elif b"__declspec(deprecated(" in line:
             continue
+        elif line.startswith(b"__attribute__((__unused__))"):
+            continue
 
         lines.append(line)
 
