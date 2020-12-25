@@ -1076,7 +1076,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         buffer = NonClosingBytesIO()
         cctx = zstd.ZstdCompressor(dict_data=d)
         with cctx.stream_writer(buffer) as compressor:
-            self.assertEqual(compressor.write(orig), 0)
+            self.assertEqual(compressor.write(orig), 1351)
 
         compressed = buffer.getvalue()
         buffer = io.BytesIO()
