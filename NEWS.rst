@@ -62,6 +62,18 @@ Actions Blocking Release
 * Consider controls over resetting compression contexts (session only, parameters,
   or session and parameters).
 * Consider exposing ``ZSTD_d_stableOutBuffer``.
+* Support ``ZSTD_c_enableDedicatedDictSearch``.
+* Support ``ZSTD_c_stableInBuffer``.
+* Support ``ZSTD_c_stableOutBuffer``.
+* Support ``ZSTD_c_blockDelimiters``.
+* Support ``ZSTD_c_validateSequences``.
+* Support ``ZSTD_d_forceIgnoreChecksum``.
+* Support ``ZSTD_generateSequences()``.
+* Support ``ZSTD_mergeBlockDelimiters()``.
+* Support ``ZSTD_compressSequences()``.
+* Support ``ZSTD_threadPool`` APIs for managing a thread pool.
+* Utilize ``ZSTD_getDictID_fromCDict()``?
+* Utilize ``ZSTD_DCtx_getParameter()``.
 
 Other Actions Not Blocking Release
 ---------------------------------------
