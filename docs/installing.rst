@@ -39,3 +39,38 @@ and since pip 7.0 it is possible to have the following line in your
 requirements.txt::
 
    zstandard --install-option="--legacy"
+
+All Install Arguments
+=====================
+
+``setup.py`` accepts the following arguments for influencing behavior:
+
+``--legacy``
+   Enable legacy zstd format support in order to read files produced with
+   zstd < 1.0.
+
+``--system-zstd``
+   Attempt to link against the zstd library present on the system instead
+   of the version distributed with the extension.
+
+   The Python extension only supports linking against a specific version of
+   zstd. So if the system version differs from what is expected, a build
+   or runtime error will result.
+
+``--warning-as-errors``
+   Treat all compiler warnings as errors.
+
+``--no-c-backend``
+   Do not compile the C-based backend.
+
+``--no-cffi-backend``
+   Do not compile the CFFI-based backend.
+
+``--rust-backend``
+   Compile the Rust backend (not yet feature complete).
+
+If you invoke ``setup.py``, simply pass the aforementioned arguments. e.g.
+``python3.9 setup.py --no-cffi-backend``. If using ``pip``, use the
+``--install-option`` argument. e.g.
+``python3.9 -m pip install zstandard --install-option --warning-as-errors``.
+Or in a pip requirements file: ``zstandard --install-option="--rust-backend"``.
