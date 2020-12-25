@@ -107,6 +107,7 @@ Bug Fixes
 Changes
 -------
 
+* Bundled zstandard library upgraded from 1.4.5 to 1.4.8.
 * ``PyBuffer`` instances are no longer checked to be C contiguous and
   have a single dimension. The former was redundant with what
   ``PyArg_ParseTuple()`` already did and the latter is not necessary
