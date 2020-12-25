@@ -203,7 +203,7 @@ def compress_compressobj_size(chunks, zparams):
 
 
 @bench("discrete", "chunker()")
-def compress_chunker(chunks, zparams):
+def compress_chunker_discrete(chunks, zparams):
     cctx = zstd.ZstdCompressor(compression_params=zparams)
     for in_chunk in chunks:
         chunker = cctx.chunker()
@@ -214,7 +214,7 @@ def compress_chunker(chunks, zparams):
 
 
 @bench("discrete", "chunker() w/ input size")
-def compress_chunker(chunks, zparams):
+def compress_chunker_discrete_size(chunks, zparams):
     cctx = zstd.ZstdCompressor(compression_params=zparams)
     for in_chunk in chunks:
         chunker = cctx.chunker(size=len(in_chunk))
