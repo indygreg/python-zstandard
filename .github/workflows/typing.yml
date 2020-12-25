@@ -31,4 +31,4 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy tests/*.py
+          mypy tests/*.py zstandard/*.py
