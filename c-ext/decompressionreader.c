@@ -91,7 +91,7 @@ static PyObject *decompressionreader_writable(PyObject *self) {
 }
 
 static PyObject *decompressionreader_seekable(PyObject *self) {
-    Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
 }
 
 static PyObject *decompressionreader_close(ZstdDecompressionReader *self) {
@@ -729,7 +729,7 @@ static PyMethodDef decompressionreader_methods[] = {
     {"seek", (PyCFunction)decompressionreader_seek, METH_VARARGS,
      PyDoc_STR("Seek the stream")},
     {"seekable", (PyCFunction)decompressionreader_seekable, METH_NOARGS,
-     PyDoc_STR("Returns True")},
+     PyDoc_STR("Returns False")},
     {"tell", (PyCFunction)decompressionreader_tell, METH_NOARGS,
      PyDoc_STR("Returns current number of bytes compressed")},
     {"writable", (PyCFunction)decompressionreader_writable, METH_NOARGS,

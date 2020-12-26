@@ -1949,7 +1949,7 @@ class ZstdDecompressionReader(object):
         return False
 
     def seekable(self):
-        return True
+        return False
 
     def readline(self):
         raise io.UnsupportedOperation()

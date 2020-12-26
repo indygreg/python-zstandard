@@ -345,7 +345,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
             self.assertFalse(reader.closed)
             self.assertTrue(reader.readable())
             self.assertFalse(reader.writable())
-            self.assertTrue(reader.seekable())
+            self.assertFalse(reader.seekable())
             self.assertFalse(reader.isatty())
             self.assertFalse(reader.closed)
             self.assertIsNone(reader.flush())
