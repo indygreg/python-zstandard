@@ -134,6 +134,7 @@ Changes
 * ``zstd.c`` file renamed to ``c-ext/backend_c.c``.
 * All built/installed Python modules are now in the ``zstandard``
   package. Previously, there were modules in other packages. (#115)
+* C source code is now automatically formatted with ``clang-format``.
 
 0.14.1 (released 2020-12-05)
 ============================
