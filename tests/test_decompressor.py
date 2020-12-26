@@ -478,24 +478,24 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         with dctx.stream_reader(frame) as reader:
             with self.assertRaisesRegex(
-                ValueError, "cannot seek to negative position"
+                OSError, "cannot seek to negative position"
             ):
                 reader.seek(-1, os.SEEK_SET)
 
             reader.read(1)
 
             with self.assertRaisesRegex(
-                ValueError, "cannot seek zstd decompression stream backwards"
+                OSError, "cannot seek zstd decompression stream backwards"
             ):
                 reader.seek(0, os.SEEK_SET)
 
             with self.assertRaisesRegex(
-                ValueError, "cannot seek zstd decompression stream backwards"
+                OSError, "cannot seek zstd decompression stream backwards"
             ):
                 reader.seek(-1, os.SEEK_CUR)
 
             with self.assertRaisesRegex(
-                ValueError,
+                OSError,
                 "zstd decompression streams cannot be seeked with SEEK_END",
             ):
                 reader.seek(0, os.SEEK_END)

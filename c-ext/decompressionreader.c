@@ -615,13 +615,13 @@ static PyObject *decompressionreader_seek(ZstdDecompressionReader *self,
 
     if (whence == SEEK_SET) {
         if (pos < 0) {
-            PyErr_SetString(PyExc_ValueError,
+            PyErr_SetString(PyExc_OSError,
                             "cannot seek to negative position with SEEK_SET");
             return NULL;
         }
 
         if ((unsigned long long)pos < self->bytesDecompressed) {
-            PyErr_SetString(PyExc_ValueError,
+            PyErr_SetString(PyExc_OSError,
                             "cannot seek zstd decompression stream backwards");
             return NULL;
         }
@@ -630,7 +630,7 @@ static PyObject *decompressionreader_seek(ZstdDecompressionReader *self,
     }
     else if (whence == SEEK_CUR) {
         if (pos < 0) {
-            PyErr_SetString(PyExc_ValueError,
+            PyErr_SetString(PyExc_OSError,
                             "cannot seek zstd decompression stream backwards");
             return NULL;
         }
@@ -641,7 +641,7 @@ static PyObject *decompressionreader_seek(ZstdDecompressionReader *self,
         /* We /could/ support this with pos==0. But let's not do that until
            someone needs it. */
         PyErr_SetString(
-            PyExc_ValueError,
+            PyExc_OSError,
             "zstd decompression streams cannot be seeked with SEEK_END");
         return NULL;
     }

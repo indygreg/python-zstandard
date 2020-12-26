@@ -102,6 +102,8 @@ Backwards Compatibility Notes
   CFFI extension module is now built as ``zstandard._cffi`` instead of
   ``_zstd_cffi``. The CFFI backend is now ``zstandard.backend_cffi`` instead
   of ``zstandard.cffi``.
+* ``ZstdDecompressionReader.seek()`` now raises ``OSError`` instead of
+  ``ValueError`` when the seek cannot be fulfilled. (#107)
 
 Bug Fixes
 ---------

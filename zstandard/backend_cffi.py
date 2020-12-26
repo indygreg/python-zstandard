@@ -2190,12 +2190,10 @@ class ZstdDecompressionReader(object):
 
         if whence == os.SEEK_SET:
             if pos < 0:
-                raise ValueError(
-                    "cannot seek to negative position with SEEK_SET"
-                )
+                raise OSError("cannot seek to negative position with SEEK_SET")
 
             if pos < self._bytes_decompressed:
-                raise ValueError(
+                raise OSError(
                     "cannot seek zstd decompression stream " "backwards"
                 )
 
@@ -2203,13 +2201,13 @@ class ZstdDecompressionReader(object):
 
         elif whence == os.SEEK_CUR:
             if pos < 0:
-                raise ValueError(
+                raise OSError(
                     "cannot seek zstd decompression stream " "backwards"
                 )
 
             read_amount = pos
         elif whence == os.SEEK_END:
-            raise ValueError(
+            raise OSError(
                 "zstd decompression streams cannot be seeked " "with SEEK_END"
             )
 
