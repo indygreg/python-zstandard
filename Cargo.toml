@@ -8,7 +8,7 @@ description = "Python bindings to zstandard compression library"
 readme = "README.rst"
 
 [lib]
-name = "zstandard_oxidized"
+name = "backend_rust"
 crate-type = ["cdylib"]
 path = "rust-ext/src/lib.rs"
 

@@ -154,7 +154,7 @@ ffi = cffi.FFI()
 # when cffi uses the function. Since we statically link against zstd, even
 # if we use the deprecated functions it shouldn't be a huge problem.
 ffi.set_source(
-    "_zstd_cffi",
+    "zstandard._cffi",
     """
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define ZSTD_STATIC_LINKING_ONLY

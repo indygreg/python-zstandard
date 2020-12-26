@@ -32,41 +32,41 @@ _module_policy = os.environ.get("PYTHON_ZSTANDARD_IMPORT_POLICY", "default")
 
 if _module_policy == "default":
     if platform.python_implementation() in ("CPython",):
-        from zstd import *  # type: ignore
+        from .backend_c import *  # type: ignore
 
         backend = "cext"
     elif platform.python_implementation() in ("PyPy",):
-        from .cffi import *  # type: ignore
+        from .backend_cffi import *  # type: ignore
 
         backend = "cffi"
     else:
         try:
-            from zstd import *
+            from .backend_c import *
 
             backend = "cext"
         except ImportError:
-            from .cffi import *
+            from .backend_cffi import *
 
             backend = "cffi"
 elif _module_policy == "cffi_fallback":
     try:
-        from zstd import *
+        from .backend_c import *
 
         backend = "cext"
     except ImportError:
-        from .cffi import *
+        from .backend_cffi import *
 
         backend = "cffi"
 elif _module_policy == "rust":
-    from zstandard_oxidized import *  # type: ignore
+    from .backend_rust import *  # type: ignore
 
     backend = "rust"
 elif _module_policy == "cext":
-    from zstd import *
+    from .backend_c import *
 
     backend = "cext"
 elif _module_policy == "cffi":
-    from .cffi import *
+    from .backend_cffi import *
 
     backend = "cffi"
 else:

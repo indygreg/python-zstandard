@@ -84,7 +84,6 @@ extensions = []
 if C_BACKEND:
     extensions.append(
         setup_zstd.get_c_extension(
-            name="zstd",
             support_legacy=SUPPORT_LEGACY,
             system_zstd=SYSTEM_ZSTD,
             warnings_as_errors=WARNINGS_AS_ERRORS,

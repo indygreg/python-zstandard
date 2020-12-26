@@ -80,7 +80,7 @@ __all__ = [
 import io
 import os
 
-from _zstd_cffi import (  # type: ignore
+from ._cffi import (  # type: ignore
     ffi,
     lib,
 )

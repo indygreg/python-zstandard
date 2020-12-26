@@ -30,7 +30,7 @@ zstd_depends = [
 def get_c_extension(
     support_legacy=False,
     system_zstd=False,
-    name="zstd",
+    name="zstandard.backend_c",
     warnings_as_errors=False,
     root=None,
 ):
@@ -177,4 +177,4 @@ def get_rust_extension(root=None,):
     actual_root = os.path.abspath(os.path.dirname(__file__))
     root = root or actual_root
 
-    return RustExtension("zstandard_oxidized", root)
+    return RustExtension("zstandard.backend_rust", root)

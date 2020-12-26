@@ -18,7 +18,7 @@ use exceptions::ZstdError;
 
 const VERSION: &'static str = "0.15.0.dev0";
 
-py_module_initializer!(zstandard_oxidized, |py, m| { init_module(py, m) });
+py_module_initializer!(backend_rust, |py, m| { init_module(py, m) });
 
 fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
     crate::compression_dict::init_module(py, module)?;

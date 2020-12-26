@@ -97,6 +97,11 @@ Backwards Compatibility Notes
 * ``train_dictionary()`` now always calls
   ``ZDICT_optimizeTrainFromBuffer_fastCover()`` instead of different APIs
   depending on which arguments were passed.
+* The names of various Python modules have been changed. The C extension
+  is now built as ``zstandard.backend_c`` instead of ``zstd``. The
+  CFFI extension module is now built as ``zstandard._cffi`` instead of
+  ``_zstd_cffi``. The CFFI backend is now ``zstandard.backend_cffi`` instead
+  of ``zstandard.cffi``.
 
 Bug Fixes
 ---------
@@ -127,6 +132,8 @@ Changes
   ``accel``, which are parameters unique to ``fastcover``.
 * CI now tests and builds wheels for Python 3.9.
 * ``zstd.c`` file renamed to ``c-ext/backend_c.c``.
+* All built/installed Python modules are now in the ``zstandard``
+  package. Previously, there were modules in other packages. (#115)
 
 0.14.1 (released 2020-12-05)
 ============================

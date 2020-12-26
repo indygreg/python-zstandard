@@ -237,13 +237,13 @@ void zstd_module_init(PyObject* m) {
 
 static struct PyModuleDef zstd_module = {
 	PyModuleDef_HEAD_INIT,
-	"zstd",
+	"backend_c",
 	zstd_doc,
 	-1,
 	zstd_methods
 };
 
-PYTHON_ZSTD_VISIBILITY PyMODINIT_FUNC PyInit_zstd(void) {
+PYTHON_ZSTD_VISIBILITY PyMODINIT_FUNC PyInit_backend_c(void) {
 	PyObject *m = PyModule_Create(&zstd_module);
 	if (m) {
 		zstd_module_init(m);
