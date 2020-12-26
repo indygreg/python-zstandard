@@ -42,9 +42,6 @@ In addition, the ``zstandard`` module exports a ``backend`` attribute
 containing the string name of the backend being used. It will be one
 of ``cext`` or ``cffi`` (for *C extension* and *cffi*, respectively).
 
-The types, functions, and attributes exposed by the ``zstandard`` module
-are documented in the sections below.
-
 .. note::
 
    The documentation in this section makes references to various zstd
