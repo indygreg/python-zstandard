@@ -1951,10 +1951,10 @@ class ZstdDecompressionReader(object):
     def seekable(self):
         return False
 
-    def readline(self):
+    def readline(self, size=-1):
         raise io.UnsupportedOperation()
 
-    def readlines(self):
+    def readlines(self, hint=-1):
         raise io.UnsupportedOperation()
 
     def write(self, data):

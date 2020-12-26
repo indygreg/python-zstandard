@@ -587,12 +587,14 @@ static PyObject *decompressionreader_readall(PyObject *self) {
     return result;
 }
 
-static PyObject *decompressionreader_readline(PyObject *self) {
+static PyObject *decompressionreader_readline(PyObject *self, PyObject *args,
+                                              PyObject *kwargs) {
     decompressionreader_set_unsupported_operation();
     return NULL;
 }
 
-static PyObject *decompressionreader_readlines(PyObject *self) {
+static PyObject *decompressionreader_readlines(PyObject *self, PyObject *args,
+                                               PyObject *kwargs) {
     decompressionreader_set_unsupported_operation();
     return NULL;
 }
@@ -722,10 +724,10 @@ static PyMethodDef decompressionreader_methods[] = {
      NULL},
     {"readall", (PyCFunction)decompressionreader_readall, METH_NOARGS,
      PyDoc_STR("Not implemented")},
-    {"readline", (PyCFunction)decompressionreader_readline, METH_NOARGS,
-     PyDoc_STR("Not implemented")},
-    {"readlines", (PyCFunction)decompressionreader_readlines, METH_NOARGS,
-     PyDoc_STR("Not implemented")},
+    {"readline", (PyCFunction)decompressionreader_readline,
+     METH_VARARGS | METH_KEYWORDS, PyDoc_STR("Not implemented")},
+    {"readlines", (PyCFunction)decompressionreader_readlines,
+     METH_VARARGS | METH_KEYWORDS, PyDoc_STR("Not implemented")},
     {"seek", (PyCFunction)decompressionreader_seek, METH_VARARGS,
      PyDoc_STR("Seek the stream")},
     {"seekable", (PyCFunction)decompressionreader_seekable, METH_NOARGS,

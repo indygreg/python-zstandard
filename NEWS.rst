@@ -108,6 +108,10 @@ Backwards Compatibility Notes
   called for all scenarios.
 * ``ZstdDecompressionReader.seek()`` now raises ``OSError`` instead of
   ``ValueError`` when the seek cannot be fulfilled. (#107)
+* ``ZstdDecompressionReader.readline()`` and
+  ``ZstdDecompressionReader.readlines()`` now accept an integer argument.
+   This makes them conform with the IO interface. The methods still raise
+  ``io.UnsupportedOperation``.
 
 Bug Fixes
 ---------
