@@ -231,6 +231,8 @@ typedef struct {
     int readAcrossFrames;
     /* Buffer to read from (if reading from a buffer). */
     Py_buffer buffer;
+    /* Whether to close the inner object on close() */
+    int closefd;
 
     /* Whether the context manager is active. */
     int entered;

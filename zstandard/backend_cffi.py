@@ -1937,11 +1937,19 @@ class ZstdDecompressionObj(object):
 
 
 class ZstdDecompressionReader(object):
-    def __init__(self, decompressor, source, read_size, read_across_frames):
+    def __init__(
+        self,
+        decompressor,
+        source,
+        read_size,
+        read_across_frames,
+        closefd=False,
+    ):
         self._decompressor = decompressor
         self._source = source
         self._read_size = read_size
         self._read_across_frames = bool(read_across_frames)
+        self._closefd = bool(closefd)
         self._entered = False
         self._closed = False
         self._bytes_decompressed = 0
@@ -1955,14 +1963,19 @@ class ZstdDecompressionReader(object):
         if self._entered:
             raise ValueError("cannot __enter__ multiple times")
 
+        if self._closed:
+            raise ValueError("stream is closed")
+
         self._entered = True
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
-        self._closed = True
-        self._source = None
         self._decompressor = None
+
+        self.close()
+
+        self._source = None
 
         return False
 
@@ -1994,8 +2007,14 @@ class ZstdDecompressionReader(object):
         return None
 
     def close(self):
+        if self._closed:
+            return None
+
         self._closed = True
-        return None
+
+        f = getattr(self._source, "close", None)
+        if self._closefd and f:
+            f()
 
     @property
     def closed(self):
@@ -2472,10 +2491,11 @@ class ZstdDecompressor(object):
         source,
         read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
         read_across_frames=False,
+        closefd=False,
     ):
         self._ensure_dctx()
         return ZstdDecompressionReader(
-            self, source, read_size, read_across_frames
+            self, source, read_size, read_across_frames, closefd=closefd
         )
 
     def decompressobj(self, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):

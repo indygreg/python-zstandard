@@ -50,6 +50,11 @@ decompressionreader_enter(ZstdDecompressionReader *self) {
         return NULL;
     }
 
+    if (self->closed) {
+        PyErr_SetString(PyExc_ValueError, "stream is closed");
+        return NULL;
+    }
+
     self->entered = 1;
 
     Py_INCREF(self);
@@ -68,7 +73,10 @@ static PyObject *decompressionreader_exit(ZstdDecompressionReader *self,
     }
 
     self->entered = 0;
-    self->closed = 1;
+
+    if (NULL == PyObject_CallMethod((PyObject *)self, "close", NULL)) {
+        return NULL;
+    }
 
     /* Release resources. */
     Py_CLEAR(self->reader);
@@ -95,7 +103,16 @@ static PyObject *decompressionreader_seekable(PyObject *self) {
 }
 
 static PyObject *decompressionreader_close(ZstdDecompressionReader *self) {
+    if (self->closed) {
+        Py_RETURN_NONE;
+    }
+
     self->closed = 1;
+
+    if (self->closefd && PyObject_HasAttrString(self->reader, "close")) {
+        return PyObject_CallMethod(self->reader, "close", NULL);
+    }
+
     Py_RETURN_NONE;
 }
 

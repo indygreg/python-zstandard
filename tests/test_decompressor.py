@@ -455,6 +455,68 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), source)
 
+    def test_close(self):
+        foo = zstd.ZstdCompressor().compress(b"foo" * 1024)
+
+        buffer = io.BytesIO(foo)
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(buffer)
+
+        reader.read(3)
+        self.assertFalse(reader.closed)
+        self.assertFalse(buffer.closed)
+        reader.close()
+        self.assertTrue(reader.closed)
+        self.assertFalse(buffer.closed)
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            reader.read(b"")
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            with reader:
+                pass
+
+        # Context manager exit should not close stream.
+        buffer = io.BytesIO(foo)
+        reader = dctx.stream_reader(buffer)
+
+        with reader:
+            reader.read(3)
+
+        self.assertTrue(reader.closed)
+        self.assertFalse(buffer.closed)
+
+    def test_close_closefd_true(self):
+        foo = zstd.ZstdCompressor().compress(b"foo" * 1024)
+
+        buffer = io.BytesIO(foo)
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(buffer, closefd=True)
+
+        reader.read(3)
+        self.assertFalse(reader.closed)
+        self.assertFalse(buffer.closed)
+        reader.close()
+        self.assertTrue(reader.closed)
+        self.assertTrue(buffer.closed)
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            reader.read(b"")
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            with reader:
+                pass
+
+        # Context manager exit should not close stream.
+        buffer = io.BytesIO(foo)
+        reader = dctx.stream_reader(buffer, closefd=True)
+
+        with reader:
+            reader.read(3)
+
+        self.assertTrue(reader.closed)
+        self.assertTrue(buffer.closed)
+
     def test_read_after_exit(self):
         cctx = zstd.ZstdCompressor()
         frame = cctx.compress(b"foo" * 60)
@@ -550,9 +612,9 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         with reader:
             reader.read(0)
 
-        with reader:
-            with self.assertRaisesRegex(ValueError, "stream is closed"):
-                reader.read(100)
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            with reader:
+                pass
 
     def test_partial_read(self):
         # Inspired by https://github.com/indygreg/python-zstandard/issues/71.

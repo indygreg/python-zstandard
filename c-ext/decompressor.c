@@ -576,15 +576,18 @@ PyDoc_STRVAR(
 static ZstdDecompressionReader *
 Decompressor_stream_reader(ZstdDecompressor *self, PyObject *args,
                            PyObject *kwargs) {
-    static char *kwlist[] = {"source", "read_size", "read_across_frames", NULL};
+    static char *kwlist[] = {"source", "read_size", "read_across_frames",
+                             "closefd", NULL};
 
     PyObject *source;
     size_t readSize = ZSTD_DStreamInSize();
     PyObject *readAcrossFrames = NULL;
+    PyObject *closefd = NULL;
     ZstdDecompressionReader *result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kO:stream_reader", kwlist,
-                                     &source, &readSize, &readAcrossFrames)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kOO:stream_reader",
+                                     kwlist, &source, &readSize,
+                                     &readAcrossFrames, &closefd)) {
         return NULL;
     }
 
@@ -624,6 +627,7 @@ Decompressor_stream_reader(ZstdDecompressor *self, PyObject *args,
     Py_INCREF(self);
     result->readAcrossFrames =
         readAcrossFrames ? PyObject_IsTrue(readAcrossFrames) : 0;
+    result->closefd = closefd ? PyObject_IsTrue(closefd) : 0;
 
     return result;
 }

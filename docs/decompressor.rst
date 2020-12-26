@@ -169,6 +169,9 @@ When ``False`` (the default), a read will complete when the end of a
 zstd *frame* is encountered. When ``True``, a read can potentially
 return data spanning multiple zstd *frames*.
 
+The ``closefd`` keyword argument defines whether to close the underlying stream
+when this instance is itself ``close()``d. The default is ``False``.
+
 Streaming Writer Interface
 ==========================
 
