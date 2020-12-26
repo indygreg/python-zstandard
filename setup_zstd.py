@@ -7,6 +7,7 @@
 import distutils.ccompiler
 import distutils.command.build_ext
 import distutils.extension
+import glob
 import os
 import shutil
 import subprocess
@@ -19,11 +20,6 @@ ext_includes = [
 
 ext_sources = [
     "c-ext/backend_c.c",
-]
-
-zstd_depends = [
-    "c-ext/python-zstandard.h",
-    "c-ext/pythoncapi_compat.h",
 ]
 
 
@@ -55,13 +51,12 @@ def get_c_extension(
     root = root or actual_root
 
     sources = sorted(set([os.path.join(actual_root, p) for p in ext_sources]))
-
     include_dirs = [os.path.join(actual_root, d) for d in ext_includes]
+    depends = []
 
     if not system_zstd:
         include_dirs.append(os.path.join(actual_root, "zstd"))
-
-    depends = [os.path.join(actual_root, p) for p in zstd_depends]
+        depends = sorted(glob.glob(os.path.join(actual_root, "c-ext", "*")))
 
     compiler = distutils.ccompiler.new_compiler()
 
