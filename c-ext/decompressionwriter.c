@@ -139,7 +139,7 @@ static PyObject *ZstdDecompressionWriter_close(ZstdDecompressionWriter *self) {
     }
 
     /* Call close on underlying stream as well. */
-    if (PyObject_HasAttrString(self->writer, "close")) {
+    if (self->closefd && PyObject_HasAttrString(self->writer, "close")) {
         return PyObject_CallMethod(self->writer, "close", NULL);
     }
 

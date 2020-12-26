@@ -204,10 +204,13 @@ Like the ``stream_writer()`` compressor, instances can be used as context
 managers. However, context managers add no extra special behavior and offer
 little to no benefit to being used.
 
+The ``closefd`` keyword argument defines whether to close the underlying stream
+when this instance is itself ``close()``d. The default is ``True``.
+
 Calling ``close()`` will mark the stream as closed and subsequent I/O operations
 will raise ``ValueError`` (per the documented behavior of ``io.RawIOBase``).
 ``close()`` will also call ``close()`` on the underlying stream if such a
-method exists.
+method exists and ``closefd`` is True.
 
 The size of chunks being ``write()`` to the destination can be specified:
 

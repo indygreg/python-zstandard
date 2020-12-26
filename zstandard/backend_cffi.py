@@ -2233,13 +2233,16 @@ class ZstdDecompressionReader(object):
 
 
 class ZstdDecompressionWriter(object):
-    def __init__(self, decompressor, writer, write_size, write_return_read):
+    def __init__(
+        self, decompressor, writer, write_size, write_return_read, closefd=True,
+    ):
         decompressor._ensure_dctx()
 
         self._decompressor = decompressor
         self._writer = writer
         self._write_size = write_size
         self._write_return_read = bool(write_return_read)
+        self._closefd = bool(closefd)
         self._entered = False
         self._closed = False
 
@@ -2271,7 +2274,7 @@ class ZstdDecompressionWriter(object):
             self._closed = True
 
         f = getattr(self._writer, "close", None)
-        if f:
+        if self._closefd and f:
             f()
 
     @property
@@ -2560,12 +2563,13 @@ class ZstdDecompressor(object):
         writer,
         write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
         write_return_read=False,
+        closefd=True,
     ):
         if not hasattr(writer, "write"):
             raise ValueError("must pass an object with a write() method")
 
         return ZstdDecompressionWriter(
-            self, writer, write_size, write_return_read
+            self, writer, write_size, write_return_read, closefd=closefd,
         )
 
     write_to = stream_writer

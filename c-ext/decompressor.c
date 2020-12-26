@@ -646,15 +646,18 @@ PyDoc_STRVAR(
 static ZstdDecompressionWriter *
 Decompressor_stream_writer(ZstdDecompressor *self, PyObject *args,
                            PyObject *kwargs) {
-    static char *kwlist[] = {"writer", "write_size", "write_return_read", NULL};
+    static char *kwlist[] = {"writer", "write_size", "write_return_read",
+                             "closefd", NULL};
 
     PyObject *writer;
     size_t outSize = ZSTD_DStreamOutSize();
     PyObject *writeReturnRead = NULL;
+    PyObject *closefd = NULL;
     ZstdDecompressionWriter *result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kO:stream_writer", kwlist,
-                                     &writer, &outSize, &writeReturnRead)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|kOO:stream_writer",
+                                     kwlist, &writer, &outSize,
+                                     &writeReturnRead, &closefd)) {
         return NULL;
     }
 
@@ -686,6 +689,7 @@ Decompressor_stream_writer(ZstdDecompressor *self, PyObject *args,
     result->outSize = outSize;
     result->writeReturnRead =
         writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 0;
+    result->closefd = closefd ? PyObject_IsTrue(closefd) : 1;
 
     return result;
 }

@@ -973,6 +973,44 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertEqual(buffer.getvalue(), b"foo")
+        self.assertTrue(buffer.closed)
+
+    def test_close_closefd_false(self):
+        foo = zstd.ZstdCompressor().compress(b"foo")
+
+        buffer = NonClosingBytesIO()
+        dctx = zstd.ZstdDecompressor()
+        writer = dctx.stream_writer(buffer, closefd=False)
+
+        writer.write(foo)
+        self.assertFalse(writer.closed)
+        self.assertFalse(buffer.closed)
+        writer.close()
+        self.assertTrue(writer.closed)
+        self.assertFalse(buffer.closed)
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            writer.write(b"")
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            writer.flush()
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            with writer:
+                pass
+
+        self.assertEqual(buffer.getvalue(), b"foo")
+
+        # Context manager exit should close stream.
+        buffer = NonClosingBytesIO()
+        writer = dctx.stream_writer(buffer, closefd=False)
+
+        with writer:
+            writer.write(foo)
+
+        self.assertTrue(writer.closed)
+        self.assertEqual(buffer.getvalue(), b"foo")
+        self.assertFalse(buffer.closed)
 
     def test_flush(self):
         buffer = OpCountingBytesIO()

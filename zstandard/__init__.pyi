@@ -399,6 +399,8 @@ class ZstdDecompressor(object):
         writer: IO[bytes],
         write_size: int = 0,
         write_return_read: bool = False,
+        *,
+        closefd: bool = True,
     ) -> ZstdDecompressionWriter: ...
     def copy_stream(
         self,
