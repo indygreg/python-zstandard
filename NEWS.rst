@@ -126,6 +126,7 @@ Changes
   The function also now accepts arguments ``f``, ``split_point``, and
   ``accel``, which are parameters unique to ``fastcover``.
 * CI now tests and builds wheels for Python 3.9.
+* ``zstd.c`` file renamed to ``c-ext/backend_c.c``.
 
 0.14.1 (released 2020-12-05)
 ============================

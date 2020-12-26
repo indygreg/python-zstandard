@@ -18,7 +18,7 @@ ext_includes = [
 ]
 
 ext_sources = [
-    "zstd.c",
+    "c-ext/backend_c.c",
 ]
 
 zstd_depends = [
