@@ -296,6 +296,8 @@ class ZstdCompressor(object):
         size: int = -1,
         write_size: int = -1,
         write_return_read: bool = None,
+        *,
+        closefd: bool = True,
     ) -> ZstdCompressionWriter: ...
     def read_to_iter(
         self,

@@ -269,6 +269,9 @@ were subsequently written to the compressor. ``True`` is the *proper* behavior
 for ``write()`` as specified by the ``io.RawIOBase`` interface and will become
 the default value in a future release.
 
+The ``closefd`` keyword argument defines whether to close the underlying stream
+when this instance is itself ``close()``d. The default is ``True``.
+
 Streaming Output API
 ====================
 

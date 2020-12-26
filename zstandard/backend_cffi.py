@@ -490,12 +490,19 @@ def _get_compression_parameter(params, param):
 
 class ZstdCompressionWriter(object):
     def __init__(
-        self, compressor, writer, source_size, write_size, write_return_read
+        self,
+        compressor,
+        writer,
+        source_size,
+        write_size,
+        write_return_read,
+        closefd=True,
     ):
         self._compressor = compressor
         self._writer = writer
         self._write_size = write_size
         self._write_return_read = bool(write_return_read)
+        self._closefd = bool(closefd)
         self._entered = False
         self._closed = False
         self._bytes_compressed = 0
@@ -553,7 +560,7 @@ class ZstdCompressionWriter(object):
 
         # Call close() on underlying stream as well.
         f = getattr(self._writer, "close", None)
-        if f:
+        if self._closefd and f:
             f()
 
     @property
@@ -1512,6 +1519,7 @@ class ZstdCompressor(object):
         size=-1,
         write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
         write_return_read=False,
+        closefd=True,
     ):
 
         if not hasattr(writer, "write"):
@@ -1523,7 +1531,7 @@ class ZstdCompressor(object):
             size = lib.ZSTD_CONTENTSIZE_UNKNOWN
 
         return ZstdCompressionWriter(
-            self, writer, size, write_size, write_return_read
+            self, writer, size, write_size, write_return_read, closefd=closefd
         )
 
     write_to = stream_writer

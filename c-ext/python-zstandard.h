@@ -122,6 +122,7 @@ typedef struct {
     int entered;
     int closed;
     int writeReturnRead;
+    int closefd;
     unsigned long long bytesCompressed;
 } ZstdCompressionWriter;
 
