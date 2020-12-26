@@ -157,6 +157,9 @@ The stream returned by ``stream_reader()`` is neither writable nor seekable
 compressed data. ``tell()`` returns the number of compressed bytes
 emitted so far.
 
+The ``closefd`` keyword argument defines whether to close the underlying stream
+when this instance is itself ``close()``d. The default is ``False``.
+
 Stream Writer Interface
 =======================
 

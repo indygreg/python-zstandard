@@ -154,6 +154,7 @@ typedef struct {
     PyObject *reader;
     Py_buffer buffer;
     size_t readSize;
+    int closefd;
 
     int entered;
     int closed;

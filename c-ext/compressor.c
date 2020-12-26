@@ -484,16 +484,18 @@ PyDoc_STRVAR(
 static ZstdCompressionReader *ZstdCompressor_stream_reader(ZstdCompressor *self,
                                                            PyObject *args,
                                                            PyObject *kwargs) {
-    static char *kwlist[] = {"source", "size", "read_size", NULL};
+    static char *kwlist[] = {"source", "size", "read_size", "closefd", NULL};
 
     PyObject *source;
     unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
     size_t readSize = ZSTD_CStreamInSize();
+    PyObject *closefd = NULL;
     ZstdCompressionReader *result = NULL;
     size_t zresult;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:stream_reader", kwlist,
-                                     &source, &sourceSize, &readSize)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|KkO:stream_reader",
+                                     kwlist, &source, &sourceSize, &readSize,
+                                     &closefd)) {
         return NULL;
     }
 
@@ -526,6 +528,8 @@ static ZstdCompressionReader *ZstdCompressor_stream_reader(ZstdCompressor *self,
                         "conforms to the buffer protocol");
         goto except;
     }
+
+    result->closefd = closefd ? PyObject_IsTrue(closefd) : 0;
 
     ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 

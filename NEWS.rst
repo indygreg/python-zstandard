@@ -112,6 +112,8 @@ Backwards Compatibility Notes
   ``ZstdDecompressionReader.readlines()`` now accept an integer argument.
    This makes them conform with the IO interface. The methods still raise
   ``io.UnsupportedOperation``.
+* ``ZstdCompressionReader.__enter__`` now raises ``ValueError`` if the
+  instance was already closed.
 
 Bug Fixes
 ---------
@@ -145,10 +147,11 @@ Changes
 * All built/installed Python modules are now in the ``zstandard``
   package. Previously, there were modules in other packages. (#115)
 * C source code is now automatically formatted with ``clang-format``.
-* ``ZstdCompressor.stream_writer()`` and ``ZstdDecompressor.stream_writer()``
-  now accept a ``closefd`` argument to control whether the underlying
-  stream should be closed when the ``ZstdCompressionWriter`` or
-  ``ZstdDecompressionWriter`` are closed.
+* ``ZstdCompressor.stream_writer()``, ``ZstdCompressor.stream_reader()``,
+  and ``ZstdDecompressor.stream_writer()`` now accept a ``closefd``
+  argument to control whether the underlying stream should be closed
+  when the ``ZstdCompressionWriter``, ``ZstdCompressReader``, or
+  ``ZstdDecompressionWriter`` is closed.
 
 0.14.1 (released 2020-12-05)
 ============================

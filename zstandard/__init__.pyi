@@ -289,6 +289,8 @@ class ZstdCompressor(object):
         source: Union[IO[bytes], ByteString],
         size: int = -1,
         read_size: int = -1,
+        *,
+        closefd: bool = False,
     ) -> ZstdCompressionReader: ...
     def stream_writer(
         self,

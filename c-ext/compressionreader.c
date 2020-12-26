@@ -49,6 +49,11 @@ compressionreader_enter(ZstdCompressionReader *self) {
         return NULL;
     }
 
+    if (self->closed) {
+        PyErr_SetString(PyExc_ValueError, "stream is closed");
+        return NULL;
+    }
+
     self->entered = 1;
 
     Py_INCREF(self);
@@ -60,6 +65,7 @@ static PyObject *compressionreader_exit(ZstdCompressionReader *self,
     PyObject *exc_type;
     PyObject *exc_value;
     PyObject *exc_tb;
+    PyObject *result;
 
     if (!PyArg_ParseTuple(args, "OOO:__exit__", &exc_type, &exc_value,
                           &exc_tb)) {
@@ -67,7 +73,11 @@ static PyObject *compressionreader_exit(ZstdCompressionReader *self,
     }
 
     self->entered = 0;
-    self->closed = 1;
+
+    result = PyObject_CallMethod((PyObject *)self, "close", NULL);
+    if (NULL == result) {
+        return NULL;
+    }
 
     /* Release resources associated with source. */
     Py_CLEAR(self->reader);
@@ -122,7 +132,16 @@ static PyObject *compressionreader_flush(PyObject *self) {
 }
 
 static PyObject *compressionreader_close(ZstdCompressionReader *self) {
+    if (self->closed) {
+        Py_RETURN_NONE;
+    }
+
     self->closed = 1;
+
+    if (self->closefd && PyObject_HasAttrString(self->reader, "close")) {
+        return PyObject_CallMethod(self->reader, "close", NULL);
+    }
+
     Py_RETURN_NONE;
 }
 

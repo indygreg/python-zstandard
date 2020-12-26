@@ -837,6 +837,82 @@ class TestCompressor_stream_reader(unittest.TestCase):
         self.assertEqual(reader.read1(2), foo[2:4])
         self.assertEqual(reader.read1(1024), foo[4:])
 
+    def test_close(self):
+        buffer = NonClosingBytesIO()
+        cctx = zstd.ZstdCompressor(level=1)
+        writer = cctx.stream_writer(buffer)
+
+        writer.write(b"foo" * 1024)
+        self.assertFalse(writer.closed)
+        self.assertFalse(buffer.closed)
+        writer.close()
+        self.assertTrue(writer.closed)
+        self.assertTrue(buffer.closed)
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            writer.write(b"foo")
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            writer.flush()
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            with writer:
+                pass
+
+        self.assertEqual(
+            buffer.getvalue(),
+            b"\x28\xb5\x2f\xfd\x00\x48\x55\x00\x00\x18\x66\x6f"
+            b"\x6f\x01\x00\xfa\xd3\x77\x43",
+        )
+
+        # Context manager exit should close stream.
+        buffer = io.BytesIO()
+        writer = cctx.stream_writer(buffer)
+
+        with writer:
+            writer.write(b"foo")
+
+        self.assertTrue(writer.closed)
+        self.assertTrue(buffer.closed)
+
+    def test_close_closefd_false(self):
+        buffer = NonClosingBytesIO()
+        cctx = zstd.ZstdCompressor(level=1)
+        writer = cctx.stream_writer(buffer, closefd=False)
+
+        writer.write(b"foo" * 1024)
+        self.assertFalse(writer.closed)
+        self.assertFalse(buffer.closed)
+        writer.close()
+        self.assertTrue(writer.closed)
+        self.assertFalse(buffer.closed)
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            writer.write(b"foo")
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            writer.flush()
+
+        with self.assertRaisesRegex(ValueError, "stream is closed"):
+            with writer:
+                pass
+
+        self.assertEqual(
+            buffer.getvalue(),
+            b"\x28\xb5\x2f\xfd\x00\x48\x55\x00\x00\x18\x66\x6f"
+            b"\x6f\x01\x00\xfa\xd3\x77\x43",
+        )
+
+        # Context manager exit should close stream.
+        buffer = io.BytesIO()
+        writer = cctx.stream_writer(buffer, closefd=False)
+
+        with writer:
+            writer.write(b"foo")
+
+        self.assertTrue(writer.closed)
+        self.assertFalse(buffer.closed)
+
 
 class TestCompressor_stream_writer(unittest.TestCase):
     def test_io_api(self):

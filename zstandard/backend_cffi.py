@@ -873,10 +873,11 @@ class ZstdCompressionChunker(object):
 
 
 class ZstdCompressionReader(object):
-    def __init__(self, compressor, source, read_size):
+    def __init__(self, compressor, source, read_size, closefd=False):
         self._compressor = compressor
         self._source = source
         self._read_size = read_size
+        self._closefd = closefd
         self._entered = False
         self._closed = False
         self._bytes_compressed = 0
@@ -891,14 +892,19 @@ class ZstdCompressionReader(object):
         if self._entered:
             raise ValueError("cannot __enter__ multiple times")
 
+        if self._closed:
+            raise ValueError("stream is closed")
+
         self._entered = True
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
-        self._closed = True
-        self._source = None
         self._compressor = None
+
+        self.close()
+
+        self._source = None
 
         return False
 
@@ -930,8 +936,14 @@ class ZstdCompressionReader(object):
         return None
 
     def close(self):
+        if self._closed:
+            return
+
         self._closed = True
-        return None
+
+        f = getattr(self._source, "close", None)
+        if self._closefd and f:
+            f()
 
     @property
     def closed(self):
@@ -1493,7 +1505,11 @@ class ZstdCompressor(object):
         return total_read, total_write
 
     def stream_reader(
-        self, source, size=-1, read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE
+        self,
+        source,
+        size=-1,
+        read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
+        closefd=False,
     ):
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
@@ -1511,7 +1527,7 @@ class ZstdCompressor(object):
                 "error setting source size: %s" % _zstd_error(zresult)
             )
 
-        return ZstdCompressionReader(self, source, read_size)
+        return ZstdCompressionReader(self, source, read_size, closefd=closefd)
 
     def stream_writer(
         self,
