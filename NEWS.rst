@@ -139,6 +139,11 @@ Backwards Compatibility Notes
 * ``ZstdDecompressionObj.flush()`` now returns ``bytes`` instead of
   ``None``. This makes it behave more similarly to ``flush()`` methods
   for similar types in the Python standard library. (#78)
+* ``ZstdCompressionWriter.__exit__()`` now always calls ``close()``.
+  Previously, ``close()`` would not be called if the context manager
+  raised an exception. The old behavior was inconsistent with other
+  stream types in this package and with the behavior of Python's
+  standard library IO types. (#86)
 
 Bug Fixes
 ---------

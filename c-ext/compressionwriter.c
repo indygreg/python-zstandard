@@ -55,12 +55,10 @@ static PyObject *ZstdCompressionWriter_exit(ZstdCompressionWriter *self,
 
     self->entered = 0;
 
-    if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
-        PyObject *result = PyObject_CallMethod((PyObject *)self, "close", NULL);
+    PyObject *result = PyObject_CallMethod((PyObject *)self, "close", NULL);
 
-        if (NULL == result) {
-            return NULL;
-        }
+    if (NULL == result) {
+        return NULL;
     }
 
     Py_RETURN_FALSE;

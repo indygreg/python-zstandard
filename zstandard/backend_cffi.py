@@ -503,10 +503,7 @@ class ZstdCompressionWriter(object):
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
-
-        if not exc_type and not exc_value and not exc_tb:
-            self.close()
-
+        self.close()
         self._compressor = None
 
         return False
@@ -873,9 +870,7 @@ class ZstdCompressionReader(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
         self._compressor = None
-
         self.close()
-
         self._source = None
 
         return False
@@ -1940,9 +1935,7 @@ class ZstdDecompressionReader(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._entered = False
         self._decompressor = None
-
         self.close()
-
         self._source = None
 
         return False

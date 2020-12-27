@@ -1082,9 +1082,8 @@ class TestCompressor_stream_writer(unittest.TestCase):
                 writer.write(b"foo")
                 raise Exception("ignore")
 
-        # TODO fix
-        self.assertFalse(writer.closed)
-        self.assertFalse(buffer.closed)
+        self.assertTrue(writer.closed)
+        self.assertTrue(buffer.closed)
 
     def test_close_closefd_false(self):
         buffer = io.BytesIO()
@@ -1133,8 +1132,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
                 writer.write(b"foo")
                 raise Exception("ignore")
 
-        # TODO fix
-        self.assertFalse(writer.closed)
+        self.assertTrue(writer.closed)
         self.assertFalse(buffer.closed)
 
     def test_empty(self):
