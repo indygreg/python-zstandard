@@ -170,7 +170,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     int threads = 0;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, "|iiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
+            args, kwargs, "|iiiiiiiiiiiiiiiiiiiiii:ZstdCompressionParameters",
             kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
             &searchLog, &minMatch, &targetLength, &compressionStrategy,
             &strategy, &contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize,
@@ -243,7 +243,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
 }
 
 PyDoc_STRVAR(ZstdCompressionParameters_from_level__doc__,
-             "Create a CompressionParameters from a compression level and "
+             "Create a ZstdCompressionParameters from a compression level and "
              "target sizes\n");
 
 ZstdCompressionParametersObject *

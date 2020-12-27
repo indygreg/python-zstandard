@@ -108,7 +108,7 @@ PyDoc_STRVAR(
     "   A ``ZstdCompressionDict`` to be used to compress with dictionary "
     "data.\n"
     "compression_params\n"
-    "   A ``CompressionParameters`` instance defining low-level compression"
+    "   A ``ZstdCompressionParameters`` instance defining low-level compression"
     "   parameters. If defined, this will overwrite the ``level`` argument.\n"
     "write_checksum\n"
     "   If True, a 4 byte content checksum will be written with the "
