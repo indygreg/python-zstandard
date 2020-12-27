@@ -104,6 +104,9 @@ static PyObject *ZstdDecompressionWriter_write(ZstdDecompressionWriter *self,
         if (output.pos) {
             res = PyObject_CallMethod(self->writer, "write", "y#", output.dst,
                                       output.pos);
+            if (NULL == res) {
+                goto finally;
+            }
             Py_XDECREF(res);
             totalWrite += output.pos;
             output.pos = 0;

@@ -113,6 +113,9 @@ static PyObject *ZstdCompressionWriter_write(ZstdCompressionWriter *self,
         if (self->output.pos) {
             res = PyObject_CallMethod(self->writer, "write", "y#",
                                       self->output.dst, self->output.pos);
+            if (NULL == res) {
+                goto finally;
+            }
             Py_XDECREF(res);
             totalWrite += self->output.pos;
             self->bytesCompressed += self->output.pos;
@@ -186,6 +189,9 @@ static PyObject *ZstdCompressionWriter_flush(ZstdCompressionWriter *self,
         if (self->output.pos) {
             res = PyObject_CallMethod(self->writer, "write", "y#",
                                       self->output.dst, self->output.pos);
+            if (NULL == res) {
+                return NULL;
+            }
             Py_XDECREF(res);
             totalWrite += self->output.pos;
             self->bytesCompressed += self->output.pos;

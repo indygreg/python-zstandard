@@ -134,12 +134,23 @@ Backwards Compatibility Notes
 * The deprecated aliases ``ZstdCompressor.write_to()`` and
   ``ZstdDecompressor.write_to()`` have been removed. Use the corresponding
   ``stream_writer()`` methods instead.
+* ``ZstdCompressor.copy_stream()`` now raises the original exception
+  on error calling the source stream's ``read()`` instead of raising
+  ``ZstdError``.
 
 Bug Fixes
 ---------
 
 * Fix a memory leak in ``stream_reader`` decompressor when reader is closed
   before reading everything. (Patch by Pierre Fersing.)
+* The C backend now properly checks for errors after calling IO methods
+  on inner streams in various methods. ``ZstdCompressionWriter.write()``
+  now catches exceptions when calling the inner stream's ``write()``.
+  ``ZstdCompressionWriter.flush()`` on inner stream's ``write()``.
+  ``ZstdCompressor.copy_stream()`` on dest stream's ``write()``.
+  ``ZstdDecompressionWriter.write()`` on inner stream's ``write()``.
+  ``ZstdDecompressor.copy_stream()`` on dest stream's ``write()``. (#102)
+
 
 Changes
 -------

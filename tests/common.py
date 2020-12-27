@@ -35,18 +35,33 @@ class CustomBytesIO(io.BytesIO):
         self._flush_count = 0
         self._read_count = 0
         self._write_count = 0
+        self.flush_exception = None
+        self.read_exception = None
+        self.write_exception = None
         super(CustomBytesIO, self).__init__(*args, **kwargs)
 
     def flush(self):
         self._flush_count += 1
+
+        if self.flush_exception:
+            raise self.flush_exception
+
         return super(CustomBytesIO, self).flush()
 
     def read(self, *args):
         self._read_count += 1
+
+        if self.read_exception:
+            raise self.read_exception
+
         return super(CustomBytesIO, self).read(*args)
 
     def write(self, data):
         self._write_count += 1
+
+        if self.write_exception:
+            raise self.write_exception
+
         return super(CustomBytesIO, self).write(data)
 
 

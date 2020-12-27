@@ -580,6 +580,28 @@ class TestCompressor_copy_stream(unittest.TestCase):
         dest = io.BytesIO()
         cctx.copy_stream(source, dest)
 
+    def test_read_exception(self):
+        source = CustomBytesIO(b"foo" * 1024)
+        dest = CustomBytesIO()
+
+        source.read_exception = IOError("read")
+
+        cctx = zstd.ZstdCompressor()
+
+        with self.assertRaisesRegex(IOError, "read"):
+            cctx.copy_stream(source, dest)
+
+    def test_write_exception(self):
+        source = CustomBytesIO(b"foo" * 1024)
+        dest = CustomBytesIO()
+
+        dest.write_exception = IOError("write")
+
+        cctx = zstd.ZstdCompressor()
+
+        with self.assertRaisesRegex(IOError, "write"):
+            cctx.copy_stream(source, dest)
+
 
 class TestCompressor_stream_reader(unittest.TestCase):
     def test_context_manager(self):
@@ -912,6 +934,19 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertFalse(buffer.closed)
+
+    def test_write_exception(self):
+        b = CustomBytesIO()
+        b.write_exception = IOError("write")
+
+        cctx = zstd.ZstdCompressor()
+
+        writer = cctx.stream_writer(b)
+        # Initial write won't issue write() to underlying stream.
+        writer.write(b"foo")
+
+        with self.assertRaisesRegex(IOError, "write"):
+            writer.flush()
 
 
 class TestCompressor_stream_writer(unittest.TestCase):

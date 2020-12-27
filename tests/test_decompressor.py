@@ -302,6 +302,28 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         self.assertEqual(source._read_count, len(source.getvalue()) + 1)
         self.assertEqual(dest._write_count, len(dest.getvalue()))
 
+    def test_read_exception(self):
+        source = CustomBytesIO(zstd.ZstdCompressor().compress(b"foo" * 1024))
+        dest = CustomBytesIO()
+
+        source.read_exception = IOError("read")
+
+        cctx = zstd.ZstdCompressor()
+
+        with self.assertRaisesRegex(IOError, "read"):
+            cctx.copy_stream(source, dest)
+
+    def test_write_exception(self):
+        source = CustomBytesIO(zstd.ZstdCompressor().compress(b"foo" * 1024))
+        dest = CustomBytesIO()
+
+        dest.write_exception = IOError("write")
+
+        cctx = zstd.ZstdCompressor()
+
+        with self.assertRaisesRegex(IOError, "write"):
+            cctx.copy_stream(source, dest)
+
 
 class TestDecompressor_stream_reader(unittest.TestCase):
     def test_context_manager(self):
@@ -1219,6 +1241,19 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertEqual(dest.getvalue(), b"foobarfoobar")
         self.assertEqual(dest._write_count, len(dest.getvalue()))
+
+    def test_write_exception(self):
+        frame = zstd.ZstdCompressor().compress(b"foo" * 1024)
+
+        b = CustomBytesIO()
+        b.write_exception = IOError("write")
+
+        dctx = zstd.ZstdDecompressor()
+
+        writer = dctx.stream_writer(b)
+
+        with self.assertRaisesRegex(IOError, "write"):
+            writer.write(frame)
 
 
 class TestDecompressor_read_to_iter(unittest.TestCase):

@@ -245,6 +245,10 @@ static PyObject *Decompressor_copy_stream(ZstdDecompressor *self,
             if (output.pos) {
                 writeResult = PyObject_CallMethod(dest, "write", "y#",
                                                   output.dst, output.pos);
+                if (NULL == writeResult) {
+                    res = NULL;
+                    goto finally;
+                }
 
                 Py_XDECREF(writeResult);
                 totalWrite += output.pos;

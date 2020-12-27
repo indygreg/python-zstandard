@@ -386,7 +386,6 @@ static PyObject *ZstdCompressor_copy_stream(ZstdCompressor *self,
         /* Try to read from source stream. */
         readResult = PyObject_CallMethod(source, "read", "n", inSize);
         if (!readResult) {
-            PyErr_SetString(ZstdError, "could not read() from source");
             goto finally;
         }
 
@@ -419,6 +418,10 @@ static PyObject *ZstdCompressor_copy_stream(ZstdCompressor *self,
             if (output.pos) {
                 writeResult = PyObject_CallMethod(dest, "write", "y#",
                                                   output.dst, output.pos);
+                if (NULL == writeResult) {
+                    res = NULL;
+                    goto finally;
+                }
                 Py_XDECREF(writeResult);
                 totalWrite += output.pos;
                 output.pos = 0;
@@ -446,6 +449,10 @@ static PyObject *ZstdCompressor_copy_stream(ZstdCompressor *self,
         if (output.pos) {
             writeResult = PyObject_CallMethod(dest, "write", "y#", output.dst,
                                               output.pos);
+            if (NULL == writeResult) {
+                res = NULL;
+                goto finally;
+            }
             totalWrite += output.pos;
             Py_XDECREF(writeResult);
             output.pos = 0;
