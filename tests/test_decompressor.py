@@ -1110,9 +1110,9 @@ class TestDecompressor_stream_writer(unittest.TestCase):
             decompressor.write(source)
             self.assertEqual(buffer.getvalue(), b"foo")
 
-            buffer = NonClosingBytesIO()
+            buffer = io.BytesIO()
 
-            with dctx.stream_writer(buffer) as decompressor:
+            with dctx.stream_writer(buffer, closefd=False) as decompressor:
                 self.assertEqual(decompressor.write(source), 3)
 
             self.assertEqual(buffer.getvalue(), b"foo")
@@ -1142,9 +1142,9 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         cctx = zstd.ZstdCompressor()
         compressed = cctx.compress(orig)
 
-        buffer = NonClosingBytesIO()
+        buffer = io.BytesIO()
         dctx = zstd.ZstdDecompressor()
-        with dctx.stream_writer(buffer) as decompressor:
+        with dctx.stream_writer(buffer, closefd=False) as decompressor:
             pos = 0
             while pos < len(compressed):
                 pos2 = pos + 8192
@@ -1173,9 +1173,9 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         d = zstd.train_dictionary(8192, samples)
 
         orig = b"foobar" * 16384
-        buffer = NonClosingBytesIO()
+        buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(dict_data=d)
-        with cctx.stream_writer(buffer) as compressor:
+        with cctx.stream_writer(buffer, closefd=False) as compressor:
             self.assertEqual(compressor.write(orig), 1351)
 
         compressed = buffer.getvalue()
@@ -1186,9 +1186,9 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertEqual(decompressor.write(compressed), len(orig))
         self.assertEqual(buffer.getvalue(), orig)
 
-        buffer = NonClosingBytesIO()
+        buffer = io.BytesIO()
 
-        with dctx.stream_writer(buffer) as decompressor:
+        with dctx.stream_writer(buffer, closefd=False) as decompressor:
             self.assertEqual(decompressor.write(compressed), len(orig))
 
         self.assertEqual(buffer.getvalue(), orig)
@@ -1340,10 +1340,10 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
     )
     def test_large_input(self):
         bytes = list(struct.Struct(">B").pack(i) for i in range(256))
-        compressed = NonClosingBytesIO()
+        compressed = io.BytesIO()
         input_size = 0
         cctx = zstd.ZstdCompressor(level=1)
-        with cctx.stream_writer(compressed) as compressor:
+        with cctx.stream_writer(compressed, closefd=False) as compressor:
             while True:
                 compressor.write(random.choice(bytes))
                 input_size += 1
@@ -1398,8 +1398,8 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
 
         source = io.BytesIO()
 
-        compressed = NonClosingBytesIO()
-        with cctx.stream_writer(compressed) as compressor:
+        compressed = io.BytesIO()
+        with cctx.stream_writer(compressed, closefd=False) as compressor:
             for i in range(256):
                 chunk = b"\0" * 1024
                 compressor.write(chunk)

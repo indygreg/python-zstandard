@@ -10,10 +10,7 @@ except ImportError:
 
 import zstandard as zstd
 
-from .common import (
-    NonClosingBytesIO,
-    random_input_data,
-)
+from .common import random_input_data
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
@@ -404,9 +401,11 @@ class TestDecompressor_stream_writer_fuzzing(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         source = io.BytesIO(frame)
-        dest = NonClosingBytesIO()
+        dest = io.BytesIO()
 
-        with dctx.stream_writer(dest, write_size=write_size) as decompressor:
+        with dctx.stream_writer(
+            dest, write_size=write_size, closefd=False
+        ) as decompressor:
             while True:
                 input_size = input_sizes.draw(strategies.integers(1, 4096))
                 chunk = source.read(input_size)

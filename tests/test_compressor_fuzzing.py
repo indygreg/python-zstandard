@@ -10,10 +10,7 @@ except ImportError:
 
 import zstandard as zstd
 
-from .common import (
-    NonClosingBytesIO,
-    random_input_data,
-)
+from .common import random_input_data
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
@@ -582,9 +579,9 @@ class TestCompressor_stream_writer_fuzzing(unittest.TestCase):
         ref_frame = refctx.compress(original)
 
         cctx = zstd.ZstdCompressor(level=level)
-        b = NonClosingBytesIO()
+        b = io.BytesIO()
         with cctx.stream_writer(
-            b, size=len(original), write_size=write_size
+            b, size=len(original), write_size=write_size, closefd=False
         ) as compressor:
             compressor.write(original)
 
