@@ -1522,8 +1522,6 @@ class ZstdCompressor(object):
             self, writer, size, write_size, write_return_read, closefd=closefd
         )
 
-    write_to = stream_writer
-
     def read_to_iter(
         self,
         reader,
@@ -2575,8 +2573,6 @@ class ZstdDecompressor(object):
         return ZstdDecompressionWriter(
             self, writer, write_size, write_return_read, closefd=closefd,
         )
-
-    write_to = stream_writer
 
     def copy_stream(
         self,

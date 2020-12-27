@@ -131,6 +131,9 @@ Backwards Compatibility Notes
 * The deprecated aliases ``ZstdCompressor.read_from()`` and
   ``ZstdDecompressor.read_from()`` have been removed. Use the corresponding
   ``read_to_iter()`` methods instead.
+* The deprecated aliases ``ZstdCompressor.write_to()`` and
+  ``ZstdDecompressor.write_to()`` have been removed. Use the corresponding
+  ``stream_writer()`` methods instead.
 
 Bug Fixes
 ---------
