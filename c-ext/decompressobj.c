@@ -130,7 +130,7 @@ static PyObject *DecompressionObj_flush(ZstdDecompressionObj *self,
         return NULL;
     }
 
-    Py_RETURN_NONE;
+    return PyBytes_FromString("");
 }
 
 static PyMethodDef DecompressionObj_methods[] = {

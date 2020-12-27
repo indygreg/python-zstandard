@@ -136,6 +136,9 @@ Backwards Compatibility Notes
   and ``ZstdDecompressor.copy_stream()`` now raise the original exception
   on error calling the source stream's ``read()`` instead of raising
   ``ZstdError``. This only affects the C backend.
+* ``ZstdDecompressionObj.flush()`` now returns ``bytes`` instead of
+  ``None``. This makes it behave more similarly to ``flush()`` methods
+  for similar types in the Python standard library. (#78)
 
 Bug Fixes
 ---------

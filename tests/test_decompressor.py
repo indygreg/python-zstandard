@@ -877,9 +877,9 @@ class TestDecompressor_decompressobj(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
         dobj = dctx.decompressobj()
         self.assertEqual(dobj.decompress(data), b"foobar")
-        self.assertIsNone(dobj.flush())
-        self.assertIsNone(dobj.flush(10))
-        self.assertIsNone(dobj.flush(length=100))
+        self.assertEqual(dobj.flush(), b"")
+        self.assertEqual(dobj.flush(10), b"")
+        self.assertEqual(dobj.flush(length=100), b"")
 
     def test_input_types(self):
         compressed = zstd.ZstdCompressor(level=1).compress(b"foo")
@@ -897,11 +897,11 @@ class TestDecompressor_decompressobj(unittest.TestCase):
 
         for source in sources:
             dobj = dctx.decompressobj()
-            self.assertIsNone(dobj.flush())
-            self.assertIsNone(dobj.flush(10))
-            self.assertIsNone(dobj.flush(length=100))
+            self.assertEqual(dobj.flush(), b"")
+            self.assertEqual(dobj.flush(10), b"")
+            self.assertEqual(dobj.flush(length=100), b"")
             self.assertEqual(dobj.decompress(source), b"foo")
-            self.assertIsNone(dobj.flush())
+            self.assertEqual(dobj.flush(), b"")
 
     def test_reuse(self):
         data = zstd.ZstdCompressor(level=1).compress(b"foobar")
@@ -914,7 +914,7 @@ class TestDecompressor_decompressobj(unittest.TestCase):
             zstd.ZstdError, "cannot use a decompressobj"
         ):
             dobj.decompress(data)
-            self.assertIsNone(dobj.flush())
+            self.assertEqual(dobj.flush(), b"")
 
     def test_bad_write_size(self):
         dctx = zstd.ZstdDecompressor()

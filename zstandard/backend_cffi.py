@@ -1901,7 +1901,7 @@ class ZstdDecompressionObj(object):
         return b"".join(chunks)
 
     def flush(self, length=0):
-        pass
+        return b""
 
 
 class ZstdDecompressionReader(object):
