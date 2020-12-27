@@ -134,9 +134,10 @@ Backwards Compatibility Notes
 * The deprecated aliases ``ZstdCompressor.write_to()`` and
   ``ZstdDecompressor.write_to()`` have been removed. Use the corresponding
   ``stream_writer()`` methods instead.
-* ``ZstdCompressor.copy_stream()`` now raises the original exception
+* ``ZstdCompressor.copy_stream()``, ``ZstdCompressorIterator.__next__()``,
+  and ``ZstdDecompressor.copy_stream()`` now raise the original exception
   on error calling the source stream's ``read()`` instead of raising
-  ``ZstdError``.
+  ``ZstdError``. This only affects the C backend.
 
 Bug Fixes
 ---------

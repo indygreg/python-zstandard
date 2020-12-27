@@ -1606,6 +1606,17 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         # Test another operation on errored compressor.
         b"".join(cctx.read_to_iter(source))
 
+    def test_read_exception(self):
+        b = CustomBytesIO(b"foo" * 1024)
+        b.read_exception = IOError("read")
+
+        cctx = zstd.ZstdCompressor()
+
+        it = cctx.read_to_iter(b)
+
+        with self.assertRaisesRegex(IOError, "read"):
+            next(it)
+
 
 class TestCompressor_chunker(unittest.TestCase):
     def test_empty(self):

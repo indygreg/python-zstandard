@@ -212,7 +212,6 @@ static PyObject *Decompressor_copy_stream(ZstdDecompressor *self,
     while (1) {
         readResult = PyObject_CallMethod(source, "read", "n", inSize);
         if (!readResult) {
-            PyErr_SetString(ZstdError, "could not read() from source");
             goto finally;
         }
 

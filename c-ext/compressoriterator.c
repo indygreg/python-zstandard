@@ -95,7 +95,6 @@ feedcompressor:
             readResult =
                 PyObject_CallMethod(self->reader, "read", "I", self->inSize);
             if (!readResult) {
-                PyErr_SetString(ZstdError, "could not read() from source");
                 return NULL;
             }
 

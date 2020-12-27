@@ -451,8 +451,7 @@ impl ZstdCompressor {
         loop {
             // Try to read from source stream.
             let read_object = source
-                .call_method(py, "read", (read_size,), None)
-                .or_else(|_| Err(ZstdError::from_message(py, "could not read() from source")))?;
+                .call_method(py, "read", (read_size,), None)?;
 
             let read_bytes = read_object.cast_into::<PyBytes>(py)?;
             let read_data = read_bytes.data(py);
