@@ -1427,7 +1427,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
         self.assertEqual(source._read_count, len(source.getvalue()))
 
     def test_magic_less(self):
-        params = zstd.CompressionParameters.from_level(
+        params = zstd.ZstdCompressionParameters.from_level(
             1, format=zstd.FORMAT_ZSTD1_MAGICLESS
         )
         cctx = zstd.ZstdCompressor(compression_params=params)

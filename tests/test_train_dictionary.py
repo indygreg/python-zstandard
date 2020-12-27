@@ -89,7 +89,7 @@ class TestCompressionDict(unittest.TestCase):
             ValueError, "must only specify one of level or "
         ):
             d.precompute_compress(
-                level=3, compression_params=zstd.CompressionParameters()
+                level=3, compression_params=zstd.ZstdCompressionParameters()
             )
 
     def test_precompute_compress_rawcontent(self):

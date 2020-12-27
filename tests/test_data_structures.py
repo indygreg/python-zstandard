@@ -27,7 +27,7 @@ class TestCompressionParameters(unittest.TestCase):
 
     def test_from_level(self):
         p = zstd.ZstdCompressionParameters.from_level(1)
-        self.assertIsInstance(p, zstd.CompressionParameters)
+        self.assertIsInstance(p, zstd.ZstdCompressionParameters)
 
         self.assertEqual(p.window_log, 19)
 

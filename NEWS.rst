@@ -38,7 +38,7 @@ Actions Blocking Release
 * Audit for ability to control read/write sizes on all APIs.
 * Detect memory leaks via bench.py.
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
-  require use of ``CompressionParameters``.
+  require use of ``ZstdCompressionParameters``.
 * Expose ``ZSTD_getFrameProgression()`` from more compressor types.
 * Support modifying compression parameters mid operation when supported by
   zstd API.
@@ -114,7 +114,7 @@ Backwards Compatibility Notes
   ``io.UnsupportedOperation``.
 * ``ZstdCompressionReader.__enter__`` and ``ZstdDecompressionReader.__enter__``
   now raise ``ValueError`` if the instance was already closed.
-* The deprecated ``overlap_size_log`` attribute on ``CompressionParameters``
+* The deprecated ``overlap_size_log`` attribute on ``ZstdCompressionParameters``
   instances has been removed. The ``overlap_log`` attribute should be used
   instead.
 * The deprecated ``overlap_size_log`` argument to ``ZstdCompressionParameters``
@@ -125,6 +125,9 @@ Backwards Compatibility Notes
 * The deprecated ``ldm_hash_every_log`` argument to
   ``ZstdCompressionParameters`` has been removed. The ``ldm_hash_rate_log``
   argument should be used instead.
+* The deprecated ``CompressionParameters`` type alias to
+  ``ZstdCompressionParamaters`` has been removed. Use
+  ``ZstdCompressionParameters``.
 
 Bug Fixes
 ---------

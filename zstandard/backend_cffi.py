@@ -14,7 +14,6 @@ __all__ = [
     #'BufferSegments',
     #'BufferWithSegments',
     #'BufferWithSegmentsCollection',
-    "CompressionParameters",
     "ZstdCompressionDict",
     "ZstdCompressionParameters",
     "ZstdCompressor",
@@ -433,9 +432,6 @@ class ZstdCompressionParameters(object):
 
     def estimated_compression_context_size(self):
         return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self._params)
-
-
-CompressionParameters = ZstdCompressionParameters
 
 
 def estimate_decompression_context_size():

@@ -545,9 +545,4 @@ void compressionparams_module_init(PyObject *mod) {
     Py_INCREF(&ZstdCompressionParametersType);
     PyModule_AddObject(mod, "ZstdCompressionParameters",
                        (PyObject *)&ZstdCompressionParametersType);
-
-    /* TODO remove deprecated alias. */
-    Py_INCREF(&ZstdCompressionParametersType);
-    PyModule_AddObject(mod, "CompressionParameters",
-                       (PyObject *)&ZstdCompressionParametersType);
 }

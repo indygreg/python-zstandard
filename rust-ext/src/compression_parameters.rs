@@ -695,12 +695,5 @@ pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
         py.get_type::<ZstdCompressionParameters>(),
     )?;
 
-    // TODO remove deprecated alias
-    module.add(
-        py,
-        "CompressionParameters",
-        py.get_type::<ZstdCompressionParameters>(),
-    )?;
-
     Ok(())
 }
