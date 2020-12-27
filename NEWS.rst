@@ -144,6 +144,9 @@ Backwards Compatibility Notes
   raised an exception. The old behavior was inconsistent with other
   stream types in this package and with the behavior of Python's
   standard library IO types. (#86)
+* Distribution metadata no longer lists ``cffi`` as an ``install_requires``
+  except when running on PyPy. Instead, ``cffi`` is listed as an
+  ``extras_require``.
 
 Bug Fixes
 ---------

@@ -27,8 +27,7 @@ try:
     import cffi
 
     # PyPy (and possibly other distros) have CFFI distributed as part of
-    # them. The install_requires for CFFI below won't work. We need to sniff
-    # out the CFFI version here and reject CFFI if it is too old.
+    # them.
     cffi_version = LooseVersion(cffi.__version__)
     if cffi_version < LooseVersion(MINIMUM_CFFI_VERSION):
         print(
@@ -93,13 +92,10 @@ if C_BACKEND:
 if RUST_BACKEND:
     extensions.append(setup_zstd.get_rust_extension())
 
-install_requires = []
-
 if CFFI_BACKEND and cffi:
     import make_cffi
 
     extensions.append(make_cffi.ffi.distutils_extension())
-    install_requires.append("cffi>=%s" % MINIMUM_CFFI_VERSION)
 
 version = None
 
@@ -139,10 +135,15 @@ setup(
     ],
     keywords="zstandard zstd compression",
     packages=["zstandard"],
-    package_data={"zstandard": ["__init__.pyi", "py.typed"],},
+    package_data={"zstandard": ["__init__.pyi", "py.typed"]},
     ext_modules=extensions,
     cmdclass={"build_ext": setup_zstd.RustBuildExt},
     test_suite="tests",
-    install_requires=install_requires,
+    install_requires=[
+        # cffi is required on PyPy.
+        "cffi>=%s; platform_python_implementation == 'PyPy'"
+        % MINIMUM_CFFI_VERSION
+    ],
+    extras_require={"cffi": ["cffi>=%s" % MINIMUM_CFFI_VERSION],},
     tests_require=["hypothesis"],
 )

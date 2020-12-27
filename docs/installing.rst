@@ -22,10 +22,23 @@ this package with ``conda``.
 Requirements
 ============
 
-This extension is designed to run with Python 3.5, 3.6, 3.7, 3.8, and 3.9
+This package is designed to run with Python 3.5, 3.6, 3.7, 3.8, and 3.9
 on common platforms (Linux, Windows, and OS X). On PyPy (both PyPy2 and PyPy3)
 we support version 6.0.0 and above. x86 and x86_64 are well-tested on Windows.
 Only x86_64 is well-tested on Linux and macOS.
+
+CFFI Backend
+============
+
+In order to build/run the CFFI backend/bindings (as opposed to the C/Rust
+backend/bindings), you will need the ``cffi`` package installed. The
+``cffi`` package is listed as an optional dependency in ``setup.py`` and
+may not get picked up by your packaging tools.
+
+If you wish to use the CFFI backend (or have to use it since your Python
+distribution doesn't support compiled extensions using the Python C API -
+this is the case for PyPy for example), be sure you have the ``cffi``
+package installed.
 
 Legacy Format Support
 =====================
