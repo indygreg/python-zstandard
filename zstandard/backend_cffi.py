@@ -2264,6 +2264,8 @@ class ZstdDecompressionWriter(object):
         self._entered = False
         self.close()
 
+        return False
+
     def memory_size(self):
         return lib.ZSTD_sizeof_DCtx(self._decompressor._dctx)
 
