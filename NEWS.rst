@@ -117,8 +117,14 @@ Backwards Compatibility Notes
 * The deprecated ``overlap_size_log`` attribute on ``CompressionParameters``
   instances has been removed. The ``overlap_log`` attribute should be used
   instead.
-* The deprecated ``overlap_size_log`` argument to ``CompressionParameters``
+* The deprecated ``overlap_size_log`` argument to ``ZstdCompressionParameters``
   has been removed. The ``overlap_log`` argument should be used instead.
+* The deprecated ``ldm_hash_every_log`` attribute on
+  ``ZstdCompressionParameters`` instances has been removed. The
+  ``ldm_hash_rate_log`` attribute should be used instead.
+* The deprecated ``ldm_hash_every_log`` argument to
+  ``ZstdCompressionParameters`` has been removed. The ``ldm_hash_rate_log``
+  argument should be used instead.
 
 Bug Fixes
 ---------

@@ -301,11 +301,6 @@ py_class!(pub class ZstdCompressionParameters |py| {
         self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_ldmHashRateLog)
     }
 
-    // TODO remove this deprecated attribute.
-    @property def ldm_hash_every_log(&self) -> PyResult<PyObject> {
-        self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_ldmHashRateLog)
-    }
-
     @property def threads(&self) -> PyResult<PyObject> {
         self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_nbWorkers)
     }
@@ -473,7 +468,6 @@ impl ZstdCompressionParameters {
         let mut ldm_min_match = 0;
         let mut ldm_bucket_size_log = 0;
         let mut ldm_hash_rate_log = -1;
-        let mut ldm_hash_every_log = -1;
         let mut threads = 0;
 
         for (key, value) in kwargs.items(py) {
@@ -501,7 +495,6 @@ impl ZstdCompressionParameters {
                 "ldm_min_match" => ldm_min_match = value.extract::<_>(py)?,
                 "ldm_bucket_size_log" => ldm_bucket_size_log = value.extract::<_>(py)?,
                 "ldm_hash_rate_log" => ldm_hash_rate_log = value.extract::<_>(py)?,
-                "ldm_hash_every_log" => ldm_hash_every_log = value.extract::<_>(py)?,
                 "threads" => threads = value.extract::<_>(py)?,
                 key => {
                     return Err(PyErr::new::<TypeError, _>(
@@ -607,16 +600,7 @@ impl ZstdCompressionParameters {
             ldm_bucket_size_log,
         )?;
 
-        if ldm_hash_rate_log != -1 && ldm_hash_every_log != -1 {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
-                "cannot specify both ldm_hash_rate_log and ldm_hash_every_log",
-            ));
-        }
-
-        if ldm_hash_every_log != -1 {
-            ldm_hash_rate_log = ldm_hash_every_log;
-        } else if ldm_hash_rate_log == -1 {
+        if ldm_hash_rate_log == -1 {
             ldm_hash_rate_log = 0;
         }
 

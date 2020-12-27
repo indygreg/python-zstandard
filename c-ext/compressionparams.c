@@ -143,7 +143,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
                              "ldm_min_match",
                              "ldm_bucket_size_log",
                              "ldm_hash_rate_log",
-                             "ldm_hash_every_log",
                              "threads",
                              NULL};
 
@@ -168,16 +167,15 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     int ldmMinMatch = 0;
     int ldmBucketSizeLog = 0;
     int ldmHashRateLog = -1;
-    int ldmHashEveryLog = -1;
     int threads = 0;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, "|iiiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
+            args, kwargs, "|iiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
             kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
             &searchLog, &minMatch, &targetLength, &compressionStrategy,
             &strategy, &contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize,
             &overlapLog, &forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch,
-            &ldmBucketSizeLog, &ldmHashRateLog, &ldmHashEveryLog, &threads)) {
+            &ldmBucketSizeLog, &ldmHashRateLog, &threads)) {
         return -1;
     }
 
@@ -235,17 +233,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     TRY_SET_PARAMETER(self->params, ZSTD_c_ldmMinMatch, ldmMinMatch);
     TRY_SET_PARAMETER(self->params, ZSTD_c_ldmBucketSizeLog, ldmBucketSizeLog);
 
-    if (ldmHashRateLog != -1 && ldmHashEveryLog != -1) {
-        PyErr_SetString(
-            PyExc_ValueError,
-            "cannot specify both ldm_hash_rate_log and ldm_hash_everyLog");
-        return -1;
-    }
-
-    if (ldmHashEveryLog != -1) {
-        ldmHashRateLog = ldmHashEveryLog;
-    }
-    else if (ldmHashRateLog == -1) {
+    if (ldmHashRateLog == -1) {
         ldmHashRateLog = 0;
     }
 
@@ -506,9 +494,6 @@ static PyGetSetDef ZstdCompressionParameters_getset[] = {
     GET_SET_ENTRY(ldm_min_match),
     GET_SET_ENTRY(ldm_bucket_size_log),
     GET_SET_ENTRY(ldm_hash_rate_log),
-    /* TODO remove this deprecated attribute */
-    {"ldm_hash_every_log", ZstdCompressionParameters_get_ldm_hash_rate_log,
-     NULL, NULL, NULL},
     {NULL}};
 
 PyTypeObject ZstdCompressionParametersType = {

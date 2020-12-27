@@ -259,7 +259,6 @@ class ZstdCompressionParameters(object):
         ldm_min_match=0,
         ldm_bucket_size_log=0,
         ldm_hash_rate_log=-1,
-        ldm_hash_every_log=-1,
         threads=0,
     ):
 
@@ -329,14 +328,7 @@ class ZstdCompressionParameters(object):
             params, lib.ZSTD_c_ldmBucketSizeLog, ldm_bucket_size_log
         )
 
-        if ldm_hash_rate_log != -1 and ldm_hash_every_log != -1:
-            raise ValueError(
-                "cannot specify both ldm_hash_rate_log and ldm_hash_every_log"
-            )
-
-        if ldm_hash_every_log != -1:
-            ldm_hash_rate_log = ldm_hash_every_log
-        elif ldm_hash_rate_log == -1:
+        if ldm_hash_rate_log == -1:
             ldm_hash_rate_log = 0
 
         _set_compression_parameter(
@@ -434,10 +426,6 @@ class ZstdCompressionParameters(object):
         return _get_compression_parameter(
             self._params, lib.ZSTD_c_ldmHashRateLog
         )
-
-    @property
-    def ldm_hash_every_log(self):
-        return self.ldm_hash_rate_log
 
     @property
     def threads(self):
