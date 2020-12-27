@@ -1330,7 +1330,9 @@ class TestCompressor_stream_writer(unittest.TestCase):
     def test_write_size(self):
         cctx = zstd.ZstdCompressor(level=3)
         dest = OpCountingBytesIO()
-        with cctx.stream_writer(dest, write_size=1) as compressor:
+        with cctx.stream_writer(
+            dest, write_size=1, closefd=False
+        ) as compressor:
             self.assertEqual(compressor.write(b"foo"), 0)
             self.assertEqual(compressor.write(b"bar"), 0)
             self.assertEqual(compressor.write(b"foobar"), 0)
@@ -1340,7 +1342,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
     def test_flush_repeated(self):
         cctx = zstd.ZstdCompressor(level=3)
         dest = OpCountingBytesIO()
-        with cctx.stream_writer(dest) as compressor:
+        with cctx.stream_writer(dest, closefd=False) as compressor:
             self.assertEqual(compressor.write(b"foo"), 0)
             self.assertEqual(dest._write_count, 0)
             self.assertEqual(compressor.flush(), 12)
@@ -1356,7 +1358,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
     def test_flush_empty_block(self):
         cctx = zstd.ZstdCompressor(level=3, write_checksum=True)
         dest = OpCountingBytesIO()
-        with cctx.stream_writer(dest) as compressor:
+        with cctx.stream_writer(dest, closefd=False) as compressor:
             self.assertEqual(compressor.write(b"foobar" * 8192), 0)
             count = dest._write_count
             offset = dest.tell()
@@ -1378,7 +1380,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=3)
         dest = OpCountingBytesIO()
 
-        with cctx.stream_writer(dest) as compressor:
+        with cctx.stream_writer(dest, closefd=False) as compressor:
             self.assertEqual(compressor.write(b"foobar" * 8192), 0)
             self.assertEqual(compressor.flush(zstd.FLUSH_FRAME), 23)
             compressor.write(b"biz" * 16384)

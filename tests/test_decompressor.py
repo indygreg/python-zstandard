@@ -1210,7 +1210,9 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         source = zstd.ZstdCompressor().compress(b"foobarfoobar")
         dest = OpCountingBytesIO()
         dctx = zstd.ZstdDecompressor()
-        with dctx.stream_writer(dest, write_size=1) as decompressor:
+        with dctx.stream_writer(
+            dest, write_size=1, closefd=False
+        ) as decompressor:
             s = struct.Struct(">B")
             for c in source:
                 if not isinstance(c, str):

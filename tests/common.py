@@ -30,7 +30,7 @@ class NonClosingBytesIO(io.BytesIO):
             return super(NonClosingBytesIO, self).getvalue()
 
 
-class OpCountingBytesIO(NonClosingBytesIO):
+class OpCountingBytesIO(io.BytesIO):
     def __init__(self, *args, **kwargs):
         self._flush_count = 0
         self._read_count = 0
