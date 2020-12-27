@@ -129,7 +129,6 @@ class ZstdCompressionParameters(object):
         write_dict_id: int = 0,
         job_size: int = 0,
         overlap_log: int = -1,
-        overlap_size_log: int = -1,
         force_max_window: int = 0,
         enable_ldm: int = 0,
         ldm_hash_log: int = 0,
@@ -167,8 +166,6 @@ class ZstdCompressionParameters(object):
     def job_size(self) -> int: ...
     @property
     def overlap_log(self) -> int: ...
-    @property
-    def overlap_size_log(self) -> int: ...
     @property
     def force_max_window(self) -> int: ...
     @property

@@ -70,7 +70,6 @@ follows:
 * write_dict_id
 * job_size
 * overlap_log
-* overlap_size_log (deprecated: same as ``overlap_log``)
 * force_max_window
 * enable_ldm
 * ldm_hash_log

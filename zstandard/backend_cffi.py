@@ -253,7 +253,6 @@ class ZstdCompressionParameters(object):
         write_dict_id=0,
         job_size=0,
         overlap_log=-1,
-        overlap_size_log=-1,
         force_max_window=0,
         enable_ldm=0,
         ldm_hash_log=0,
@@ -312,14 +311,7 @@ class ZstdCompressionParameters(object):
         _set_compression_parameter(params, lib.ZSTD_c_dictIDFlag, write_dict_id)
         _set_compression_parameter(params, lib.ZSTD_c_jobSize, job_size)
 
-        if overlap_log != -1 and overlap_size_log != -1:
-            raise ValueError(
-                "cannot specify both overlap_log and overlap_size_log"
-            )
-
-        if overlap_size_log != -1:
-            overlap_log = overlap_size_log
-        elif overlap_log == -1:
+        if overlap_log == -1:
             overlap_log = 0
 
         _set_compression_parameter(params, lib.ZSTD_c_overlapLog, overlap_log)
@@ -410,10 +402,6 @@ class ZstdCompressionParameters(object):
     @property
     def overlap_log(self):
         return _get_compression_parameter(self._params, lib.ZSTD_c_overlapLog)
-
-    @property
-    def overlap_size_log(self):
-        return self.overlap_log
 
     @property
     def force_max_window(self):

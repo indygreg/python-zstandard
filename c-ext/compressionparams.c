@@ -137,7 +137,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
                              "write_dict_id",
                              "job_size",
                              "overlap_log",
-                             "overlap_size_log",
                              "force_max_window",
                              "enable_ldm",
                              "ldm_hash_log",
@@ -163,7 +162,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     int dictIDFlag = 0;
     int jobSize = 0;
     int overlapLog = -1;
-    int overlapSizeLog = -1;
     int forceMaxWindow = 0;
     int enableLDM = 0;
     int ldmHashLog = 0;
@@ -174,13 +172,12 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     int threads = 0;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, "|iiiiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
+            args, kwargs, "|iiiiiiiiiiiiiiiiiiiiiii:CompressionParameters",
             kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
             &searchLog, &minMatch, &targetLength, &compressionStrategy,
             &strategy, &contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize,
-            &overlapLog, &overlapSizeLog, &forceMaxWindow, &enableLDM,
-            &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog, &ldmHashRateLog,
-            &ldmHashEveryLog, &threads)) {
+            &overlapLog, &forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch,
+            &ldmBucketSizeLog, &ldmHashRateLog, &ldmHashEveryLog, &threads)) {
         return -1;
     }
 
@@ -226,16 +223,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     TRY_SET_PARAMETER(self->params, ZSTD_c_dictIDFlag, dictIDFlag);
     TRY_SET_PARAMETER(self->params, ZSTD_c_jobSize, jobSize);
 
-    if (overlapLog != -1 && overlapSizeLog != -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "cannot specify both overlap_log and overlap_size_log");
-        return -1;
-    }
-
-    if (overlapSizeLog != -1) {
-        overlapLog = overlapSizeLog;
-    }
-    else if (overlapLog == -1) {
+    if (overlapLog == -1) {
         overlapLog = 0;
     }
 
@@ -512,9 +500,6 @@ static PyGetSetDef ZstdCompressionParameters_getset[] = {
     GET_SET_ENTRY(threads),
     GET_SET_ENTRY(job_size),
     GET_SET_ENTRY(overlap_log),
-    /* TODO remove this deprecated attribute */
-    {"overlap_size_log", ZstdCompressionParameters_get_overlap_log, NULL, NULL,
-     NULL},
     GET_SET_ENTRY(force_max_window),
     GET_SET_ENTRY(enable_ldm),
     GET_SET_ENTRY(ldm_hash_log),

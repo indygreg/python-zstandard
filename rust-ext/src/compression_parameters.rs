@@ -277,11 +277,6 @@ py_class!(pub class ZstdCompressionParameters |py| {
         self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_overlapLog)
     }
 
-    // TODO remove this deprecated attribute.
-    @property def overlap_size_log(&self) -> PyResult<PyObject> {
-        self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_overlapLog)
-    }
-
     @property def force_max_window(&self) -> PyResult<PyObject> {
         self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_experimentalParam3)
     }
@@ -472,7 +467,6 @@ impl ZstdCompressionParameters {
         let mut write_dict_id = 0;
         let mut job_size = 0;
         let mut overlap_log = -1;
-        let mut overlap_size_log = -1;
         let mut force_max_window = 0;
         let mut enable_ldm = 0;
         let mut ldm_hash_log = 0;
@@ -501,7 +495,6 @@ impl ZstdCompressionParameters {
                 "write_dict_id" => write_dict_id = value.extract::<_>(py)?,
                 "job_size" => job_size = value.extract::<_>(py)?,
                 "overlap_log" => overlap_log = value.extract::<_>(py)?,
-                "overlap_size_log" => overlap_size_log = value.extract::<_>(py)?,
                 "force_max_window" => force_max_window = value.extract::<_>(py)?,
                 "enable_ldm" => enable_ldm = value.extract::<_>(py)?,
                 "ldm_hash_log" => ldm_hash_log = value.extract::<_>(py)?,
@@ -579,16 +572,7 @@ impl ZstdCompressionParameters {
         )?;
         self.set_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_jobSize, job_size)?;
 
-        if overlap_log != -1 && overlap_size_log != -1 {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
-                "cannot specify both overlap_log and overlap_size_log",
-            ));
-        }
-
-        if overlap_size_log != -1 {
-            overlap_log = overlap_size_log;
-        } else if overlap_log == -1 {
+        if overlap_log == -1 {
             overlap_log = 0;
         }
 

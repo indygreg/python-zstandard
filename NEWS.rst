@@ -114,6 +114,11 @@ Backwards Compatibility Notes
   ``io.UnsupportedOperation``.
 * ``ZstdCompressionReader.__enter__`` and ``ZstdDecompressionReader.__enter__``
   now raise ``ValueError`` if the instance was already closed.
+* The deprecated ``overlap_size_log`` attribute on ``CompressionParameters``
+  instances has been removed. The ``overlap_log`` attribute should be used
+  instead.
+* The deprecated ``overlap_size_log`` argument to ``CompressionParameters``
+  has been removed. The ``overlap_log`` argument should be used instead.
 
 Bug Fixes
 ---------
