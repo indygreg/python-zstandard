@@ -30,24 +30,24 @@ class NonClosingBytesIO(io.BytesIO):
             return super(NonClosingBytesIO, self).getvalue()
 
 
-class OpCountingBytesIO(io.BytesIO):
+class CustomBytesIO(io.BytesIO):
     def __init__(self, *args, **kwargs):
         self._flush_count = 0
         self._read_count = 0
         self._write_count = 0
-        super(OpCountingBytesIO, self).__init__(*args, **kwargs)
+        super(CustomBytesIO, self).__init__(*args, **kwargs)
 
     def flush(self):
         self._flush_count += 1
-        return super(OpCountingBytesIO, self).flush()
+        return super(CustomBytesIO, self).flush()
 
     def read(self, *args):
         self._read_count += 1
-        return super(OpCountingBytesIO, self).read(*args)
+        return super(CustomBytesIO, self).read(*args)
 
     def write(self, data):
         self._write_count += 1
-        return super(OpCountingBytesIO, self).write(data)
+        return super(CustomBytesIO, self).write(data)
 
 
 _source_files = []  # type: List[bytes]

@@ -10,7 +10,7 @@ import zstandard as zstd
 
 from .common import (
     NonClosingBytesIO,
-    OpCountingBytesIO,
+    CustomBytesIO,
 )
 
 
@@ -523,8 +523,8 @@ class TestCompressor_copy_stream(unittest.TestCase):
         self.assertFalse(with_params.has_checksum)
 
     def test_read_write_size(self):
-        source = OpCountingBytesIO(b"foobarfoobar")
-        dest = OpCountingBytesIO()
+        source = CustomBytesIO(b"foobarfoobar")
+        dest = CustomBytesIO()
         cctx = zstd.ZstdCompressor()
         r, w = cctx.copy_stream(source, dest, read_size=1, write_size=1)
 
@@ -804,7 +804,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
             reader.readinto1(b"foobar")
 
         b = bytearray(1024)
-        source = OpCountingBytesIO(b"foo")
+        source = CustomBytesIO(b"foo")
         reader = cctx.stream_reader(source)
         self.assertEqual(reader.readinto1(b), len(foo))
         self.assertEqual(b[0 : len(foo)], foo)
@@ -812,7 +812,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
         # readinto1() with small reads.
         b = bytearray(1024)
-        source = OpCountingBytesIO(b"foo")
+        source = CustomBytesIO(b"foo")
         reader = cctx.stream_reader(source, read_size=1)
         self.assertEqual(reader.readinto1(b), len(foo))
         self.assertEqual(b[0 : len(foo)], foo)
@@ -822,13 +822,13 @@ class TestCompressor_stream_reader(unittest.TestCase):
         cctx = zstd.ZstdCompressor()
         foo = b"".join(cctx.read_to_iter(io.BytesIO(b"foo")))
 
-        b = OpCountingBytesIO(b"foo")
+        b = CustomBytesIO(b"foo")
         reader = cctx.stream_reader(b)
 
         self.assertEqual(reader.read1(), foo)
         self.assertEqual(b._read_count, 2)
 
-        b = OpCountingBytesIO(b"foo")
+        b = CustomBytesIO(b"foo")
         reader = cctx.stream_reader(b)
 
         self.assertEqual(reader.read1(0), b"")
@@ -1329,7 +1329,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
     def test_write_size(self):
         cctx = zstd.ZstdCompressor(level=3)
-        dest = OpCountingBytesIO()
+        dest = CustomBytesIO()
         with cctx.stream_writer(
             dest, write_size=1, closefd=False
         ) as compressor:
@@ -1341,7 +1341,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
     def test_flush_repeated(self):
         cctx = zstd.ZstdCompressor(level=3)
-        dest = OpCountingBytesIO()
+        dest = CustomBytesIO()
         with cctx.stream_writer(dest, closefd=False) as compressor:
             self.assertEqual(compressor.write(b"foo"), 0)
             self.assertEqual(dest._write_count, 0)
@@ -1357,7 +1357,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
     def test_flush_empty_block(self):
         cctx = zstd.ZstdCompressor(level=3, write_checksum=True)
-        dest = OpCountingBytesIO()
+        dest = CustomBytesIO()
         with cctx.stream_writer(dest, closefd=False) as compressor:
             self.assertEqual(compressor.write(b"foobar" * 8192), 0)
             count = dest._write_count
@@ -1378,7 +1378,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
     def test_flush_frame(self):
         cctx = zstd.ZstdCompressor(level=3)
-        dest = OpCountingBytesIO()
+        dest = CustomBytesIO()
 
         with cctx.stream_writer(dest, closefd=False) as compressor:
             self.assertEqual(compressor.write(b"foobar" * 8192), 0)
@@ -1541,7 +1541,7 @@ class TestCompressor_read_to_iter(unittest.TestCase):
         self.assertEqual(b"".join(chunks), cctx.compress(source.getvalue()))
 
     def test_read_write_size(self):
-        source = OpCountingBytesIO(b"foobarfoobar")
+        source = CustomBytesIO(b"foobarfoobar")
         cctx = zstd.ZstdCompressor(level=3)
         for chunk in cctx.read_to_iter(source, read_size=1, write_size=1):
             self.assertEqual(len(chunk), 1)

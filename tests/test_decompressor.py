@@ -11,7 +11,7 @@ from .common import (
     generate_samples,
     get_optimal_dict_size_heuristically,
     NonClosingBytesIO,
-    OpCountingBytesIO,
+    CustomBytesIO,
 )
 
 
@@ -291,11 +291,9 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         self.assertEqual(w, len(source.getvalue()))
 
     def test_read_write_size(self):
-        source = OpCountingBytesIO(
-            zstd.ZstdCompressor().compress(b"foobarfoobar")
-        )
+        source = CustomBytesIO(zstd.ZstdCompressor().compress(b"foobarfoobar"))
 
-        dest = OpCountingBytesIO()
+        dest = CustomBytesIO()
         dctx = zstd.ZstdDecompressor()
         r, w = dctx.copy_stream(source, dest, read_size=1, write_size=1)
 
@@ -792,13 +790,13 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
 
-        b = OpCountingBytesIO(foo)
+        b = CustomBytesIO(foo)
         reader = dctx.stream_reader(b)
 
         self.assertEqual(reader.read1(), b"foo")
         self.assertEqual(b._read_count, 1)
 
-        b = OpCountingBytesIO(foo)
+        b = CustomBytesIO(foo)
         reader = dctx.stream_reader(b)
 
         self.assertEqual(reader.read1(0), b"")
@@ -1075,7 +1073,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertFalse(buffer.closed)
 
     def test_flush(self):
-        buffer = OpCountingBytesIO()
+        buffer = CustomBytesIO()
         dctx = zstd.ZstdDecompressor()
         writer = dctx.stream_writer(buffer)
 
@@ -1208,7 +1206,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
     def test_write_size(self):
         source = zstd.ZstdCompressor().compress(b"foobarfoobar")
-        dest = OpCountingBytesIO()
+        dest = CustomBytesIO()
         dctx = zstd.ZstdDecompressor()
         with dctx.stream_writer(
             dest, write_size=1, closefd=False
@@ -1419,9 +1417,7 @@ class TestDecompressor_read_to_iter(unittest.TestCase):
         self.assertEqual(streamed, source.getvalue())
 
     def test_read_write_size(self):
-        source = OpCountingBytesIO(
-            zstd.ZstdCompressor().compress(b"foobarfoobar")
-        )
+        source = CustomBytesIO(zstd.ZstdCompressor().compress(b"foobarfoobar"))
         dctx = zstd.ZstdDecompressor()
         for chunk in dctx.read_to_iter(source, read_size=1, write_size=1):
             self.assertEqual(len(chunk), 1)
