@@ -154,6 +154,8 @@ Changes
   when the ``ZstdCompressionWriter``, ``ZstdCompressReader``,
   ``ZstdDecompressionWriter``, or ``ZstdDecompressionReader`` is closed.
   (#76)
+* There is now a ``zstandard.open()`` function for returning a file
+  object with zstd (de)compression. (#64)
 
 0.14.1 (released 2020-12-05)
 ============================

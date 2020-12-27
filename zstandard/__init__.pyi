@@ -4,6 +4,8 @@
 # This software may be modified and distributed under the terms
 # of the BSD license. See the LICENSE file for details.
 
+import os
+
 from typing import (
     BinaryIO,
     ByteString,
@@ -11,6 +13,7 @@ from typing import (
     IO,
     Iterable,
     List,
+    Optional,
     Tuple,
     Union,
 )
@@ -449,3 +452,13 @@ def train_dictionary(
     steps: int = 0,
     threads: int = 0,
 ) -> ZstdCompressionDict: ...
+def open(
+    filename: Union[bytes, str, os.PathLike, BinaryIO],
+    mode: str = "rb",
+    cctx: Optional[ZstdCompressor] = None,
+    dctx: Optional[ZstdDecompressor] = None,
+    encoding: Optional[str] = None,
+    errors: Optional[str] = None,
+    newline: Optional[str] = None,
+    closefd: bool = None,
+): ...
