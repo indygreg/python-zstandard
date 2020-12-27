@@ -1835,9 +1835,6 @@ static PyMethodDef Decompressor_methods[] = {
      METH_VARARGS | METH_KEYWORDS, Decompressor_decompressobj__doc__},
     {"read_to_iter", (PyCFunction)Decompressor_read_to_iter,
      METH_VARARGS | METH_KEYWORDS, Decompressor_read_to_iter__doc__},
-    /* TODO Remove deprecated API */
-    {"read_from", (PyCFunction)Decompressor_read_to_iter,
-     METH_VARARGS | METH_KEYWORDS, Decompressor_read_to_iter__doc__},
     {"stream_reader", (PyCFunction)Decompressor_stream_reader,
      METH_VARARGS | METH_KEYWORDS, Decompressor_stream_reader__doc__},
     {"stream_writer", (PyCFunction)Decompressor_stream_writer,

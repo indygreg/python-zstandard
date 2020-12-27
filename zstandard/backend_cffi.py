@@ -1630,8 +1630,6 @@ class ZstdCompressor(object):
             if zresult == 0:
                 break
 
-    read_from = read_to_iter
-
     def frame_progression(self):
         progression = lib.ZSTD_getFrameProgression(self._cctx)
 
@@ -2563,8 +2561,6 @@ class ZstdDecompressor(object):
             continue
 
         # If we get here, input is exhausted.
-
-    read_from = read_to_iter
 
     def stream_writer(
         self,

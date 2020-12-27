@@ -1638,9 +1638,6 @@ static PyMethodDef ZstdCompressor_methods[] = {
      METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_writer___doc__},
     {"read_to_iter", (PyCFunction)ZstdCompressor_read_to_iter,
      METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_to_iter__doc__},
-    /* TODO Remove deprecated API */
-    {"read_from", (PyCFunction)ZstdCompressor_read_to_iter,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_to_iter__doc__},
     /* TODO remove deprecated API */
     {"write_to", (PyCFunction)ZstdCompressor_stream_writer,
      METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_writer___doc__},

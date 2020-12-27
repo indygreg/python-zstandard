@@ -128,6 +128,9 @@ Backwards Compatibility Notes
 * The deprecated ``CompressionParameters`` type alias to
   ``ZstdCompressionParamaters`` has been removed. Use
   ``ZstdCompressionParameters``.
+* The deprecated aliases ``ZstdCompressor.read_from()`` and
+  ``ZstdDecompressor.read_from()`` have been removed. Use the corresponding
+  ``read_to_iter()`` methods instead.
 
 Bug Fixes
 ---------
