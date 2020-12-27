@@ -20,8 +20,6 @@ Actions Blocking Release
   wrapped stream acceptable, should ``__exit__`` always call ``close()``,
   should ``close()`` imply ``flush()``, etc.
 * Consider making reads across frames configurable behavior.
-* Refactor module names so C and CFFI extensions live under ``zstandard``
-  package.
 * Overall API design review.
 * Use Python allocator where possible.
 * Figure out what to do about experimental APIs not implemented by CFFI.
