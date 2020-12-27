@@ -506,6 +506,18 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertTrue(reader.closed)
         self.assertFalse(buffer.closed)
 
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO(foo)
+        reader = dctx.stream_reader(buffer)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with reader:
+                reader.read(3)
+                raise Exception("ignore")
+
+        self.assertTrue(reader.closed)
+        self.assertFalse(buffer.closed)
+
     def test_close_closefd_true(self):
         foo = zstd.ZstdCompressor().compress(b"foo" * 1024)
 
@@ -533,6 +545,18 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         with reader:
             reader.read(3)
+
+        self.assertTrue(reader.closed)
+        self.assertTrue(buffer.closed)
+
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO(foo)
+        reader = dctx.stream_reader(buffer, closefd=True)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with reader:
+                reader.read(3)
+                raise Exception("ignore")
 
         self.assertTrue(reader.closed)
         self.assertTrue(buffer.closed)
@@ -1057,6 +1081,18 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertEqual(buffer.getvalue(), b"foo")
         self.assertTrue(buffer.closed)
 
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO()
+        writer = dctx.stream_writer(buffer)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with writer:
+                writer.write(foo)
+                raise Exception("ignore")
+
+        self.assertTrue(writer.closed)
+        self.assertTrue(buffer.closed)
+
     def test_close_closefd_false(self):
         foo = zstd.ZstdCompressor().compress(b"foo")
 
@@ -1092,6 +1128,18 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertEqual(buffer.getvalue(), b"foo")
+        self.assertFalse(buffer.closed)
+
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO()
+        writer = dctx.stream_writer(buffer, closefd=False)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with writer:
+                writer.write(foo)
+                raise Exception("ignore")
+
+        self.assertTrue(writer.closed)
         self.assertFalse(buffer.closed)
 
     def test_flush(self):

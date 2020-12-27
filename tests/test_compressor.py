@@ -860,79 +860,89 @@ class TestCompressor_stream_reader(unittest.TestCase):
         self.assertEqual(reader.read1(1024), foo[4:])
 
     def test_close(self):
-        buffer = NonClosingBytesIO()
-        cctx = zstd.ZstdCompressor(level=1)
-        writer = cctx.stream_writer(buffer)
+        frame = zstd.ZstdCompressor().compress(b"foo" * 1024)
 
-        writer.write(b"foo" * 1024)
-        self.assertFalse(writer.closed)
+        buffer = NonClosingBytesIO(frame)
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(buffer)
+
+        reader.read(3)
+        self.assertFalse(reader.closed)
         self.assertFalse(buffer.closed)
-        writer.close()
-        self.assertTrue(writer.closed)
-        self.assertTrue(buffer.closed)
+        reader.close()
+        self.assertTrue(reader.closed)
+        self.assertFalse(buffer.closed)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
-            writer.write(b"foo")
+            reader.read(3)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
-            writer.flush()
-
-        with self.assertRaisesRegex(ValueError, "stream is closed"):
-            with writer:
+            with reader:
                 pass
 
-        self.assertEqual(
-            buffer.getvalue(),
-            b"\x28\xb5\x2f\xfd\x00\x48\x55\x00\x00\x18\x66\x6f"
-            b"\x6f\x01\x00\xfa\xd3\x77\x43",
-        )
-
         # Context manager exit should close stream.
-        buffer = io.BytesIO()
-        writer = cctx.stream_writer(buffer)
+        buffer = io.BytesIO(frame)
+        reader = dctx.stream_reader(buffer)
 
-        with writer:
-            writer.write(b"foo")
+        with reader:
+            reader.read(3)
 
-        self.assertTrue(writer.closed)
-        self.assertTrue(buffer.closed)
-
-    def test_close_closefd_false(self):
-        buffer = NonClosingBytesIO()
-        cctx = zstd.ZstdCompressor(level=1)
-        writer = cctx.stream_writer(buffer, closefd=False)
-
-        writer.write(b"foo" * 1024)
-        self.assertFalse(writer.closed)
-        self.assertFalse(buffer.closed)
-        writer.close()
-        self.assertTrue(writer.closed)
+        self.assertTrue(reader.closed)
         self.assertFalse(buffer.closed)
 
-        with self.assertRaisesRegex(ValueError, "stream is closed"):
-            writer.write(b"foo")
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO(frame)
+        reader = dctx.stream_reader(buffer)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with reader:
+                reader.read(3)
+                raise Exception("ignore")
+
+        self.assertTrue(reader.closed)
+        self.assertFalse(buffer.closed)
+
+    def test_close_closefd_true(self):
+        frame = zstd.ZstdCompressor().compress(b"foo" * 1024)
+
+        buffer = NonClosingBytesIO(frame)
+        dctx = zstd.ZstdDecompressor()
+        reader = dctx.stream_reader(buffer)
+
+        reader.read(3)
+        self.assertFalse(reader.closed)
+        self.assertFalse(buffer.closed)
+        reader.close()
+        self.assertTrue(reader.closed)
+        self.assertFalse(buffer.closed)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
-            writer.flush()
+            reader.read(3)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
-            with writer:
+            with reader:
                 pass
 
-        self.assertEqual(
-            buffer.getvalue(),
-            b"\x28\xb5\x2f\xfd\x00\x48\x55\x00\x00\x18\x66\x6f"
-            b"\x6f\x01\x00\xfa\xd3\x77\x43",
-        )
-
         # Context manager exit should close stream.
-        buffer = io.BytesIO()
-        writer = cctx.stream_writer(buffer, closefd=False)
+        buffer = io.BytesIO(frame)
+        reader = dctx.stream_reader(buffer)
 
-        with writer:
-            writer.write(b"foo")
+        with reader:
+            reader.read(3)
 
-        self.assertTrue(writer.closed)
+        self.assertTrue(reader.closed)
+        self.assertFalse(buffer.closed)
+
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO(frame)
+        reader = dctx.stream_reader(buffer)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with reader:
+                reader.read(3)
+                raise Exception("ignore")
+
+        self.assertTrue(reader.closed)
         self.assertFalse(buffer.closed)
 
     def test_write_exception(self):
@@ -1063,6 +1073,19 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertTrue(writer.closed)
         self.assertTrue(buffer.closed)
 
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO()
+        writer = cctx.stream_writer(buffer)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with writer:
+                writer.write(b"foo")
+                raise Exception("ignore")
+
+        # TODO fix
+        self.assertFalse(writer.closed)
+        self.assertFalse(buffer.closed)
+
     def test_close_closefd_false(self):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1)
@@ -1099,6 +1122,19 @@ class TestCompressor_stream_writer(unittest.TestCase):
             writer.write(b"foo")
 
         self.assertTrue(writer.closed)
+        self.assertFalse(buffer.closed)
+
+        # Context manager exit should close stream if an exception raised.
+        buffer = io.BytesIO()
+        writer = cctx.stream_writer(buffer, closefd=False)
+
+        with self.assertRaisesRegex(Exception, "ignore"):
+            with writer:
+                writer.write(b"foo")
+                raise Exception("ignore")
+
+        # TODO fix
+        self.assertFalse(writer.closed)
         self.assertFalse(buffer.closed)
 
     def test_empty(self):
