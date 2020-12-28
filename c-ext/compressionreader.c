@@ -138,7 +138,8 @@ static PyObject *compressionreader_close(ZstdCompressionReader *self) {
 
     self->closed = 1;
 
-    if (self->closefd && PyObject_HasAttrString(self->reader, "close")) {
+    if (self->closefd && self->reader != NULL &&
+        PyObject_HasAttrString(self->reader, "close")) {
         return PyObject_CallMethod(self->reader, "close", NULL);
     }
 

@@ -518,6 +518,13 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertTrue(reader.closed)
         self.assertFalse(buffer.closed)
 
+        # Test with non-file source variant.
+        with dctx.stream_reader(foo) as reader:
+            reader.read(3)
+            self.assertFalse(reader.closed)
+
+        self.assertTrue(reader.closed)
+
     def test_close_closefd_true(self):
         foo = zstd.ZstdCompressor().compress(b"foo" * 1024)
 
@@ -560,6 +567,13 @@ class TestDecompressor_stream_reader(unittest.TestCase):
 
         self.assertTrue(reader.closed)
         self.assertTrue(buffer.closed)
+
+        # Test with non-file source variant.
+        with dctx.stream_reader(foo, closefd=True) as reader:
+            reader.read(3)
+            self.assertFalse(reader.closed)
+
+        self.assertTrue(reader.closed)
 
     def test_read_after_exit(self):
         cctx = zstd.ZstdCompressor()
