@@ -1852,6 +1852,9 @@ class TestCompressor_chunker(unittest.TestCase):
             list(chunker.finish())
 
 
+@unittest.skipUnless(
+    hasattr(zstd, "BufferWithSegments"), "buffer types not available"
+)
 class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
     def test_invalid_inputs(self):
         cctx = zstd.ZstdCompressor()

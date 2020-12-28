@@ -89,49 +89,6 @@ static PyObject *frame_progression(ZSTD_CCtx *cctx) {
     return result;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressor__doc__,
-    "ZstdCompressor(level=None, dict_data=None, compression_params=None)\n"
-    "\n"
-    "Create an object used to perform Zstandard compression.\n"
-    "\n"
-    "An instance can compress data various ways. Instances can be used "
-    "multiple\n"
-    "times. Each compression operation will use the compression parameters\n"
-    "defined at construction time.\n"
-    "\n"
-    "Compression can be configured via the following names arguments:\n"
-    "\n"
-    "level\n"
-    "   Integer compression level.\n"
-    "dict_data\n"
-    "   A ``ZstdCompressionDict`` to be used to compress with dictionary "
-    "data.\n"
-    "compression_params\n"
-    "   A ``ZstdCompressionParameters`` instance defining low-level compression"
-    "   parameters. If defined, this will overwrite the ``level`` argument.\n"
-    "write_checksum\n"
-    "   If True, a 4 byte content checksum will be written with the "
-    "compressed\n"
-    "   data, allowing the decompressor to perform content verification.\n"
-    "write_content_size\n"
-    "   If True (the default), the decompressed content size will be included "
-    "in\n"
-    "   the header of the compressed data. This data will only be written if "
-    "the\n"
-    "   compressor knows the size of the input data.\n"
-    "write_dict_id\n"
-    "   Determines whether the dictionary ID will be written into the "
-    "compressed\n"
-    "   data. Defaults to True. Only adds content to the compressed data if\n"
-    "   a dictionary is being used.\n"
-    "threads\n"
-    "   Number of threads to use to compress data concurrently. When set,\n"
-    "   compression operations are performed on multiple threads. The default\n"
-    "   value (0) disables multi-threaded compression. A value of ``-1`` means "
-    "to\n"
-    "   set the number of threads to the number of detected logical CPUs.\n");
-
 static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
                                PyObject *kwargs) {
     static char *kwlist[] = {"level",
@@ -272,11 +229,6 @@ static void ZstdCompressor_dealloc(ZstdCompressor *self) {
     PyObject_Del(self);
 }
 
-PyDoc_STRVAR(ZstdCompressor_memory_size__doc__,
-             "memory_size()\n"
-             "\n"
-             "Obtain the memory usage of this compressor, in bytes.\n");
-
 static PyObject *ZstdCompressor_memory_size(ZstdCompressor *self) {
     if (self->cctx) {
         return PyLong_FromSize_t(ZSTD_sizeof_CCtx(self->cctx));
@@ -288,35 +240,9 @@ static PyObject *ZstdCompressor_memory_size(ZstdCompressor *self) {
     }
 }
 
-PyDoc_STRVAR(ZstdCompressor_frame_progression__doc__,
-             "frame_progression()\n"
-             "\n"
-             "Return information on how much work the compressor has done.\n"
-             "\n"
-             "Returns a 3-tuple of (ingested, consumed, produced).\n");
-
 static PyObject *ZstdCompressor_frame_progression(ZstdCompressor *self) {
     return frame_progression(self->cctx);
 }
-
-PyDoc_STRVAR(
-    ZstdCompressor_copy_stream__doc__,
-    "copy_stream(ifh, ofh[, size=0, read_size=default, write_size=default])\n"
-    "compress data between streams\n"
-    "\n"
-    "Data will be read from ``ifh``, compressed, and written to ``ofh``.\n"
-    "``ifh`` must have a ``read(size)`` method. ``ofh`` must have a "
-    "``write(data)``\n"
-    "method.\n"
-    "\n"
-    "An optional ``size`` argument specifies the size of the source stream.\n"
-    "If defined, compression parameters will be tuned based on the size.\n"
-    "\n"
-    "Optional arguments ``read_size`` and ``write_size`` define the chunk "
-    "sizes\n"
-    "of ``read()`` and ``write()`` operations, respectively. By default, they "
-    "use\n"
-    "the default compression stream input and output sizes, respectively.\n");
 
 static PyObject *ZstdCompressor_copy_stream(ZstdCompressor *self,
                                             PyObject *args, PyObject *kwargs) {
@@ -479,15 +405,6 @@ finally:
     return res;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressor_stream_reader__doc__,
-    "stream_reader(source, [size=0])\n"
-    "\n"
-    "Obtain an object that behaves like an I/O stream.\n"
-    "\n"
-    "The source object can be any object with a ``read(size)`` method\n"
-    "or an object that conforms to the buffer protocol.\n");
-
 static ZstdCompressionReader *ZstdCompressor_stream_reader(ZstdCompressor *self,
                                                            PyObject *args,
                                                            PyObject *kwargs) {
@@ -558,19 +475,6 @@ except:
     return NULL;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressor_compress__doc__,
-    "compress(data)\n"
-    "\n"
-    "Compress data in a single operation.\n"
-    "\n"
-    "This is the simplest mechanism to perform compression: simply pass in a\n"
-    "value and get a compressed value back. It is almost the most prone to "
-    "abuse.\n"
-    "The input and output values must fit in memory, so passing in very large\n"
-    "values can result in excessive memory usage. For this reason, one of the\n"
-    "streaming based APIs is preferred for larger values.\n");
-
 static PyObject *ZstdCompressor_compress(ZstdCompressor *self, PyObject *args,
                                          PyObject *kwargs) {
     static char *kwlist[] = {"data", NULL};
@@ -638,16 +542,6 @@ finally:
     return output;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressor_CompressionObj__doc__,
-    "compressobj()\n"
-    "\n"
-    "Return an object exposing ``compress(data)`` and ``flush()`` methods.\n"
-    "\n"
-    "The returned object exposes an API similar to ``zlib.compressobj`` and\n"
-    "``bz2.BZ2Compressor`` so that callers can swap in the zstd compressor\n"
-    "without changing how compression is performed.\n");
-
 static ZstdCompressionObj *ZstdCompressor_compressobj(ZstdCompressor *self,
                                                       PyObject *args,
                                                       PyObject *kwargs) {
@@ -690,30 +584,6 @@ static ZstdCompressionObj *ZstdCompressor_compressobj(ZstdCompressor *self,
 
     return result;
 }
-
-PyDoc_STRVAR(
-    ZstdCompressor_read_to_iter__doc__,
-    "read_to_iter(reader, [size=0, read_size=default, write_size=default])\n"
-    "Read uncompressed data from a reader and return an iterator\n"
-    "\n"
-    "Returns an iterator of compressed data produced from reading from "
-    "``reader``.\n"
-    "\n"
-    "Uncompressed data will be obtained from ``reader`` by calling the\n"
-    "``read(size)`` method of it. The source data will be streamed into a\n"
-    "compressor. As compressed data is available, it will be exposed to the\n"
-    "iterator.\n"
-    "\n"
-    "Data is read from the source in chunks of ``read_size``. Compressed "
-    "chunks\n"
-    "are at most ``write_size`` bytes. Both values default to the zstd input "
-    "and\n"
-    "and output defaults, respectively.\n"
-    "\n"
-    "The caller is partially in control of how fast data is fed into the\n"
-    "compressor by how it consumes the returned iterator. The compressor will\n"
-    "not consume from the reader unless the caller consumes from the "
-    "iterator.\n");
 
 static ZstdCompressorIterator *ZstdCompressor_read_to_iter(ZstdCompressor *self,
                                                            PyObject *args,
@@ -786,27 +656,6 @@ finally:
     return result;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressor_stream_writer___doc__,
-    "Create a context manager to write compressed data to an object.\n"
-    "\n"
-    "The passed object must have a ``write()`` method.\n"
-    "\n"
-    "The caller feeds input data to the object by calling ``compress(data)``.\n"
-    "Compressed data is written to the argument given to this function.\n"
-    "\n"
-    "The function takes an optional ``size`` argument indicating the total "
-    "size\n"
-    "of the eventual input. If specified, the size will influence compression\n"
-    "parameter tuning and could result in the size being written into the\n"
-    "header of the compressed data.\n"
-    "\n"
-    "An optional ``write_size`` argument is also accepted. It defines the "
-    "maximum\n"
-    "byte size of chunks fed to ``write()``. By default, it uses the zstd "
-    "default\n"
-    "for a compressor output stream.\n");
-
 static ZstdCompressionWriter *ZstdCompressor_stream_writer(ZstdCompressor *self,
                                                            PyObject *args,
                                                            PyObject *kwargs) {
@@ -874,10 +723,6 @@ static ZstdCompressionWriter *ZstdCompressor_stream_writer(ZstdCompressor *self,
 
     return result;
 }
-
-PyDoc_STRVAR(
-    ZstdCompressor_chunker__doc__,
-    "Create an object for iterative compressing to same-sized chunks.\n");
 
 static ZstdCompressionChunker *
 ZstdCompressor_chunker(ZstdCompressor *self, PyObject *args, PyObject *kwargs) {
@@ -1452,19 +1297,6 @@ finally:
     return result;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressor_multi_compress_to_buffer__doc__,
-    "Compress multiple pieces of data as a single operation\n"
-    "\n"
-    "Receives a ``BufferWithSegmentsCollection``, a ``BufferWithSegments``, "
-    "or\n"
-    "a list of bytes like objects holding data to compress.\n"
-    "\n"
-    "Returns a ``BufferWithSegmentsCollection`` holding compressed data.\n"
-    "\n"
-    "This function is optimized to perform multiple compression operations as\n"
-    "as possible with as little overhead as possbile.\n");
-
 static ZstdBufferWithSegmentsCollection *
 ZstdCompressor_multi_compress_to_buffer(ZstdCompressor *self, PyObject *args,
                                         PyObject *kwargs) {
@@ -1632,27 +1464,25 @@ finally:
 
 static PyMethodDef ZstdCompressor_methods[] = {
     {"chunker", (PyCFunction)ZstdCompressor_chunker,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_chunker__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"compress", (PyCFunction)ZstdCompressor_compress,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_compress__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"compressobj", (PyCFunction)ZstdCompressor_compressobj,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_CompressionObj__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"copy_stream", (PyCFunction)ZstdCompressor_copy_stream,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_copy_stream__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"stream_reader", (PyCFunction)ZstdCompressor_stream_reader,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_reader__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"stream_writer", (PyCFunction)ZstdCompressor_stream_writer,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_stream_writer___doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"read_to_iter", (PyCFunction)ZstdCompressor_read_to_iter,
-     METH_VARARGS | METH_KEYWORDS, ZstdCompressor_read_to_iter__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"multi_compress_to_buffer",
      (PyCFunction)ZstdCompressor_multi_compress_to_buffer,
-     METH_VARARGS | METH_KEYWORDS,
-     ZstdCompressor_multi_compress_to_buffer__doc__},
-    {"memory_size", (PyCFunction)ZstdCompressor_memory_size, METH_NOARGS,
-     ZstdCompressor_memory_size__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
+    {"memory_size", (PyCFunction)ZstdCompressor_memory_size, METH_NOARGS, NULL},
     {"frame_progression", (PyCFunction)ZstdCompressor_frame_progression,
-     METH_NOARGS, ZstdCompressor_frame_progression__doc__},
+     METH_NOARGS, NULL},
     {NULL, NULL}};
 
 PyTypeObject ZstdCompressorType = {
@@ -1675,7 +1505,7 @@ PyTypeObject ZstdCompressorType = {
     0,                                                    /* tp_setattro */
     0,                                                    /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,             /* tp_flags */
-    ZstdCompressor__doc__,                                /* tp_doc */
+    0,                                                    /* tp_doc */
     0,                                                    /* tp_traverse */
     0,                                                    /* tp_clear */
     0,                                                    /* tp_richcompare */

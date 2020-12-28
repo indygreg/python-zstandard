@@ -149,6 +149,9 @@ Backwards Compatibility Notes
 * ``ZstdCompressor.stream_reader()`` and ``ZstdDecompressor.stream_reader()``
   now default to closing the source stream when the instance is itself
   closed. To change this behavior, pass ``closefd=False``. (#76)
+* The ``CFFI`` backend now defines a
+  ``ZstdCompressor.multi_compress_to_buffer()``. However, it raises
+  ``NotImplementedError``, as it is not yet implemented.
 
 Bug Fixes
 ---------

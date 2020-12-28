@@ -565,8 +565,8 @@ class TestDecompressor_multi_decompress_to_buffer_fuzzing(unittest.TestCase):
             level=1, write_content_size=True, write_checksum=True, **kwargs
         )
 
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
+        if not hasattr(zstd, "BufferWithSegments"):
+            self.skipTest("buffer types not available")
 
         frames_buffer = cctx.multi_compress_to_buffer(original, threads=-1)
 

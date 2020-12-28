@@ -13,5 +13,8 @@ jobs:
           python-version: '3.8'
       - name: Run Sphinx
         run: |
-          python3.8 -m pip install Sphinx==3.2.1
+          python -m pip install -r ci/requirements.txt
+          python setup.py --no-c-backend install
+
+          python -m pip install Sphinx==3.2.1
           make -C docs html

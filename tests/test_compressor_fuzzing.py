@@ -738,6 +738,9 @@ class TestCompressor_read_to_iter_fuzzing(unittest.TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
+@unittest.skipUnless(
+    hasattr(zstd, "BufferWithSegments"), "buffer types not available"
+)
 class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
     @hypothesis.given(
         original=strategies.lists(

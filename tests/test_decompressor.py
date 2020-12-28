@@ -1788,8 +1788,8 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
             b"foo4" * 6,
         ]
 
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
+        if not hasattr(zstd, "BufferWithSegments"):
+            self.skipTest("buffer types not available")
 
         frames = cctx.multi_compress_to_buffer(original)
 

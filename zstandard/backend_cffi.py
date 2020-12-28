@@ -1194,6 +1194,57 @@ class ZstdCompressionReader(object):
 
 
 class ZstdCompressor(object):
+    """
+    Create an object used to perform Zstandard compression.
+
+    An instance can compress data various ways. Instances can be used
+    multiple times. Each compression operation will use the compression
+    parameters defined at construction time.
+
+    .. note:
+
+       When using a compression dictionary and multiple compression
+       operations are performed, the ``ZstdCompressionParameters`` derived
+       from an integer compression ``level`` and the first compressed data's
+       size will be reused for all subsequent operations. This may not be
+       desirable if source data sizes vary significantly.
+
+    ``compression_params`` is mutually exclusive with ``level``,
+    ``write_checksum``, ``write_content_size``, ``write_dict_id``, and
+    ``threads``.
+
+    Unless specified otherwise, assume that no two methods of
+    ``ZstdCompressor`` instances can be called from multiple Python
+    threads simultaneously. In other words, assume instances are not thread safe
+    unless stated otherwise.
+
+    :param level:
+       Integer compression level. Valid values are all negative integers
+       through 22.
+    :param dict_data:
+       A ``ZstdCompressionDict`` to be used to compress with dictionary
+        data.
+    :param compression_params:
+       A ``ZstdCompressionParameters`` instance defining low-level compression
+       parameters. If defined, this will overwrite the ``level`` argument.
+    :param write_checksum:
+       If True, a 4 byte content checksum will be written with the compressed
+       data, allowing the decompressor to perform content verification.
+    :param write_content_size:
+       If True (the default), the decompressed content size will be included
+       in the header of the compressed data. This data will only be written if
+       the compressor knows the size of the input data.
+    :param write_dict_id:
+       Determines whether the dictionary ID will be written into the compressed
+       data. Defaults to True. Only adds content to the compressed data if
+       a dictionary is being used.
+    :param threads:
+       Number of threads to use to compress data concurrently. When set,
+       compression operations are performed on multiple threads. The default
+       value (0) disables multi-threaded compression. A value of ``-1`` means
+       to set the number of threads to the number of detected logical CPUs.
+    """
+
     def __init__(
         self,
         level=3,
@@ -1314,9 +1365,33 @@ class ZstdCompressor(object):
                 )
 
     def memory_size(self):
+        """Obtain the memory usage of this compressor, in bytes.
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> memory = cctx.memory_size()
+        """
         return lib.ZSTD_sizeof_CCtx(self._cctx)
 
     def compress(self, data):
+        """
+        Compress data in a single operation.
+
+        This is the simplest mechanism to perform compression: simply pass in a
+        value and get a compressed value back. It is almost the most prone to
+        abuse.
+
+        The input and output values must fit in memory, so passing in very large
+        values can result in excessive memory usage. For this reason, one of the
+        streaming based APIs is preferred for larger values.
+
+        :param data:
+           Source data to compress
+        :return:
+           Compressed data
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> compressed = cctx.compress(b"data to compress")
+        """
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
         data_buffer = ffi.from_buffer(data)
@@ -1353,6 +1428,57 @@ class ZstdCompressor(object):
         return ffi.buffer(out, out_buffer.pos)[:]
 
     def compressobj(self, size=-1):
+        """
+        Return an object exposing ``compress(data)`` and ``flush()`` methods.
+
+        The returned object exposes an API similar to ``zlib.compressobj`` and
+        ``bz2.BZ2Compressor`` so that callers can swap in the zstd compressor
+        while using an identical API.
+
+        ``flush()`` accepts an optional argument indicating how to end the
+        stream. ``zstandard.COMPRESSOBJ_FLUSH_FINISH`` (the default) ends the
+        compression stream. Once this type of flush is performed, ``compress()``
+        and ``flush()`` can no longer be called. This type of flush **must** be
+        called to end the compression context. If not called, returned data may
+        be incomplete.
+
+        A ``zstandard.COMPRESSOBJ_FLUSH_BLOCK`` argument to ``flush()`` will
+        flush a zstd block. Flushes of this type can be performed multiple
+        times. The next call to ``compress()`` will begin a new zstd block.
+
+        Here is how this API should be used:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> cobj = cctx.compressobj()
+        >>> data = cobj.compress(b"raw input 0")
+        >>> data = cobj.compress(b"raw input 1")
+        >>> data = cobj.flush()
+
+        Or to flush blocks:
+
+        >>> cctx.zstandard.ZstdCompressor()
+        >>> cobj = cctx.compressobj()
+        >>> data = cobj.compress(b"chunk in first block")
+        >>> data = cobj.flush(zstandard.COMPRESSOBJ_FLUSH_BLOCK)
+        >>> data = cobj.compress(b"chunk in second block")
+        >>> data = cobj.flush()
+
+        For best performance results, keep input chunks under 256KB. This avoids
+        extra allocations for a large output object.
+
+        It is possible to declare the input size of the data that will be fed
+        into the compressor:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> cobj = cctx.compressobj(size=6)
+        >>> data = cobj.compress(b"foobar")
+        >>> data = cobj.flush()
+
+        :param size:
+           Size in bytes of data that will be compressed.
+        :return:
+           ZstdCompressionObj
+        """
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
         if size < 0:
@@ -1378,6 +1504,70 @@ class ZstdCompressor(object):
         return cobj
 
     def chunker(self, size=-1, chunk_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+        """
+        Create an object for iterative compressing to same-sized chunks.
+
+        This API allows you to iteratively feed chunks of data into a
+        compressor and produce output chunks of uniform size.
+
+        The object returned by ``chunker()`` exposes the following methods:
+
+        ``compress(data)``
+           Feeds new input data into the compressor.
+
+        ``flush()``
+           Flushes all data currently in the compressor.
+
+        ``finish()``
+           Signals the end of input data. No new data can be compressed after this
+           method is called.
+
+        ``compress()``, ``flush()``, and ``finish()`` all return an iterator of
+        ``bytes`` instances holding compressed data. The iterator may be empty. Callers
+        MUST iterate through all elements of the returned iterator before performing
+        another operation on the object.
+
+        All chunks emitted by ``compress()`` will have a length of ``chunk_size``.
+
+        ``flush()`` and ``finish()`` may return a final chunk smaller than
+        ``chunk_size``.
+
+        Here is how the API should be used:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> chunker = cctx.chunker(chunk_size=32768)
+        >>>
+        >>> with open(path, 'rb') as fh:
+        ...     while True:
+        ...         in_chunk = fh.read(32768)
+        ...         if not in_chunk:
+        ...             break
+        ...
+        ...         for out_chunk in chunker.compress(in_chunk):
+        ...             # Do something with output chunk of size 32768.
+        ...
+        ...     for out_chunk in chunker.finish():
+        ...         # Do something with output chunks that finalize the zstd frame.
+
+        The ``chunker()`` API is often a better alternative to ``compressobj()``.
+
+        ``compressobj()`` will emit output data as it is available. This results
+        in a *stream* of output chunks of varying sizes. The consistency of the
+        output chunk size with ``chunker()`` is more appropriate for many usages,
+        such as sending compressed data to a socket.
+
+        ``compressobj()`` may also perform extra memory reallocations in order
+        to dynamically adjust the sizes of the output chunks. Since ``chunker()``
+        output chunks are all the same size (except for flushed or final chunks),
+        there is less memory allocation overhead.
+
+        :param size:
+           Size in bytes of data that will be compressed.
+        :param chunk_size:
+           Size of compressed chunks.
+        :return:
+           ZstdCompressionChunker
+        """
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
         if size < 0:
@@ -1399,6 +1589,48 @@ class ZstdCompressor(object):
         read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
         write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
     ):
+        """
+        Copy data between 2 streams while compressing it.
+
+        Data will be read from ``ifh``, compressed, and written to ``ofh``.
+        ``ifh`` must have a ``read(size)`` method. ``ofh`` must have a
+        ``write(data)``
+        method.
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> with open(input_path, "rb") as ifh, open(output_path, "wb") as ofh:
+        ...     cctx.copy_stream(ifh, ofh)
+
+        It is also possible to declare the size of the source stream:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> cctx.copy_stream(ifh, ofh, size=len_of_input)
+
+        You can also specify how large the chunks that are ``read()``
+        and ``write()`` from and to the streams:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> cctx.copy_stream(ifh, ofh, read_size=32768, write_size=16384)
+
+        The stream copier returns a 2-tuple of bytes read and written:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> read_count, write_count = cctx.copy_stream(ifh, ofh)
+
+        :param ifh:
+           Source stream to read from
+        :param ofh:
+           Destination stream to write to
+        :param size:
+           Size in bytes of the source stream. If defined, compression
+           parameters will be tuned for this size.
+        :param read_size:
+           Chunk sizes that source stream should be ``read()`` from.
+        :param write_size:
+           Chunk sizes that destination stream should be ``write()`` to.
+        :return:
+           2-tuple of ints of bytes read and written, respectively.
+        """
 
         if not hasattr(ifh, "read"):
             raise ValueError("first argument must have a read() method")
@@ -1478,6 +1710,83 @@ class ZstdCompressor(object):
         read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
         closefd=True,
     ):
+        """
+        Wrap a readable source with a stream that can read compressed data.
+
+        This will produce an object conforming to the ``io.RawIOBase``
+        interface which can be ``read()`` from to retrieve compressed data
+        from a source.
+
+        The stream returned by ``stream_reader()`` is neither writable nor
+        seekable (even if the underlying source is seekable). ``readline()``
+        and ``readlines()`` are not implemented because they don't make sense
+        for compressed data. ``tell()`` returns the number of compressed bytes
+        emitted so far.
+
+        The source object can be any object with a ``read(size)`` method
+        or an object that conforms to the buffer protocol.
+
+        In this example, we open a file for reading and then wrap that file
+        handle with a stream from which compressed data can be ``read()``.
+
+        >>> with open(path, 'rb') as fh:
+        ...     cctx = zstandard.ZstdCompressor()
+        ...     reader = cctx.stream_reader(fh)
+        ...     while True:
+        ...         chunk = reader.read(16384)
+        ...         if not chunk:
+        ...             break
+        ...
+        ...         # Do something with compressed chunk.
+
+        Instances can also be used as context managers:
+
+        >>> with open(path, 'rb') as fh:
+        ...     cctx = zstandard.ZstdCompressor()
+        ...     with cctx.stream_reader(fh) as reader:
+        ...         while True:
+        ...             chunk = reader.read(16384)
+        ...             if not chunk:
+        ...                 break
+        ...
+        ...             # Do something with compressed chunk.
+
+        When the context manager exits or ``close()`` is called, the stream is
+        closed, underlying resources are released, and future operations against
+        the compression stream will fail.
+
+        ``stream_reader()`` accepts a ``size`` argument specifying how large the
+        input stream is. This is used to adjust compression parameters so they are
+        tailored to the source size. e.g.
+
+        >>> with open(path, 'rb') as fh:
+        ...     cctx = zstandard.ZstdCompressor()
+        ...     with cctx.stream_reader(fh, size=os.stat(path).st_size) as reader:
+        ...         ...
+
+        If the ``source`` is a stream, you can specify how large ``read()``
+        requests to that stream should be via the ``read_size`` argument.
+        It defaults to ``zstandard.COMPRESSION_RECOMMENDED_INPUT_SIZE``. e.g.
+
+        >>> with open(path, 'rb') as fh:
+        ...     cctx = zstandard.ZstdCompressor()
+        ...     # Will perform fh.read(8192) when obtaining data to feed into the
+        ...     # compressor.
+        ...     with cctx.stream_reader(fh, read_size=8192) as reader:
+        ...         ...
+
+        :param source:
+           Object to read source data from
+        :param size:
+           Size in bytes of source object.
+        :param read_size:
+           How many bytes to request when ``read()``'ing from the source.
+        :param closefd:
+           Whether to close the source stream when the returned stream is
+           closed.
+        :return:
+           ZstdCompressionReader
+        """
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
         try:
@@ -1504,7 +1813,131 @@ class ZstdCompressor(object):
         write_return_read=False,
         closefd=True,
     ):
+        """
+        Create a stream that will write compressed data into another stream.
 
+        Returned instances implement the ``io.RawIOBase`` interface. Only
+        methods that involve writing will do useful things.
+
+        The argument to ``stream_writer()`` must have a ``write(data)`` method.
+        As compressed data is available, ``write()`` will be called with the
+        compressed data as its argument. Many common Python types implement
+        ``write()``, including open file handles and ``io.BytesIO``.
+
+        The ``write(data)`` method is used to feed data into the compressor.
+
+        The ``flush([flush_mode=FLUSH_BLOCK])`` method can be called to evict
+        whatever data remains within the compressor's internal state into the
+        output object. This may result in 0 or more ``write()`` calls to the
+        output object. This method accepts an optional ``flush_mode`` argument
+        to control the flushing behavior. Its value can be any of the
+        ``FLUSH_*`` constants.
+
+        Both ``write()`` and ``flush()`` return the number of bytes written to the
+        object's ``write()``. In many cases, small inputs do not accumulate enough
+        data to cause a write and ``write()`` will return ``0``.
+
+        Calling ``close()`` will mark the stream as closed and subsequent I/O
+        operations will raise ``ValueError`` (per the documented behavior of
+        ``io.RawIOBase``). ``close()`` will also call ``close()`` on the underlying
+        stream if such a method exists.
+
+        Typically usage is as follows:
+
+        >>> cctx = zstandard.ZstdCompressor(level=10)
+        >>> compressor = cctx.stream_writer(fh)
+        >>> compressor.write(b"chunk 0\\n")
+        >>> compressor.write(b"chunk 1\\n")
+        >>> compressor.flush()
+        >>> # Receiver will be able to decode ``chunk 0\\nchunk 1\\n`` at this point.
+        >>> # Receiver is also expecting more data in the zstd *frame*.
+        >>>
+        >>> compressor.write(b"chunk 2\\n")
+        >>> compressor.flush(zstandard.FLUSH_FRAME)
+        >>> # Receiver will be able to decode ``chunk 0\\nchunk 1\\nchunk 2``.
+        >>> # Receiver is expecting no more data, as the zstd frame is closed.
+        >>> # Any future calls to ``write()`` at this point will construct a new
+        >>> # zstd frame.
+
+        Instances can be used as context managers. Exiting the context manager is
+        the equivalent of calling ``close()``, which is equivalent to calling
+        ``flush(zstandard.FLUSH_FRAME)``:
+
+        >>> cctx = zstandard.ZstdCompressor(level=10)
+        >>> with cctx.stream_writer(fh) as compressor:
+        ...     compressor.write(b'chunk 0')
+        ...     compressor.write(b'chunk 1')
+        ...     ...
+
+        .. important::
+
+           If ``flush(FLUSH_FRAME)`` is not called, emitted data doesn't
+           constitute a full zstd *frame* and consumers of this data may complain
+           about malformed input. It is recommended to use instances as a context
+           manager to ensure *frames* are properly finished.
+
+        If the size of the data being fed to this streaming compressor is known,
+        you can declare it before compression begins:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> with cctx.stream_writer(fh, size=data_len) as compressor:
+        ...     compressor.write(chunk0)
+        ...     compressor.write(chunk1)
+        ...     ...
+
+        Declaring the size of the source data allows compression parameters to
+        be tuned. And if ``write_content_size`` is used, it also results in the
+        content size being written into the frame header of the output data.
+
+        The size of chunks being ``write()`` to the destination can be specified:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> with cctx.stream_writer(fh, write_size=32768) as compressor:
+        ...     ...
+
+        To see how much memory is being used by the streaming compressor:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> with cctx.stream_writer(fh) as compressor:
+        ...     ...
+        ...     byte_size = compressor.memory_size()
+
+        Thte total number of bytes written so far are exposed via ``tell()``:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> with cctx.stream_writer(fh) as compressor:
+        ...     ...
+        ...     total_written = compressor.tell()
+
+        ``stream_writer()`` accepts a ``write_return_read`` boolean argument to
+        control the return value of ``write()``. When ``False`` (the default),
+        ``write()`` returns the number of bytes that were ``write()``'en to the
+        underlying object. When ``True``, ``write()`` returns the number of bytes
+        read from the input that were subsequently written to the compressor.
+        ``True`` is the *proper* behavior for ``write()`` as specified by the
+        ``io.RawIOBase`` interface and will become the default value in a future
+        release.
+
+        The ``closefd`` keyword argument defines whether to close the
+        underlying stream when this instance is itself ``close()``d. The default
+        is ``True``.
+
+        :param writer:
+           Stream to write compressed data to.
+        :param size:
+           Size in bytes of data to be compressed. If set, it will be used
+           to influence compression parameter tuning and could result in the
+           size being written into the header of the compressed data.
+        :param write_size:
+           How much data to ``write()`` to ``writer`` at a time.
+        :param write_return_read:
+           Whether ``write()`` should return the number of bytes that were
+           consumed from the input.
+        :param closefd:
+           Whether to ``close`` the ``writer`` when this stream is closed.
+        :return:
+           ZstdCompressionWriter.
+        """
         if not hasattr(writer, "write"):
             raise ValueError("must pass an object with a write() method")
 
@@ -1524,6 +1957,69 @@ class ZstdCompressor(object):
         read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
         write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
     ):
+        """
+        Read uncompressed data from a reader and return an iterator
+
+        Returns an iterator of compressed data produced from reading from
+        ``reader``.
+
+        This method provides a mechanism to stream compressed data out of a
+        source as an iterator of data chunks.
+
+        Uncompressed data will be obtained from ``reader`` by calling the
+        ``read(size)`` method of it or by reading a slice (if ``reader``
+        conforms to the *buffer protocol*). The source data will be streamed
+        into a compressor. As compressed data is available, it will be exposed
+        to the iterator.
+
+        Data is read from the source in chunks of ``read_size``. Compressed
+        chunks are at most ``write_size`` bytes. Both values default to the
+        zstd input and and output defaults, respectively.
+
+        If reading from the source via ``read()``, ``read()`` will be called
+        until it raises or returns an empty bytes (``b""``). It is perfectly
+        valid for the source to deliver fewer bytes than were what requested
+        by ``read(size)``.
+
+        The caller is partially in control of how fast data is fed into the
+        compressor by how it consumes the returned iterator. The compressor
+        will not consume from the reader unless the caller consumes from the
+        iterator.
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> for chunk in cctx.read_to_iter(fh):
+        ...     # Do something with emitted data.
+
+        ``read_to_iter()`` accepts a ``size`` argument declaring the size of
+        the input stream:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> for chunk in cctx.read_to_iter(fh, size=some_int):
+        >>>     pass
+
+        You can also control the size that data is ``read()`` from the source
+        and the ideal size of output chunks:
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> for chunk in cctx.read_to_iter(fh, read_size=16384, write_size=8192):
+        >>>     pass
+
+        ``read_to_iter()`` does not give direct control over the sizes of chunks
+        fed into the compressor. Instead, chunk sizes will be whatever the object
+        being read from delivers. These will often be of a uniform size.
+
+        :param reader:
+           Stream providing data to be compressed.
+        :param size:
+           Size in bytes of input data.
+        :param read_size:
+           Controls how many bytes are ``read()`` from the source.
+        :param write_size:
+           Controls the output size of emitted chunks.
+        :return:
+           Iterator of ``bytes``.
+        """
+
         if hasattr(reader, "read"):
             have_read = True
         elif hasattr(reader, "__getitem__"):
@@ -1623,7 +2119,64 @@ class ZstdCompressor(object):
             if zresult == 0:
                 break
 
+    def multi_compress_to_buffer(self, data, threads=-1):
+        """
+        Compress multiple pieces of data as a single function call.
+
+        (Experimental. Not yet supported by CFFI backend.)
+
+        This function is optimized to perform multiple compression operations
+        as as possible with as little overhead as possible.
+
+        Data to be compressed can be passed as a ``BufferWithSegmentsCollection``,
+        a ``BufferWithSegments``, or a list containing byte like objects. Each
+        element of the container will be compressed individually using the
+        configured parameters on the ``ZstdCompressor`` instance.
+
+        The ``threads`` argument controls how many threads to use for
+        compression. The default is ``0`` which means to use a single thread.
+        Negative values use the number of logical CPUs in the machine.
+
+        The function returns a ``BufferWithSegmentsCollection``. This type
+        represents N discrete memory allocations, each holding 1 or more
+        compressed frames.
+
+        Output data is written to shared memory buffers. This means that unlike
+        regular Python objects, a reference to *any* object within the collection
+        keeps the shared buffer and therefore memory backing it alive. This can
+        have undesirable effects on process memory usage.
+
+        The API and behavior of this function is experimental and will likely
+        change. Known deficiencies include:
+
+        * If asked to use multiple threads, it will always spawn that many
+          threads, even if the input is too small to use them. It should
+          automatically lower the thread count when the extra threads would
+          just add overhead.
+        * The buffer allocation strategy is fixed. There is room to make it
+          dynamic, perhaps even to allow one output buffer per input,
+          facilitating a variation of the API to return a list without the
+          adverse effects of shared memory buffers.
+
+        :param data:
+           Source to read discrete pieces of data to compress.
+
+           Can be a ``BufferWithSegmentsCollection``, a ``BufferWithSegments``,
+           or a ``list[bytes]``.
+        :return:
+           BufferWithSegmentsCollection holding compressed data.
+        """
+        raise NotImplementedError()
+
     def frame_progression(self):
+        """
+        Return information on how much work the compressor has done.
+
+        Returns a 3-tuple of (ingested, consumed, produced).
+
+        >>> cctx = zstandard.ZstdCompressor()
+        >>> (ingested, consumed, produced) = cctx.frame_progression()
+        """
         progression = lib.ZSTD_getFrameProgression(self._cctx)
 
         return progression.ingested, progression.consumed, progression.produced
