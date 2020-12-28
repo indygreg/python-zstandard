@@ -1853,14 +1853,12 @@ class TestCompressor_chunker(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    hasattr(zstd, "BufferWithSegments"), "buffer types not available"
+    "multi_compress_to_buffer" in zstd.backend_features,
+    "multi_compress_to_buffer feature not available",
 )
 class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
     def test_invalid_inputs(self):
         cctx = zstd.ZstdCompressor()
-
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
 
         with self.assertRaises(TypeError):
             cctx.multi_compress_to_buffer(True)
@@ -1876,9 +1874,6 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
     def test_empty_input(self):
         cctx = zstd.ZstdCompressor()
 
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
-
         with self.assertRaisesRegex(ValueError, "no source elements found"):
             cctx.multi_compress_to_buffer([])
 
@@ -1887,9 +1882,6 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
 
     def test_list_input(self):
         cctx = zstd.ZstdCompressor(write_checksum=True)
-
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
 
         original = [b"foo" * 12, b"bar" * 6]
         frames = [cctx.compress(c) for c in original]
@@ -1905,9 +1897,6 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
 
     def test_buffer_with_segments_input(self):
         cctx = zstd.ZstdCompressor(write_checksum=True)
-
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
 
         original = [b"foo" * 4, b"bar" * 6]
         frames = [cctx.compress(c) for c in original]
@@ -1927,9 +1916,6 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
 
     def test_buffer_with_segments_collection_input(self):
         cctx = zstd.ZstdCompressor(write_checksum=True)
-
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
 
         original = [
             b"foo1",
@@ -1978,9 +1964,6 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         reference = [refcctx.compress(b"x" * 64), refcctx.compress(b"y" * 64)]
 
         cctx = zstd.ZstdCompressor(write_checksum=True)
-
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
 
         frames = []
         frames.extend(b"x" * 64 for i in range(256))

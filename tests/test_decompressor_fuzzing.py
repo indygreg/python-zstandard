@@ -546,6 +546,10 @@ class TestDecompressor_read_to_iter_fuzzing(unittest.TestCase):
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
+@unittest.skipUnless(
+    "multi_decompress_to_buffer" in zstd.backend_features,
+    "multi_decompress_to_buffer not available",
+)
 class TestDecompressor_multi_decompress_to_buffer_fuzzing(unittest.TestCase):
     @hypothesis.given(
         original=strategies.lists(
@@ -564,9 +568,6 @@ class TestDecompressor_multi_decompress_to_buffer_fuzzing(unittest.TestCase):
         cctx = zstd.ZstdCompressor(
             level=1, write_content_size=True, write_checksum=True, **kwargs
         )
-
-        if not hasattr(zstd, "BufferWithSegments"):
-            self.skipTest("buffer types not available")
 
         frames_buffer = cctx.multi_compress_to_buffer(original, threads=-1)
 

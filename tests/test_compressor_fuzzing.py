@@ -739,7 +739,8 @@ class TestCompressor_read_to_iter_fuzzing(unittest.TestCase):
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 @unittest.skipUnless(
-    hasattr(zstd, "BufferWithSegments"), "buffer types not available"
+    "multi_compress_to_buffer" in zstd.backend_features,
+    "multi_compress_to_buffer not available",
 )
 class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
     @hypothesis.given(
@@ -759,9 +760,6 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
             kwargs["dict_data"] = zstd.ZstdCompressionDict(original[0])
 
         cctx = zstd.ZstdCompressor(level=1, write_checksum=True, **kwargs)
-
-        if not hasattr(cctx, "multi_compress_to_buffer"):
-            self.skipTest("multi_compress_to_buffer not available")
 
         result = cctx.multi_compress_to_buffer(original, threads=-1)
 
