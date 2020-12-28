@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Union,
 )
@@ -80,6 +81,7 @@ FRAME_HEADER: bytes
 MAGIC_NUMBER: int
 
 backend: str
+backend_features: Set[str]
 __version__: str
 
 class ZstdError(Exception): ...

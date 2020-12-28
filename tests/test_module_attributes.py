@@ -9,6 +9,20 @@ class TestModuleAttributes(unittest.TestCase):
 
         self.assertEqual(zstd.__version__, "0.15.0.dev0")
 
+    def test_features(self):
+        self.assertIsInstance(zstd.backend_features, set)
+
+        expected = {
+            "cext": {
+                "buffer_types",
+                "multi_compress_to_buffer",
+                "multi_decompress_to_buffer",
+            },
+            "cffi": set(),
+        }[zstd.backend]
+
+        self.assertEqual(zstd.backend_features, expected)
+
     def test_constants(self):
         self.assertEqual(zstd.MAX_COMPRESSION_LEVEL, 22)
         self.assertEqual(zstd.FRAME_HEADER, b"\x28\xb5\x2f\xfd")

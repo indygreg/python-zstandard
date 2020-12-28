@@ -27,6 +27,7 @@ __all__ = [
     "ZstdDecompressor",
     "ZstdError",
     "FrameParameters",
+    "backend_features",
     "estimate_decompression_context_size",
     "frame_content_size",
     "frame_header_size",
@@ -91,6 +92,8 @@ from ._cffi import (  # type: ignore
     lib,
 )
 
+
+backend_features = set()  # type: ignore
 
 COMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_CStreamInSize()
 COMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_CStreamOutSize()

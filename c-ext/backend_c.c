@@ -147,6 +147,8 @@ void zstd_module_init(PyObject *m) {
        We detect this mismatch here and refuse to load the module if this
        scenario is detected.
     */
+    PyObject *features = NULL;
+    PyObject *feature = NULL;
     unsigned zstd_ver_no = ZSTD_versionNumber();
     unsigned our_hardcoded_version = 10408;
     if (ZSTD_VERSION_NUMBER != our_hardcoded_version ||
@@ -159,6 +161,54 @@ void zstd_module_init(PyObject *m) {
             zstd_ver_no, ZSTD_VERSION_NUMBER, our_hardcoded_version);
         return;
     }
+
+    features = PySet_New(NULL);
+    if (NULL == features) {
+        PyErr_SetString(PyExc_ImportError, "could not create empty set");
+        return;
+    }
+
+    feature = PyUnicode_FromString("buffer_types");
+    if (NULL == feature) {
+        PyErr_SetString(PyExc_ImportError, "could not create feature string");
+        return;
+    }
+
+    if (PySet_Add(features, feature) == -1) {
+        return;
+    }
+
+    Py_DECREF(feature);
+
+    feature = PyUnicode_FromString("multi_compress_to_buffer");
+    if (NULL == feature) {
+        PyErr_SetString(PyExc_ImportError, "could not create feature string");
+        return;
+    }
+
+    if (PySet_Add(features, feature) == -1) {
+        return;
+    }
+
+    Py_DECREF(feature);
+
+    feature = PyUnicode_FromString("multi_decompress_to_buffer");
+    if (NULL == feature) {
+        PyErr_SetString(PyExc_ImportError, "could not create feature string");
+        return;
+    }
+
+    if (PySet_Add(features, feature) == -1) {
+        return;
+    }
+
+    Py_DECREF(feature);
+
+    if (PyObject_SetAttrString(m, "backend_features", features) == -1) {
+        return;
+    }
+
+    Py_DECREF(features);
 
     bufferutil_module_init(m);
     compressionparams_module_init(m);

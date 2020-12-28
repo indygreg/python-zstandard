@@ -172,7 +172,6 @@ Bug Fixes
   ``ZstdDecompressionWriter.write()`` on inner stream's ``write()``.
   ``ZstdDecompressor.copy_stream()`` on dest stream's ``write()``. (#102)
 
-
 Changes
 -------
 
@@ -208,6 +207,11 @@ Changes
   (#76)
 * There is now a ``zstandard.open()`` function for returning a file
   object with zstd (de)compression. (#64)
+* The ``zstandard`` module now exposes a ``backend_features``
+  attribute containing a set of strings denoting optional features
+  present in that backend. This can be used to sniff feature support
+  by performing a string lookup instead of sniffing for API presence
+  or behavior.
 
 0.14.1 (released 2020-12-05)
 ============================
