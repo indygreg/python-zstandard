@@ -152,6 +152,9 @@ Backwards Compatibility Notes
 * The ``CFFI`` backend now defines a
   ``ZstdCompressor.multi_compress_to_buffer()``. However, it raises
   ``NotImplementedError``, as it is not yet implemented.
+* The ``CFFI`` backend now exposes the types ``ZstdCompressionChunker``,
+  ``ZstdCompressionObj``, ``ZstdCompressionReader``, and
+  ``ZstdCompressionWriter`` as symbols on the ``zstandard`` module.
 
 Bug Fixes
 ---------

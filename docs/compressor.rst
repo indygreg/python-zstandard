@@ -1,13 +1,40 @@
 .. _compressor:
 
-=======================
-``ZstdCompressor`` Type
-=======================
+================
+Compression APIs
+================
 
-The ``zstandard.ZstdCompressor`` type provides an interface for performing
-compression operations. Each instance is essentially a wrapper around a
-``ZSTD_CCtx`` from the C API.
+``ZstdCompressor``
+==================
 
 .. autoclass:: zstandard.ZstdCompressor
+   :members:
+   :undoc-members:
+
+``ZstdCompressionWriter``
+=========================
+
+.. autoclass:: zstandard.ZstdCompressionWriter
+   :members:
+   :undoc-members:
+
+``ZstdCompressionReader``
+=========================
+
+.. autoclass:: zstandard.ZstdCompressionReader
+   :members:
+   :undoc-members:
+
+``ZstdCompressionObj``
+======================
+
+.. autoclass:: zstandard.ZstdCompressionObj
+   :members:
+   :undoc-members:
+
+``ZstdCompressionChunker``
+==========================
+
+.. autoclass:: zstandard.ZstdCompressionChunker
    :members:
    :undoc-members:
