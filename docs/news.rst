@@ -10,9 +10,6 @@ Version History
 Actions Blocking Release
 ------------------------
 
-* compression and decompression APIs that support ``io.RawIOBase`` interface
-  (#13).
-* ``stream_writer()`` APIs should support ``io.RawIOBase`` interface.
 * Properly handle non-blocking I/O and partial writes for objects implementing
   ``io.RawIOBase``.
 * Make ``write_return_read=True`` the default for objects implementing
