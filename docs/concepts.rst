@@ -100,9 +100,9 @@ length. This allows the C API to be largely type agnostic when accessing their
 data. This allows custom types to be passed in without first converting them
 to a specific type.
 
-Many Python types implement the buffer protocol. These include ``bytes``
-(``str`` on Python 2), ``bytearray``, ``array.array``, ``io.BytesIO``,
-``mmap.mmap``, and ``memoryview``.
+Many Python types implement the buffer protocol. These include ``bytes``,
+``bytearray``, ``array.array``, ``io.BytesIO``, ``mmap.mmap``, and
+``memoryview``.
 
 Requiring Output Sizes for Non-Streaming Decompression APIs
 ===========================================================
