@@ -123,7 +123,7 @@ setup(
     license="BSD",
     python_requires=">=3.5",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: C",
