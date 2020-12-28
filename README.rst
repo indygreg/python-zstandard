@@ -2,10 +2,7 @@
 python-zstandard
 ================
 
-![.github/workflows/test.yml](https://github.com/indygreg/python-zstandard/workflows/.github/workflows/test.yml/badge.svg)
-![.github/workflows/wheel.yml](https://github.com/indygreg/python-zstandard/workflows/.github/workflows/wheel.yml/badge.svg)
-![.github/workflows/typing.yml](https://github.com/indygreg/python-zstandard/workflows/.github/workflows/typing.yml/badge.svg)
-![.github/workflows/anaconda.yml](https://github.com/indygreg/python-zstandard/workflows/.github/workflows/anaconda.yml/badge.svg)
+| |ci-test| |ci-wheel| |ci-typing| |ci-sdist| |ci-anaconda| |ci-sphinx|
 
 This project provides Python bindings for interfacing with the
 `Zstandard <http://www.zstd.net>`_ compression library. A C extension
@@ -20,3 +17,21 @@ The canonical home for this project is
 https://github.com/indygreg/python-zstandard.
 
 For usage documentation, see https://python-zstandard.readthedocs.org/.
+
+.. |ci-test| image:: https://github.com/indygreg/python-zstandard/workflows/.github/workflows/test.yml/badge.svg
+     :target: .github/workflows/test.yml
+
+.. |ci-wheel| image:: https://github.com/indygreg/python-zstandard/workflows/.github/workflows/wheel.yml/badge.svg
+     :target: .github/workflows/wheel.yml
+
+.. |ci-typing| image:: https://github.com/indygreg/python-zstandard/workflows/.github/workflows/typing.yml/badge.svg
+     :target: .github/workflows/typing.yml
+
+.. |ci-sdist| image:: https://github.com/indygreg/python-zstandard/workflows/.github/workflows/sdist.yml/badge.svg
+     :target: .github/workflows/sdist.yml
+
+.. |ci-anaconda| image:: https://github.com/indygreg/python-zstandard/workflows/.github/workflows/anaconda.yml/badge.svg
+     :target: .github/workflows/anaconda.yml
+
+.. |ci-sphinx| image:: https://github.com/indygreg/python-zstandard/workflows/.github/workflows/sphinx.yml/badge.svg
+     :target: .github/workflows/sphinx.yml
