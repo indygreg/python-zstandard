@@ -10,9 +10,6 @@
 
 extern PyObject *ZstdError;
 
-PyDoc_STRVAR(FrameParameters__doc__,
-             "FrameParameters: information about a zstd frame");
-
 FrameParametersObject *get_frame_parameters(PyObject *self, PyObject *args,
                                             PyObject *kwargs) {
     static char *kwlist[] = {"data", NULL};
@@ -93,7 +90,7 @@ PyTypeObject FrameParametersType = {
     0,                                                /* tp_setattro */
     0,                                                /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                               /* tp_flags */
-    FrameParameters__doc__,                           /* tp_doc */
+    0,                                                /* tp_doc */
     0,                                                /* tp_traverse */
     0,                                                /* tp_clear */
     0,                                                /* tp_richcompare */

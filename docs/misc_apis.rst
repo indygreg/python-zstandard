@@ -20,25 +20,6 @@ length of the frame parameters varies. If insufficient bytes are passed
 in to fully parse the frame parameters, ``ZstdError`` is raised. To ensure
 frame parameters can be parsed, pass in at least 18 bytes.
 
-``FrameParameters`` instances have the following attributes:
-
-``content_size``
-   Integer size of original, uncompressed content. This will be ``0`` if the
-   original content size isn't written to the frame (controlled with the
-   ``write_content_size`` argument to ``ZstdCompressor``) or if the input
-   content size was ``0``.
-
-``window_size``
-   Integer size of maximum back-reference distance in compressed data.
-
-``dict_id``
-   Integer of dictionary ID used for compression. ``0`` if no dictionary
-   ID was used or if the dictionary ID was ``0``.
-
-``has_checksum``
-   Bool indicating whether a 4 byte content checksum is stored at the end
-   of the frame.
-
 ``zstandard.frame_header_size(data)`` returns the size of the zstandard frame
 header.
 
@@ -46,6 +27,10 @@ header.
 the frame header. ``-1`` means the content size is unknown. ``0`` means
 an empty frame. The content size is usually correct. However, it may not
 be accurate.
+
+.. autoclass:: zstandard.FrameParameters
+   :members:
+   :undoc-members:
 
 estimate_decompression_context_size()
 =====================================
