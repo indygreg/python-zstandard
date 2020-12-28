@@ -8,4 +8,3 @@ include setup_zstd.py
 include Cargo.lock
 include Cargo.toml
 include LICENSE
-include NEWS.rst

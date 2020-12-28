@@ -1,3 +1,5 @@
+.. _news:
+
 ===============
 Version History
 ===============
@@ -108,7 +110,7 @@ Backwards Compatibility Notes
   ``ValueError`` when the seek cannot be fulfilled. (#107)
 * ``ZstdDecompressionReader.readline()`` and
   ``ZstdDecompressionReader.readlines()`` now accept an integer argument.
-   This makes them conform with the IO interface. The methods still raise
+  This makes them conform with the IO interface. The methods still raise
   ``io.UnsupportedOperation``.
 * ``ZstdCompressionReader.__enter__`` and ``ZstdDecompressionReader.__enter__``
   now raise ``ValueError`` if the instance was already closed.
@@ -552,7 +554,7 @@ Bug Fixes
   all data necessary to flush a block. Before, it was possible for the
   ``flush()`` to not emit all data necessary to fully represent a block. This
   would mean decompressors wouldn't be able to decompress all data that had been
-  fed into the compressor and ``flush()``ed. (#55).
+  fed into the compressor and ``flush()``'ed. (#55).
 
 New Features
 ------------
@@ -836,7 +838,7 @@ Changes
 * Added compression and decompression APIs providing similar interfaces
   to the standard library ``zlib`` and ``bz2`` modules. This allows
   coding to a common interface.
-* ``zstd.__version__` is now defined.
+* ``zstd.__version__`` is now defined.
 * ``read_from()`` on various APIs now accepts objects implementing the buffer
   protocol.
 * ``read_from()`` has gained a ``skip_bytes`` argument. This allows callers

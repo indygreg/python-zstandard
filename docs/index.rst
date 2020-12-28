@@ -17,3 +17,4 @@ python-zstandard
    misc_apis
    buffer
    contributing
+   news
