@@ -222,8 +222,55 @@ def _make_cctx_params(params):
 
 
 class ZstdCompressionParameters(object):
+    """Low-level zstd compression parameters.
+
+    This type represents a collection of parameters to control how zstd
+    compression is performed.
+
+    Instances can be constructed from raw parameters or derived from a
+    base set of defaults specified from a compression level (recommended)
+    via :py:meth:`ZstdCompressionParameters.from_level`.
+
+    >>> # Derive compression settings for compression level 7.
+    >>> params = zstandard.ZstdCompressionParameters.from_level(7)
+
+    >>> # With an input size of 1MB
+    >>> params = zstandard.ZstdCompressionParameters.from_level(7, source_size=1048576)
+
+    Using ``from_level()``, it is also possible to override individual compression
+    parameters or to define additional settings that aren't automatically derived.
+    e.g.:
+
+    >>> params = zstandard.ZstdCompressionParameters.from_level(4, window_log=10)
+    >>> params = zstandard.ZstdCompressionParameters.from_level(5, threads=4)
+
+    Or you can define low-level compression settings directly:
+
+    >>> params = zstandard.ZstdCompressionParameters(window_log=12, enable_ldm=True)
+
+    Once a ``ZstdCompressionParameters`` instance is obtained, it can be used to
+    configure a compressor:
+
+    >>> cctx = zstandard.ZstdCompressor(compression_params=params)
+
+    Some of these are very low-level settings. It may help to consult the official
+    zstandard documentation for their behavior. Look for the ``ZSTD_p_*`` constants
+    in ``zstd.h`` (https://github.com/facebook/zstd/blob/dev/lib/zstd.h).
+    """
+
     @staticmethod
     def from_level(level, source_size=0, dict_size=0, **kwargs):
+        """Create compression parameters from a compression level.
+
+        :param level:
+           Integer compression level.
+        :param source_size:
+           Integer size in bytes of source to be compressed.
+        :param dict_size:
+           Integer size in bytes of compression dictionary to use.
+        :return:
+           :py:class:`ZstdCompressionParameters`
+        """
         params = lib.ZSTD_getCParams(level, source_size, dict_size)
 
         args = {
@@ -438,6 +485,7 @@ class ZstdCompressionParameters(object):
         return _get_compression_parameter(self._params, lib.ZSTD_c_nbWorkers)
 
     def estimated_compression_context_size(self):
+        """Estimated size in bytes needed to compress with these parameters."""
         return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self._params)
 
 

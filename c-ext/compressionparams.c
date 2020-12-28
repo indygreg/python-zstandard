@@ -242,10 +242,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     return 0;
 }
 
-PyDoc_STRVAR(ZstdCompressionParameters_from_level__doc__,
-             "Create a ZstdCompressionParameters from a compression level and "
-             "target sizes\n");
-
 ZstdCompressionParametersObject *
 CompressionParameters_from_level(PyObject *undef, PyObject *args,
                                  PyObject *kwargs) {
@@ -396,20 +392,11 @@ cleanup:
     return result;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressionParameters_estimated_compression_context_size__doc__,
-    "Estimate the size in bytes of a compression context for compression "
-    "parameters\n");
-
 PyObject *ZstdCompressionParameters_estimated_compression_context_size(
     ZstdCompressionParametersObject *self) {
     return PyLong_FromSize_t(
         ZSTD_estimateCCtxSize_usingCCtxParams(self->params));
 }
-
-PyDoc_STRVAR(
-    ZstdCompressionParameters__doc__,
-    "ZstdCompressionParameters: low-level control over zstd compression");
 
 static void
 ZstdCompressionParameters_dealloc(ZstdCompressionParametersObject *self) {
@@ -461,12 +448,10 @@ PARAM_GETTER(threads, ZSTD_c_nbWorkers)
 
 static PyMethodDef ZstdCompressionParameters_methods[] = {
     {"from_level", (PyCFunction)CompressionParameters_from_level,
-     METH_VARARGS | METH_KEYWORDS | METH_STATIC,
-     ZstdCompressionParameters_from_level__doc__},
+     METH_VARARGS | METH_KEYWORDS | METH_STATIC, NULL},
     {"estimated_compression_context_size",
      (PyCFunction)ZstdCompressionParameters_estimated_compression_context_size,
-     METH_NOARGS,
-     ZstdCompressionParameters_estimated_compression_context_size__doc__},
+     METH_NOARGS, NULL},
     {NULL, NULL}};
 
 #define GET_SET_ENTRY(name)                                                    \
