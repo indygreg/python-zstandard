@@ -215,6 +215,11 @@ Changes
   present in that backend. This can be used to sniff feature support
   by performing a string lookup instead of sniffing for API presence
   or behavior.
+* Python docstrings have been moved from the C backend to the CFFI
+  backend. Sphinx docs have been updated to generate API documentation
+  via the CFFI backend. Documentation for Python APIs is now fully
+  defined via Python docstrings instead of spread across Sphinx ReST
+  files and source code.
 
 0.14.1 (released 2020-12-05)
 ============================
