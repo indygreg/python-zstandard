@@ -57,13 +57,6 @@ int ensure_dctx(ZstdDecompressor *decompressor, int loadDict) {
     return 0;
 }
 
-PyDoc_STRVAR(Decompressor__doc__,
-             "ZstdDecompressor(dict_data=None)\n"
-             "\n"
-             "Create an object used to perform Zstandard decompression.\n"
-             "\n"
-             "An instance can perform multiple decompression operations.");
-
 static int Decompressor_init(ZstdDecompressor *self, PyObject *args,
                              PyObject *kwargs) {
     static char *kwlist[] = {"dict_data", "max_window_size", "format", NULL};
@@ -123,9 +116,6 @@ static void Decompressor_dealloc(ZstdDecompressor *self) {
     PyObject_Del(self);
 }
 
-PyDoc_STRVAR(Decompressor_memory_size__doc__,
-             "memory_size() -- Size of decompression context, in bytes\n");
-
 static PyObject *Decompressor_memory_size(ZstdDecompressor *self) {
     if (self->dctx) {
         return PyLong_FromSize_t(ZSTD_sizeof_DCtx(self->dctx));
@@ -137,21 +127,6 @@ static PyObject *Decompressor_memory_size(ZstdDecompressor *self) {
         return NULL;
     }
 }
-
-PyDoc_STRVAR(
-    Decompressor_copy_stream__doc__,
-    "copy_stream(ifh, ofh[, read_size=default, write_size=default]) -- "
-    "decompress data between streams\n"
-    "\n"
-    "Compressed data will be read from ``ifh``, decompressed, and written to\n"
-    "``ofh``. ``ifh`` must have a ``read(size)`` method. ``ofh`` must have a\n"
-    "``write(data)`` method.\n"
-    "\n"
-    "The optional ``read_size`` and ``write_size`` arguments control the "
-    "chunk\n"
-    "size of data that is ``read()`` and ``write()`` between streams. They "
-    "default\n"
-    "to the default input and output sizes of zstd decompressor streams.\n");
 
 static PyObject *Decompressor_copy_stream(ZstdDecompressor *self,
                                           PyObject *args, PyObject *kwargs) {
@@ -276,39 +251,6 @@ finally:
     return res;
 }
 
-PyDoc_STRVAR(
-    Decompressor_decompress__doc__,
-    "decompress(data[, max_output_size=None]) -- Decompress data in its "
-    "entirety\n"
-    "\n"
-    "This method will decompress the entirety of the argument and return the\n"
-    "result.\n"
-    "\n"
-    "The input bytes are expected to contain a full Zstandard frame "
-    "(something\n"
-    "compressed with ``ZstdCompressor.compress()`` or similar). If the input "
-    "does\n"
-    "not contain a full frame, an exception will be raised.\n"
-    "\n"
-    "If the frame header of the compressed data does not contain the content "
-    "size\n"
-    "``max_output_size`` must be specified or ``ZstdError`` will be raised. "
-    "An\n"
-    "allocation of size ``max_output_size`` will be performed and an attempt "
-    "will\n"
-    "be made to perform decompression into that buffer. If the buffer is too\n"
-    "small or cannot be allocated, ``ZstdError`` will be raised. The buffer "
-    "will\n"
-    "be resized if it is too large.\n"
-    "\n"
-    "Uncompressed data could be much larger than compressed data. As a "
-    "result,\n"
-    "calling this function could result in a very large memory allocation "
-    "being\n"
-    "performed to hold the uncompressed data. Therefore it is **highly**\n"
-    "recommended to use a streaming decompression method instead of this "
-    "one.\n");
-
 PyObject *Decompressor_decompress(ZstdDecompressor *self, PyObject *args,
                                   PyObject *kwargs) {
     static char *kwlist[] = {"data", "max_output_size", NULL};
@@ -416,17 +358,6 @@ finally:
     return result;
 }
 
-PyDoc_STRVAR(
-    Decompressor_decompressobj__doc__,
-    "decompressobj([write_size=default])\n"
-    "\n"
-    "Incrementally feed data into a decompressor.\n"
-    "\n"
-    "The returned object exposes a ``decompress(data)`` method. This makes it\n"
-    "compatible with ``zlib.decompressobj`` and ``bz2.BZ2Decompressor`` so "
-    "that\n"
-    "callers can swap in the zstd decompressor while using the same API.\n");
-
 static ZstdDecompressionObj *Decompressor_decompressobj(ZstdDecompressor *self,
                                                         PyObject *args,
                                                         PyObject *kwargs) {
@@ -462,30 +393,6 @@ static ZstdDecompressionObj *Decompressor_decompressobj(ZstdDecompressor *self,
 
     return result;
 }
-
-PyDoc_STRVAR(
-    Decompressor_read_to_iter__doc__,
-    "read_to_iter(reader[, read_size=default, write_size=default, "
-    "skip_bytes=0])\n"
-    "Read compressed data and return an iterator\n"
-    "\n"
-    "Returns an iterator of decompressed data chunks produced from reading "
-    "from\n"
-    "the ``reader``.\n"
-    "\n"
-    "Compressed data will be obtained from ``reader`` by calling the\n"
-    "``read(size)`` method of it. The source data will be streamed into a\n"
-    "decompressor. As decompressed data is available, it will be exposed to "
-    "the\n"
-    "returned iterator.\n"
-    "\n"
-    "Data is ``read()`` in chunks of size ``read_size`` and exposed to the\n"
-    "iterator in chunks of size ``write_size``. The default values are the "
-    "input\n"
-    "and output sizes for a zstd streaming decompressor.\n"
-    "\n"
-    "There is also support for skipping the first ``skip_bytes`` of data from\n"
-    "the source.\n");
 
 static ZstdDecompressorIterator *
 Decompressor_read_to_iter(ZstdDecompressor *self, PyObject *args,
@@ -560,22 +467,6 @@ finally:
     return result;
 }
 
-PyDoc_STRVAR(
-    Decompressor_stream_reader__doc__,
-    "stream_reader(source, [read_size=default, [read_across_frames=False]])\n"
-    "\n"
-    "Obtain an object that behaves like an I/O stream that can be used for\n"
-    "reading decompressed output from an object.\n"
-    "\n"
-    "The source object can be any object with a ``read(size)`` method or that\n"
-    "conforms to the buffer protocol.\n"
-    "\n"
-    "``read_across_frames`` controls the behavior of ``read()`` when the end\n"
-    "of a zstd frame is reached. When ``True``, ``read()`` can potentially\n"
-    "return data belonging to multiple zstd frames. When ``False``, "
-    "``read()``\n"
-    "will return when the end of a frame is reached.\n");
-
 static ZstdDecompressionReader *
 Decompressor_stream_reader(ZstdDecompressor *self, PyObject *args,
                            PyObject *kwargs) {
@@ -635,21 +526,6 @@ Decompressor_stream_reader(ZstdDecompressor *self, PyObject *args,
     return result;
 }
 
-PyDoc_STRVAR(
-    Decompressor_stream_writer__doc__,
-    "Create a context manager to write decompressed data to an object.\n"
-    "\n"
-    "The passed object must have a ``write()`` method.\n"
-    "\n"
-    "The caller feeds intput data to the object by calling ``write(data)``.\n"
-    "Decompressed data is written to the argument given as it is "
-    "decompressed.\n"
-    "\n"
-    "An optional ``write_size`` argument defines the size of chunks to\n"
-    "``write()`` to the writer. It defaults to the default output size for a "
-    "zstd\n"
-    "streaming decompressor.\n");
-
 static ZstdDecompressionWriter *
 Decompressor_stream_writer(ZstdDecompressor *self, PyObject *args,
                            PyObject *kwargs) {
@@ -700,10 +576,6 @@ Decompressor_stream_writer(ZstdDecompressor *self, PyObject *args,
 
     return result;
 }
-
-PyDoc_STRVAR(Decompressor_decompress_content_dict_chain__doc__,
-             "Decompress a series of chunks using the content dictionary "
-             "chaining technique\n");
 
 static PyObject *
 Decompressor_decompress_content_dict_chain(ZstdDecompressor *self,
@@ -1544,37 +1416,6 @@ finally:
     return result;
 }
 
-PyDoc_STRVAR(
-    Decompressor_multi_decompress_to_buffer__doc__,
-    "Decompress multiple frames to output buffers\n"
-    "\n"
-    "Receives a ``BufferWithSegments``, a ``BufferWithSegmentsCollection`` or "
-    "a\n"
-    "list of bytes-like objects. Each item in the passed collection should be "
-    "a\n"
-    "compressed zstd frame.\n"
-    "\n"
-    "Unless ``decompressed_sizes`` is specified, the content size *must* be\n"
-    "written into the zstd frame header. If ``decompressed_sizes`` is "
-    "specified,\n"
-    "it is an object conforming to the buffer protocol that represents an "
-    "array\n"
-    "of 64-bit unsigned integers in the machine's native format. Specifying\n"
-    "``decompressed_sizes`` avoids a pre-scan of each frame to determine its\n"
-    "output size.\n"
-    "\n"
-    "Returns a ``BufferWithSegmentsCollection`` containing the decompressed\n"
-    "data. All decompressed data is allocated in a single memory buffer. The\n"
-    "``BufferWithSegments`` instance tracks which objects are at which "
-    "offsets\n"
-    "and their respective lengths.\n"
-    "\n"
-    "The ``threads`` argument controls how many threads to use for "
-    "operations.\n"
-    "Negative values will use the same number of threads as logical CPUs on "
-    "the\n"
-    "machine.\n");
-
 static ZstdBufferWithSegmentsCollection *
 Decompressor_multi_decompress_to_buffer(ZstdDecompressor *self, PyObject *args,
                                         PyObject *kwargs) {
@@ -1831,27 +1672,24 @@ finally:
 
 static PyMethodDef Decompressor_methods[] = {
     {"copy_stream", (PyCFunction)Decompressor_copy_stream,
-     METH_VARARGS | METH_KEYWORDS, Decompressor_copy_stream__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"decompress", (PyCFunction)Decompressor_decompress,
-     METH_VARARGS | METH_KEYWORDS, Decompressor_decompress__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"decompressobj", (PyCFunction)Decompressor_decompressobj,
-     METH_VARARGS | METH_KEYWORDS, Decompressor_decompressobj__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"read_to_iter", (PyCFunction)Decompressor_read_to_iter,
-     METH_VARARGS | METH_KEYWORDS, Decompressor_read_to_iter__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"stream_reader", (PyCFunction)Decompressor_stream_reader,
-     METH_VARARGS | METH_KEYWORDS, Decompressor_stream_reader__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"stream_writer", (PyCFunction)Decompressor_stream_writer,
-     METH_VARARGS | METH_KEYWORDS, Decompressor_stream_writer__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"decompress_content_dict_chain",
      (PyCFunction)Decompressor_decompress_content_dict_chain,
-     METH_VARARGS | METH_KEYWORDS,
-     Decompressor_decompress_content_dict_chain__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"multi_decompress_to_buffer",
      (PyCFunction)Decompressor_multi_decompress_to_buffer,
-     METH_VARARGS | METH_KEYWORDS,
-     Decompressor_multi_decompress_to_buffer__doc__},
-    {"memory_size", (PyCFunction)Decompressor_memory_size, METH_NOARGS,
-     Decompressor_memory_size__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
+    {"memory_size", (PyCFunction)Decompressor_memory_size, METH_NOARGS, NULL},
     {NULL, NULL}};
 
 PyTypeObject ZstdDecompressorType = {
@@ -1874,7 +1712,7 @@ PyTypeObject ZstdDecompressorType = {
     0,                                                      /* tp_setattro */
     0,                                                      /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,               /* tp_flags */
-    Decompressor__doc__,                                    /* tp_doc */
+    0,                                                      /* tp_doc */
     0,                                                      /* tp_traverse */
     0,                                                      /* tp_clear */
     0,                                                      /* tp_richcompare */

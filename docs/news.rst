@@ -149,12 +149,15 @@ Backwards Compatibility Notes
 * ``ZstdCompressor.stream_reader()`` and ``ZstdDecompressor.stream_reader()``
   now default to closing the source stream when the instance is itself
   closed. To change this behavior, pass ``closefd=False``. (#76)
-* The ``CFFI`` backend now defines a
-  ``ZstdCompressor.multi_compress_to_buffer()``. However, it raises
-  ``NotImplementedError``, as it is not yet implemented.
+* The ``CFFI`` backend now defines
+  ``ZstdCompressor.multi_compress_to_buffer()`` and
+  ``ZstdDecompressor.multi_decompress_to_buffer()``. However, they
+  raise ``NotImplementedError``, as they are not yet implemented.
 * The ``CFFI`` backend now exposes the types ``ZstdCompressionChunker``,
-  ``ZstdCompressionObj``, ``ZstdCompressionReader``, and
-  ``ZstdCompressionWriter`` as symbols on the ``zstandard`` module.
+  ``ZstdCompressionObj``, ``ZstdCompressionReader``,
+  ``ZstdCompressionWriter``, ``ZstdDecompressionObj``,
+  ``ZstdDecompressionReader``, and ``ZstdDecompressionWriter`` as
+  symbols on the ``zstandard`` module.
 
 Bug Fixes
 ---------

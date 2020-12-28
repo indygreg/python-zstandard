@@ -21,8 +21,11 @@ __all__ = [
     "ZstdCompressionReader",
     "ZstdCompressionWriter",
     "ZstdCompressor",
-    "ZstdError",
+    "ZstdDecompressionObj",
+    "ZstdDecompressionReader",
+    "ZstdDecompressionWriter",
     "ZstdDecompressor",
+    "ZstdError",
     "FrameParameters",
     "estimate_decompression_context_size",
     "frame_content_size",
@@ -2516,12 +2519,54 @@ def train_dictionary(
 
 
 class ZstdDecompressionObj(object):
+    """A standard library API compatible decompressor.
+
+    This type implements a compressor that conforms to the API by other
+    decompressors in Python's standard library. e.g. ``zlib.decompressobj``
+    or ``bz2.BZ2Decompressor``. This allows callers to use zstd compression
+    while conforming to a similar API.
+
+    Compressed data chunks are fed into ``decompress(data)`` and
+    uncompressed output (or an empty bytes) is returned. Output from
+    subsequent calls needs to be concatenated to reassemble the full
+    decompressed byte sequence.
+
+    Each instance is single use: once an input frame is decoded,
+    ``decompress()`` can no longer be called.
+
+    >>> dctx = zstandard.ZstdDecompressor()
+    >>> dobj = dctx.decompressobj()
+    >>> data = dobj.decompress(compressed_chunk_0)
+    >>> data = dobj.decompress(compressed_chunk_1)
+
+    By default, calls to ``decompress()`` write output data in chunks of size
+    ``DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE``. These chunks are concatenated
+    before being returned to the caller. It is possible to define the size of
+    these temporary chunks by passing ``write_size`` to ``decompressobj()``:
+
+    >>> dctx = zstandard.ZstdDecompressor()
+    >>> dobj = dctx.decompressobj(write_size=1048576)
+
+    .. note::
+
+       Because calls to ``decompress()`` may need to perform multiple
+       memory (re)allocations, this streaming decompression API isn't as
+       efficient as other APIs.
+    """
+
     def __init__(self, decompressor, write_size):
         self._decompressor = decompressor
         self._write_size = write_size
         self._finished = False
 
     def decompress(self, data):
+        """Send compressed data to the decompressor and obtain decompressed data.
+
+        :param data:
+           Data to feed into the decompressor.
+        :return:
+           Decompressed bytes.
+        """
         if self._finished:
             raise ZstdError("cannot use a decompressobj multiple times")
 
@@ -2570,10 +2615,81 @@ class ZstdDecompressionObj(object):
         return b"".join(chunks)
 
     def flush(self, length=0):
+        """Effectively a no-op.
+
+        Implemented for compatibility with the standard library APIs.
+
+        Safe to call at any time.
+
+        :return:
+           Empty bytes.
+        """
         return b""
 
 
 class ZstdDecompressionReader(object):
+    """Read only decompressor that pull uncompressed data from another stream.
+
+    This type provides a read-only stream interface for performing transparent
+    decompression from another stream or data source. It conforms to the
+    ``io.RawIOBase`` interface. Only methods relevant to reading are
+    implemented.
+
+    >>> with open(path, 'rb') as fh:
+    >>> dctx = zstandard.ZstdDecompressor()
+    >>> reader = dctx.stream_reader(fh)
+    >>> while True:
+    ...     chunk = reader.read(16384)
+    ...     if not chunk:
+    ...         break
+    ...     # Do something with decompressed chunk.
+
+    The stream can also be used as a context manager:
+
+    >>> with open(path, 'rb') as fh:
+    ...     dctx = zstandard.ZstdDecompressor()
+    ...     with dctx.stream_reader(fh) as reader:
+    ...         ...
+
+    When used as a context manager, the stream is closed and the underlying
+    resources are released when the context manager exits. Future operations
+    against the stream will fail.
+
+    The ``source`` argument to ``stream_reader()`` can be any object with a
+    ``read(size)`` method or any object implementing the *buffer protocol*.
+
+    If the ``source`` is a stream, you can specify how large ``read()`` requests
+    to that stream should be via the ``read_size`` argument. It defaults to
+    ``zstandard.DECOMPRESSION_RECOMMENDED_INPUT_SIZE``.:
+
+    >>> with open(path, 'rb') as fh:
+    ...     dctx = zstandard.ZstdDecompressor()
+    ...     # Will perform fh.read(8192) when obtaining data for the decompressor.
+    ...     with dctx.stream_reader(fh, read_size=8192) as reader:
+    ...         ...
+
+    Instances are *partially* seekable. Absolute and relative positions
+    (``SEEK_SET`` and ``SEEK_CUR``) forward of the current position are
+    allowed. Offsets behind the current read position and offsets relative
+    to the end of stream are not allowed and will raise ``ValueError``
+    if attempted.
+
+    ``tell()`` returns the number of decompressed bytes read so far.
+
+    Not all I/O methods are implemented. Notably missing is support for
+    ``readline()``, ``readlines()``, and linewise iteration support. This is
+    because streams operate on binary data - not text data. If you want to
+    convert decompressed output to text, you can chain an ``io.TextIOWrapper``
+    to the stream:
+
+    >>> with open(path, 'rb') as fh:
+    ...     dctx = zstandard.ZstdDecompressor()
+    ...     stream_reader = dctx.stream_reader(fh)
+    ...     text_stream = io.TextIOWrapper(stream_reader, encoding='utf-8')
+    ...     for line in text_stream:
+    ...         ...
+    """
+
     def __init__(
         self, decompressor, source, read_size, read_across_frames, closefd=True,
     ):
@@ -2898,6 +3014,59 @@ class ZstdDecompressionReader(object):
 
 
 class ZstdDecompressionWriter(object):
+    """
+    Write-only stream wrapper that performs decompression.
+
+    This type provides a writable stream that performs decompression and writes
+    decompressed data to another stream.
+
+    This type implements the ``io.RawIOBase`` interface. Only methods that
+    involve writing will do useful things.
+
+    Behavior is similar to :py:meth:`ZstdCompressor.stream_writer`: compressed
+    data is sent to the decompressor by calling ``write(data)`` and decompressed
+    output is written to the inner stream by calling its ``write(data)``
+    method:
+
+    >>> dctx = zstandard.ZstdDecompressor()
+    >>> decompressor = dctx.stream_writer(fh)
+    >>> # Will call fh.write() with uncompressed data.
+    >>> decompressor.write(compressed_data)
+
+    Calls to ``write()`` will return the number of bytes written to the output
+    object. Not all inputs will result in bytes being written, so return values
+    of ``0`` are possible.
+
+    Instances can be used as context managers. However, context managers add no
+    extra special behavior other than automatically calling ``close()`` when
+    they exit.
+
+    Calling ``close()`` will mark the stream as closed and subsequent I/O
+    operations will raise ``ValueError`` (per the documented behavior of
+    ``io.RawIOBase``). ``close()`` will also call ``close()`` on the
+    underlying stream if such a method exists and the instance was created with
+    ``closefd=True``.
+
+    The size of chunks to ``write()`` to the destination can be specified:
+
+    >>> dctx = zstandard.ZstdDecompressor()
+    >>> with dctx.stream_writer(fh, write_size=16384) as decompressor:
+    >>>    pass
+
+    You can see how much memory is being used by the decompressor:
+
+    >>> dctx = zstandard.ZstdDecompressor()
+    >>> with dctx.stream_writer(fh) as decompressor:
+    >>>    byte_size = decompressor.memory_size()
+
+    ``stream_writer()`` accepts a ``write_return_read`` boolean argument to control
+    the return value of ``write()``. When ``False`` (the default)``, ``write()``
+    returns the number of bytes that were ``write()``en to the underlying stream.
+    When ``True``, ``write()`` returns the number of bytes read from the input.
+    ``True`` is the *proper* behavior for ``write()`` as specified by the
+    ``io.RawIOBase`` interface and will become the default in a future release.
+    """
+
     def __init__(
         self, decompressor, writer, write_size, write_return_read, closefd=True,
     ):
@@ -3044,6 +3213,37 @@ class ZstdDecompressionWriter(object):
 
 
 class ZstdDecompressor(object):
+    """
+    Context for performing zstandard decompression.
+
+    Each instance is essentially a wrapper around a ``ZSTD_DCtx`` from zstd's
+    C API.
+
+    An instance can compress data various ways. Instances can be used multiple
+    times.
+
+    The interface of this class is very similar to
+    :py:class:`zstandard.ZstdCompressor` (by design).
+
+    Unless specified otherwise, assume that no two methods of
+    ``ZstdDecompressor`` instances can be called from multiple Python
+    threads simultaneously. In other words, assume instances are not thread safe
+    unless stated otherwise.
+
+    :param dict_data:
+       Compression dictionary to use.
+    :param max_window_size:
+       Sets an upper limit on the window size for decompression operations in
+       kibibytes. This setting can be used to prevent large memory allocations
+       for inputs using large compression windows.
+    :param format:
+       Set the format of data for the decoder.
+
+       By default this is ``zstandard.FORMAT_ZSTD1``. It can be set to
+       ``zstandard.FORMAT_ZSTD1_MAGICLESS`` to allow decoding frames without
+       the 4 byte magic header. Not all decompression APIs support this mode.
+    """
+
     def __init__(self, dict_data=None, max_window_size=0, format=FORMAT_ZSTD1):
         self._dict_data = dict_data
         self._max_window_size = max_window_size
@@ -3065,9 +3265,69 @@ class ZstdDecompressor(object):
             )
 
     def memory_size(self):
+        """Size of decompression context, in bytes.
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> size = dctx.memory_size()
+        """
         return lib.ZSTD_sizeof_DCtx(self._dctx)
 
     def decompress(self, data, max_output_size=0):
+        """
+        Decompress data in its entirety in a single operation.
+
+        This method will decompress the entirety of the argument and return the
+        result.
+
+        The input bytes are expected to contain a full Zstandard frame
+        (something compressed with :py:meth:`ZstdCompressor.compress` or
+        similar). If the input does not contain a full frame, an exception will
+        be raised.
+
+        If the frame header of the compressed data does not contain the content
+        size ``max_output_size`` must be specified or ``ZstdError`` will be
+        raised. An allocation of size ``max_output_size`` will be performed and an
+        attempt will be made to perform decompression into that buffer. If the
+        buffer is too small or cannot be allocated, ``ZstdError`` will be
+        raised. The buffer will be resized if it is too large.
+
+        Uncompressed data could be much larger than compressed data. As a result,
+        calling this function could result in a very large memory allocation
+        being performed to hold the uncompressed data. This could potentially
+        result in ``MemoryError`` or system memory swapping. Therefore it is
+        **highly** recommended to use a streaming decompression method instead
+        of this one.
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> decompressed = dctx.decompress(data)
+
+        If the compressed data doesn't have its content size embedded within it,
+        decompression can be attempted by specifying the ``max_output_size``
+        argument:
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> uncompressed = dctx.decompress(data, max_output_size=1048576)
+
+        Ideally, ``max_output_size`` will be identical to the decompressed
+        output size.
+
+        .. important::
+
+           If the exact size of decompressed data is unknown (not passed in
+           explicitly and not stored in the zstd frame), for performance
+           reasons it is encouraged to use a streaming API.
+
+        :param data:
+           Compressed data to decompress.
+        :param max_output_size:
+           Integer max size of response.
+
+           If ``0``, there is no limit and we can attempt to allocate an output
+           buffer of infinite size.
+        :return:
+           ``bytes`` representing decompressed output.
+        """
+
         self._ensure_dctx()
 
         data_buffer = ffi.from_buffer(data)
@@ -3125,12 +3385,46 @@ class ZstdDecompressor(object):
         read_across_frames=False,
         closefd=True,
     ):
+        """
+        Read-only stream wrapper that performs decompression.
+
+        This method obtains an object that conforms to the ``io.RawIOBase``
+        interface and performs transparent decompression via ``read()``
+        operations. Source data is obtained by calling ``read()`` on a
+        source stream or object implementing the buffer protocol.
+
+        See :py:class:`zstandard.ZstdDecompressionReader` for more documentation
+        and usage examples.
+
+        :param source:
+           Source of compressed data to decompress. Can be any object
+           with a ``read(size)`` method or that conforms to the buffer protocol.
+        :param read_size:
+           Integer number of bytes to read from the source and feed into the
+           compressor at a time.
+        :param read_across_frames:
+           Whether to read data across multiple zstd frames. If False,
+           decompression is stopped at frame boundaries.
+        :param closefd:
+           Whether to close the source stream when this instance is closed.
+        :return:
+           :py:class:`zstandard.ZstdDecompressionReader`.
+        """
         self._ensure_dctx()
         return ZstdDecompressionReader(
             self, source, read_size, read_across_frames, closefd=closefd
         )
 
     def decompressobj(self, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+        """Obtain a standard library compatible incremental decompressor.
+
+        See :py:class:`ZstdDecompressionObj` for more documentation
+        and usage examples.
+
+        :param write_size:
+        :return:
+           :py:class:`zstandard.ZstdDecompressionObj`
+        """
         if write_size < 1:
             raise ValueError("write_size must be positive")
 
@@ -3144,6 +3438,67 @@ class ZstdDecompressor(object):
         write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
         skip_bytes=0,
     ):
+        """Read compressed data to an iterator of uncompressed chunks.
+
+        This method will read data from ``reader``, feed it to a decompressor,
+        and emit ``bytes`` chunks representing the decompressed result.
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> for chunk in dctx.read_to_iter(fh):
+        ...     # Do something with original data.
+
+        ``read_to_iter()`` accepts an object with a ``read(size)`` method that
+        will return compressed bytes or an object conforming to the buffer
+        protocol.
+
+        ``read_to_iter()`` returns an iterator whose elements are chunks of the
+        decompressed data.
+
+        The size of requested ``read()`` from the source can be specified:
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> for chunk in dctx.read_to_iter(fh, read_size=16384):
+        ...    pass
+
+        It is also possible to skip leading bytes in the input data:
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> for chunk in dctx.read_to_iter(fh, skip_bytes=1):
+        ...    pass
+
+        .. tip::
+
+           Skipping leading bytes is useful if the source data contains extra
+           *header* data. Traditionally, you would need to create a slice or
+           ``memoryview`` of the data you want to decompress. This would create
+           overhead. It is more efficient to pass the offset into this API.
+
+        Similarly to :py:meth:`ZstdCompressor.read_to_iter`, the consumer of the
+        iterator controls when data is decompressed. If the iterator isn't consumed,
+        decompression is put on hold.
+
+        When ``read_to_iter()`` is passed an object conforming to the buffer protocol,
+        the behavior may seem similar to what occurs when the simple decompression
+        API is used. However, this API works when the decompressed size is unknown.
+        Furthermore, if feeding large inputs, the decompressor will work in chunks
+        instead of performing a single operation.
+
+        :param reader:
+           Source of compressed data. Can be any object with a
+           ``read(size)`` method or any object conforming to the buffer
+           protocol.
+        :param read_size:
+           Integer size of data chunks to read from ``reader`` and feed into
+           the decompressor.
+        :param write_size:
+           Integer size of data chunks to emit from iterator.
+        :param skip_bytes:
+           Integer number of bytes to skip over before sending data into
+           the decompressor.
+        :return:
+           Iterator of ``bytes`` representing uncompressed data.
+        """
+
         if skip_bytes >= read_size:
             raise ValueError("skip_bytes must be smaller than read_size")
 
@@ -3231,6 +3586,30 @@ class ZstdDecompressor(object):
         write_return_read=False,
         closefd=True,
     ):
+        """
+        Push-based stream wrapper that performs decompression.
+
+        This method constructs a stream wrapper that conforms to the
+        ``io.RawIOBase`` interface and performs transparent decompression
+        when writing to a wrapper stream.
+
+        See :py:class:`zstandard.ZstdDecompressionWriter` for more documentation
+        and usage examples.
+
+        :param writer:
+           Destination for decompressed output. Can be any object with a
+           ``write(data)``.
+        :param write_size:
+           Integer size of chunks to ``write()`` to ``writer``.
+        :param write_return_read:
+           Whether ``write()`` should return the number of bytes of input
+           consumed. If False, ``write()`` returns the number of bytes sent
+           to the inner stream.
+        :param closefd:
+           Whether to ``close()`` the inner stream when this stream is closed.
+        :return:
+           :py:class:`zstandard.ZstdDecompressionWriter`
+        """
         if not hasattr(writer, "write"):
             raise ValueError("must pass an object with a write() method")
 
@@ -3245,6 +3624,46 @@ class ZstdDecompressor(object):
         read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
         write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
     ):
+        """
+        Copy data between streams, decompressing in the process.
+
+        Compressed data will be read from ``ifh``, decompressed, and written
+        to ``ofh``.
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> dctx.copy_stream(ifh, ofh)
+
+        e.g. to decompress a file to another file:
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> with open(input_path, 'rb') as ifh, open(output_path, 'wb') as ofh:
+        ...     dctx.copy_stream(ifh, ofh)
+
+        The size of chunks being ``read()`` and ``write()`` from and to the
+        streams can be specified:
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> dctx.copy_stream(ifh, ofh, read_size=8192, write_size=16384)
+
+        :param ifh:
+           Source stream to read compressed data from.
+
+           Must have a ``read()`` method.
+        :param ofh:
+           Destination stream to write uncompressed data to.
+
+           Must have a ``write()`` method.
+        :param read_size:
+           The number of bytes to ``read()`` from the source in a single
+           operation.
+        :param write_size:
+           The number of bytes to ``write()`` to the destination in a single
+           operation.
+        :return:
+           2-tuple of integers representing the number of bytes read and
+           written, respectively.
+        """
+
         if not hasattr(ifh, "read"):
             raise ValueError("first argument must have a read() method")
         if not hasattr(ofh, "write"):
@@ -3294,6 +3713,58 @@ class ZstdDecompressor(object):
         return total_read, total_write
 
     def decompress_content_dict_chain(self, frames):
+        """
+        Decompress a series of frames using the content dictionary chaining technique.
+
+        Such a list of frames is produced by compressing discrete inputs where
+        each non-initial input is compressed with a *prefix* dictionary consisting
+        of the content of the previous input.
+
+        For example, say you have the following inputs:
+
+        >>> inputs = [b"input 1", b"input 2", b"input 3"]
+
+        The zstd frame chain consists of:
+
+        1. ``b"input 1"`` compressed in standalone/discrete mode
+        2. ``b"input 2"`` compressed using ``b"input 1"`` as a *prefix* dictionary
+        3. ``b"input 3"`` compressed using ``b"input 2"`` as a *prefix* dictionary
+
+        Each zstd frame **must** have the content size written.
+
+        The following Python code can be used to produce a *prefix dictionary chain*:
+
+        >>> def make_chain(inputs):
+        ...    frames = []
+        ...
+        ...    # First frame is compressed in standalone/discrete mode.
+        ...    zctx = zstandard.ZstdCompressor()
+        ...    frames.append(zctx.compress(inputs[0]))
+        ...
+        ...    # Subsequent frames use the previous fulltext as a prefix dictionary
+        ...    for i, raw in enumerate(inputs[1:]):
+        ...        dict_data = zstandard.ZstdCompressionDict(
+        ...            inputs[i], dict_type=zstandard.DICT_TYPE_RAWCONTENT)
+        ...        zctx = zstandard.ZstdCompressor(dict_data=dict_data)
+        ...        frames.append(zctx.compress(raw))
+        ...
+        ...    return frames
+
+        ``decompress_content_dict_chain()`` returns the uncompressed data of the last
+        element in the input chain.
+
+        .. note::
+
+           It is possible to implement *prefix dictionary chain* decompression
+           on top of other APIs. However, this function will likely be faster -
+           especially for long input chains - as it avoids the overhead of
+           instantiating and passing around intermediate objects between
+           multiple functions.
+
+        :param frames:
+           List of ``bytes`` holding compressed zstd frames.
+        :return:
+        """
         if not isinstance(frames, list):
             raise TypeError("argument must be a list")
 
@@ -3389,6 +3860,84 @@ class ZstdDecompressor(object):
             i += 1
 
         return ffi.buffer(last_buffer, len(last_buffer))[:]
+
+    def multi_decompress_to_buffer(
+        self, frames, decompressed_sizes=None, threads=0
+    ):
+        """
+        Decompress multiple zstd frames to output buffers as a single operation.
+
+        (Experimental. Not available in CFFI backend.)
+
+        Compressed frames can be passed to the function as a
+        ``BufferWithSegments``, a ``BufferWithSegmentsCollection``, or as a
+        list containing objects that conform to the buffer protocol. For best
+        performance, pass a ``BufferWithSegmentsCollection`` or a
+        ``BufferWithSegments``, as minimal input validation will be done for
+        that type. If calling from Python (as opposed to C), constructing one
+        of these instances may add overhead cancelling out the performance
+        overhead of validation for list inputs.
+
+        Returns a ``BufferWithSegmentsCollection`` containing the decompressed
+        data. All decompressed data is allocated in a single memory buffer. The
+        ``BufferWithSegments`` instance tracks which objects are at which offsets
+        and their respective lengths.
+
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> results = dctx.multi_decompress_to_buffer([b'...', b'...'])
+
+        The decompressed size of each frame MUST be discoverable. It can either be
+        embedded within the zstd frame or passed in via the ``decompressed_sizes``
+        argument.
+
+        The ``decompressed_sizes`` argument is an object conforming to the buffer
+        protocol which holds an array of 64-bit unsigned integers in the machine's
+        native format defining the decompressed sizes of each frame. If this argument
+        is passed, it avoids having to scan each frame for its decompressed size.
+        This frame scanning can add noticeable overhead in some scenarios.
+
+        >>> frames = [...]
+        >>> sizes = struct.pack('=QQQQ', len0, len1, len2, len3)
+        >>>
+        >>> dctx = zstandard.ZstdDecompressor()
+        >>> results = dctx.multi_decompress_to_buffer(frames, decompressed_sizes=sizes)
+
+        .. note::
+
+           It is possible to pass a ``mmap.mmap()`` instance into this function by
+           wrapping it with a ``BufferWithSegments`` instance (which will define the
+           offsets of frames within the memory mapped region).
+
+        This function is logically equivalent to performing
+        :py:meth:`ZstdCompressor.decompress` on each input frame and returning the
+        result.
+
+        This function exists to perform decompression on multiple frames as fast
+        as possible by having as little overhead as possible. Since decompression is
+        performed as a single operation and since the decompressed output is stored in
+        a single buffer, extra memory allocations, Python objects, and Python function
+        calls are avoided. This is ideal for scenarios where callers know up front that
+        they need to access data for multiple frames, such as when  *delta chains* are
+        being used.
+
+        Currently, the implementation always spawns multiple threads when requested,
+        even if the amount of work to do is small. In the future, it will be smarter
+        about avoiding threads and their associated overhead when the amount of
+        work to do is small.
+
+        :param frames:
+           Source defining zstd frames to decompress.
+        :param decompressed_sizes:
+           Array of integers representing sizes of decompressed zstd frames.
+        :param threads:
+           How many threads to use for decompression operations.
+
+           Negative values will use the same number of threads as logical CPUs
+           on the machine. Values ``0`` or ``1`` use a single thread.
+        :return:
+           ``BufferWithSegmentsCollection``
+        """
+        raise NotImplementedError()
 
     def _ensure_dctx(self, load_dict=True):
         lib.ZSTD_DCtx_reset(self._dctx, lib.ZSTD_reset_session_only)

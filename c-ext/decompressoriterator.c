@@ -12,9 +12,6 @@
 
 extern PyObject *ZstdError;
 
-PyDoc_STRVAR(ZstdDecompressorIterator__doc__,
-             "Represents an iterator of decompressed data.\n");
-
 static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator *self) {
     Py_XDECREF(self->decompressor);
     Py_XDECREF(self->reader);
@@ -225,7 +222,7 @@ PyTypeObject ZstdDecompressorIteratorType = {
     0,                                               /* tp_setattro */
     0,                                               /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /* tp_flags */
-    ZstdDecompressorIterator__doc__,                 /* tp_doc */
+    0,                                               /* tp_doc */
     0,                                               /* tp_traverse */
     0,                                               /* tp_clear */
     0,                                               /* tp_richcompare */

@@ -10,10 +10,6 @@
 
 extern PyObject *ZstdError;
 
-PyDoc_STRVAR(ZstdDecompressionWriter__doc,
-             ""
-             "A context manager used for writing decompressed output.\n");
-
 static void ZstdDecompressionWriter_dealloc(ZstdDecompressionWriter *self) {
     Py_XDECREF(self->decompressor);
     Py_XDECREF(self->writer);
@@ -269,7 +265,7 @@ PyTypeObject ZstdDecompressionWriterType = {
     0,                                           /* tp_setattro */
     0,                                           /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,    /* tp_flags */
-    ZstdDecompressionWriter__doc,                /* tp_doc */
+    0,                                           /* tp_doc */
     0,                                           /* tp_traverse */
     0,                                           /* tp_clear */
     0,                                           /* tp_richcompare */
