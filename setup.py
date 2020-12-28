@@ -133,7 +133,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
-    keywords="zstandard zstd compression",
+    keywords=["zstandard", "zstd", "compression"],
     packages=["zstandard"],
     package_data={"zstandard": ["__init__.pyi", "py.typed"]},
     ext_modules=extensions,
