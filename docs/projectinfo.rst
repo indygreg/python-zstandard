@@ -102,8 +102,6 @@ Donate
 A lot of time has been invested into this project by the author.
 
 If you find this project useful and would like to thank the author for
-their work, consider donating some money. Any amount is appreciated.
-
-.. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif
-    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gregory%2eszorc%40gmail%2ecom&lc=US&item_name=python%2dzstandard&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
-    :alt: Donate via PayPal
+their work or commission a feature, consider donating some money.
+Any amount is appreciated. This can be done through GitHub Sponsors at
+https://github.com/sponsors/indygreg.
