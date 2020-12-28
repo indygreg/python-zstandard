@@ -119,41 +119,6 @@ PyDoc_STRVAR(get_frame_parameters__doc__,
              "\n"
              "Obtains a ``FrameParameters`` instance by parsing data.\n");
 
-PyDoc_STRVAR(
-    train_dictionary__doc__,
-    "train_dictionary(dict_size, samples, k=None, d=None, steps=None,\n"
-    "                 threads=None,notifications=0, dict_id=0, level=0)\n"
-    "\n"
-    "Train a dictionary from sample data using the COVER algorithm.\n"
-    "\n"
-    "A compression dictionary of size ``dict_size`` will be created from the\n"
-    "iterable of ``samples``. The raw dictionary bytes will be returned.\n"
-    "\n"
-    "The COVER algorithm has 2 parameters: ``k`` and ``d``. These control the\n"
-    "*segment size* and *dmer size*. A reasonable range for ``k`` is\n"
-    "``[16, 2048+]``. A reasonable range for ``d`` is ``[6, 16]``.\n"
-    "``d`` must be less than or equal to ``k``.\n"
-    "\n"
-    "``steps`` can be specified to control the number of steps through "
-    "potential\n"
-    "values of ``k`` and ``d`` to try. ``k`` and ``d`` will only be varied if\n"
-    "those arguments are not defined. i.e. if ``d`` is ``8``, then only ``k``\n"
-    "will be varied in this mode.\n"
-    "\n"
-    "``threads`` can specify how many threads to use to test various ``k`` "
-    "and\n"
-    "``d`` values. ``-1`` will use as many threads as available CPUs. By "
-    "default,\n"
-    "a single thread is used.\n"
-    "\n"
-    "When ``k`` and ``d`` are not defined, default values are used and the\n"
-    "algorithm will perform multiple iterations - or steps - to try to find\n"
-    "ideal parameters. If both ``k`` and ``d`` are specified, then those "
-    "values\n"
-    "will be used. ``steps`` or ``threads`` triggers optimization mode to "
-    "test\n"
-    "multiple ``k`` and ``d`` variations.\n");
-
 static char zstd_doc[] = "Interface to zstandard";
 
 static PyMethodDef zstd_methods[] = {
@@ -167,7 +132,7 @@ static PyMethodDef zstd_methods[] = {
     {"get_frame_parameters", (PyCFunction)get_frame_parameters,
      METH_VARARGS | METH_KEYWORDS, get_frame_parameters__doc__},
     {"train_dictionary", (PyCFunction)train_dictionary,
-     METH_VARARGS | METH_KEYWORDS, train_dictionary__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {NULL, NULL}};
 
 void bufferutil_module_init(PyObject *mod);

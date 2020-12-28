@@ -161,15 +161,6 @@ int ensure_ddict(ZstdCompressionDict *dict) {
     return 0;
 }
 
-PyDoc_STRVAR(
-    ZstdCompressionDict__doc__,
-    "ZstdCompressionDict(data) - Represents a computed compression dictionary\n"
-    "\n"
-    "This type holds the results of a computed Zstandard compression "
-    "dictionary.\n"
-    "Instances are obtained by calling ``train_dictionary()`` or by passing\n"
-    "bytes obtained from another source into the constructor.\n");
-
 static int ZstdCompressionDict_init(ZstdCompressionDict *self, PyObject *args,
                                     PyObject *kwargs) {
     static char *kwlist[] = {"data", "dict_type", NULL};
@@ -233,10 +224,6 @@ static void ZstdCompressionDict_dealloc(ZstdCompressionDict *self) {
 
     PyObject_Del(self);
 }
-
-PyDoc_STRVAR(
-    ZstdCompressionDict_precompute_compress__doc__,
-    "Precompute a dictionary so it can be used by multiple compressors.\n");
 
 static PyObject *
 ZstdCompressionDict_precompute_compress(ZstdCompressionDict *self,
@@ -316,8 +303,7 @@ static PyMethodDef ZstdCompressionDict_methods[] = {
                "data")},
     {"precompute_compress",
      (PyCFunction)ZstdCompressionDict_precompute_compress,
-     METH_VARARGS | METH_KEYWORDS,
-     ZstdCompressionDict_precompute_compress__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {NULL, NULL}};
 
 static PyMemberDef ZstdCompressionDict_members[] = {
@@ -360,7 +346,7 @@ PyTypeObject ZstdCompressionDictType = {
     0,                                        /* tp_setattro */
     0,                                        /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    ZstdCompressionDict__doc__,               /* tp_doc */
+    0,                                        /* tp_doc */
     0,                                        /* tp_traverse */
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
