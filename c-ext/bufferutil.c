@@ -10,20 +10,6 @@
 
 extern PyObject *ZstdError;
 
-PyDoc_STRVAR(
-    BufferWithSegments__doc__,
-    "BufferWithSegments - A memory buffer holding known sub-segments.\n"
-    "\n"
-    "This type represents a contiguous chunk of memory containing N discrete\n"
-    "items within sub-segments of that memory.\n"
-    "\n"
-    "Segments within the buffer are stored as an array of\n"
-    "``(offset, length)`` pairs, where each element is an unsigned 64-bit\n"
-    "integer using the host/native bit order representation.\n"
-    "\n"
-    "The type exists to facilitate operations against N>1 items without the\n"
-    "overhead of Python object creation and management.\n");
-
 static void BufferWithSegments_dealloc(ZstdBufferWithSegments *self) {
     /* Backing memory is either canonically owned by a Py_buffer or by us. */
     if (self->parent.buf) {
@@ -215,9 +201,6 @@ static int BufferWithSegments_getbuffer(ZstdBufferWithSegments *self,
                              (Py_ssize_t)self->dataSize, 1, flags);
 }
 
-PyDoc_STRVAR(BufferWithSegments_tobytes__doc__,
-             "Obtain a bytes instance for this buffer.\n");
-
 static PyObject *BufferWithSegments_tobytes(ZstdBufferWithSegments *self) {
     if (self->dataSize > PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_ValueError,
@@ -227,9 +210,6 @@ static PyObject *BufferWithSegments_tobytes(ZstdBufferWithSegments *self) {
 
     return PyBytes_FromStringAndSize(self->data, (Py_ssize_t)self->dataSize);
 }
-
-PyDoc_STRVAR(BufferWithSegments_segments__doc__,
-             "Obtain a BufferSegments describing segments in this sintance.\n");
 
 static ZstdBufferSegments *
 BufferWithSegments_segments(ZstdBufferWithSegments *self) {
@@ -264,10 +244,8 @@ static PyBufferProcs BufferWithSegments_as_buffer = {
 };
 
 static PyMethodDef BufferWithSegments_methods[] = {
-    {"segments", (PyCFunction)BufferWithSegments_segments, METH_NOARGS,
-     BufferWithSegments_segments__doc__},
-    {"tobytes", (PyCFunction)BufferWithSegments_tobytes, METH_NOARGS,
-     BufferWithSegments_tobytes__doc__},
+    {"segments", (PyCFunction)BufferWithSegments_segments, METH_NOARGS, NULL},
+    {"tobytes", (PyCFunction)BufferWithSegments_tobytes, METH_NOARGS, NULL},
     {NULL, NULL}};
 
 static PyMemberDef BufferWithSegments_members[] = {
@@ -295,7 +273,7 @@ PyTypeObject ZstdBufferWithSegmentsType = {
     0,                                 /* tp_setattro */
     &BufferWithSegments_as_buffer,     /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                /* tp_flags */
-    BufferWithSegments__doc__,         /* tp_doc */
+    0,                                 /* tp_doc */
     0,                                 /* tp_traverse */
     0,                                 /* tp_clear */
     0,                                 /* tp_richcompare */
@@ -314,10 +292,6 @@ PyTypeObject ZstdBufferWithSegmentsType = {
     0,                                 /* tp_alloc */
     PyType_GenericNew,                 /* tp_new */
 };
-
-PyDoc_STRVAR(BufferSegments__doc__,
-             "BufferSegments - Represents segments/offsets within a "
-             "BufferWithSegments\n");
 
 static void BufferSegments_dealloc(ZstdBufferSegments *self) {
     Py_CLEAR(self->parent);
@@ -354,7 +328,7 @@ PyTypeObject ZstdBufferSegmentsType = {
     0,                                                    /* tp_setattro */
     &BufferSegments_as_buffer,                            /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                                   /* tp_flags */
-    BufferSegments__doc__,                                /* tp_doc */
+    0,                                                    /* tp_doc */
     0,                                                    /* tp_traverse */
     0,                                                    /* tp_clear */
     0,                                                    /* tp_richcompare */
@@ -374,10 +348,6 @@ PyTypeObject ZstdBufferSegmentsType = {
     PyType_GenericNew, /* tp_new */
 };
 
-PyDoc_STRVAR(
-    BufferSegment__doc__,
-    "BufferSegment - Represents a segment within a BufferWithSegments\n");
-
 static void BufferSegment_dealloc(ZstdBufferSegment *self) {
     Py_CLEAR(self->parent);
     PyObject_Del(self);
@@ -392,9 +362,6 @@ static int BufferSegment_getbuffer(ZstdBufferSegment *self, Py_buffer *view,
     return PyBuffer_FillInfo(view, (PyObject *)self, self->data, self->dataSize,
                              1, flags);
 }
-
-PyDoc_STRVAR(BufferSegment_tobytes__doc__,
-             "Obtain a bytes instance for this segment.\n");
 
 static PyObject *BufferSegment_tobytes(ZstdBufferSegment *self) {
     return PyBytes_FromStringAndSize(self->data, self->dataSize);
@@ -415,8 +382,7 @@ static PyBufferProcs BufferSegment_as_buffer = {
     (getbufferproc)BufferSegment_getbuffer, 0};
 
 static PyMethodDef BufferSegment_methods[] = {
-    {"tobytes", (PyCFunction)BufferSegment_tobytes, METH_NOARGS,
-     BufferSegment_tobytes__doc__},
+    {"tobytes", (PyCFunction)BufferSegment_tobytes, METH_NOARGS, NULL},
     {NULL, NULL}};
 
 static PyMemberDef BufferSegment_members[] = {
@@ -444,7 +410,7 @@ PyTypeObject ZstdBufferSegmentType = {
     0,                                                   /* tp_setattro */
     &BufferSegment_as_buffer,                            /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                                  /* tp_flags */
-    BufferSegment__doc__,                                /* tp_doc */
+    0,                                                   /* tp_doc */
     0,                                                   /* tp_traverse */
     0,                                                   /* tp_clear */
     0,                                                   /* tp_richcompare */
@@ -463,9 +429,6 @@ PyTypeObject ZstdBufferSegmentType = {
     0,                                                   /* tp_alloc */
     PyType_GenericNew,                                   /* tp_new */
 };
-
-PyDoc_STRVAR(BufferWithSegmentsCollection__doc__,
-             "Represents a collection of BufferWithSegments.\n");
 
 static void
 BufferWithSegmentsCollection_dealloc(ZstdBufferWithSegmentsCollection *self) {
@@ -647,7 +610,7 @@ PyTypeObject ZstdBufferWithSegmentsCollectionType = {
     0,                                                /* tp_setattro */
     0,                                                /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                               /* tp_flags */
-    BufferWithSegmentsCollection__doc__,              /* tp_doc */
+    0,                                                /* tp_doc */
     0,                                                /* tp_traverse */
     0,                                                /* tp_clear */
     0,                                                /* tp_richcompare */

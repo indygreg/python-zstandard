@@ -158,6 +158,9 @@ Backwards Compatibility Notes
   ``ZstdCompressionWriter``, ``ZstdDecompressionObj``,
   ``ZstdDecompressionReader``, and ``ZstdDecompressionWriter`` as
   symbols on the ``zstandard`` module.
+* The ``CFFI`` backend now exposes the types ``BufferSegment``,
+  ``BufferSegments``, ``BufferWithSegments``, and
+  ``BufferWithSegmentsCollection``. However, they are not implemented.
 
 Bug Fixes
 ---------

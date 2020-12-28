@@ -10,10 +10,10 @@ from __future__ import absolute_import, unicode_literals
 
 # This should match what the C extension exports.
 __all__ = [
-    #'BufferSegment',
-    #'BufferSegments',
-    #'BufferWithSegments',
-    #'BufferWithSegmentsCollection',
+    "BufferSegment",
+    "BufferSegments",
+    "BufferWithSegments",
+    "BufferWithSegmentsCollection",
     "ZstdCompressionChunker",
     "ZstdCompressionDict",
     "ZstdCompressionObj",
@@ -174,6 +174,116 @@ def _cpu_count():
 
     # TODO implement on other platforms.
     return 0
+
+
+class BufferSegment:
+    """Represents a segment within a ``BufferWithSegments``.
+
+    This type is essentially a reference to N bytes within a
+    ``BufferWithSegments``.
+
+    The object conforms to the buffer protocol.
+    """
+
+    @property
+    def offset(self):
+        """The byte offset of this segment within its parent buffer."""
+        raise NotImplementedError()
+
+    def __len__(self):
+        """Obtain the length of the segment, in bytes."""
+        raise NotImplementedError()
+
+    def tobytes(self):
+        """Obtain bytes copy of this segment."""
+        raise NotImplementedError()
+
+
+class BufferSegments:
+    """Represents an array of ``(offset, length)`` integers.
+
+    This type is effectively an index used by :py:class:`BufferWithSegments`.
+
+    The array members are 64-bit unsigned integers using host/native bit order.
+
+    Instances conform to the buffer protocol.
+    """
+
+
+class BufferWithSegments:
+    """A memory buffer containing N discrete items of known lengths.
+
+    This type is essentially a fixed size memory address and an array
+    of 2-tuples of ``(offset, length)`` 64-bit unsigned native-endian
+    integers defining the byte offset and length of each segment within
+    the buffer.
+
+    Instances behave like containers.
+
+    Instances also conform to the buffer protocol. So a reference to the
+    backing bytes can be obtained via ``memoryview(o)``. A *copy* of the
+    backing bytes can be obtained via ``.tobytes()``.
+
+    This type exists to facilitate operations against N>1 items without
+    the overhead of Python object creation and management. Used with
+    APIs like :py:meth:`ZstdDecompressor.multi_decompress_to_buffer`, it
+    is possible to decompress many objects in parallel without the GIL
+    held, leading to even better performance.
+    """
+
+    @property
+    def size(self):
+        """Total sizein bytes of the backing buffer."""
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
+
+    def __getitem__(self, i):
+        """Obtains a segment within the buffer.
+
+        The returned object references memory within this buffer.
+
+        :param i:
+           Integer index of segment to retrieve.
+        :return:
+           :py:class:`BufferSegment`
+        """
+        raise NotImplementedError()
+
+    def segments(self):
+        """Obtain the array of ``(offset, length)`` segments in the buffer.
+
+        :return:
+           :py:class:`BufferSegments`
+        """
+        raise NotImplementedError()
+
+    def tobytes(self):
+        """Obtain bytes copy of this instance."""
+        raise NotImplementedError()
+
+
+class BufferWithSegmentsCollection:
+    """A virtual spanning view over multiple BufferWithSegments.
+
+    Instances are constructed from 1 or more :py:class:`BufferWithSegments`
+    instances. The resulting object behaves like an ordered sequence whose
+    members are the segments within each ``BufferWithSegments``.
+
+    If the object is composed of 2 ``BufferWithSegments`` instances with the
+    first having 2 segments and the second have 3 segments, then ``b[0]``
+    and ``b[1]`` access segments in the first object and ``b[2]``, ``b[3]``,
+    and ``b[4]`` access segments from the second.
+    """
+
+    def __len__(self):
+        """The number of segments within all ``BufferWithSegments``."""
+        raise NotImplementedError()
+
+    def __getitem__(self, i):
+        """Obtain the ``BufferSegment`` at an offset."""
+        raise NotImplementedError()
 
 
 class ZstdError(Exception):
