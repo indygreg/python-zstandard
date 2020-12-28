@@ -10,9 +10,6 @@
 
 extern PyObject *ZstdError;
 
-PyDoc_STRVAR(ZstdCompressionObj__doc__,
-             "Perform compression using a standard library compatible API.\n");
-
 static void ZstdCompressionObj_dealloc(ZstdCompressionObj *self) {
     PyMem_Free(self->output.dst);
     self->output.dst = NULL;
@@ -217,7 +214,7 @@ PyTypeObject ZstdCompressionObjType = {
     0,                                        /* tp_setattro */
     0,                                        /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    ZstdCompressionObj__doc__,                /* tp_doc */
+    0,                                        /* tp_doc */
     0,                                        /* tp_traverse */
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */

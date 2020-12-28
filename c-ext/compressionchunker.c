@@ -10,9 +10,6 @@
 
 extern PyObject *ZstdError;
 
-PyDoc_STRVAR(ZstdCompressionChunkerIterator__doc__,
-             "Iterator of output chunks from ZstdCompressionChunker.\n");
-
 static void
 ZstdCompressionChunkerIterator_dealloc(ZstdCompressionChunkerIterator *self) {
     Py_XDECREF(self->chunker);
@@ -159,7 +156,7 @@ PyTypeObject ZstdCompressionChunkerIteratorType = {
     0,                                                  /* tp_setattro */
     0,                                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,           /* tp_flags */
-    ZstdCompressionChunkerIterator__doc__,              /* tp_doc */
+    0,                                                  /* tp_doc */
     0,                                                  /* tp_traverse */
     0,                                                  /* tp_clear */
     0,                                                  /* tp_richcompare */
@@ -178,9 +175,6 @@ PyTypeObject ZstdCompressionChunkerIteratorType = {
     0,                                                     /* tp_alloc */
     PyType_GenericNew,                                     /* tp_new */
 };
-
-PyDoc_STRVAR(ZstdCompressionChunker__doc__,
-             "Compress chunks iteratively into exact chunk sizes.\n");
 
 static void ZstdCompressionChunker_dealloc(ZstdCompressionChunker *self) {
     PyBuffer_Release(&self->inBuffer);
@@ -328,7 +322,7 @@ PyTypeObject ZstdCompressionChunkerType = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    ZstdCompressionChunker__doc__,              /* tp_doc */
+    0,                                          /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
