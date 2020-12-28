@@ -630,7 +630,7 @@ Decompressor_stream_reader(ZstdDecompressor *self, PyObject *args,
     Py_INCREF(self);
     result->readAcrossFrames =
         readAcrossFrames ? PyObject_IsTrue(readAcrossFrames) : 0;
-    result->closefd = closefd ? PyObject_IsTrue(closefd) : 0;
+    result->closefd = closefd ? PyObject_IsTrue(closefd) : 1;
 
     return result;
 }

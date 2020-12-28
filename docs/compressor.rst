@@ -158,7 +158,7 @@ compressed data. ``tell()`` returns the number of compressed bytes
 emitted so far.
 
 The ``closefd`` keyword argument defines whether to close the underlying stream
-when this instance is itself ``close()``d. The default is ``False``.
+when this instance is itself ``close()``d. The default is ``True``.
 
 Stream Writer Interface
 =======================

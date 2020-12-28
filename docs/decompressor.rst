@@ -170,7 +170,7 @@ zstd *frame* is encountered. When ``True``, a read can potentially
 return data spanning multiple zstd *frames*.
 
 The ``closefd`` keyword argument defines whether to close the underlying stream
-when this instance is itself ``close()``d. The default is ``False``.
+when this instance is itself ``close()``d. The default is ``True``.
 
 Streaming Writer Interface
 ==========================

@@ -147,6 +147,9 @@ Backwards Compatibility Notes
 * Distribution metadata no longer lists ``cffi`` as an ``install_requires``
   except when running on PyPy. Instead, ``cffi`` is listed as an
   ``extras_require``.
+* ``ZstdCompressor.stream_reader()`` and ``ZstdDecompressor.stream_reader()``
+  now default to closing the source stream when the instance is itself
+  closed. To change this behavior, pass ``closefd=False``. (#76)
 
 Bug Fixes
 ---------

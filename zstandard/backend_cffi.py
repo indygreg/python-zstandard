@@ -842,7 +842,7 @@ class ZstdCompressionChunker(object):
 
 
 class ZstdCompressionReader(object):
-    def __init__(self, compressor, source, read_size, closefd=False):
+    def __init__(self, compressor, source, read_size, closefd=True):
         self._compressor = compressor
         self._source = source
         self._read_size = read_size
@@ -1476,7 +1476,7 @@ class ZstdCompressor(object):
         source,
         size=-1,
         read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
-        closefd=False,
+        closefd=True,
     ):
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
@@ -1901,12 +1901,7 @@ class ZstdDecompressionObj(object):
 
 class ZstdDecompressionReader(object):
     def __init__(
-        self,
-        decompressor,
-        source,
-        read_size,
-        read_across_frames,
-        closefd=False,
+        self, decompressor, source, read_size, read_across_frames, closefd=True,
     ):
         self._decompressor = decompressor
         self._source = source
@@ -2454,7 +2449,7 @@ class ZstdDecompressor(object):
         source,
         read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
         read_across_frames=False,
-        closefd=False,
+        closefd=True,
     ):
         self._ensure_dctx()
         return ZstdDecompressionReader(

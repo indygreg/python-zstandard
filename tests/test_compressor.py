@@ -869,7 +869,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
         self.assertFalse(buffer.closed)
         reader.close()
         self.assertTrue(reader.closed)
-        self.assertFalse(buffer.closed)
+        self.assertTrue(buffer.closed)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
             reader.read(3)
@@ -886,7 +886,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
             reader.read(3)
 
         self.assertTrue(reader.closed)
-        self.assertFalse(buffer.closed)
+        self.assertTrue(buffer.closed)
 
         # Context manager exit should close stream if an exception raised.
         buffer = io.BytesIO(b"foo" * 1024)
@@ -898,7 +898,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
                 raise Exception("ignore")
 
         self.assertTrue(reader.closed)
-        self.assertFalse(buffer.closed)
+        self.assertTrue(buffer.closed)
 
         # Test with non-file source.
         with cctx.stream_reader(b"foo" * 1024) as reader:
@@ -907,17 +907,17 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
         self.assertTrue(reader.closed)
 
-    def test_close_closefd_true(self):
+    def test_close_closefd_false(self):
         buffer = NonClosingBytesIO(b"foo" * 1024)
         cctx = zstd.ZstdCompressor()
-        reader = cctx.stream_reader(buffer, closefd=True)
+        reader = cctx.stream_reader(buffer, closefd=False)
 
         reader.read(3)
         self.assertFalse(reader.closed)
         self.assertFalse(buffer.closed)
         reader.close()
         self.assertTrue(reader.closed)
-        self.assertTrue(buffer.closed)
+        self.assertFalse(buffer.closed)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
             reader.read(3)
@@ -928,17 +928,17 @@ class TestCompressor_stream_reader(unittest.TestCase):
 
         # Context manager exit should close stream.
         buffer = io.BytesIO(b"foo" * 1024)
-        reader = cctx.stream_reader(buffer, closefd=True)
+        reader = cctx.stream_reader(buffer, closefd=False)
 
         with reader:
             reader.read(3)
 
         self.assertTrue(reader.closed)
-        self.assertTrue(buffer.closed)
+        self.assertFalse(buffer.closed)
 
         # Context manager exit should close stream if an exception raised.
         buffer = io.BytesIO(b"foo" * 1024)
-        reader = cctx.stream_reader(buffer, closefd=True)
+        reader = cctx.stream_reader(buffer, closefd=False)
 
         with self.assertRaisesRegex(Exception, "ignore"):
             with reader:
@@ -946,10 +946,10 @@ class TestCompressor_stream_reader(unittest.TestCase):
                 raise Exception("ignore")
 
         self.assertTrue(reader.closed)
-        self.assertTrue(buffer.closed)
+        self.assertFalse(buffer.closed)
 
         # Test with non-file source variant.
-        with cctx.stream_reader(b"foo" * 1024, closefd=True) as reader:
+        with cctx.stream_reader(b"foo" * 1024, closefd=False) as reader:
             reader.read(3)
             self.assertFalse(reader.closed)
 

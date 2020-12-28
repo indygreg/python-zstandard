@@ -536,7 +536,7 @@ static ZstdCompressionReader *ZstdCompressor_stream_reader(ZstdCompressor *self,
         goto except;
     }
 
-    result->closefd = closefd ? PyObject_IsTrue(closefd) : 0;
+    result->closefd = closefd ? PyObject_IsTrue(closefd) : 1;
 
     ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
