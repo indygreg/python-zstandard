@@ -38,20 +38,9 @@
 
 PyObject *ZstdError;
 
-PyDoc_STRVAR(
-    estimate_decompression_context_size__doc__,
-    "estimate_decompression_context_size()\n"
-    "\n"
-    "Estimate the amount of memory allocated to a decompression context.\n");
-
 static PyObject *estimate_decompression_context_size(PyObject *self) {
     return PyLong_FromSize_t(ZSTD_estimateDCtxSize());
 }
-
-PyDoc_STRVAR(frame_content_size__doc__,
-             "frame_content_size(data)\n"
-             "\n"
-             "Obtain the decompressed size of a frame.");
 
 static PyObject *frame_content_size(PyObject *self, PyObject *args,
                                     PyObject *kwargs) {
@@ -83,10 +72,6 @@ static PyObject *frame_content_size(PyObject *self, PyObject *args,
     return result;
 }
 
-PyDoc_STRVAR(frame_header_size__doc__, "frame_header_size(data)\n"
-                                       "\n"
-                                       "Obtain the size of a frame header.\n");
-
 static PyObject *frame_header_size(PyObject *self, PyObject *args,
                                    PyObject *kwargs) {
     static char *kwlist[] = {"source", NULL};
@@ -114,23 +99,17 @@ static PyObject *frame_header_size(PyObject *self, PyObject *args,
     return result;
 }
 
-PyDoc_STRVAR(get_frame_parameters__doc__,
-             "get_frame_parameters(data)\n"
-             "\n"
-             "Obtains a ``FrameParameters`` instance by parsing data.\n");
-
 static char zstd_doc[] = "Interface to zstandard";
 
 static PyMethodDef zstd_methods[] = {
     {"estimate_decompression_context_size",
-     (PyCFunction)estimate_decompression_context_size, METH_NOARGS,
-     estimate_decompression_context_size__doc__},
+     (PyCFunction)estimate_decompression_context_size, METH_NOARGS, NULL},
     {"frame_content_size", (PyCFunction)frame_content_size,
-     METH_VARARGS | METH_KEYWORDS, frame_content_size__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"frame_header_size", (PyCFunction)frame_header_size,
-     METH_VARARGS | METH_KEYWORDS, frame_header_size__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"get_frame_parameters", (PyCFunction)get_frame_parameters,
-     METH_VARARGS | METH_KEYWORDS, get_frame_parameters__doc__},
+     METH_VARARGS | METH_KEYWORDS, NULL},
     {"train_dictionary", (PyCFunction)train_dictionary,
      METH_VARARGS | METH_KEYWORDS, NULL},
     {NULL, NULL}};

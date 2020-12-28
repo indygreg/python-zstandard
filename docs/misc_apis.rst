@@ -12,21 +12,11 @@ begins with a 4 byte *magic number* header followed by 2 to 14 bytes describing
 the frame in more detail. For more info, see
 https://github.com/facebook/zstd/blob/master/doc/zstd_compression_format.md.
 
-``zstandard.get_frame_parameters(data)`` parses a zstd *frame* header from a
-bytes instance and return a ``FrameParameters`` object describing the frame.
+.. autofunction:: zstandard.get_frame_parameters
 
-Depending on which fields are present in the frame and their values, the
-length of the frame parameters varies. If insufficient bytes are passed
-in to fully parse the frame parameters, ``ZstdError`` is raised. To ensure
-frame parameters can be parsed, pass in at least 18 bytes.
+.. autofunction:: zstandard.frame_header_size
 
-``zstandard.frame_header_size(data)`` returns the size of the zstandard frame
-header.
-
-``zstandard.frame_content_size(data)`` returns the content size as parsed from
-the frame header. ``-1`` means the content size is unknown. ``0`` means
-an empty frame. The content size is usually correct. However, it may not
-be accurate.
+.. autofunction:: zstandard.frame_content_size
 
 .. autoclass:: zstandard.FrameParameters
    :members:
@@ -35,7 +25,7 @@ be accurate.
 estimate_decompression_context_size()
 =====================================
 
-Estimate the memory size requirements for a decompressor instance.
+.. autofunction:: zstandard.estimate_decompression_context_size
 
 open()
 ======

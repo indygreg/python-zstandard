@@ -490,6 +490,11 @@ class ZstdCompressionParameters(object):
 
 
 def estimate_decompression_context_size():
+    """Estimate the memory size requirements for a decompressor instance.
+
+    :return:
+       Integer number of bytes.
+    """
     return lib.ZSTD_estimateDCtxSize()
 
 
@@ -2385,6 +2390,14 @@ class FrameParameters(object):
 
 
 def frame_content_size(data):
+    """Obtain the decompressed size of a frame.
+
+    The returned value is usually accurate. But strictly speaking it should
+    not be trusted.
+
+    :return:
+       ``-1`` if size unknown and a non-negative integer otherwise.
+    """
     data_buffer = ffi.from_buffer(data)
 
     size = lib.ZSTD_getFrameContentSize(data_buffer, len(data_buffer))
@@ -2398,6 +2411,11 @@ def frame_content_size(data):
 
 
 def frame_header_size(data):
+    """Obtain the size of a frame header.
+
+    :return:
+       Integer size in bytes.
+    """
     data_buffer = ffi.from_buffer(data)
 
     zresult = lib.ZSTD_frameHeaderSize(data_buffer, len(data_buffer))
@@ -2410,6 +2428,19 @@ def frame_header_size(data):
 
 
 def get_frame_parameters(data):
+    """
+    Parse a zstd frame header into frame parameters.
+
+    Depending on which fields are present in the frame and their values, the
+    length of the frame parameters varies. If insufficient bytes are passed
+    in to fully parse the frame parameters, ``ZstdError`` is raised. To ensure
+    frame parameters can be parsed, pass in at least 18 bytes.
+
+    :param data:
+       Data from which to read frame parameters.
+    :return:
+       :py:class:`FrameParameters`
+    """
     params = ffi.new("ZSTD_frameHeader *")
 
     data_buffer = ffi.from_buffer(data)
