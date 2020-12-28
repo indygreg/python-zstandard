@@ -95,31 +95,36 @@ def open(
     newline=None,
     closefd=None,
 ):
-    """Open a zstd compressed file.
+    """Create a file object with zstd (de)compression.
 
-    filename can be a filename (given as a str, bytes, or PathLike
-    object) or an existing file object. If the former, the file will
-    be opened via `builtins.open()` (the `open()` function in the
-    standard library).
+    The object returned from this function will be a
+    :py:class:`ZstdDecompressionReader` if opened for reading in binary mode,
+    a :py:class:`ZstdCompressionWriter` if opened for writing in binary mode,
+    or an ``io.TextIOWrapper`` if opened for reading or writing in text mode.
 
-    mode can be `rb` for reading (the default), `wb` for writing,
-    `xb` for creating exclusively, or `ab` for appending. The text mode
-    variants `r`, `wb`, `xb`, and `ab` are also accepted and if used will
-    result in an `io.TextIOWrapper` being installed.
-
-    cctx is a ZstdCompressor to use for compression. If not specified
-    and opened for writing, a default compressor will be used.
-
-    dctx is a ZstdDecompressor to use for decompression. If not specified
-    and opened for reading, a default decompressor will be used.
-
-    encoding, errors, and newline are used when operating in text mode
-    and are proxied to io.TextIOWrapper.
-
-    closefd specifies whether to close the passed file object when the
-    returned file object is closed. If a file is explicitly opened,
-    that handle is always closed when the returned file object is closed:
-    this argument only matters when filename is a file object.
+    :param filename:
+       ``bytes``, ``str``, or ``os.PathLike`` defining a file to open or a
+       file object (with a ``read()`` or ``write()`` method).
+    :param mode:
+       ``str`` File open mode. Accepts any of the open modes recognized by
+       ``open()``.
+    :param cctx:
+       ``ZstdCompressor`` to use for compression. If not specified and file
+       is opened for writing, the default ``ZstdCompressor`` will be used.
+    :param dctx:
+       ``ZstdDecompressor`` to use for decompression. If not specified and file
+       is opened for reading, the default ``ZstdDecompressor`` will be used.
+    :param encoding:
+        ``str`` that defines text encoding to use when file is opened in text
+        mode.
+    :param errors:
+       ``str`` defining text encoding error handling mode.
+    :param newline:
+       ``str`` defining newline to use in text mode.
+    :param closefd:
+       ``bool`` whether to close the file when the returned object is closed.
+        Only used if a file object is passed. If a filename is specified, the
+        opened file is always closed when the returned object is closed.
     """
     normalized_mode = mode.replace("t", "")
 

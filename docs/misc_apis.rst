@@ -30,39 +30,7 @@ estimate_decompression_context_size()
 open()
 ======
 
-Create a file object with zstandard (de)compression.
-
-This function accepts the following arguments:
-
-``filename``
-   ``bytes``, ``str``, or ``os.PathLike`` defining a file to open or a
-   file object (with a ``read()`` or ``write()`` method).
-
-``mode``
-   ``str`` File open mode. Accepts any of the open modes recognized by
-   ``open()``.
-
-``cctx``
-   ``ZstdCompressor`` to use for compression. If not specified and file
-   is opened for writing, the default ``ZstdCompressor`` will be used.
-
-``dctx``
-   ``ZstdDecompressor`` to use for decompression. If not specified and file
-   is opened for reading, the default ``ZstdDecompressor`` will be used.
-
-``encoding``, ``errors``, ``newline``
-   ``str`` that define text encoding/decoding settings when the file is
-   opened in text mode.
-
-``closefd``
-   ``bool`` whether to close the file when the returned object is closed.
-    Only used if a file object is passed. If a filename is specified, the
-    opened file is always closed when the returned object is closed.
-
-The object returned from this function will be a ``ZstdDecompressionReader``
-if opened for reading in binary mode, a ``ZstdCompressionWriter`` if opened
-for writing in binary mode, or an ``io.TextIOWrapper`` if opened for reading
-or writing in text mode.
+.. autofunction:: zstandard.open
 
 Constants
 =========
