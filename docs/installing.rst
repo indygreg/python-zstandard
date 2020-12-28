@@ -40,6 +40,10 @@ distribution doesn't support compiled extensions using the Python C API -
 this is the case for PyPy for example), be sure you have the ``cffi``
 package installed.
 
+One way to do this is to depend on the ``zstandard[cffi]`` dependency.
+e.g. ``pip install 'zstandard[cffi]'`` or add ``zstandard[cffi]`` to your
+pip requirements file.
+
 Legacy Format Support
 =====================
 
