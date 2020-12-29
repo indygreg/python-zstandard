@@ -264,6 +264,7 @@ typedef struct {
     PyObject *writer;
     size_t outSize;
     int entered;
+    int closing;
     int closed;
     int writeReturnRead;
     int closefd;

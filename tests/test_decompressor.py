@@ -1093,7 +1093,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertTrue(buffer.closed)
-        self.assertEqual(buffer._flush_count, 1)
+        self.assertEqual(buffer._flush_count, 0)
 
         # Context manager exit should close stream if an exception raised.
         buffer = CustomBytesIO()
@@ -1106,7 +1106,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertTrue(buffer.closed)
-        self.assertEqual(buffer._flush_count, 1)
+        self.assertEqual(buffer._flush_count, 0)
 
     def test_close_closefd_false(self):
         foo = zstd.ZstdCompressor().compress(b"foo")
@@ -1143,7 +1143,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertFalse(buffer.closed)
-        self.assertEqual(buffer._flush_count, 1)
+        self.assertEqual(buffer._flush_count, 0)
 
         # Context manager exit should close stream if an exception raised.
         buffer = CustomBytesIO()
@@ -1156,7 +1156,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertFalse(buffer.closed)
-        self.assertEqual(buffer._flush_count, 1)
+        self.assertEqual(buffer._flush_count, 0)
 
     def test_flush(self):
         buffer = CustomBytesIO()

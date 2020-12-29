@@ -130,7 +130,9 @@ static PyObject *ZstdDecompressionWriter_close(ZstdDecompressionWriter *self) {
         Py_RETURN_NONE;
     }
 
+    self->closing = 1;
     result = PyObject_CallMethod((PyObject *)self, "flush", NULL);
+    self->closing = 0;
     self->closed = 1;
 
     if (NULL == result) {
@@ -162,7 +164,7 @@ static PyObject *ZstdDecompressionWriter_flush(ZstdDecompressionWriter *self) {
         return NULL;
     }
 
-    if (PyObject_HasAttrString(self->writer, "flush")) {
+    if (!self->closing && PyObject_HasAttrString(self->writer, "flush")) {
         return PyObject_CallMethod(self->writer, "flush", NULL);
     }
     else {

@@ -561,6 +561,7 @@ Decompressor_stream_writer(ZstdDecompressor *self, PyObject *args,
     }
 
     result->entered = 0;
+    result->closing = 0;
     result->closed = 0;
 
     result->decompressor = self;

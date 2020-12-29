@@ -164,6 +164,9 @@ Backwards Compatibility Notes
 * ``ZstdCompressionWriter.flush()`` now calls ``flush()`` on the inner stream
   if such a method exists. However, when ``close()`` itself calls
   ``self.flush()``, ``flush()`` is not called on the inner stream.
+* ``ZstdDecompressionWriter.close()`` no longer calls ``flush()`` on
+  the inner stream. However, ``ZstdDecompressionWriter.flush()`` still
+  calls ``flush()`` on the inner stream.
 
 Bug Fixes
 ---------

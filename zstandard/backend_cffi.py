@@ -3457,6 +3457,7 @@ class ZstdDecompressionWriter(object):
         self._write_return_read = bool(write_return_read)
         self._closefd = bool(closefd)
         self._entered = False
+        self._closing = False
         self._closed = False
 
     def __enter__(self):
@@ -3484,8 +3485,10 @@ class ZstdDecompressionWriter(object):
             return
 
         try:
+            self._closing = True
             self.flush()
         finally:
+            self._closing = False
             self._closed = True
 
         f = getattr(self._writer, "close", None)
@@ -3508,7 +3511,7 @@ class ZstdDecompressionWriter(object):
             raise ValueError("stream is closed")
 
         f = getattr(self._writer, "flush", None)
-        if f:
+        if f and not self._closing:
             return f()
 
     def isatty(self):
