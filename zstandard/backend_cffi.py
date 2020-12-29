@@ -753,6 +753,7 @@ class ZstdCompressionWriter(object):
         self._write_return_read = bool(write_return_read)
         self._closefd = bool(closefd)
         self._entered = False
+        self._closing = False
         self._closed = False
         self._bytes_compressed = 0
 
@@ -800,8 +801,10 @@ class ZstdCompressionWriter(object):
             return
 
         try:
+            self._closing = True
             self.flush(FLUSH_FRAME)
         finally:
+            self._closing = False
             self._closed = True
 
         # Call close() on underlying stream as well.
@@ -897,6 +900,9 @@ class ZstdCompressionWriter(object):
         Calling this method may result in 0 or more ``write()`` calls to the
         inner stream.
 
+        This method will also call ``flush()`` on the inner stream, if such a
+        method exists.
+
         :param flush_mode:
            How to flush the zstd compressor.
 
@@ -949,6 +955,10 @@ class ZstdCompressionWriter(object):
 
             if not zresult:
                 break
+
+        f = getattr(self._writer, "flush", None)
+        if f and not self._closing:
+            f()
 
         return total_write
 

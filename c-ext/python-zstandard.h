@@ -120,6 +120,7 @@ typedef struct {
     ZSTD_outBuffer output;
     size_t outSize;
     int entered;
+    int closing;
     int closed;
     int writeReturnRead;
     int closefd;

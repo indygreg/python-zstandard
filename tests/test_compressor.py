@@ -1429,17 +1429,17 @@ class TestCompressor_stream_writer(unittest.TestCase):
             self.assertEqual(compressor.write(b"foo"), 0)
             self.assertEqual(dest._write_count, 0)
             self.assertEqual(compressor.flush(), 12)
-            self.assertEqual(dest._flush_count, 0)
+            self.assertEqual(dest._flush_count, 1)
             self.assertEqual(dest._write_count, 1)
             self.assertEqual(compressor.write(b"bar"), 0)
             self.assertEqual(dest._write_count, 1)
             self.assertEqual(compressor.flush(), 6)
-            self.assertEqual(dest._flush_count, 0)
+            self.assertEqual(dest._flush_count, 2)
             self.assertEqual(dest._write_count, 2)
             self.assertEqual(compressor.write(b"baz"), 0)
 
         self.assertEqual(dest._write_count, 3)
-        self.assertEqual(dest._flush_count, 0)
+        self.assertEqual(dest._flush_count, 2)
 
     def test_flush_empty_block(self):
         cctx = zstd.ZstdCompressor(level=3, write_checksum=True)
@@ -1449,14 +1449,14 @@ class TestCompressor_stream_writer(unittest.TestCase):
             count = dest._write_count
             offset = dest.tell()
             self.assertEqual(compressor.flush(), 23)
-            self.assertEqual(dest._flush_count, 0)
+            self.assertEqual(dest._flush_count, 1)
             self.assertGreater(dest._write_count, count)
             self.assertGreater(dest.tell(), offset)
             offset = dest.tell()
             # Ending the write here should cause an empty block to be written
             # to denote end of frame.
 
-        self.assertEqual(dest._flush_count, 0)
+        self.assertEqual(dest._flush_count, 1)
 
         trailing = dest.getvalue()[offset:]
         # 3 bytes block header + 4 bytes frame checksum
@@ -1472,10 +1472,10 @@ class TestCompressor_stream_writer(unittest.TestCase):
         with cctx.stream_writer(dest, closefd=False) as compressor:
             self.assertEqual(compressor.write(b"foobar" * 8192), 0)
             self.assertEqual(compressor.flush(zstd.FLUSH_FRAME), 23)
-            self.assertEqual(dest._flush_count, 0)
+            self.assertEqual(dest._flush_count, 1)
             compressor.write(b"biz" * 16384)
 
-        self.assertEqual(dest._flush_count, 0)
+        self.assertEqual(dest._flush_count, 1)
 
         self.assertEqual(
             dest.getvalue(),

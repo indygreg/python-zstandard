@@ -197,6 +197,14 @@ static PyObject *ZstdCompressionWriter_flush(ZstdCompressionWriter *self,
         }
     }
 
+    if (!self->closing && PyObject_HasAttrString(self->writer, "flush")) {
+        res = PyObject_CallMethod(self->writer, "flush", NULL);
+        if (NULL == res) {
+            return NULL;
+        }
+        Py_XDECREF(res);
+    }
+
     return PyLong_FromSsize_t(totalWrite);
 }
 
@@ -207,7 +215,9 @@ static PyObject *ZstdCompressionWriter_close(ZstdCompressionWriter *self) {
         Py_RETURN_NONE;
     }
 
+    self->closing = 1;
     result = PyObject_CallMethod((PyObject *)self, "flush", "I", 1);
+    self->closing = 0;
     self->closed = 1;
 
     if (NULL == result) {

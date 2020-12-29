@@ -161,6 +161,9 @@ Backwards Compatibility Notes
 * The ``CFFI`` backend now exposes the types ``BufferSegment``,
   ``BufferSegments``, ``BufferWithSegments``, and
   ``BufferWithSegmentsCollection``. However, they are not implemented.
+* ``ZstdCompressionWriter.flush()`` now calls ``flush()`` on the inner stream
+  if such a method exists. However, when ``close()`` itself calls
+  ``self.flush()``, ``flush()`` is not called on the inner stream.
 
 Bug Fixes
 ---------

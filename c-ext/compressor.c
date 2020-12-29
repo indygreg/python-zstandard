@@ -698,6 +698,7 @@ static ZstdCompressionWriter *ZstdCompressor_stream_writer(ZstdCompressor *self,
     }
 
     result->entered = 0;
+    result->closing = 0;
     result->closed = 0;
 
     result->output.dst = PyMem_Malloc(outSize);
