@@ -16,7 +16,7 @@ mod frame_parameters;
 
 use exceptions::ZstdError;
 
-const VERSION: &'static str = "0.15.0.dev0";
+const VERSION: &'static str = "0.15.0";
 
 py_module_initializer!(backend_rust, |py, m| { init_module(py, m) });
 

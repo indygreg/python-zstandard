@@ -25,7 +25,7 @@
 #endif
 
 /* Remember to change the string in zstandard/__init__ as well */
-#define PYTHON_ZSTANDARD_VERSION "0.15.0.dev0"
+#define PYTHON_ZSTANDARD_VERSION "0.15.0"
 
 typedef enum {
     compressorobj_flush_finish,
