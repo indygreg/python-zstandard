@@ -229,6 +229,9 @@ Changes
   defined via Python docstrings instead of spread across Sphinx ReST
   files and source code.
 * ``ZstdCompressionParameters`` now exposes a ``strategy`` property.
+* There are now ``compress()`` and ``decompress()`` convenience functions
+  on the ``zstandard`` module. These are simply wrappers around the
+  corresponding APIs on ``ZstdCompressor`` and ``ZstdDecompressor``.
 
 0.14.1 (released 2020-12-05)
 ============================

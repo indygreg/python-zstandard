@@ -18,6 +18,8 @@ import io
 import os
 import platform
 
+from typing import ByteString
+
 # Some Python implementations don't support C extensions. That's why we have
 # a CFFI implementation in the first place. The code here import one of our
 # "backends" then re-exports the symbols from this module. For convenience,
@@ -170,3 +172,39 @@ def open(
         )
     else:
         return fh
+
+
+def compress(data: ByteString, level: int = 3) -> bytes:
+    """Compress source data using the zstd compression format.
+
+    This performs one-shot compression using basic/default compression
+    settings.
+
+    This method is provided for convenience and is equivalent to calling
+    ``ZstdCompressor(level=level).compress(data)``.
+
+    If you find yourself calling this function in a tight loop,
+    performance will be greater if you construct a single ``ZstdCompressor``
+    and repeatedly call ``compress()`` on it.
+    """
+    cctx = ZstdCompressor(level=level)
+
+    return cctx.compress(data)
+
+
+def decompress(data: ByteString, max_output_size: int = 0) -> bytes:
+    """Decompress a zstd frame into its original data.
+
+    This performs one-shot decompression using basic/default compression
+    settings.
+
+    This method is provided for convenience and is equivalent to calling
+    ``ZstdDecompressor().decompress(data, max_output_size=max_output_size)``.
+
+    If you find yourself calling this function in a tight loop, performance
+    will be greater if you construct a single ``ZstdDecompressor`` and
+    repeatedly call ``decompress()`` on it.
+    """
+    dctx = ZstdDecompressor()
+
+    return dctx.decompress(data, max_output_size=max_output_size)

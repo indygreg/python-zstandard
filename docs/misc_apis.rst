@@ -22,15 +22,25 @@ https://github.com/facebook/zstd/blob/master/doc/zstd_compression_format.md.
    :members:
    :undoc-members:
 
-estimate_decompression_context_size()
-=====================================
+``estimate_decompression_context_size()``
+=========================================
 
 .. autofunction:: zstandard.estimate_decompression_context_size
 
-open()
-======
+``open()``
+==========
 
 .. autofunction:: zstandard.open
+
+``compress()``
+==============
+
+.. autofunction:: zstandard.compress
+
+``decompress()``
+================
+
+.. autofunction:: zstandard.decompress
 
 Constants
 =========
