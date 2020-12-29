@@ -130,7 +130,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
                              "search_log",
                              "min_match",
                              "target_length",
-                             "compression_strategy",
                              "strategy",
                              "write_content_size",
                              "write_checksum",
@@ -154,7 +153,6 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     int searchLog = 0;
     int minMatch = 0;
     int targetLength = 0;
-    int compressionStrategy = -1;
     int strategy = -1;
     int contentSizeFlag = 1;
     int checksumFlag = 0;
@@ -170,12 +168,12 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     int threads = 0;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, "|iiiiiiiiiiiiiiiiiiiiii:ZstdCompressionParameters",
+            args, kwargs, "|iiiiiiiiiiiiiiiiiiiii:ZstdCompressionParameters",
             kwlist, &format, &compressionLevel, &windowLog, &hashLog, &chainLog,
-            &searchLog, &minMatch, &targetLength, &compressionStrategy,
-            &strategy, &contentSizeFlag, &checksumFlag, &dictIDFlag, &jobSize,
-            &overlapLog, &forceMaxWindow, &enableLDM, &ldmHashLog, &ldmMinMatch,
-            &ldmBucketSizeLog, &ldmHashRateLog, &threads)) {
+            &searchLog, &minMatch, &targetLength, &strategy, &contentSizeFlag,
+            &checksumFlag, &dictIDFlag, &jobSize, &overlapLog, &forceMaxWindow,
+            &enableLDM, &ldmHashLog, &ldmMinMatch, &ldmBucketSizeLog,
+            &ldmHashRateLog, &threads)) {
         return -1;
     }
 
@@ -201,17 +199,7 @@ static int ZstdCompressionParameters_init(ZstdCompressionParametersObject *self,
     TRY_SET_PARAMETER(self->params, ZSTD_c_minMatch, minMatch);
     TRY_SET_PARAMETER(self->params, ZSTD_c_targetLength, targetLength);
 
-    if (compressionStrategy != -1 && strategy != -1) {
-        PyErr_SetString(
-            PyExc_ValueError,
-            "cannot specify both compression_strategy and strategy");
-        return -1;
-    }
-
-    if (compressionStrategy != -1) {
-        strategy = compressionStrategy;
-    }
-    else if (strategy == -1) {
+    if (strategy == -1) {
         strategy = 0;
     }
 
@@ -352,13 +340,13 @@ CompressionParameters_from_level(PyObject *undef, PyObject *args,
         Py_DECREF(val);
     }
 
-    val = PyDict_GetItemString(kwargs, "compression_strategy");
+    val = PyDict_GetItemString(kwargs, "strategy");
     if (!val) {
         val = PyLong_FromUnsignedLong(params.strategy);
         if (!val) {
             goto cleanup;
         }
-        PyDict_SetItemString(kwargs, "compression_strategy", val);
+        PyDict_SetItemString(kwargs, "strategy", val);
         Py_DECREF(val);
     }
 
@@ -432,7 +420,7 @@ PARAM_GETTER(chain_log, ZSTD_c_chainLog)
 PARAM_GETTER(search_log, ZSTD_c_searchLog)
 PARAM_GETTER(min_match, ZSTD_c_minMatch)
 PARAM_GETTER(target_length, ZSTD_c_targetLength)
-PARAM_GETTER(compression_strategy, ZSTD_c_strategy)
+PARAM_GETTER(strategy, ZSTD_c_strategy)
 PARAM_GETTER(write_content_size, ZSTD_c_contentSizeFlag)
 PARAM_GETTER(write_checksum, ZSTD_c_checksumFlag)
 PARAM_GETTER(write_dict_id, ZSTD_c_dictIDFlag)
@@ -466,7 +454,7 @@ static PyGetSetDef ZstdCompressionParameters_getset[] = {
     GET_SET_ENTRY(search_log),
     GET_SET_ENTRY(min_match),
     GET_SET_ENTRY(target_length),
-    GET_SET_ENTRY(compression_strategy),
+    GET_SET_ENTRY(strategy),
     GET_SET_ENTRY(write_content_size),
     GET_SET_ENTRY(write_checksum),
     GET_SET_ENTRY(write_dict_id),

@@ -253,7 +253,7 @@ py_class!(pub class ZstdCompressionParameters |py| {
         self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_targetLength)
     }
 
-    @property def compression_strategy(&self) -> PyResult<PyObject> {
+    @property def strategy(&self) -> PyResult<PyObject> {
         self.get_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_strategy)
     }
 
@@ -376,10 +376,10 @@ impl ZstdCompressionParameters {
         if !kwargs.contains(py, "target_length")? {
             kwargs.set_item(py, "target_length", compression_params.targetLength)?;
         }
-        if !kwargs.contains(py, "compression_strategy")? {
+        if !kwargs.contains(py, "strategy")? {
             kwargs.set_item(
                 py,
-                "compression_strategy",
+                "strategy",
                 compression_params.strategy as u32,
             )?;
         }
@@ -455,7 +455,6 @@ impl ZstdCompressionParameters {
         let mut search_log = 0;
         let mut min_match = 0;
         let mut target_length = 0;
-        let mut compression_strategy = -1;
         let mut strategy = -1;
         let mut write_content_size = 1;
         let mut write_checksum = 0;
@@ -482,7 +481,6 @@ impl ZstdCompressionParameters {
                 "search_log" => search_log = value.extract::<_>(py)?,
                 "min_match" => min_match = value.extract::<_>(py)?,
                 "target_length" => target_length = value.extract::<_>(py)?,
-                "compression_strategy" => compression_strategy = value.extract::<_>(py)?,
                 "strategy" => strategy = value.extract::<_>(py)?,
                 "write_content_size" => write_content_size = value.extract::<_>(py)?,
                 "write_checksum" => write_checksum = value.extract::<_>(py)?,
@@ -534,16 +532,7 @@ impl ZstdCompressionParameters {
             target_length,
         )?;
 
-        if compression_strategy != -1 && strategy != -1 {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
-                "cannot specify both compression_strategy and strategy",
-            ));
-        }
-
-        if compression_strategy != -1 {
-            strategy = compression_strategy;
-        } else if strategy == -1 {
+        if strategy == -1 {
             strategy = 0;
         }
 

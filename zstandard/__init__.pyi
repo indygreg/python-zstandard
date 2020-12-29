@@ -125,7 +125,6 @@ class ZstdCompressionParameters(object):
         min_match: int = 0,
         target_length: int = 0,
         strategy: int = -1,
-        compression_strategy: int = -1,
         write_content_size: int = 1,
         write_checksum: int = 0,
         write_dict_id: int = 0,
@@ -156,7 +155,7 @@ class ZstdCompressionParameters(object):
     @property
     def target_length(self) -> int: ...
     @property
-    def compression_strategy(self) -> int: ...
+    def strategy(self) -> int: ...
     @property
     def write_content_size(self) -> int: ...
     @property

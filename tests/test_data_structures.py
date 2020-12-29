@@ -50,7 +50,7 @@ class TestCompressionParameters(unittest.TestCase):
         self.assertEqual(p.search_log, 4)
         self.assertEqual(p.min_match, 5)
         self.assertEqual(p.target_length, 8)
-        self.assertEqual(p.compression_strategy, 1)
+        self.assertEqual(p.strategy, 1)
 
         p = zstd.ZstdCompressionParameters(compression_level=2)
         self.assertEqual(p.compression_level, 2)
@@ -106,16 +106,11 @@ class TestCompressionParameters(unittest.TestCase):
         )
 
     def test_strategy(self):
-        with self.assertRaisesRegex(
-            ValueError, "cannot specify both compression_strategy"
-        ):
-            zstd.ZstdCompressionParameters(strategy=0, compression_strategy=0)
-
         p = zstd.ZstdCompressionParameters(strategy=2)
-        self.assertEqual(p.compression_strategy, 2)
+        self.assertEqual(p.strategy, 2)
 
         p = zstd.ZstdCompressionParameters(strategy=3)
-        self.assertEqual(p.compression_strategy, 3)
+        self.assertEqual(p.strategy, 3)
 
     def test_ldm_hash_rate_log(self):
         p = zstd.ZstdCompressionParameters(ldm_hash_rate_log=8)

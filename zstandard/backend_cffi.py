@@ -313,7 +313,7 @@ def _make_cctx_params(params):
         (lib.ZSTD_c_searchLog, params.search_log),
         (lib.ZSTD_c_minMatch, params.min_match),
         (lib.ZSTD_c_targetLength, params.target_length),
-        (lib.ZSTD_c_strategy, params.compression_strategy),
+        (lib.ZSTD_c_strategy, params.strategy),
         (lib.ZSTD_c_contentSizeFlag, params.write_content_size),
         (lib.ZSTD_c_checksumFlag, params.write_checksum),
         (lib.ZSTD_c_dictIDFlag, params.write_dict_id),
@@ -393,7 +393,7 @@ class ZstdCompressionParameters(object):
             "search_log": "searchLog",
             "min_match": "minMatch",
             "target_length": "targetLength",
-            "compression_strategy": "strategy",
+            "strategy": "strategy",
         }
 
         for arg, attr in args.items():
@@ -413,7 +413,6 @@ class ZstdCompressionParameters(object):
         min_match=0,
         target_length=0,
         strategy=-1,
-        compression_strategy=-1,
         write_content_size=1,
         write_checksum=0,
         write_dict_id=0,
@@ -456,14 +455,7 @@ class ZstdCompressionParameters(object):
             params, lib.ZSTD_c_targetLength, target_length
         )
 
-        if strategy != -1 and compression_strategy != -1:
-            raise ValueError(
-                "cannot specify both compression_strategy and strategy"
-            )
-
-        if compression_strategy != -1:
-            strategy = compression_strategy
-        elif strategy == -1:
+        if strategy == -1:
             strategy = 0
 
         _set_compression_parameter(params, lib.ZSTD_c_strategy, strategy)
@@ -536,7 +528,7 @@ class ZstdCompressionParameters(object):
         return _get_compression_parameter(self._params, lib.ZSTD_c_targetLength)
 
     @property
-    def compression_strategy(self):
+    def strategy(self):
         return _get_compression_parameter(self._params, lib.ZSTD_c_strategy)
 
     @property
@@ -2714,7 +2706,7 @@ class ZstdCompressionDict(object):
             cparams.hashLog = compression_params.hash_log
             cparams.minMatch = compression_params.min_match
             cparams.searchLog = compression_params.search_log
-            cparams.strategy = compression_params.compression_strategy
+            cparams.strategy = compression_params.strategy
             cparams.targetLength = compression_params.target_length
             cparams.windowLog = compression_params.window_log
 

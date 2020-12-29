@@ -172,6 +172,9 @@ Backwards Compatibility Notes
   This brings the behavior of ``write()`` in compliance with the
   ``io.RawIOBase`` interface by default. The argument may be removed
   in a future release.
+* ``ZstdCompressionParameters`` no longer exposes a ``compression_strategy``
+  property. Its constructor no longer accepts a ``compression_strategy``
+  argument. Use the ``strategy`` property/argument instead.
 
 Bug Fixes
 ---------
@@ -231,6 +234,7 @@ Changes
   via the CFFI backend. Documentation for Python APIs is now fully
   defined via Python docstrings instead of spread across Sphinx ReST
   files and source code.
+* ``ZstdCompressionParameters`` now exposes a ``strategy`` property.
 
 0.14.1 (released 2020-12-05)
 ============================
