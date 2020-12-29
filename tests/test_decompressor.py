@@ -1085,18 +1085,18 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertEqual(buffer.getvalue(), b"foo")
 
         # Context manager exit should close stream.
-        buffer = NonClosingBytesIO()
+        buffer = CustomBytesIO()
         writer = dctx.stream_writer(buffer)
 
         with writer:
             writer.write(foo)
 
         self.assertTrue(writer.closed)
-        self.assertEqual(buffer.getvalue(), b"foo")
         self.assertTrue(buffer.closed)
+        self.assertEqual(buffer._flush_count, 1)
 
         # Context manager exit should close stream if an exception raised.
-        buffer = io.BytesIO()
+        buffer = CustomBytesIO()
         writer = dctx.stream_writer(buffer)
 
         with self.assertRaisesRegex(Exception, "ignore"):
@@ -1106,6 +1106,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertTrue(buffer.closed)
+        self.assertEqual(buffer._flush_count, 1)
 
     def test_close_closefd_false(self):
         foo = zstd.ZstdCompressor().compress(b"foo")
@@ -1134,18 +1135,18 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         self.assertEqual(buffer.getvalue(), b"foo")
 
         # Context manager exit should close stream.
-        buffer = NonClosingBytesIO()
+        buffer = CustomBytesIO()
         writer = dctx.stream_writer(buffer, closefd=False)
 
         with writer:
             writer.write(foo)
 
         self.assertTrue(writer.closed)
-        self.assertEqual(buffer.getvalue(), b"foo")
         self.assertFalse(buffer.closed)
+        self.assertEqual(buffer._flush_count, 1)
 
         # Context manager exit should close stream if an exception raised.
-        buffer = io.BytesIO()
+        buffer = CustomBytesIO()
         writer = dctx.stream_writer(buffer, closefd=False)
 
         with self.assertRaisesRegex(Exception, "ignore"):
@@ -1155,6 +1156,7 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         self.assertTrue(writer.closed)
         self.assertFalse(buffer.closed)
+        self.assertEqual(buffer._flush_count, 1)
 
     def test_flush(self):
         buffer = CustomBytesIO()
