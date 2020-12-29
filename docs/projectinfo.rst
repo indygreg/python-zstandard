@@ -29,9 +29,17 @@ Comparison to Other Python Bindings
 
 https://pypi.python.org/pypi/zstd is an alternate Python binding to
 Zstandard. At the time this was written, the latest release of that
-package (1.1.2) only exposed the simple APIs for compression and decompression.
+package (1.4.8) only exposed the simple APIs for compression and decompression.
 This package exposes much more of the zstd API, including streaming and
 dictionary compression. This package also has CFFI support.
+
+https://github.com/animalize/pyzstd is an alternate Python binding to
+Zstandard. At the time this was written, the latest release of that
+package (0.14.1) exposed a fraction of the functionality in this
+package. There may be some minor features in ``pyzstd`` not found in
+this package. But those features could be added easily if someone made
+a feature request. Also, ``pyzstd`` lacks CFFI support, so it won't run
+on PyPy.
 
 Performance
 ===========
