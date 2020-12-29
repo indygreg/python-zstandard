@@ -12,12 +12,6 @@ Actions Blocking Release
 
 * Properly handle non-blocking I/O and partial writes for objects implementing
   ``io.RawIOBase``.
-* Make ``write_return_read=True`` the default for objects implementing
-  ``io.RawIOBase``.
-* Audit for consistent and proper behavior of ``flush()`` and ``close()`` for
-  all objects implementing ``io.RawIOBase``. Is calling ``close()`` on
-  wrapped stream acceptable, should ``__exit__`` always call ``close()``,
-  should ``close()`` imply ``flush()``, etc.
 * Consider making reads across frames configurable behavior.
 * Overall API design review.
 * Use Python allocator where possible.
