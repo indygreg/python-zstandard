@@ -167,6 +167,11 @@ Backwards Compatibility Notes
 * ``ZstdDecompressionWriter.close()`` no longer calls ``flush()`` on
   the inner stream. However, ``ZstdDecompressionWriter.flush()`` still
   calls ``flush()`` on the inner stream.
+* ``ZstdCompressor.stream_writer()`` and ``ZstdDecompressor.stream_writer()``
+  now have their ``write_return_read`` argument default to ``True``.
+  This brings the behavior of ``write()`` in compliance with the
+  ``io.RawIOBase`` interface by default. The argument may be removed
+  in a future release.
 
 Bug Fixes
 ---------

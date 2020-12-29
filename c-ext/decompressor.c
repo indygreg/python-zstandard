@@ -572,7 +572,7 @@ Decompressor_stream_writer(ZstdDecompressor *self, PyObject *args,
 
     result->outSize = outSize;
     result->writeReturnRead =
-        writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 0;
+        writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 1;
     result->closefd = closefd ? PyObject_IsTrue(closefd) : 1;
 
     return result;

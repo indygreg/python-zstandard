@@ -2208,7 +2208,7 @@ class ZstdCompressor(object):
         writer,
         size=-1,
         write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-        write_return_read=False,
+        write_return_read=True,
         closefd=True,
     ):
         """
@@ -3412,10 +3412,6 @@ class ZstdDecompressionWriter(object):
     >>> # Will call fh.write() with uncompressed data.
     >>> decompressor.write(compressed_data)
 
-    Calls to ``write()`` will return the number of bytes written to the output
-    object. Not all inputs will result in bytes being written, so return values
-    of ``0`` are possible.
-
     Instances can be used as context managers. However, context managers add no
     extra special behavior other than automatically calling ``close()`` when
     they exit.
@@ -3439,11 +3435,10 @@ class ZstdDecompressionWriter(object):
     >>>    byte_size = decompressor.memory_size()
 
     ``stream_writer()`` accepts a ``write_return_read`` boolean argument to control
-    the return value of ``write()``. When ``False`` (the default)``, ``write()``
-    returns the number of bytes that were ``write()``en to the underlying stream.
-    When ``True``, ``write()`` returns the number of bytes read from the input.
-    ``True`` is the *proper* behavior for ``write()`` as specified by the
-    ``io.RawIOBase`` interface and will become the default in a future release.
+    the return value of ``write()``. When ``True`` (the default)``, ``write()``
+    returns the number of bytes that were read from the input. When ``False``,
+    ``write()`` returns the number of bytes that were ``write()`` to the inner
+    stream.
     """
 
     def __init__(
@@ -3965,7 +3960,7 @@ class ZstdDecompressor(object):
         self,
         writer,
         write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-        write_return_read=False,
+        write_return_read=True,
         closefd=True,
     ):
         """

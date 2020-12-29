@@ -719,7 +719,7 @@ static ZstdCompressionWriter *ZstdCompressor_stream_writer(ZstdCompressor *self,
     result->outSize = outSize;
     result->bytesCompressed = 0;
     result->writeReturnRead =
-        writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 0;
+        writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 1;
     result->closefd = closefd ? PyObject_IsTrue(closefd) : 1;
 
     return result;

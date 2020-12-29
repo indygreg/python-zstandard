@@ -296,7 +296,7 @@ class ZstdCompressor(object):
         writer: IO[bytes],
         size: int = -1,
         write_size: int = -1,
-        write_return_read: bool = None,
+        write_return_read: bool = True,
         *,
         closefd: bool = True,
     ) -> ZstdCompressionWriter: ...
@@ -401,7 +401,7 @@ class ZstdDecompressor(object):
         self,
         writer: IO[bytes],
         write_size: int = 0,
-        write_return_read: bool = False,
+        write_return_read: bool = True,
         *,
         closefd: bool = True,
     ) -> ZstdDecompressionWriter: ...

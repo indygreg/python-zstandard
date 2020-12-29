@@ -1197,13 +1197,13 @@ class TestDecompressor_stream_writer(unittest.TestCase):
             buffer = io.BytesIO()
 
             with dctx.stream_writer(buffer, closefd=False) as decompressor:
-                self.assertEqual(decompressor.write(source), 3)
+                self.assertEqual(decompressor.write(source), len(source))
 
             self.assertEqual(buffer.getvalue(), b"foo")
 
             buffer = io.BytesIO()
-            writer = dctx.stream_writer(buffer, write_return_read=True)
-            self.assertEqual(writer.write(source), len(source))
+            writer = dctx.stream_writer(buffer, write_return_read=False)
+            self.assertEqual(writer.write(source), 3)
             self.assertEqual(buffer.getvalue(), b"foo")
 
     def test_large_roundtrip(self):
@@ -1236,14 +1236,18 @@ class TestDecompressor_stream_writer(unittest.TestCase):
                 pos += 8192
         self.assertEqual(buffer.getvalue(), orig)
 
-        # Again with write_return_read=True
+        # Again with write_return_read=False
         buffer = io.BytesIO()
-        writer = dctx.stream_writer(buffer, write_return_read=True)
+        writer = dctx.stream_writer(buffer, write_return_read=False)
         pos = 0
+        buffer_len = len(buffer.getvalue())
         while pos < len(compressed):
             pos2 = pos + 8192
             chunk = compressed[pos:pos2]
-            self.assertEqual(writer.write(chunk), len(chunk))
+            self.assertEqual(
+                writer.write(chunk), len(buffer.getvalue()) - buffer_len
+            )
+            buffer_len = len(buffer.getvalue())
             pos += 8192
         self.assertEqual(buffer.getvalue(), orig)
 
@@ -1260,20 +1264,20 @@ class TestDecompressor_stream_writer(unittest.TestCase):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(dict_data=d)
         with cctx.stream_writer(buffer, closefd=False) as compressor:
-            self.assertEqual(compressor.write(orig), 1351)
+            self.assertEqual(compressor.write(orig), len(orig))
 
         compressed = buffer.getvalue()
         buffer = io.BytesIO()
 
         dctx = zstd.ZstdDecompressor(dict_data=d)
         decompressor = dctx.stream_writer(buffer)
-        self.assertEqual(decompressor.write(compressed), len(orig))
+        self.assertEqual(decompressor.write(compressed), len(compressed))
         self.assertEqual(buffer.getvalue(), orig)
 
         buffer = io.BytesIO()
 
         with dctx.stream_writer(buffer, closefd=False) as decompressor:
-            self.assertEqual(decompressor.write(compressed), len(orig))
+            self.assertEqual(decompressor.write(compressed), len(compressed))
 
         self.assertEqual(buffer.getvalue(), orig)
 

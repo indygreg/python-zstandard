@@ -1179,8 +1179,8 @@ class TestCompressor_stream_writer(unittest.TestCase):
         self.assertEqual(params.dict_id, 0)
         self.assertFalse(params.has_checksum)
 
-        # Test write_return_read=True
-        compressor = cctx.stream_writer(buffer, write_return_read=True)
+        # Test write_return_read=False
+        compressor = cctx.stream_writer(buffer, write_return_read=False)
         self.assertEqual(compressor.write(b""), 0)
 
     def test_input_types(self):
@@ -1203,16 +1203,16 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
             self.assertEqual(buffer.getvalue(), expected)
 
-            compressor = cctx.stream_writer(buffer, write_return_read=True)
-            self.assertEqual(compressor.write(source), len(source))
+            compressor = cctx.stream_writer(buffer, write_return_read=False)
+            self.assertEqual(compressor.write(source), 0)
 
     def test_multiple_compress(self):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=5)
         with cctx.stream_writer(buffer, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foo"), 0)
-            self.assertEqual(compressor.write(b"bar"), 0)
-            self.assertEqual(compressor.write(b"x" * 8192), 0)
+            self.assertEqual(compressor.write(b"foo"), 3)
+            self.assertEqual(compressor.write(b"bar"), 3)
+            self.assertEqual(compressor.write(b"x" * 8192), 8192)
 
         result = buffer.getvalue()
         self.assertEqual(
@@ -1224,9 +1224,9 @@ class TestCompressor_stream_writer(unittest.TestCase):
         # Test without context manager.
         buffer = io.BytesIO()
         compressor = cctx.stream_writer(buffer)
-        self.assertEqual(compressor.write(b"foo"), 0)
-        self.assertEqual(compressor.write(b"bar"), 0)
-        self.assertEqual(compressor.write(b"x" * 8192), 0)
+        self.assertEqual(compressor.write(b"foo"), 3)
+        self.assertEqual(compressor.write(b"bar"), 3)
+        self.assertEqual(compressor.write(b"x" * 8192), 8192)
         self.assertEqual(compressor.flush(zstd.FLUSH_FRAME), 23)
         result = buffer.getvalue()
         self.assertEqual(
@@ -1235,11 +1235,11 @@ class TestCompressor_stream_writer(unittest.TestCase):
             b"\x6f\x62\x61\x72\x78\x01\x00\xfc\xdf\x03\x23",
         )
 
-        # Test with write_return_read=True.
-        compressor = cctx.stream_writer(buffer, write_return_read=True)
-        self.assertEqual(compressor.write(b"foo"), 3)
-        self.assertEqual(compressor.write(b"barbiz"), 6)
-        self.assertEqual(compressor.write(b"x" * 8192), 8192)
+        # Test with write_return_read=False.
+        compressor = cctx.stream_writer(buffer, write_return_read=False)
+        self.assertEqual(compressor.write(b"foo"), 0)
+        self.assertEqual(compressor.write(b"barbiz"), 0)
+        self.assertEqual(compressor.write(b"x" * 8192), 0)
 
     def test_dictionary(self):
         samples = []
@@ -1256,9 +1256,9 @@ class TestCompressor_stream_writer(unittest.TestCase):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=9, dict_data=d)
         with cctx.stream_writer(buffer, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foo"), 0)
-            self.assertEqual(compressor.write(b"bar"), 0)
-            self.assertEqual(compressor.write(b"foo" * 16384), 561)
+            self.assertEqual(compressor.write(b"foo"), 3)
+            self.assertEqual(compressor.write(b"bar"), 3)
+            self.assertEqual(compressor.write(b"foo" * 16384), 3 * 16384)
 
         compressed = buffer.getvalue()
 
@@ -1293,9 +1293,9 @@ class TestCompressor_stream_writer(unittest.TestCase):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(compression_params=params)
         with cctx.stream_writer(buffer, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foo"), 0)
-            self.assertEqual(compressor.write(b"bar"), 0)
-            self.assertEqual(compressor.write(b"foobar" * 16384), 0)
+            self.assertEqual(compressor.write(b"foo"), 3)
+            self.assertEqual(compressor.write(b"bar"), 3)
+            self.assertEqual(compressor.write(b"foobar" * 16384), 6 * 16384)
 
         compressed = buffer.getvalue()
 
@@ -1312,12 +1312,12 @@ class TestCompressor_stream_writer(unittest.TestCase):
         no_checksum = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1)
         with cctx.stream_writer(no_checksum, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobar"), 0)
+            self.assertEqual(compressor.write(b"foobar"), 6)
 
         with_checksum = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1, write_checksum=True)
         with cctx.stream_writer(with_checksum, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobar"), 0)
+            self.assertEqual(compressor.write(b"foobar"), 6)
 
         no_params = zstd.get_frame_parameters(no_checksum.getvalue())
         with_params = zstd.get_frame_parameters(with_checksum.getvalue())
@@ -1336,12 +1336,16 @@ class TestCompressor_stream_writer(unittest.TestCase):
         no_size = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
         with cctx.stream_writer(no_size, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobar" * 256), 0)
+            self.assertEqual(
+                compressor.write(b"foobar" * 256), len(b"foobar" * 256)
+            )
 
         with_size = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1)
         with cctx.stream_writer(with_size, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobar" * 256), 0)
+            self.assertEqual(
+                compressor.write(b"foobar" * 256), len(b"foobar" * 256)
+            )
 
         # Source size is not known in streaming mode, so header not
         # written.
@@ -1352,7 +1356,9 @@ class TestCompressor_stream_writer(unittest.TestCase):
         with cctx.stream_writer(
             with_size, size=len(b"foobar" * 256), closefd=False
         ) as compressor:
-            self.assertEqual(compressor.write(b"foobar" * 256), 0)
+            self.assertEqual(
+                compressor.write(b"foobar" * 256), len(b"foobar" * 256)
+            )
 
         no_params = zstd.get_frame_parameters(no_size.getvalue())
         with_params = zstd.get_frame_parameters(with_size.getvalue())
@@ -1377,14 +1383,14 @@ class TestCompressor_stream_writer(unittest.TestCase):
         with_dict_id = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=1, dict_data=d)
         with cctx.stream_writer(with_dict_id, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobarfoobar"), 0)
+            self.assertEqual(compressor.write(b"foobarfoobar"), 12)
 
         self.assertEqual(with_dict_id.getvalue()[4:5], b"\x03")
 
         cctx = zstd.ZstdCompressor(level=1, dict_data=d, write_dict_id=False)
         no_dict_id = io.BytesIO()
         with cctx.stream_writer(no_dict_id, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobarfoobar"), 0)
+            self.assertEqual(compressor.write(b"foobarfoobar"), 12)
 
         self.assertEqual(no_dict_id.getvalue()[4:5], b"\x00")
 
@@ -1416,9 +1422,9 @@ class TestCompressor_stream_writer(unittest.TestCase):
         with cctx.stream_writer(
             dest, write_size=1, closefd=False
         ) as compressor:
-            self.assertEqual(compressor.write(b"foo"), 0)
-            self.assertEqual(compressor.write(b"bar"), 0)
-            self.assertEqual(compressor.write(b"foobar"), 0)
+            self.assertEqual(compressor.write(b"foo"), 3)
+            self.assertEqual(compressor.write(b"bar"), 3)
+            self.assertEqual(compressor.write(b"foobar"), 6)
 
         self.assertEqual(len(dest.getvalue()), dest._write_count)
 
@@ -1426,17 +1432,17 @@ class TestCompressor_stream_writer(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=3)
         dest = CustomBytesIO()
         with cctx.stream_writer(dest, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foo"), 0)
+            self.assertEqual(compressor.write(b"foo"), 3)
             self.assertEqual(dest._write_count, 0)
             self.assertEqual(compressor.flush(), 12)
             self.assertEqual(dest._flush_count, 1)
             self.assertEqual(dest._write_count, 1)
-            self.assertEqual(compressor.write(b"bar"), 0)
+            self.assertEqual(compressor.write(b"bar"), 3)
             self.assertEqual(dest._write_count, 1)
             self.assertEqual(compressor.flush(), 6)
             self.assertEqual(dest._flush_count, 2)
             self.assertEqual(dest._write_count, 2)
-            self.assertEqual(compressor.write(b"baz"), 0)
+            self.assertEqual(compressor.write(b"baz"), 3)
 
         self.assertEqual(dest._write_count, 3)
         self.assertEqual(dest._flush_count, 2)
@@ -1445,7 +1451,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         cctx = zstd.ZstdCompressor(level=3, write_checksum=True)
         dest = CustomBytesIO()
         with cctx.stream_writer(dest, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobar" * 8192), 0)
+            self.assertEqual(compressor.write(b"foobar" * 8192), 6 * 8192)
             count = dest._write_count
             offset = dest.tell()
             self.assertEqual(compressor.flush(), 23)
@@ -1470,7 +1476,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         dest = CustomBytesIO()
 
         with cctx.stream_writer(dest, closefd=False) as compressor:
-            self.assertEqual(compressor.write(b"foobar" * 8192), 0)
+            self.assertEqual(compressor.write(b"foobar" * 8192), 6 * 8192)
             self.assertEqual(compressor.flush(zstd.FLUSH_FRAME), 23)
             self.assertEqual(dest._flush_count, 1)
             compressor.write(b"biz" * 16384)
