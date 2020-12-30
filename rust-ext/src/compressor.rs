@@ -12,7 +12,7 @@ use {
         ZstdError,
     },
     pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*, types::PyBytes},
-    std::{cell::RefCell, marker::PhantomData, sync::Arc},
+    std::{marker::PhantomData, sync::Arc},
 };
 
 pub struct CCtx<'a>(*mut zstd_sys::ZSTD_CCtx, PhantomData<&'a ()>);
@@ -165,14 +165,15 @@ impl<'a> CCtx<'a> {
     }
 }
 
-struct CompressorState<'params, 'cctx> {
+#[pyclass]
+struct ZstdCompressor {
     threads: i32,
     dict: Option<Py<ZstdCompressionDict>>,
-    params: CCtxParams<'params>,
-    cctx: Arc<CCtx<'cctx>>,
+    params: CCtxParams<'static>,
+    cctx: Arc<CCtx<'static>>,
 }
 
-impl<'params, 'cctx> CompressorState<'params, 'cctx> {
+impl ZstdCompressor {
     pub(crate) fn setup_cctx(&self, py: Python) -> PyResult<()> {
         self.cctx
             .set_parameters(&self.params)
@@ -184,11 +185,6 @@ impl<'params, 'cctx> CompressorState<'params, 'cctx> {
 
         Ok(())
     }
-}
-
-#[pyclass]
-struct ZstdCompressor {
-    state: RefCell<CompressorState<'static, 'static>>,
 }
 
 #[pymethods]
@@ -281,28 +277,24 @@ impl ZstdCompressor {
             }
         }
 
-        let state = CompressorState {
+        let compressor = ZstdCompressor {
             threads,
             dict: dict_data,
             params,
             cctx,
         };
 
-        state.setup_cctx(py)?;
+        compressor.setup_cctx(py)?;
 
-        Ok(ZstdCompressor {
-            state: RefCell::new(state),
-        })
+        Ok(compressor)
     }
 
     fn memory_size(&self) -> PyResult<usize> {
-        Ok(self.state.borrow().cctx.memory_size())
+        Ok(self.cctx.memory_size())
     }
 
     fn frame_progression(&self) -> PyResult<(usize, usize, usize)> {
-        let state = self.state.borrow();
-
-        let progression = state.cctx.get_frame_progression();
+        let progression = self.cctx.get_frame_progression();
 
         Ok((
             progression.ingested as usize,
@@ -312,12 +304,10 @@ impl ZstdCompressor {
     }
 
     fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<&'p PyBytes> {
-        let state = self.state.borrow();
-
         let source: &[u8] =
             unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const _, buffer.len_bytes()) };
 
-        let cctx = &state.cctx;
+        let cctx = &self.cctx;
 
         // TODO implement 0 copy via Py_SIZE().
         let data = py
@@ -329,9 +319,7 @@ impl ZstdCompressor {
 
     #[args(size = "None")]
     fn compressobj(&self, size: Option<u64>) -> PyResult<ZstdCompressionObj> {
-        let state = self.state.borrow();
-
-        state.cctx.reset();
+        self.cctx.reset();
 
         let size = if let Some(size) = size {
             size
@@ -339,14 +327,14 @@ impl ZstdCompressor {
             zstd_safe::CONTENTSIZE_UNKNOWN
         };
 
-        state.cctx.set_pledged_source_size(size).or_else(|msg| {
+        self.cctx.set_pledged_source_size(size).or_else(|msg| {
             Err(ZstdError::new_err(format!(
                 "error setting source size: {}",
                 msg
             )))
         })?;
 
-        ZstdCompressionObj::new(state.cctx.clone())
+        ZstdCompressionObj::new(self.cctx.clone())
     }
 
     #[args(
@@ -365,8 +353,6 @@ impl ZstdCompressor {
         read_size: Option<usize>,
         write_size: Option<usize>,
     ) -> PyResult<(usize, usize)> {
-        let state = self.state.borrow();
-
         let source_size = if let Some(source_size) = source_size {
             source_size
         } else {
@@ -387,9 +373,8 @@ impl ZstdCompressor {
             ));
         }
 
-        state.cctx.reset();
-        state
-            .cctx
+        self.cctx.reset();
+        self.cctx
             .set_pledged_source_size(source_size)
             .or_else(|msg| {
                 Err(ZstdError::new_err(format!(
@@ -418,7 +403,7 @@ impl ZstdCompressor {
             // Send data to compressor.
 
             let mut source = read_data;
-            let cctx = &state.cctx;
+            let cctx = &self.cctx;
 
             while !source.is_empty() {
                 let result = py
@@ -448,7 +433,7 @@ impl ZstdCompressor {
 
         // We've finished reading. Now flush the compressor stream.
         loop {
-            let result = state
+            let result = self
                 .cctx
                 .compress_chunk(&[], zstd_sys::ZSTD_EndDirective::ZSTD_e_end, write_size)
                 .or_else(|msg| {
