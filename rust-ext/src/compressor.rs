@@ -4,18 +4,16 @@
 // This software may be modified and distributed under the terms
 // of the BSD license. See the LICENSE file for details.
 
-use crate::compression_dict::ZstdCompressionDict;
-use crate::compression_parameters::{CCtxParams, ZstdCompressionParameters};
-use crate::compressionobj::ZstdCompressionObj;
-use crate::ZstdError;
-use cpython::buffer::PyBuffer;
-use cpython::exc::ValueError;
-use cpython::{
-    py_class, ObjectProtocol, PyBytes, PyErr, PyModule, PyObject, PyResult, Python, PythonObject,
+use {
+    crate::{
+        compression_dict::ZstdCompressionDict,
+        compression_parameters::{CCtxParams, ZstdCompressionParameters},
+        compressionobj::ZstdCompressionObj,
+        ZstdError,
+    },
+    pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*, types::PyBytes},
+    std::{cell::RefCell, marker::PhantomData, sync::Arc},
 };
-use std::cell::RefCell;
-use std::marker::PhantomData;
-use std::sync::Arc;
 
 pub struct CCtx<'a>(*mut zstd_sys::ZSTD_CCtx, PhantomData<&'a ()>);
 
@@ -169,7 +167,7 @@ impl<'a> CCtx<'a> {
 
 struct CompressorState<'params, 'cctx> {
     threads: i32,
-    dict: Option<ZstdCompressionDict>,
+    dict: Option<Py<ZstdCompressionDict>>,
     params: CCtxParams<'params>,
     cctx: Arc<CCtx<'cctx>>,
 }
@@ -178,88 +176,48 @@ impl<'params, 'cctx> CompressorState<'params, 'cctx> {
     pub(crate) fn setup_cctx(&self, py: Python) -> PyResult<()> {
         self.cctx
             .set_parameters(&self.params)
-            .or_else(|msg| Err(PyErr::new::<ZstdError, _>(py, msg)))?;
+            .or_else(|msg| Err(ZstdError::new_err(msg)))?;
 
         if let Some(dict) = &self.dict {
-            dict.load_into_cctx(py, self.cctx.0)?;
+            dict.borrow(py).load_into_cctx(self.cctx.0)?;
         }
 
         Ok(())
     }
 }
 
-py_class!(class ZstdCompressor |py| {
-    data state: RefCell<CompressorState<'static, 'static>>;
+#[pyclass]
+struct ZstdCompressor {
+    state: RefCell<CompressorState<'static, 'static>>,
+}
 
-    def __new__(
-        _cls,
-        level: i32 = 3,
-        dict_data: Option<ZstdCompressionDict> = None,
-        compression_params: Option<ZstdCompressionParameters> = None,
-        write_checksum: Option<bool> = None,
-        write_content_size: Option<bool> = None,
-        write_dict_id: Option<bool> = None,
-        threads: i32 = 0
-    ) -> PyResult<PyObject> {
-        ZstdCompressor::new_impl(
-            py,
-            level,
-            dict_data,
-            compression_params,
-            write_checksum,
-            write_content_size,
-            write_dict_id,
-            threads,
-        )
-    }
-
-    def memory_size(&self) -> PyResult<usize> {
-        Ok(self.state(py).borrow().cctx.memory_size())
-    }
-
-    def frame_progression(&self) -> PyResult<(usize, usize, usize)> {
-        self.frame_progression_impl(py)
-    }
-
-    def compress(&self, data: PyObject) -> PyResult<PyBytes> {
-        self.compress_impl(py, data)
-    }
-
-    def compressobj(&self, size: Option<u64> = None) -> PyResult<ZstdCompressionObj> {
-        self.compressobj_impl(py, size)
-    }
-
-    def copy_stream(
-        &self,
-        ifh: PyObject,
-        ofh: PyObject,
-        size: Option<u64> = None,
-        read_size: Option<usize> = None,
-        write_size: Option<usize> = None
-    ) -> PyResult<(usize, usize)> {
-        self.copy_stream_impl(py, ifh, ofh, size, read_size, write_size)
-    }
-});
-
+#[pymethods]
 impl ZstdCompressor {
-    fn new_impl(
+    #[new]
+    #[args(
+        level = "3",
+        dict_data = "None",
+        compression_params = "None",
+        write_checksum = "None",
+        write_content_size = "None",
+        write_dict_id = "None",
+        threads = "0"
+    )]
+    fn new(
         py: Python,
         level: i32,
-        dict_data: Option<ZstdCompressionDict>,
-        compression_params: Option<ZstdCompressionParameters>,
+        dict_data: Option<Py<ZstdCompressionDict>>,
+        compression_params: Option<Py<ZstdCompressionParameters>>,
         write_checksum: Option<bool>,
         write_content_size: Option<bool>,
         write_dict_id: Option<bool>,
         threads: i32,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<Self> {
         if level > zstd_safe::max_c_level() {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
-                format!(
-                    "level must be less than {}",
-                    zstd_safe::max_c_level() as i32 + 1
-                ),
-            ));
+            return Err(PyValueError::new_err(format!(
+                "level must be less than {}",
+                zstd_safe::max_c_level() as i32 + 1
+            )));
         }
 
         let threads = if threads < 0 {
@@ -268,31 +226,27 @@ impl ZstdCompressor {
             threads
         };
 
-        let cctx = Arc::new(CCtx::new().or_else(|msg| Err(PyErr::new::<ZstdError, _>(py, msg)))?);
-        let params = CCtxParams::create(py)?;
+        let cctx = Arc::new(CCtx::new().or_else(|msg| Err(PyErr::new::<ZstdError, _>(msg)))?);
+        let params = CCtxParams::create()?;
 
-        if let Some(ref compression_params) = compression_params {
+        if let Some(compression_params) = &compression_params {
             if write_checksum.is_some() {
-                return Err(PyErr::new::<ValueError, _>(
-                    py,
+                return Err(PyValueError::new_err(
                     "cannot define compression_params and write_checksum",
                 ));
             }
             if write_content_size.is_some() {
-                return Err(PyErr::new::<ValueError, _>(
-                    py,
+                return Err(PyValueError::new_err(
                     "cannot define compression_params and write_content_size",
                 ));
             }
             if write_dict_id.is_some() {
-                return Err(PyErr::new::<ValueError, _>(
-                    py,
+                return Err(PyValueError::new_err(
                     "cannot define compression_params and write_dict_id",
                 ));
             }
             if threads != 0 {
-                return Err(PyErr::new::<ValueError, _>(
-                    py,
+                return Err(PyValueError::new_err(
                     "cannot define compression_params and threads",
                 ));
             }
@@ -301,13 +255,8 @@ impl ZstdCompressor {
 
         // TODO set parameters from CompressionParameters
         } else {
+            params.set_parameter(zstd_sys::ZSTD_cParameter::ZSTD_c_compressionLevel, level)?;
             params.set_parameter(
-                py,
-                zstd_sys::ZSTD_cParameter::ZSTD_c_compressionLevel,
-                level,
-            )?;
-            params.set_parameter(
-                py,
                 zstd_sys::ZSTD_cParameter::ZSTD_c_contentSizeFlag,
                 if write_content_size.unwrap_or(true) {
                     1
@@ -316,7 +265,6 @@ impl ZstdCompressor {
                 },
             )?;
             params.set_parameter(
-                py,
                 zstd_sys::ZSTD_cParameter::ZSTD_c_checksumFlag,
                 if write_checksum.unwrap_or(false) {
                     1
@@ -325,12 +273,11 @@ impl ZstdCompressor {
                 },
             )?;
             params.set_parameter(
-                py,
                 zstd_sys::ZSTD_cParameter::ZSTD_c_dictIDFlag,
                 if write_dict_id.unwrap_or(true) { 1 } else { 0 },
             )?;
             if threads != 0 {
-                params.set_parameter(py, zstd_sys::ZSTD_cParameter::ZSTD_c_nbWorkers, threads)?;
+                params.set_parameter(zstd_sys::ZSTD_cParameter::ZSTD_c_nbWorkers, threads)?;
             }
         }
 
@@ -343,11 +290,17 @@ impl ZstdCompressor {
 
         state.setup_cctx(py)?;
 
-        Ok(ZstdCompressor::create_instance(py, RefCell::new(state))?.into_object())
+        Ok(ZstdCompressor {
+            state: RefCell::new(state),
+        })
     }
 
-    fn frame_progression_impl(&self, py: Python) -> PyResult<(usize, usize, usize)> {
-        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
+    fn memory_size(&self) -> PyResult<usize> {
+        Ok(self.state.borrow().cctx.memory_size())
+    }
+
+    fn frame_progression(&self) -> PyResult<(usize, usize, usize)> {
+        let state = self.state.borrow();
 
         let progression = state.cctx.get_frame_progression();
 
@@ -358,10 +311,8 @@ impl ZstdCompressor {
         ))
     }
 
-    fn compress_impl(&self, py: Python, data: PyObject) -> PyResult<PyBytes> {
-        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
-
-        let buffer = PyBuffer::get(py, &data)?;
+    fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<&'p PyBytes> {
+        let state = self.state.borrow();
 
         let source: &[u8] =
             unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const _, buffer.len_bytes()) };
@@ -369,18 +320,16 @@ impl ZstdCompressor {
         let cctx = &state.cctx;
 
         // TODO implement 0 copy via Py_SIZE().
-        let data = py.allow_threads(|| cctx.compress(source)).or_else(|msg| {
-            Err(ZstdError::from_message(
-                py,
-                format!("cannot compress: {}", msg).as_ref(),
-            ))
-        })?;
+        let data = py
+            .allow_threads(|| cctx.compress(source))
+            .or_else(|msg| Err(ZstdError::new_err(format!("cannot compress: {}", msg))))?;
 
         Ok(PyBytes::new(py, &data))
     }
 
-    fn compressobj_impl(&self, py: Python, size: Option<u64>) -> PyResult<ZstdCompressionObj> {
-        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
+    #[args(size = "None")]
+    fn compressobj(&self, size: Option<u64>) -> PyResult<ZstdCompressionObj> {
+        let state = self.state.borrow();
 
         state.cctx.reset();
 
@@ -391,25 +340,32 @@ impl ZstdCompressor {
         };
 
         state.cctx.set_pledged_source_size(size).or_else(|msg| {
-            Err(ZstdError::from_message(
-                py,
-                format!("error setting source size: {}", msg).as_ref(),
-            ))
+            Err(ZstdError::new_err(format!(
+                "error setting source size: {}",
+                msg
+            )))
         })?;
 
-        ZstdCompressionObj::new(py, state.cctx.clone())
+        ZstdCompressionObj::new(state.cctx.clone())
     }
 
-    fn copy_stream_impl(
+    #[args(
+        source,
+        dest,
+        source_size = "None",
+        read_size = "None",
+        write_size = "None"
+    )]
+    fn copy_stream(
         &self,
         py: Python,
-        source: PyObject,
-        dest: PyObject,
+        source: &PyAny,
+        dest: &PyAny,
         source_size: Option<u64>,
         read_size: Option<usize>,
         write_size: Option<usize>,
     ) -> PyResult<(usize, usize)> {
-        let state: std::cell::Ref<CompressorState> = self.state(py).borrow();
+        let state = self.state.borrow();
 
         let source_size = if let Some(source_size) = source_size {
             source_size
@@ -420,16 +376,13 @@ impl ZstdCompressor {
         let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
         let write_size = write_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
 
-        if !source.hasattr(py, "read")? {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
+        if !source.hasattr("read")? {
+            return Err(PyValueError::new_err(
                 "first argument must have a read() method",
             ));
         }
-
-        if !dest.hasattr(py, "write")? {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
+        if !dest.hasattr("write")? {
+            return Err(PyValueError::new_err(
                 "second argument must have a write() method",
             ));
         }
@@ -439,10 +392,10 @@ impl ZstdCompressor {
             .cctx
             .set_pledged_source_size(source_size)
             .or_else(|msg| {
-                Err(ZstdError::from_message(
-                    py,
-                    format!("error setting source size: {}", msg).as_ref(),
-                ))
+                Err(ZstdError::new_err(format!(
+                    "error setting source size: {}",
+                    msg
+                )))
             })?;
 
         let mut total_read = 0;
@@ -450,11 +403,10 @@ impl ZstdCompressor {
 
         loop {
             // Try to read from source stream.
-            let read_object = source
-                .call_method(py, "read", (read_size,), None)?;
+            let read_object = source.call_method("read", (read_size,), None)?;
 
-            let read_bytes = read_object.cast_into::<PyBytes>(py)?;
-            let read_data = read_bytes.data(py);
+            let read_bytes: &PyBytes = read_object.downcast()?;
+            let read_data = read_bytes.as_bytes();
 
             // If no data was read we are at EOF.
             if read_data.len() == 0 {
@@ -478,10 +430,7 @@ impl ZstdCompressor {
                         )
                     })
                     .or_else(|msg| {
-                        Err(ZstdError::from_message(
-                            py,
-                            format!("zstd compress error: {}", msg).as_ref(),
-                        ))
+                        Err(ZstdError::new_err(format!("zstd compress error: {}", msg)))
                     })?;
 
                 source = result.1;
@@ -491,7 +440,7 @@ impl ZstdCompressor {
                 if !chunk.is_empty() {
                     // TODO avoid buffer copy.
                     let data = PyBytes::new(py, chunk);
-                    dest.call_method(py, "write", (data,), None)?;
+                    dest.call_method("write", (data,), None)?;
                     total_write += chunk.len();
                 }
             }
@@ -503,10 +452,10 @@ impl ZstdCompressor {
                 .cctx
                 .compress_chunk(&[], zstd_sys::ZSTD_EndDirective::ZSTD_e_end, write_size)
                 .or_else(|msg| {
-                    Err(ZstdError::from_message(
-                        py,
-                        format!("error ending compression stream: {}", msg).as_ref(),
-                    ))
+                    Err(ZstdError::new_err(format!(
+                        "error ending compression stream: {}",
+                        msg
+                    )))
                 })?;
 
             let chunk = &result.0;
@@ -514,7 +463,7 @@ impl ZstdCompressor {
             if !chunk.is_empty() {
                 // TODO avoid buffer copy.
                 let data = PyBytes::new(py, &chunk);
-                dest.call_method(py, "write", (&data,), None)?;
+                dest.call_method("write", (data,), None)?;
                 total_write += chunk.len();
             }
 
@@ -527,8 +476,8 @@ impl ZstdCompressor {
     }
 }
 
-pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
-    module.add(py, "ZstdCompressor", py.get_type::<ZstdCompressor>())?;
+pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+    module.add_class::<ZstdCompressor>()?;
 
     Ok(())
 }

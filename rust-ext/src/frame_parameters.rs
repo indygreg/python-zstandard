@@ -4,39 +4,44 @@
 // This software may be modified and distributed under the terms
 // of the BSD license. See the LICENSE file for details.
 
-use crate::ZstdError;
-use cpython::buffer::PyBuffer;
-use cpython::{
-    py_class, py_class_prop_getter, py_fn, PyModule, PyObject, PyResult, Python, PythonObject,
-    ToPyObject,
+use {
+    crate::ZstdError,
+    pyo3::{buffer::PyBuffer, prelude::*, wrap_pyfunction},
 };
 
-py_class!(class FrameParameters |py| {
-    data header: zstd_sys::ZSTD_frameHeader;
+#[pyclass]
+struct FrameParameters {
+    header: zstd_sys::ZSTD_frameHeader,
+}
 
-    @property def content_size(&self) -> PyResult<PyObject> {
-        Ok(self.header(py).frameContentSize.into_py_object(py).into_object())
+#[pymethods]
+impl FrameParameters {
+    #[getter]
+    fn content_size(&self) -> PyResult<libc::c_ulonglong> {
+        Ok(self.header.frameContentSize)
     }
 
-    @property def window_size(&self) -> PyResult<PyObject> {
-        Ok(self.header(py).windowSize.into_py_object(py).into_object())
+    #[getter]
+    fn window_size(&self) -> PyResult<libc::c_ulonglong> {
+        Ok(self.header.windowSize)
     }
 
-    @property def dict_id(&self) -> PyResult<PyObject> {
-        Ok(self.header(py).dictID.into_py_object(py).into_object())
+    #[getter]
+    fn dict_id(&self) -> PyResult<libc::c_uint> {
+        Ok(self.header.dictID)
     }
 
-    @property def has_checksum(&self) -> PyResult<PyObject> {
-        Ok(match self.header(py).checksumFlag {
+    #[getter]
+    fn has_checksum(&self) -> PyResult<bool> {
+        Ok(match self.header.checksumFlag {
             0 => false,
             _ => true,
-        }.into_py_object(py).into_object())
+        })
     }
-});
+}
 
-fn get_frame_parameters(py: Python, data: PyObject) -> PyResult<PyObject> {
-    let buffer = PyBuffer::get(py, &data)?;
-
+#[pyfunction]
+fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FrameParameters>> {
     let raw_data = unsafe {
         std::slice::from_raw_parts::<u8>(buffer.buf_ptr() as *const _, buffer.len_bytes())
     };
@@ -55,35 +60,23 @@ fn get_frame_parameters(py: Python, data: PyObject) -> PyResult<PyObject> {
     };
 
     if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-        Err(ZstdError::from_message(
-            py,
-            format!(
-                "cannot get frame parameters: {}",
-                zstd_safe::get_error_name(zresult)
-            )
-            .as_ref(),
-        ))
+        Err(ZstdError::new_err(format!(
+            "cannot get frame parameters: {}",
+            zstd_safe::get_error_name(zresult)
+        )))
     } else if zresult != 0 {
-        Err(ZstdError::from_message(
-            py,
-            format!(
-                "not enough data for frame parameters; need {} bytes",
-                zresult
-            )
-            .as_ref(),
-        ))
+        Err(ZstdError::new_err(format!(
+            "not enough data for frame parameters; need {} bytes",
+            zresult
+        )))
     } else {
-        Ok(FrameParameters::create_instance(py, header)?.into_object())
+        Py::new(py, FrameParameters { header })
     }
 }
 
-pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
-    module.add(py, "FrameParameters", py.get_type::<FrameParameters>())?;
-    module.add(
-        py,
-        "get_frame_parameters",
-        py_fn!(py, get_frame_parameters(data: PyObject)),
-    )?;
+pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+    module.add_class::<FrameParameters>()?;
+    module.add_function(wrap_pyfunction!(get_frame_parameters, module)?)?;
 
     Ok(())
 }
