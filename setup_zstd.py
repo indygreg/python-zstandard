@@ -144,12 +144,14 @@ class RustExtension(distutils.extension.Extension):
 
         dest_path = get_ext_path_fn(self.name)
 
+        libname = self.name.split(".")[-1]
+
         if os.name == "nt":
-            rust_lib_filename = "%s.dll" % self.name
+            rust_lib_filename = "%s.dll" % libname
         elif sys.platform == "darwin":
-            rust_lib_filename = "lib%s.dylib" % self.name
+            rust_lib_filename = "lib%s.dylib" % libname
         else:
-            rust_lib_filename = "lib%s.so" % self.name
+            rust_lib_filename = "lib%s.so" % libname
 
         rust_lib = os.path.join(build_dir, "release", rust_lib_filename)
         os.makedirs(os.path.dirname(rust_lib), exist_ok=True)
