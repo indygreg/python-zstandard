@@ -11,28 +11,20 @@ use {
         ZstdError,
     },
     pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*, types::PyBytes},
-    std::{cell::RefCell, sync::Arc},
+    std::sync::Arc,
 };
-
-pub struct CompressionObjState<'cctx> {
-    cctx: Arc<CCtx<'cctx>>,
-    finished: bool,
-}
 
 #[pyclass]
 pub struct ZstdCompressionObj {
-    state: RefCell<CompressionObjState<'static>>,
+    cctx: Arc<CCtx<'static>>,
+    finished: bool,
 }
 
 impl ZstdCompressionObj {
     pub fn new(cctx: Arc<CCtx<'static>>) -> PyResult<Self> {
-        let state = CompressionObjState {
+        Ok(ZstdCompressionObj {
             cctx,
             finished: false,
-        };
-
-        Ok(ZstdCompressionObj {
-            state: RefCell::new(state),
         })
     }
 }
@@ -40,9 +32,7 @@ impl ZstdCompressionObj {
 #[pymethods]
 impl ZstdCompressionObj {
     fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<&'p PyBytes> {
-        let state = self.state.borrow();
-
-        if state.finished {
+        if self.finished {
             return Err(ZstdError::new_err(
                 "cannot call compress() after compressor finished",
             ));
@@ -57,7 +47,7 @@ impl ZstdCompressionObj {
         let mut compressed = Vec::new();
         let write_size = zstd_safe::cstream_out_size();
 
-        let cctx = &state.cctx;
+        let cctx = &self.cctx;
         while !source.is_empty() {
             let result = py
                 .allow_threads(|| {
@@ -77,8 +67,6 @@ impl ZstdCompressionObj {
     }
 
     fn flush<'p>(&mut self, py: Python<'p>, flush_mode: Option<i32>) -> PyResult<&'p PyBytes> {
-        let mut state = self.state.borrow_mut();
-
         let flush_mode = if let Some(flush_mode) = flush_mode {
             match flush_mode {
                 COMPRESSOBJ_FLUSH_FINISH => Ok(zstd_sys::ZSTD_EndDirective::ZSTD_e_end),
@@ -89,16 +77,16 @@ impl ZstdCompressionObj {
             Ok(zstd_sys::ZSTD_EndDirective::ZSTD_e_end)
         }?;
 
-        if state.finished {
+        if self.finished {
             return Err(ZstdError::new_err("compressor object already finished"));
         }
 
         if flush_mode == zstd_sys::ZSTD_EndDirective::ZSTD_e_end {
-            state.finished = true;
+            self.finished = true;
         }
 
         let write_size = zstd_safe::cstream_out_size();
-        let cctx = &state.cctx;
+        let cctx = &self.cctx;
 
         // TODO avoid extra buffer copy.
         let mut result = Vec::new();
