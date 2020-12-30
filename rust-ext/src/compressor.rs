@@ -8,6 +8,7 @@ use {
     crate::{
         compression_dict::ZstdCompressionDict,
         compression_parameters::{CCtxParams, ZstdCompressionParameters},
+        compression_writer::ZstdCompressionWriter,
         compressionobj::ZstdCompressionObj,
         ZstdError,
     },
@@ -452,6 +453,44 @@ impl ZstdCompressor {
         }
 
         Ok((total_read, total_write))
+    }
+
+    #[args(
+        writer,
+        size = "None",
+        write_size = "None",
+        write_return_read = "true",
+        closefd = "true"
+    )]
+    fn stream_writer(
+        &self,
+        py: Python,
+        writer: &PyAny,
+        size: Option<u64>,
+        write_size: Option<usize>,
+        write_return_read: bool,
+        closefd: bool,
+    ) -> PyResult<ZstdCompressionWriter> {
+        if !writer.hasattr("write")? {
+            return Err(PyValueError::new_err(
+                "must pass object with a write() method",
+            ));
+        }
+
+        self.cctx.reset();
+
+        let size = size.unwrap_or(zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _);
+        let write_size = write_size.unwrap_or_else(|| unsafe { zstd_sys::ZSTD_CStreamOutSize() });
+
+        Ok(ZstdCompressionWriter::new(
+            py,
+            self.cctx.clone(),
+            writer,
+            size,
+            write_size,
+            write_return_read,
+            closefd,
+        ))
     }
 }
 

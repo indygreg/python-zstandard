@@ -8,6 +8,7 @@ use pyo3::{prelude::*, types::PySet};
 
 mod compression_dict;
 mod compression_parameters;
+mod compression_writer;
 mod compressionobj;
 mod compressor;
 mod constants;
