@@ -17,15 +17,11 @@ libc = "0.2"
 num_cpus = "1"
 
 [dependencies.zstd-safe]
-#version = "2.0.4"
-git = "https://github.com/indygreg/zstd-rs.git"
-rev = "2f70a50ac5eddc716d356694de9ed46f6b6b37bb"
+version = "3.0.0+zstd.1.4.8"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.zstd-sys]
-#version = "1.4.16"
-git = "https://github.com/indygreg/zstd-rs.git"
-rev = "2f70a50ac5eddc716d356694de9ed46f6b6b37bb"
+version = "1.4.19+zstd.1.4.8"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.pyo3]
