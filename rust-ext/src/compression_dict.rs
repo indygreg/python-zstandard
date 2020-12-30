@@ -7,6 +7,7 @@
 use {
     crate::{
         compression_parameters::{get_cctx_parameter, int_to_strategy, ZstdCompressionParameters},
+        zstd_safe::CDict,
         ZstdError,
     },
     pyo3::{
@@ -16,22 +17,7 @@ use {
         types::{PyBytes, PyList},
         wrap_pyfunction,
     },
-    std::marker::PhantomData,
 };
-
-/// Safe wrapper for ZSTD_CDict instances.
-pub struct CDict<'a>(*mut zstd_sys::ZSTD_CDict, PhantomData<&'a ()>);
-
-impl<'a> Drop for CDict<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            zstd_sys::ZSTD_freeCDict(self.0);
-        }
-    }
-}
-
-unsafe impl<'a> Send for CDict<'a> {}
-unsafe impl<'a> Sync for CDict<'a> {}
 
 #[pyclass]
 pub struct ZstdCompressionDict {
@@ -58,7 +44,7 @@ pub struct ZstdCompressionDict {
 impl ZstdCompressionDict {
     pub(crate) fn load_into_cctx(&self, cctx: *mut zstd_sys::ZSTD_CCtx) -> PyResult<()> {
         let zresult = if let Some(cdict) = &self.cdict {
-            unsafe { zstd_sys::ZSTD_CCtx_refCDict(cctx, cdict.0) }
+            unsafe { zstd_sys::ZSTD_CCtx_refCDict(cctx, cdict.ptr) }
         } else {
             unsafe {
                 zstd_sys::ZSTD_CCtx_loadDictionary_advanced(
@@ -195,7 +181,7 @@ impl ZstdCompressionDict {
             return Err(ZstdError::new_err("unable to precompute dictionary"));
         }
 
-        self.cdict = Some(CDict(cdict, PhantomData));
+        self.cdict = Some(CDict::from_ptr(cdict));
 
         Ok(())
     }

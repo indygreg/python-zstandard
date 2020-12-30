@@ -13,6 +13,7 @@ mod compressor;
 mod constants;
 mod exceptions;
 mod frame_parameters;
+mod zstd_safe;
 
 use exceptions::ZstdError;
 
