@@ -19,6 +19,7 @@ class TestModuleAttributes(unittest.TestCase):
                 "multi_decompress_to_buffer",
             },
             "cffi": set(),
+            "rust": set(),
         }[zstd.backend]
 
         self.assertEqual(zstd.backend_features, expected)
