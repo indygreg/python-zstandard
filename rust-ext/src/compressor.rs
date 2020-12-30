@@ -337,23 +337,17 @@ impl ZstdCompressor {
         ZstdCompressionObj::new(self.cctx.clone())
     }
 
-    #[args(
-        source,
-        dest,
-        source_size = "None",
-        read_size = "None",
-        write_size = "None"
-    )]
+    #[args(ifh, ofh, size = "None", read_size = "None", write_size = "None")]
     fn copy_stream(
         &self,
         py: Python,
-        source: &PyAny,
-        dest: &PyAny,
-        source_size: Option<u64>,
+        ifh: &PyAny,
+        ofh: &PyAny,
+        size: Option<u64>,
         read_size: Option<usize>,
         write_size: Option<usize>,
     ) -> PyResult<(usize, usize)> {
-        let source_size = if let Some(source_size) = source_size {
+        let source_size = if let Some(source_size) = size {
             source_size
         } else {
             zstd_safe::CONTENTSIZE_UNKNOWN
@@ -362,12 +356,12 @@ impl ZstdCompressor {
         let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
         let write_size = write_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
 
-        if !source.hasattr("read")? {
+        if !ifh.hasattr("read")? {
             return Err(PyValueError::new_err(
                 "first argument must have a read() method",
             ));
         }
-        if !dest.hasattr("write")? {
+        if !ofh.hasattr("write")? {
             return Err(PyValueError::new_err(
                 "second argument must have a write() method",
             ));
@@ -388,7 +382,7 @@ impl ZstdCompressor {
 
         loop {
             // Try to read from source stream.
-            let read_object = source.call_method("read", (read_size,), None)?;
+            let read_object = ifh.call_method("read", (read_size,), None)?;
 
             let read_bytes: &PyBytes = read_object.downcast()?;
             let read_data = read_bytes.as_bytes();
@@ -425,7 +419,7 @@ impl ZstdCompressor {
                 if !chunk.is_empty() {
                     // TODO avoid buffer copy.
                     let data = PyBytes::new(py, chunk);
-                    dest.call_method("write", (data,), None)?;
+                    ofh.call_method("write", (data,), None)?;
                     total_write += chunk.len();
                 }
             }
@@ -448,7 +442,7 @@ impl ZstdCompressor {
             if !chunk.is_empty() {
                 // TODO avoid buffer copy.
                 let data = PyBytes::new(py, &chunk);
-                dest.call_method("write", (data,), None)?;
+                ofh.call_method("write", (data,), None)?;
                 total_write += chunk.len();
             }
 
