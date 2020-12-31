@@ -51,11 +51,11 @@ def get_c_extension(
     root = root or actual_root
 
     sources = sorted(set([os.path.join(actual_root, p) for p in ext_sources]))
-    include_dirs = [os.path.join(actual_root, d) for d in ext_includes]
+    local_include_dirs = [os.path.join(actual_root, d) for d in ext_includes]
     depends = []
 
     if not system_zstd:
-        include_dirs.append(os.path.join(actual_root, "zstd"))
+        local_include_dirs.append(os.path.join(actual_root, "zstd"))
         depends = sorted(glob.glob(os.path.join(actual_root, "c-ext", "*")))
 
     compiler = distutils.ccompiler.new_compiler()
@@ -101,14 +101,14 @@ def get_c_extension(
 
     # Python 3.7 doesn't like absolute paths. So normalize to relative.
     sources = [os.path.relpath(p, root) for p in sources]
-    include_dirs = [os.path.relpath(p, root) for p in include_dirs]
+    local_include_dirs = [os.path.relpath(p, root) for p in local_include_dirs]
     depends = [os.path.relpath(p, root) for p in depends]
 
     # TODO compile with optimizations.
     return distutils.extension.Extension(
         name,
         sources,
-        include_dirs=include_dirs,
+        include_dirs=local_include_dirs,
         depends=depends,
         extra_compile_args=extra_args,
         libraries=libraries,
