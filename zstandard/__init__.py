@@ -80,7 +80,7 @@ else:
     )
 
 # Keep this in sync with python-zstandard.h.
-__version__ = "0.15.0"
+__version__ = "0.15.1"
 
 _MODE_CLOSED = 0
 _MODE_READ = 1
