@@ -7,6 +7,8 @@
  */
 
 #include "python-zstandard.h"
+
+/* TODO pool.h is a private header and we shouldn't rely on it. */
 #ifndef ZSTD_SINGLE_FILE
 #include "pool.h"
 #endif

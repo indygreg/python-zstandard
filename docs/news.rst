@@ -65,6 +65,7 @@ Actions Blocking Release
 * Support ``ZSTD_threadPool`` APIs for managing a thread pool.
 * Utilize ``ZSTD_getDictID_fromCDict()``?
 * Utilize ``ZSTD_DCtx_getParameter()``.
+* Stop relying on private libzstd headers and symbols (namely ``pool.h``).
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -87,6 +88,10 @@ Bug Fixes
   the case in releases prior to 0.15.0 and the include order was reversed
   as part of running ``clang-format``. The old/working order has been
   restored. (#128)
+* Include some private zstd C headers so we can build the C extension against
+  a system library. The previous behavior of referencing these headers is
+  restored. That behave is rather questionable and undermines the desire to
+  use the system zstd.
 
 0.15.0 (released 2020-12-29)
 ============================
