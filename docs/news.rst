@@ -77,6 +77,15 @@ Other Actions Not Blocking Release
 0.16.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* ``ZstdCompressor.multi_compress_to_buffer()`` and
+  ``ZstdDecompressor.multi_decompress_to_buffer()`` are no longer
+  available when linking against a system zstd library. These
+  experimental features are only available when building against the
+  bundled single file zstd C source file distribution. (#106)
+
 0.15.1 (released 2020-12-31)
 ============================
 

@@ -19,6 +19,11 @@
 
 #ifdef ZSTD_SINGLE_FILE
 #include <zstdlib.c>
+
+/* We use private APIs from pool.h. We can't rely on availability
+   of this header or symbols when linking against the system libzstd.
+   But we know it works when using the bundled single file library. */
+#define HAVE_ZSTD_POOL_APIS
 #else
 #include <zdict.h>
 #include <zstd.h>

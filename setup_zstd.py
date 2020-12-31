@@ -22,12 +22,6 @@ ext_sources = [
     "c-ext/backend_c.c",
 ]
 
-zstd_includes = [
-    "zstd",
-    "zstd/common",
-    "zstd/dictBuilder",
-]
-
 
 def get_c_extension(
     support_legacy=False,
@@ -59,18 +53,7 @@ def get_c_extension(
     sources = sorted(set([os.path.join(actual_root, p) for p in ext_sources]))
     local_include_dirs = [os.path.join(actual_root, d) for d in ext_includes]
 
-    if system_zstd:
-        # TODO remove this once pool.h dependency goes away.
-        #
-        # This effectively causes system zstd mode to pull in our
-        # local headers instead of the system's. Then we link with the
-        # system library. This is super sketchy and could result in link
-        # time errors due to symbol mismatch or even run-time errors if
-        # APIs behave differently.
-        local_include_dirs.extend(
-            [os.path.join(actual_root, d) for d in zstd_includes]
-        )
-    else:
+    if not system_zstd:
         local_include_dirs.append(os.path.join(actual_root, "zstd"))
 
     depends = sorted(glob.glob(os.path.join(actual_root, "c-ext", "*")))

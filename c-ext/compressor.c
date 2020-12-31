@@ -8,11 +8,6 @@
 
 #include "python-zstandard.h"
 
-/* TODO pool.h is a private header and we shouldn't rely on it. */
-#ifndef ZSTD_SINGLE_FILE
-#include "pool.h"
-#endif
-
 extern PyObject *ZstdError;
 
 int setup_cctx(ZstdCompressor *compressor) {
@@ -822,6 +817,7 @@ typedef struct {
     Py_ssize_t errorOffset;
 } CompressorWorkerState;
 
+#ifdef HAVE_ZSTD_POOL_APIS
 static void compress_worker(CompressorWorkerState *state) {
     Py_ssize_t inputOffset = state->startOffset;
     Py_ssize_t remainingItems = state->endOffset - state->startOffset + 1;
@@ -1043,6 +1039,11 @@ static void compress_worker(CompressorWorkerState *state) {
         destBuffer->destSize = destOffset;
     }
 }
+#endif
+
+/* We can only use the pool.h APIs if we provide the full library,
+   as these are private APIs. */
+#ifdef HAVE_ZSTD_POOL_APIS
 
 ZstdBufferWithSegmentsCollection *
 compress_from_datasources(ZstdCompressor *compressor, DataSources *sources,
@@ -1298,7 +1299,9 @@ finally:
 
     return result;
 }
+#endif
 
+#ifdef HAVE_ZSTD_POOL_APIS
 static ZstdBufferWithSegmentsCollection *
 ZstdCompressor_multi_compress_to_buffer(ZstdCompressor *self, PyObject *args,
                                         PyObject *kwargs) {
@@ -1463,6 +1466,7 @@ finally:
 
     return result;
 }
+#endif
 
 static PyMethodDef ZstdCompressor_methods[] = {
     {"chunker", (PyCFunction)ZstdCompressor_chunker,
@@ -1479,9 +1483,11 @@ static PyMethodDef ZstdCompressor_methods[] = {
      METH_VARARGS | METH_KEYWORDS, NULL},
     {"read_to_iter", (PyCFunction)ZstdCompressor_read_to_iter,
      METH_VARARGS | METH_KEYWORDS, NULL},
+#ifdef HAVE_ZSTD_POOL_APIS
     {"multi_compress_to_buffer",
      (PyCFunction)ZstdCompressor_multi_compress_to_buffer,
      METH_VARARGS | METH_KEYWORDS, NULL},
+#endif
     {"memory_size", (PyCFunction)ZstdCompressor_memory_size, METH_NOARGS, NULL},
     {"frame_progression", (PyCFunction)ZstdCompressor_frame_progression,
      METH_NOARGS, NULL},
