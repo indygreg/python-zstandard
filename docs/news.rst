@@ -77,8 +77,8 @@ Other Actions Not Blocking Release
 0.16.0 (not yet released)
 =========================
 
-0.15.1 (not yet released)
-=========================
+0.15.1 (released 2020-12-31)
+============================
 
 Bug Fixes
 ---------
