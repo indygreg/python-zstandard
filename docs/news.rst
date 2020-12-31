@@ -76,6 +76,14 @@ Other Actions Not Blocking Release
 0.16.0 (not yet released)
 =========================
 
+0.15.1 (not yet released)
+=========================
+
+Bug Fixes
+---------
+
+* ``setup.py`` no longer attempts to build the C backend on PyPy. (#130)
+
 0.15.0 (released 2020-12-29)
 ============================
 
