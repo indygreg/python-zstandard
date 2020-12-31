@@ -13,8 +13,10 @@
 #include <Windows.h>
 #elif defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) ||    \
     defined(__NetBSD__) || defined(__DragonFly__)
-#include <sys/sysctl.h>
 #include <sys/types.h>
+
+#include <sys/sysctl.h>
+
 #endif
 
 #include "python-zstandard.h"

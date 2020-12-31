@@ -80,6 +80,10 @@ Bug Fixes
 ---------
 
 * ``setup.py`` no longer attempts to build the C backend on PyPy. (#130)
+* ``<sys/types.h>`` is now included before ``<sys/sysctl.h>``. This was
+  the case in releases prior to 0.15.0 and the include order was reversed
+  as part of running ``clang-format``. The old/working order has been
+  restored. (#128)
 
 0.15.0 (released 2020-12-29)
 ============================
