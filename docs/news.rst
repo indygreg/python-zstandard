@@ -86,6 +86,13 @@ Backwards Compatibility Notes
   experimental features are only available when building against the
   bundled single file zstd C source file distribution. (#106)
 
+Changes
+-------
+
+* ``setup.py`` now recognizes a ``ZSTD_EXTRA_COMPILER_ARGS``
+  environment variable to specify additional compiler arguments
+  to use when compiling the C backend.
+
 0.15.1 (released 2020-12-31)
 ============================
 

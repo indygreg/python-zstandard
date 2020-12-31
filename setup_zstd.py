@@ -7,6 +7,7 @@
 import distutils.ccompiler
 import distutils.command.build_ext
 import distutils.extension
+import distutils.util
 import glob
 import os
 import shutil
@@ -103,6 +104,11 @@ def get_c_extension(
     sources = [os.path.relpath(p, root) for p in sources]
     local_include_dirs = [os.path.relpath(p, root) for p in local_include_dirs]
     depends = [os.path.relpath(p, root) for p in depends]
+
+    if "ZSTD_EXTRA_COMPILER_ARGS" in os.environ:
+        extra_args.extend(
+            distutils.util.split_quoted(os.environ["ZSTD_EXTRA_COMPILER_ARGS"])
+        )
 
     # TODO compile with optimizations.
     return distutils.extension.Extension(
