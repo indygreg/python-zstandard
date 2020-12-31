@@ -8,6 +8,7 @@
 from __future__ import print_function
 
 from distutils.version import LooseVersion
+import platform
 import os
 import sys
 from setuptools import setup
@@ -51,6 +52,10 @@ RUST_BACKEND = False
 
 if os.environ.get("ZSTD_WARNINGS_AS_ERRORS", ""):
     WARNINGS_AS_ERRORS = True
+
+# PyPy doesn't support the C backend.
+if platform.python_implementation() == "PyPy":
+    C_BACKEND = False
 
 if "--legacy" in sys.argv:
     SUPPORT_LEGACY = True
