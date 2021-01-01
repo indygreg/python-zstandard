@@ -1,0 +1,93 @@
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '13 4 * * *'
+jobs:
+  wheel:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'ubuntu-20.04'
+          - 'macos-10.15'
+          - 'windows-2019'
+        py:
+          - 'pypy-3.6'
+          - 'pypy-3.7'
+        arch:
+          - 'x86'
+          - 'x64'
+        exclude:
+          - os: 'ubuntu-20.04'
+            arch: 'x86'
+          - os: 'macos-10.15'
+            arch: 'x86'
+    runs-on: ${{ matrix.os }}
+    env:
+      # Make all compile warnings fatal.
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+      # Activate Python development mode so we get warnings.
+      PYTHONDEVMODE: '1'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+          architecture: ${{ matrix.arch }}
+
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          python setup.py install
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'ubuntu-20.04'
+          - 'macos-10.15'
+          - 'windows-2019'
+        py:
+          - 'pypy-3.6'
+          - 'pypy-3.7'
+        arch:
+          - 'x86'
+          - 'x64'
+        exclude:
+          - os: 'ubuntu-20.04'
+            arch: 'x86'
+          - os: 'macos-10.15'
+            arch: 'x86'
+    runs-on: ${{ matrix.os }}
+    env:
+      # Enable fuzzing tests, other expensive tests.
+      ZSTD_SLOW_TESTS: '1'
+      # Make all compile warnings fatal.
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+      # More thorough fuzzing coverage.
+      HYPOTHESIS_PROFILE: 'ci'
+      # Activate Python development mode so we get warnings.
+      PYTHONDEVMODE: '1'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.py }}
+          architecture: ${{ matrix.arch }}
+
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          pip install --require-hashes -r ci/requirements.pypy.txt
+
+      - name: Build
+        run: |
+          python setup.py develop
+
+      - name: Test
+        run: |
+          pytest --numprocesses=auto -v tests/

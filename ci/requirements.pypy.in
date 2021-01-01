@@ -1,0 +1,7 @@
+# This is a dependency of pytest on Windows but isn't picked up by pip-compile.
+atomicwrites
+# This is a dependency of pytest on Windows but isn't picked up by pip-compile.
+colorama
+hypothesis
+pytest-xdist
+pytest

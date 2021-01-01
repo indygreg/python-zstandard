@@ -92,6 +92,7 @@ Changes
 * ``setup.py`` now recognizes a ``ZSTD_EXTRA_COMPILER_ARGS``
   environment variable to specify additional compiler arguments
   to use when compiling the C backend.
+* PyPy build and test coverage has been added to CI.
 
 0.15.1 (released 2020-12-31)
 ============================
