@@ -93,6 +93,7 @@ Changes
   environment variable to specify additional compiler arguments
   to use when compiling the C backend.
 * PyPy build and test coverage has been added to CI.
+* Added CI jobs for building against external zstd library.
 
 0.15.1 (released 2020-12-31)
 ============================

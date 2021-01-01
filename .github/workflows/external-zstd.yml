@@ -1,0 +1,54 @@
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '13 4 * * *'
+jobs:
+  linux:
+    runs-on: 'ubuntu-20.04'
+    env:
+      # Make all compile warnings fatal.
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+      # Activate Python development mode so we get warnings.
+      PYTHONDEVMODE: '1'
+
+    steps:
+      - name: System Setup
+        run: |
+          sudo apt-get install -y libzstd1 libzstd-dev python3-cffi
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          python setup.py --system-zstd install
+
+  macOS:
+    runs-on: 'macos-10.15'
+    env:
+      # Make all compile warnings fatal.
+      ZSTD_WARNINGS_AS_ERRORS: '1'
+      # Activate Python development mode so we get warnings.
+      PYTHONDEVMODE: '1'
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: System Setup
+        run: |
+          brew install -v zstd
+          python -m pip install cffi
+
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          python setup.py --system-zstd install
