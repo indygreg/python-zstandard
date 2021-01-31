@@ -9,6 +9,7 @@ use {
         compression_chunker::ZstdCompressionChunker,
         compression_dict::ZstdCompressionDict,
         compression_parameters::{CCtxParams, ZstdCompressionParameters},
+        compression_reader::ZstdCompressionReader,
         compression_writer::ZstdCompressionWriter,
         compressionobj::ZstdCompressionObj,
         ZstdError,
@@ -475,6 +476,37 @@ impl ZstdCompressor {
         }
 
         Ok((total_read, total_write))
+    }
+
+    #[args(source, size = "None", read_size = "None", closefd = "true")]
+    fn stream_reader(
+        &self,
+        py: Python,
+        source: &PyAny,
+        size: Option<u64>,
+        read_size: Option<usize>,
+        closefd: bool,
+    ) -> PyResult<ZstdCompressionReader> {
+        self.cctx.reset();
+
+        let size = if let Some(size) = size {
+            size
+        } else if let Ok(size) = source.len() {
+            size as _
+        } else {
+            zstd_safe::CONTENTSIZE_UNKNOWN
+        };
+
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
+
+        self.cctx.set_pledged_source_size(size).or_else(|msg| {
+            Err(ZstdError::new_err(format!(
+                "error setting source size: {}",
+                msg
+            )))
+        })?;
+
+        ZstdCompressionReader::new(py, self.cctx.clone(), source, read_size, closefd)
     }
 
     #[args(
