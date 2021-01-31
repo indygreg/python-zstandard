@@ -6,6 +6,7 @@
 
 use {
     crate::{
+        compression_chunker::ZstdCompressionChunker,
         compression_dict::ZstdCompressionDict,
         compression_parameters::{CCtxParams, ZstdCompressionParameters},
         compression_writer::ZstdCompressionWriter,
@@ -316,6 +317,27 @@ impl ZstdCompressor {
             .or_else(|msg| Err(ZstdError::new_err(format!("cannot compress: {}", msg))))?;
 
         Ok(PyBytes::new(py, &data))
+    }
+
+    #[args(size = "None", chunk_size = "None")]
+    fn chunker(
+        &self,
+        size: Option<u64>,
+        chunk_size: Option<usize>,
+    ) -> PyResult<ZstdCompressionChunker> {
+        self.cctx.reset();
+
+        let size = size.unwrap_or(zstd_safe::CONTENTSIZE_UNKNOWN);
+        let chunk_size = chunk_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
+
+        self.cctx.set_pledged_source_size(size).or_else(|msg| {
+            Err(ZstdError::new_err(format!(
+                "error setting source size: {}",
+                msg
+            )))
+        })?;
+
+        ZstdCompressionChunker::new(self.cctx.clone(), chunk_size)
     }
 
     #[args(size = "None")]

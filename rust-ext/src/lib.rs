@@ -6,6 +6,7 @@
 
 use pyo3::{prelude::*, types::PySet};
 
+mod compression_chunker;
 mod compression_dict;
 mod compression_parameters;
 mod compression_writer;
