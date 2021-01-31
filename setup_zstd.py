@@ -137,6 +137,8 @@ class RustExtension(distutils.extension.Extension):
     def build(self, build_dir, get_ext_path_fn):
         env = os.environ.copy()
         env["PYTHON_SYS_EXECUTABLE"] = sys.executable
+        # Needed for try_reserve()
+        env["RUSTC_BOOTSTRAP"] = "1"
 
         args = [
             "cargo",
