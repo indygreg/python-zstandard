@@ -14,6 +14,7 @@ mod compression_writer;
 mod compressionobj;
 mod compressor;
 mod constants;
+mod decompressor;
 mod exceptions;
 mod frame_parameters;
 mod zstd_safe;
@@ -31,6 +32,7 @@ fn backend_rust(py: Python, module: &PyModule) -> PyResult<()> {
     crate::compression_parameters::init_module(module)?;
     crate::compressor::init_module(module)?;
     crate::constants::init_module(py, module)?;
+    crate::decompressor::init_module(module)?;
     crate::exceptions::init_module(py, module)?;
     crate::frame_parameters::init_module(module)?;
 

@@ -7,7 +7,7 @@
 use {
     crate::{
         compression_parameters::{get_cctx_parameter, int_to_strategy, ZstdCompressionParameters},
-        zstd_safe::CDict,
+        zstd_safe::{CDict, DDict},
         ZstdError,
     },
     pyo3::{
@@ -39,6 +39,9 @@ pub struct ZstdCompressionDict {
 
     /// Precomputed compression dictionary.
     cdict: Option<CDict<'static>>,
+
+    /// Precomputed decompression dictionary.
+    ddict: Option<DDict<'static>>,
 }
 
 impl ZstdCompressionDict {
@@ -65,6 +68,49 @@ impl ZstdCompressionDict {
         } else {
             Ok(())
         }
+    }
+
+    /// Ensure the DDict is populated.
+    pub(crate) fn ensure_ddict(&mut self) -> PyResult<()> {
+        if self.ddict.is_some() {
+            return Ok(());
+        }
+
+        let ddict = unsafe {
+            zstd_sys::ZSTD_createDDict_advanced(
+                self.data.as_ptr() as *const _,
+                self.data.len(),
+                zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
+                self.content_type,
+                zstd_sys::ZSTD_customMem {
+                    customAlloc: None,
+                    customFree: None,
+                    opaque: std::ptr::null_mut(),
+                },
+            )
+        };
+        if ddict.is_null() {
+            return Err(ZstdError::new_err("could not create decompression dict"));
+        }
+
+        self.ddict = Some(DDict::from_ptr(ddict));
+
+        Ok(())
+    }
+
+    pub(crate) fn load_into_dctx(&mut self, dctx: *mut zstd_sys::ZSTD_DCtx) -> PyResult<()> {
+        self.ensure_ddict()?;
+
+        let zresult =
+            unsafe { zstd_sys::ZSTD_DCtx_refDDict(dctx, self.ddict.as_ref().unwrap().ptr) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            return Err(ZstdError::new_err(format!(
+                "unable to reference prepared dictionary: {}",
+                zstd_safe::get_error_name(zresult)
+            )));
+        }
+
+        Ok(())
     }
 }
 
@@ -97,6 +143,7 @@ impl ZstdCompressionDict {
             d: 0,
             data: dict_data,
             cdict: None,
+            ddict: None,
         })
     }
 
@@ -304,6 +351,7 @@ fn train_dictionary(
         d: params.d,
         data: dict_data,
         cdict: None,
+        ddict: None,
     })
 }
 

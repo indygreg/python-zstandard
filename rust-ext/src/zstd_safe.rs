@@ -33,3 +33,30 @@ impl<'a> Drop for CDict<'a> {
 unsafe impl<'a> Send for CDict<'a> {}
 
 unsafe impl<'a> Sync for CDict<'a> {}
+
+/// Safe wrapper for ZSTD_DDict instances.
+pub(crate) struct DDict<'a> {
+    // TODO don't expose field.
+    pub(crate) ptr: *mut zstd_sys::ZSTD_DDict,
+    _phantom: PhantomData<&'a ()>,
+}
+
+unsafe impl<'a> Send for DDict<'a> {}
+unsafe impl<'a> Sync for DDict<'a> {}
+
+impl<'a> Drop for DDict<'a> {
+    fn drop(&mut self) {
+        unsafe {
+            zstd_sys::ZSTD_freeDDict(self.ptr);
+        }
+    }
+}
+
+impl<'a> DDict<'a> {
+    pub fn from_ptr(ptr: *mut zstd_sys::ZSTD_DDict) -> Self {
+        Self {
+            ptr,
+            _phantom: PhantomData,
+        }
+    }
+}
