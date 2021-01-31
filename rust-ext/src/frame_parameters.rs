@@ -41,6 +41,32 @@ impl FrameParameters {
 }
 
 #[pyfunction]
+fn frame_content_size(data: PyBuffer<u8>) -> PyResult<i64> {
+    let size = unsafe { zstd_sys::ZSTD_getFrameContentSize(data.buf_ptr(), data.len_bytes()) };
+
+    if size == zstd_sys::ZSTD_CONTENTSIZE_ERROR as _ {
+        Err(ZstdError::new_err("error when determining content size"))
+    } else if size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _ {
+        Ok(-1)
+    } else {
+        Ok(size as _)
+    }
+}
+
+#[pyfunction]
+fn frame_header_size(data: PyBuffer<u8>) -> PyResult<usize> {
+    let zresult = unsafe { zstd_sys::ZSTD_frameHeaderSize(data.buf_ptr(), data.len_bytes()) };
+    if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+        return Err(ZstdError::new_err(format!(
+            "could not determine frame header size: {}",
+            zstd_safe::get_error_name(zresult)
+        )));
+    }
+
+    Ok(zresult)
+}
+
+#[pyfunction]
 fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FrameParameters>> {
     let raw_data = unsafe {
         std::slice::from_raw_parts::<u8>(buffer.buf_ptr() as *const _, buffer.len_bytes())
@@ -76,6 +102,8 @@ fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FramePa
 
 pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
     module.add_class::<FrameParameters>()?;
+    module.add_function(wrap_pyfunction!(frame_content_size, module)?)?;
+    module.add_function(wrap_pyfunction!(frame_header_size, module)?)?;
     module.add_function(wrap_pyfunction!(get_frame_parameters, module)?)?;
 
     Ok(())
