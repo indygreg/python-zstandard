@@ -7,8 +7,10 @@
 use {
     crate::{compression_dict::ZstdCompressionDict, exceptions::ZstdError},
     pyo3::{
-        exceptions::{PyMemoryError, PyValueError},
+        buffer::PyBuffer,
+        exceptions::{PyMemoryError, PyNotImplementedError, PyValueError},
         prelude::*,
+        types::PyBytes,
     },
     std::{marker::PhantomData, sync::Arc},
 };
@@ -108,6 +110,93 @@ impl ZstdDecompressor {
             format,
             dctx,
         })
+    }
+
+    #[args(ifh, ofh, read_size = "None", write_size = "None")]
+    fn copy_stream(
+        &self,
+        ifh: &PyAny,
+        ofh: &PyAny,
+        read_size: Option<usize>,
+        write_size: Option<usize>,
+    ) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(()))
+    }
+
+    #[args(buffer, max_output_size = "None")]
+    fn decompress<'p>(
+        &self,
+        py: Python<'p>,
+        buffer: PyBuffer<u8>,
+        max_output_size: Option<usize>,
+    ) -> PyResult<&'p PyBytes> {
+        Err(PyNotImplementedError::new_err(()))
+    }
+
+    fn decompress_content_dict_chain(&self, frames: &PyAny) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(()))
+    }
+
+    #[args(write_size = "None")]
+    fn decompressobj(&self, write_size: Option<usize>) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(()))
+    }
+
+    fn memory_size(&self) -> PyResult<usize> {
+        Ok(unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.dctx.0) })
+    }
+
+    #[args(frames, decompressed_sizes = "None", threads = "0")]
+    fn multi_decompress_to_buffer(
+        &self,
+        frames: &PyAny,
+        decompressed_sizes: Option<&PyAny>,
+        threads: usize,
+    ) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(()))
+    }
+
+    #[args(reader, read_size = "None", write_size = "None", skip_bytes = "None")]
+    fn read_to_iter(
+        &self,
+        reader: &PyAny,
+        read_size: Option<usize>,
+        write_size: Option<usize>,
+        skip_bytes: Option<usize>,
+    ) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(()))
+    }
+
+    #[args(
+        source,
+        read_size = "None",
+        read_across_frames = "false",
+        closefd = "true"
+    )]
+    fn stream_reader(
+        &self,
+        source: &PyAny,
+        read_size: Option<usize>,
+        read_across_frames: bool,
+        closefd: bool,
+    ) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(()))
+    }
+
+    #[args(
+        writer,
+        write_size = "None",
+        write_return_read = "true",
+        closefd = "true"
+    )]
+    fn stream_writer(
+        &self,
+        writer: &PyAny,
+        write_size: Option<usize>,
+        write_return_read: bool,
+        closefd: bool,
+    ) -> PyResult<()> {
+        Err(PyNotImplementedError::new_err(()))
     }
 }
 
