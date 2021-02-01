@@ -5,7 +5,10 @@
 // of the BSD license. See the LICENSE file for details.
 
 use {
-    crate::{compression_dict::ZstdCompressionDict, exceptions::ZstdError},
+    crate::{
+        compression_dict::ZstdCompressionDict, decompression_reader::ZstdDecompressionReader,
+        exceptions::ZstdError,
+    },
     pyo3::{
         buffer::PyBuffer,
         exceptions::{PyMemoryError, PyNotImplementedError, PyValueError},
@@ -323,12 +326,24 @@ impl ZstdDecompressor {
     )]
     fn stream_reader(
         &self,
+        py: Python,
         source: &PyAny,
         read_size: Option<usize>,
         read_across_frames: bool,
         closefd: bool,
-    ) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(()))
+    ) -> PyResult<ZstdDecompressionReader> {
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::dstream_in_size());
+
+        self.setup_dctx(py, true)?;
+
+        ZstdDecompressionReader::new(
+            py,
+            self.dctx.clone(),
+            source,
+            read_size,
+            read_across_frames,
+            closefd,
+        )
     }
 
     #[args(

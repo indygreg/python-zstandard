@@ -16,6 +16,7 @@ mod compression_writer;
 mod compressionobj;
 mod compressor;
 mod constants;
+mod decompression_reader;
 mod decompressor;
 mod exceptions;
 mod frame_parameters;
