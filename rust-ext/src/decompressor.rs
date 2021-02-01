@@ -115,12 +115,95 @@ impl ZstdDecompressor {
     #[args(ifh, ofh, read_size = "None", write_size = "None")]
     fn copy_stream(
         &self,
+        py: Python,
         ifh: &PyAny,
         ofh: &PyAny,
         read_size: Option<usize>,
         write_size: Option<usize>,
-    ) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(()))
+    ) -> PyResult<(usize, usize)> {
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::dstream_in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+
+        if !ifh.hasattr("read")? {
+            return Err(PyValueError::new_err(
+                "first argument must have a read() method",
+            ));
+        }
+
+        if !ofh.hasattr("write")? {
+            return Err(PyValueError::new_err(
+                "second argument must have a write() method",
+            ));
+        }
+
+        self.setup_dctx(py, true)?;
+
+        let mut dest_buffer: Vec<u8> = Vec::with_capacity(write_size);
+
+        let mut in_buffer = zstd_sys::ZSTD_inBuffer {
+            src: std::ptr::null(),
+            size: 0,
+            pos: 0,
+        };
+
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: dest_buffer.as_mut_ptr() as *mut _,
+            size: dest_buffer.capacity(),
+            pos: 0,
+        };
+
+        let mut total_read = 0;
+        let mut total_write = 0;
+
+        // Read all available input.
+        loop {
+            let read_object = ifh.call_method1("read", (read_size,))?;
+            let read_bytes: &PyBytes = read_object.downcast()?;
+            let read_data = read_bytes.as_bytes();
+
+            if read_data.len() == 0 {
+                break;
+            }
+
+            total_read += read_data.len();
+
+            in_buffer.src = read_data.as_ptr() as *const _;
+            in_buffer.size = read_data.len();
+            in_buffer.pos = 0;
+
+            // Flush all read data to output.
+            while in_buffer.pos < in_buffer.size {
+                let zresult = unsafe {
+                    zstd_sys::ZSTD_decompressStream(
+                        self.dctx.0,
+                        &mut out_buffer as *mut _,
+                        &mut in_buffer as *mut _,
+                    )
+                };
+                if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+                    return Err(ZstdError::new_err(format!(
+                        "zstd decompressor error: {}",
+                        zstd_safe::get_error_name(zresult)
+                    )));
+                }
+
+                if out_buffer.pos != 0 {
+                    unsafe {
+                        dest_buffer.set_len(out_buffer.pos);
+                    }
+
+                    // TODO avoid buffer copy.
+                    let data = PyBytes::new(py, &dest_buffer);
+
+                    ofh.call_method1("write", (data,))?;
+                    total_write += out_buffer.pos;
+                    out_buffer.pos = 0;
+                }
+            }
+            // Continue loop to keep reading.
+        }
+
+        Ok((total_read, total_write))
     }
 
     #[args(buffer, max_output_size = "0")]
