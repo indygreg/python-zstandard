@@ -13,7 +13,7 @@ use {
     std::sync::Arc,
 };
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 pub struct ZstdCompressionReader {
     cctx: Arc<CCtx<'static>>,
     reader: PyObject,

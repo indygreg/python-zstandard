@@ -10,7 +10,7 @@ use {
     std::sync::Arc,
 };
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 pub struct ZstdCompressionChunker {
     cctx: Arc<CCtx<'static>>,
     chunk_size: usize,

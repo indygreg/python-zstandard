@@ -19,7 +19,7 @@ use {
     },
 };
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 pub struct ZstdCompressionDict {
     /// Internal format of dictionary data.
     content_type: zstd_sys::ZSTD_dictContentType_e,

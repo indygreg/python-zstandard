@@ -201,7 +201,7 @@ pub(crate) fn int_to_strategy(value: u32) -> Result<zstd_sys::ZSTD_strategy, PyE
     }
 }
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 pub struct ZstdCompressionParameters {
     pub(crate) params: *mut zstd_sys::ZSTD_CCtx_params,
 }

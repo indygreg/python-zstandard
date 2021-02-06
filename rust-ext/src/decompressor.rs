@@ -42,7 +42,7 @@ impl<'a> DCtx<'a> {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 struct ZstdDecompressor {
     dict_data: Option<Py<ZstdCompressionDict>>,
     max_window_size: usize,

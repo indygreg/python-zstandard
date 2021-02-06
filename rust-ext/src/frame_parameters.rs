@@ -9,7 +9,7 @@ use {
     pyo3::{buffer::PyBuffer, prelude::*, wrap_pyfunction},
 };
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 struct FrameParameters {
     header: zstd_sys::ZSTD_frameHeader,
 }

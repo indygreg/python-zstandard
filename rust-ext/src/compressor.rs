@@ -168,7 +168,7 @@ impl<'a> CCtx<'a> {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 struct ZstdCompressor {
     threads: i32,
     dict: Option<Py<ZstdCompressionDict>>,

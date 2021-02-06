@@ -14,7 +14,7 @@ use {
     std::sync::Arc,
 };
 
-#[pyclass]
+#[pyclass(module = "zstandard.backend_rust")]
 pub struct ZstdCompressionObj {
     cctx: Arc<CCtx<'static>>,
     finished: bool,
