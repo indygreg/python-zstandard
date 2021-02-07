@@ -20,6 +20,7 @@ mod decompression_reader;
 mod decompressor;
 mod exceptions;
 mod frame_parameters;
+mod stream;
 mod zstd_safe;
 
 use exceptions::ZstdError;

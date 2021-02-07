@@ -41,6 +41,10 @@ impl<'a> CCtx<'a> {
         Ok(Self(cctx, PhantomData))
     }
 
+    pub fn cctx(&self) -> *mut zstd_sys::ZSTD_CCtx {
+        self.0
+    }
+
     fn set_parameters(&self, params: &CCtxParams) -> Result<(), String> {
         let zresult = unsafe {
             zstd_sys::ZSTD_CCtx_setParametersUsingCCtxParams(self.0, params.get_raw_ptr())
