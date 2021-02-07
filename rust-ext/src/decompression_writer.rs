@@ -1,0 +1,288 @@
+// Copyright (c) 2021-present, Gregory Szorc
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license. See the LICENSE file for details.
+
+use {
+    crate::{decompressor::DCtx, exceptions::ZstdError},
+    pyo3::{
+        buffer::PyBuffer,
+        exceptions::{PyOSError, PyValueError},
+        prelude::*,
+        types::PyBytes,
+    },
+    std::sync::Arc,
+};
+
+#[pyclass(module = "zstandard.backend_rust")]
+pub struct ZstdDecompressionWriter {
+    dctx: Arc<DCtx<'static>>,
+    writer: PyObject,
+    write_size: usize,
+    write_return_read: bool,
+    closefd: bool,
+    entered: bool,
+    closing: bool,
+    closed: bool,
+}
+
+impl ZstdDecompressionWriter {
+    pub fn new(
+        py: Python,
+        dctx: Arc<DCtx<'static>>,
+        writer: &PyAny,
+        write_size: usize,
+        write_return_read: bool,
+        closefd: bool,
+    ) -> PyResult<Self> {
+        Ok(Self {
+            dctx,
+            writer: writer.into_py(py),
+            write_size,
+            write_return_read,
+            closefd,
+            entered: false,
+            closing: false,
+            closed: false,
+        })
+    }
+}
+
+#[pymethods]
+impl ZstdDecompressionWriter {
+    fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
+        if slf.closed {
+            Err(PyValueError::new_err("stream is closed"))
+        } else if slf.entered {
+            Err(ZstdError::new_err("cannot __enter__ multiple times"))
+        } else {
+            slf.entered = true;
+            Ok(slf)
+        }
+    }
+
+    fn __exit__<'p>(
+        mut slf: PyRefMut<'p, Self>,
+        py: Python<'p>,
+        _exc_type: PyObject,
+        _exc_value: PyObject,
+        _exc_tb: PyObject,
+    ) -> PyResult<bool> {
+        slf.entered = false;
+        slf.close(py)?;
+
+        // TODO release cctx and writer?
+
+        Ok(false)
+    }
+
+    fn memory_size(&self) -> usize {
+        self.dctx.memory_size()
+    }
+
+    fn close(&mut self, py: Python) -> PyResult<()> {
+        if self.closed {
+            return Ok(());
+        }
+
+        self.closing = true;
+        let res = self.flush(py);
+        self.closing = false;
+        self.closed = true;
+
+        res?;
+
+        if let Ok(close) = self.writer.getattr(py, "close") {
+            if self.closefd {
+                close.call0(py)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    #[getter]
+    fn closed(&self) -> bool {
+        self.closed
+    }
+
+    fn fileno(&self, py: Python) -> PyResult<PyObject> {
+        if let Ok(fileno) = self.writer.getattr(py, "fileno") {
+            fileno.call0(py)
+        } else {
+            Err(PyOSError::new_err(
+                "filenot not available on underlying writer",
+            ))
+        }
+    }
+
+    fn flush(&self, py: Python) -> PyResult<PyObject> {
+        if self.closed {
+            return Err(PyValueError::new_err("stream is closed"));
+        }
+
+        if let Ok(flush) = self.writer.getattr(py, "flush") {
+            if !self.closing {
+                return flush.call0(py);
+            }
+        }
+
+        Ok(py.None())
+    }
+
+    fn isatty(&self) -> bool {
+        false
+    }
+
+    fn readable(&self) -> bool {
+        false
+    }
+
+    #[args(size = "None")]
+    fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    #[args(size = "None")]
+    fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    #[args(pos, whence = "None")]
+    fn seek(&self, py: Python, offset: isize, whence: Option<i32>) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn seekable(&self) -> bool {
+        false
+    }
+
+    fn tell(&self, py: Python) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    #[args(size = "None")]
+    fn truncate(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn writable(&self) -> bool {
+        true
+    }
+
+    fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    #[args(size = "None")]
+    fn read(&self, py: Python, size: Option<usize>) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn readall(&self, py: Python) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn readinto(&self, py: Python, buffer: &PyAny) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    #[args(size = "None")]
+    fn read1(&self, py: Python, size: Option<usize>) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn readinto1(&self, py: Python, buffer: &PyAny) -> PyResult<()> {
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn write(&self, py: Python, buffer: PyBuffer<u8>) -> PyResult<usize> {
+        if self.closed {
+            return Err(PyValueError::new_err("stream is closed"));
+        }
+
+        let mut total_write = 0;
+
+        let mut in_buffer = zstd_sys::ZSTD_inBuffer {
+            src: buffer.buf_ptr(),
+            size: buffer.len_bytes(),
+            pos: 0,
+        };
+
+        let mut dest_buffer = Vec::with_capacity(self.write_size);
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: dest_buffer.as_mut_ptr() as *mut _,
+            size: dest_buffer.capacity(),
+            pos: 0,
+        };
+
+        while in_buffer.pos < in_buffer.size {
+            let zresult = unsafe {
+                zstd_sys::ZSTD_decompressStream(
+                    self.dctx.dctx(),
+                    &mut out_buffer as *mut _,
+                    &mut in_buffer as *mut _,
+                )
+            };
+
+            unsafe {
+                dest_buffer.set_len(out_buffer.pos);
+            }
+
+            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+                return Err(ZstdError::new_err(format!(
+                    "zstd decompress error: {}",
+                    zstd_safe::get_error_name(zresult)
+                )));
+            }
+
+            if out_buffer.pos > 0 {
+                // TODO avoid buffer copy.
+                let chunk = PyBytes::new(py, &dest_buffer);
+                self.writer.call_method1(py, "write", (chunk,))?;
+                total_write += out_buffer.pos;
+                out_buffer.pos = 0;
+            }
+        }
+
+        if self.write_return_read {
+            Ok(in_buffer.pos)
+        } else {
+            Ok(total_write)
+        }
+    }
+}

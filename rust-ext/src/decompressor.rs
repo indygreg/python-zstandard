@@ -7,7 +7,7 @@
 use {
     crate::{
         compression_dict::ZstdCompressionDict, decompression_reader::ZstdDecompressionReader,
-        exceptions::ZstdError,
+        decompression_writer::ZstdDecompressionWriter, exceptions::ZstdError,
     },
     pyo3::{
         buffer::PyBuffer,
@@ -39,6 +39,14 @@ impl<'a> DCtx<'a> {
         }
 
         Ok(Self(dctx, PhantomData))
+    }
+
+    pub fn dctx(&self) -> *mut zstd_sys::ZSTD_DCtx {
+        self.0
+    }
+
+    pub fn memory_size(&self) -> usize {
+        unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.0) }
     }
 }
 
@@ -354,12 +362,24 @@ impl ZstdDecompressor {
     )]
     fn stream_writer(
         &self,
+        py: Python,
         writer: &PyAny,
         write_size: Option<usize>,
         write_return_read: bool,
         closefd: bool,
-    ) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(()))
+    ) -> PyResult<ZstdDecompressionWriter> {
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+
+        self.setup_dctx(py, true)?;
+
+        ZstdDecompressionWriter::new(
+            py,
+            self.dctx.clone(),
+            writer,
+            write_size,
+            write_return_read,
+            closefd,
+        )
     }
 }
 
