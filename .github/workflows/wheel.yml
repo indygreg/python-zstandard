@@ -44,6 +44,8 @@ jobs:
           - 'cp39-*'
         arch: ['x86_64']
         include:
+          - py: 'cp38-*'
+            arch: 'arm64'
           - py: 'cp39-*'
             arch: 'arm64'
     runs-on: 'macos-10.15'
@@ -57,16 +59,35 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
+        if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
 
       - uses: actions/checkout@v2
 
       - name: Install Dependencies
         run: |
           pip install --require-hashes -r ci/requirements.macoswheels.txt
+        if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
+
+      - name: Install Dependencies
+        run: |
+          /Applications/Xcode_12.2.app/Contents/Developer/usr/bin/pip3 install --user --require-hashes -r ci/requirements.macoswheels.txt
+          /Applications/Xcode_12.2.app/Contents/Developer/usr/bin/pip3 install --user wheel
+        if: ${{ matrix.py == 'cp38-*' && matrix.arch == 'arm64' }}
 
       - name: Build Wheel
         run: |
           cibuildwheel --output-dir dist
+        if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
+
+      - name: Build Wheel
+        run: |
+          /Applications/Xcode_12.2.app/Contents/Developer/usr/bin/python3 setup.py bdist_wheel
+        env:
+          _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
+          ARCHFLAGS: '-arch arm64'
+          MACOSX_DEPLOYMENT_TARGET: '11.0'
+          SDKROOT: '/Applications/Xcode_12.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.0.sdk'
+        if: ${{ matrix.py == 'cp38-*' && matrix.arch == 'arm64' }}
 
       - name: Upload Wheel
         uses: actions/upload-artifact@v2
