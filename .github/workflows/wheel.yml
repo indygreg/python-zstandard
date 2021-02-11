@@ -9,10 +9,10 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - 'quay.io/pypa/manylinux2010_i686'
-          - 'quay.io/pypa/manylinux2010_x86_64'
-          - 'quay.io/pypa/manylinux2014_i686'
-          - 'quay.io/pypa/manylinux2014_x86_64'
+          - 'quay.io/pypa/manylinux2010_i686:2021-02-06-3d322a5'
+          - 'quay.io/pypa/manylinux2010_x86_64:2021-02-06-3d322a5'
+          - 'quay.io/pypa/manylinux2014_i686:2021-01-24-91ce2b8'
+          - 'quay.io/pypa/manylinux2014_x86_64:2021-01-24-91ce2b8'
         py:
           - 'cp35-cp35m'
           - 'cp36-cp36m'
