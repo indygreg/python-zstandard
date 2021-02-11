@@ -42,8 +42,13 @@ jobs:
           - 'cp37-*'
           - 'cp38-*'
           - 'cp39-*'
+        arch: ['x86_64']
+        include:
+          - py: 'cp39-*'
+            arch: 'arm64'
     runs-on: 'macos-10.15'
     env:
+      CIBW_ARCHS: ${{ matrix.arch }}
       CIBW_BUILD: ${{ matrix.py }}
       CIBW_BUILD_VERBOSITY: '1'
       ZSTD_WARNINGS_AS_ERRORS: '1'
