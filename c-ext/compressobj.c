@@ -90,9 +90,10 @@ static PyObject *ZstdCompressionObj_flush(ZstdCompressionObj *self,
 
     int flushMode = compressorobj_flush_finish;
     size_t zresult;
-    PyObject *result = NULL;
-    Py_ssize_t resultSize = 0;
+    PyObject *result;
     ZSTD_inBuffer input;
+    ZSTD_outBuffer output;
+    BlocksOutputBuffer blocks_buffer;
     ZSTD_EndDirective zFlushMode;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:flush", kwlist,
@@ -132,52 +133,41 @@ static PyObject *ZstdCompressionObj_flush(ZstdCompressionObj *self,
     input.size = 0;
     input.pos = 0;
 
+    /* Initialize blocks output buffer before any `goto except` statement. */
+    if (OutputBuffer_InitAndGrow(&blocks_buffer, &output, -1) < 0) {
+        goto except;
+    }
+
     while (1) {
         Py_BEGIN_ALLOW_THREADS zresult = ZSTD_compressStream2(
-            self->compressor->cctx, &self->output, &input, zFlushMode);
+            self->compressor->cctx, &output, &input, zFlushMode);
         Py_END_ALLOW_THREADS
 
             if (ZSTD_isError(zresult)) {
             PyErr_Format(ZstdError, "error ending compression stream: %s",
                          ZSTD_getErrorName(zresult));
-            return NULL;
-        }
-
-        if (self->output.pos) {
-            if (result) {
-                resultSize = PyBytes_GET_SIZE(result);
-
-                if (safe_pybytes_resize(&result,
-                                        resultSize + self->output.pos)) {
-                    Py_XDECREF(result);
-                    return NULL;
-                }
-
-                memcpy(PyBytes_AS_STRING(result) + resultSize, self->output.dst,
-                       self->output.pos);
-            }
-            else {
-                result = PyBytes_FromStringAndSize(self->output.dst,
-                                                   self->output.pos);
-                if (!result) {
-                    return NULL;
-                }
-            }
-
-            self->output.pos = 0;
+            goto except;
         }
 
         if (!zresult) {
             break;
         }
+
+        if (output.pos == output.size) {
+            if (OutputBuffer_Grow(&blocks_buffer, &output) < 0) {
+                goto except;
+            }
+        }
     }
 
+    result = OutputBuffer_Finish(&blocks_buffer, &output);
     if (result) {
         return result;
     }
-    else {
-        return PyBytes_FromString("");
-    }
+
+except:
+    OutputBuffer_OnError(&blocks_buffer);
+    return NULL;
 }
 
 static PyMethodDef ZstdCompressionObj_methods[] = {
