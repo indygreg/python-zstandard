@@ -7,6 +7,7 @@
  */
 
 #include "python-zstandard.h"
+#include "blocks_output_buffer.h"
 
 extern PyObject *ZstdError;
 
@@ -24,8 +25,8 @@ static PyObject *DecompressionObj_decompress(ZstdDecompressionObj *self,
     size_t zresult;
     ZSTD_inBuffer input;
     ZSTD_outBuffer output;
-    PyObject *result = NULL;
-    Py_ssize_t resultSize = 0;
+    BlocksOutputBuffer blocks_buffer;
+    PyObject *result;
 
     output.dst = NULL;
 
@@ -49,13 +50,10 @@ static PyObject *DecompressionObj_decompress(ZstdDecompressionObj *self,
     input.size = source.len;
     input.pos = 0;
 
-    output.dst = PyMem_Malloc(self->outSize);
-    if (!output.dst) {
-        PyErr_NoMemory();
+    /* Initialize blocks output buffer before any `goto except` statement. */
+    if (OutputBuffer_InitAndGrow(&blocks_buffer, &output, -1) < 0) {
         goto except;
     }
-    output.size = self->outSize;
-    output.pos = 0;
 
     while (1) {
         Py_BEGIN_ALLOW_THREADS zresult =
@@ -70,46 +68,32 @@ static PyObject *DecompressionObj_decompress(ZstdDecompressionObj *self,
 
         if (0 == zresult) {
             self->finished = 1;
-        }
-
-        if (output.pos) {
-            if (result) {
-                resultSize = PyBytes_GET_SIZE(result);
-                if (-1 ==
-                    safe_pybytes_resize(&result, resultSize + output.pos)) {
-                    Py_XDECREF(result);
-                    goto except;
-                }
-
-                memcpy(PyBytes_AS_STRING(result) + resultSize, output.dst,
-                       output.pos);
-            }
-            else {
-                result = PyBytes_FromStringAndSize(output.dst, output.pos);
-                if (!result) {
-                    goto except;
-                }
-            }
-        }
-
-        if (zresult == 0 || (input.pos == input.size && output.pos == 0)) {
             break;
         }
 
-        output.pos = 0;
+        /* Need to check output before input. Maybe zstd's internal buffer
+           still has a few bytes can be output, grow the buffer and continue. */
+        if (output.pos == output.size) {
+            /* Output buffer exhausted. */
+            if (OutputBuffer_Grow(&blocks_buffer, &output) < 0) {
+                goto except;
+            }
+        } else if (input.pos == input.size) {
+            /* Input buffer exhausted. */
+            break;
+        }
     }
 
-    if (!result) {
-        result = PyBytes_FromString("");
+    result = OutputBuffer_Finish(&blocks_buffer, &output);
+    if (result) {
+        goto finally;
     }
-
-    goto finally;
 
 except:
-    Py_CLEAR(result);
+    OutputBuffer_OnError(&blocks_buffer);
+    result = NULL;
 
 finally:
-    PyMem_Free(output.dst);
     PyBuffer_Release(&source);
 
     return result;
