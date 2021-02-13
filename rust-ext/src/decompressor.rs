@@ -7,7 +7,8 @@
 use {
     crate::{
         compression_dict::ZstdCompressionDict, decompression_reader::ZstdDecompressionReader,
-        decompression_writer::ZstdDecompressionWriter, exceptions::ZstdError,
+        decompression_writer::ZstdDecompressionWriter, decompressionobj::ZstdDecompressionObj,
+        exceptions::ZstdError,
     },
     pyo3::{
         buffer::PyBuffer,
@@ -297,8 +298,22 @@ impl ZstdDecompressor {
     }
 
     #[args(write_size = "None")]
-    fn decompressobj(&self, write_size: Option<usize>) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(()))
+    fn decompressobj(
+        &self,
+        py: Python,
+        write_size: Option<usize>,
+    ) -> PyResult<ZstdDecompressionObj> {
+        if let Some(write_size) = write_size {
+            if write_size < 1 {
+                return Err(PyValueError::new_err("write_size must be positive"));
+            }
+        }
+
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+
+        self.setup_dctx(py, true)?;
+
+        ZstdDecompressionObj::new(self.dctx.clone(), write_size)
     }
 
     fn memory_size(&self) -> PyResult<usize> {
