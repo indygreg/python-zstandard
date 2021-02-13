@@ -490,7 +490,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertTrue(buffer.closed)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
-            reader.read(b"")
+            reader.read()
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
             with reader:
@@ -540,7 +540,7 @@ class TestDecompressor_stream_reader(unittest.TestCase):
         self.assertFalse(buffer.closed)
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
-            reader.read(b"")
+            reader.read()
 
         with self.assertRaisesRegex(ValueError, "stream is closed"):
             with reader:
