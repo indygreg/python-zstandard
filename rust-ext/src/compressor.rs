@@ -12,6 +12,7 @@ use {
         compression_reader::ZstdCompressionReader,
         compression_writer::ZstdCompressionWriter,
         compressionobj::ZstdCompressionObj,
+        compressor_iterator::ZstdCompressorIterator,
         ZstdError,
     },
     pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*, types::PyBytes},
@@ -480,6 +481,27 @@ impl ZstdCompressor {
         }
 
         Ok((total_read, total_write))
+    }
+
+    #[args(reader, read_size = "None", write_size = "None", skip_bytes = "None")]
+    fn read_to_iter(
+        &self,
+        py: Python,
+        reader: &PyAny,
+        size: Option<u64>,
+        read_size: Option<usize>,
+        write_size: Option<usize>,
+    ) -> PyResult<ZstdCompressorIterator> {
+        let size = size.unwrap_or(zstd_safe::CONTENTSIZE_UNKNOWN);
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
+
+        self.cctx.reset();
+        self.cctx
+            .set_pledged_source_size(size)
+            .map_err(|msg| ZstdError::new_err(msg))?;
+
+        ZstdCompressorIterator::new(py, self.cctx.clone(), reader, read_size, write_size)
     }
 
     #[args(source, size = "None", read_size = "None", closefd = "true")]

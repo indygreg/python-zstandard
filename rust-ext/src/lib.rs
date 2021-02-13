@@ -15,6 +15,7 @@ mod compression_reader;
 mod compression_writer;
 mod compressionobj;
 mod compressor;
+mod compressor_iterator;
 mod constants;
 mod decompression_reader;
 mod decompression_writer;
