@@ -20,6 +20,7 @@ mod decompression_reader;
 mod decompression_writer;
 mod decompressionobj;
 mod decompressor;
+mod decompressor_iterator;
 mod exceptions;
 mod frame_parameters;
 mod stream;

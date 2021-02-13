@@ -8,7 +8,7 @@ use {
     crate::{
         compression_dict::ZstdCompressionDict, decompression_reader::ZstdDecompressionReader,
         decompression_writer::ZstdDecompressionWriter, decompressionobj::ZstdDecompressionObj,
-        exceptions::ZstdError,
+        decompressor_iterator::ZstdDecompressorIterator, exceptions::ZstdError,
     },
     pyo3::{
         buffer::PyBuffer,
@@ -495,12 +495,38 @@ impl ZstdDecompressor {
     #[args(reader, read_size = "None", write_size = "None", skip_bytes = "None")]
     fn read_to_iter(
         &self,
+        py: Python,
         reader: &PyAny,
         read_size: Option<usize>,
         write_size: Option<usize>,
         skip_bytes: Option<usize>,
-    ) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(()))
+    ) -> PyResult<ZstdDecompressorIterator> {
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::dstream_in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+        let skip_bytes = skip_bytes.unwrap_or(0);
+
+        if skip_bytes >= read_size {
+            return Err(PyValueError::new_err(
+                "skip_bytes must be smaller than read_size",
+            ));
+        }
+
+        if !reader.hasattr("read")? && !reader.hasattr("__getitem__")? {
+            return Err(PyValueError::new_err(
+                "must pass an object with a read() method or conforms to buffer protocol",
+            ));
+        }
+
+        self.setup_dctx(py, true)?;
+
+        ZstdDecompressorIterator::new(
+            py,
+            self.dctx.clone(),
+            reader,
+            read_size,
+            write_size,
+            skip_bytes,
+        )
     }
 
     #[args(
