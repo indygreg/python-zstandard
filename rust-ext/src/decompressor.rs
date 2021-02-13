@@ -14,7 +14,7 @@ use {
         buffer::PyBuffer,
         exceptions::{PyMemoryError, PyNotImplementedError, PyValueError},
         prelude::*,
-        types::PyBytes,
+        types::{PyBytes, PyList},
     },
     std::{marker::PhantomData, sync::Arc},
 };
@@ -293,8 +293,170 @@ impl ZstdDecompressor {
         }
     }
 
-    fn decompress_content_dict_chain(&self, frames: &PyAny) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(()))
+    fn decompress_content_dict_chain<'p>(
+        &self,
+        py: Python<'p>,
+        frames: &PyList,
+    ) -> PyResult<&'p PyBytes> {
+        if frames.is_empty() {
+            return Err(PyValueError::new_err("empty input chain"));
+        }
+
+        // First chunk should not be using a dictionary. We handle it specially.
+        let chunk = frames.get_item(0);
+
+        if !chunk.is_instance::<PyBytes>()? {
+            return Err(PyValueError::new_err("chunk 0 must be bytes"));
+        }
+
+        let chunk_buffer: PyBuffer<u8> = PyBuffer::get(chunk)?;
+        let mut params = zstd_sys::ZSTD_frameHeader {
+            frameContentSize: 0,
+            windowSize: 0,
+            blockSizeMax: 0,
+            frameType: zstd_sys::ZSTD_frameType_e::ZSTD_frame,
+            headerSize: 0,
+            dictID: 0,
+            checksumFlag: 0,
+        };
+        let zresult = unsafe {
+            zstd_sys::ZSTD_getFrameHeader(
+                &mut params,
+                chunk_buffer.buf_ptr() as *const _,
+                chunk_buffer.len_bytes(),
+            )
+        };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            return Err(PyValueError::new_err("chunk 0 is not a valid zstd frame"));
+        } else if zresult != 0 {
+            return Err(PyValueError::new_err(
+                "chunk 0 is too small to contain a zstd frame",
+            ));
+        }
+
+        if params.frameContentSize == zstd_safe::CONTENTSIZE_UNKNOWN {
+            return Err(PyValueError::new_err(
+                "chunk 0 missing content size in frame",
+            ));
+        }
+
+        self.setup_dctx(py, false)?;
+
+        let mut last_buffer: Vec<u8> = Vec::with_capacity(params.frameContentSize as _);
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: last_buffer.as_mut_ptr() as *mut _,
+            size: last_buffer.capacity(),
+            pos: 0,
+        };
+
+        let mut in_buffer = zstd_sys::ZSTD_inBuffer {
+            src: chunk_buffer.buf_ptr() as *mut _,
+            size: chunk_buffer.len_bytes(),
+            pos: 0,
+        };
+
+        let zresult = unsafe {
+            zstd_sys::ZSTD_decompressStream(
+                self.dctx.dctx(),
+                &mut out_buffer as *mut _,
+                &mut in_buffer as *mut _,
+            )
+        };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            return Err(ZstdError::new_err(format!(
+                "could not decompress chunk 0: {}",
+                zstd_safe::get_error_name(zresult)
+            )));
+        } else if zresult != 0 {
+            return Err(ZstdError::new_err("chunk 0 did not decompress full frame"));
+        }
+
+        unsafe {
+            last_buffer.set_len(out_buffer.pos);
+        }
+
+        // Special case of chain length 1.
+        if frames.len() == 1 {
+            // TODO avoid buffer copy.
+            let chunk = PyBytes::new(py, &last_buffer);
+            return Ok(chunk);
+        }
+
+        for (i, chunk) in frames.iter().enumerate().skip(1) {
+            if !chunk.is_instance::<PyBytes>()? {
+                return Err(PyValueError::new_err(format!("chunk {} must be bytes", i)));
+            }
+
+            let chunk_buffer: PyBuffer<u8> = PyBuffer::get(chunk)?;
+
+            let zresult = unsafe {
+                zstd_sys::ZSTD_getFrameHeader(
+                    &mut params as *mut _,
+                    chunk_buffer.buf_ptr(),
+                    chunk_buffer.len_bytes(),
+                )
+            };
+            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+                return Err(PyValueError::new_err(format!(
+                    "chunk {} is not a valid zstd frame",
+                    i
+                )));
+            } else if zresult != 0 {
+                return Err(PyValueError::new_err(format!(
+                    "chunk {} is too small to contain a zstd frame",
+                    i
+                )));
+            }
+
+            if params.frameContentSize == zstd_safe::CONTENTSIZE_UNKNOWN {
+                return Err(PyValueError::new_err(format!(
+                    "chunk {} missing content size in frame",
+                    i
+                )));
+            }
+
+            let mut dest_buffer: Vec<u8> = Vec::with_capacity(params.frameContentSize as _);
+            let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+                dst: dest_buffer.as_mut_ptr() as *mut _,
+                size: dest_buffer.capacity(),
+                pos: 0,
+            };
+
+            let mut in_buffer = zstd_sys::ZSTD_inBuffer {
+                src: chunk_buffer.buf_ptr(),
+                size: chunk_buffer.len_bytes(),
+                pos: 0,
+            };
+
+            let zresult = unsafe {
+                zstd_sys::ZSTD_decompressStream(
+                    self.dctx.dctx(),
+                    &mut out_buffer as *mut _,
+                    &mut in_buffer as *mut _,
+                )
+            };
+            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+                return Err(ZstdError::new_err(format!(
+                    "could not decompress chunk {}: {}",
+                    i,
+                    zstd_safe::get_error_name(zresult)
+                )));
+            } else if zresult != 0 {
+                return Err(ZstdError::new_err(format!(
+                    "chunk {} did not decompress full frame",
+                    i
+                )));
+            }
+
+            unsafe {
+                dest_buffer.set_len(out_buffer.pos);
+            }
+
+            last_buffer = dest_buffer;
+        }
+
+        // TODO avoid buffer copy.
+        Ok(PyBytes::new(py, &last_buffer))
     }
 
     #[args(write_size = "None")]
