@@ -15,6 +15,7 @@ use {
         exceptions::{PyMemoryError, PyNotImplementedError, PyValueError},
         prelude::*,
         types::{PyBytes, PyList},
+        wrap_pyfunction,
     },
     std::{marker::PhantomData, sync::Arc},
 };
@@ -586,8 +587,17 @@ impl ZstdDecompressor {
     }
 }
 
+#[pyfunction]
+fn estimate_decompression_context_size() -> usize {
+    unsafe { zstd_sys::ZSTD_estimateDCtxSize() }
+}
+
 pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
     module.add_class::<ZstdDecompressor>()?;
+    module.add_function(wrap_pyfunction!(
+        estimate_decompression_context_size,
+        module
+    )?)?;
 
     Ok(())
 }
