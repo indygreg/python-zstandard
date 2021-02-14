@@ -5,7 +5,7 @@
 // of the BSD license. See the LICENSE file for details.
 
 use {
-    pyo3::{buffer::PyBuffer, prelude::*},
+    pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*},
     zstd_sys::ZSTD_inBuffer,
 };
 
@@ -135,7 +135,11 @@ pub(crate) fn make_in_buffer_source(
             offset: 0,
         }))
     } else {
-        let buffer = PyBuffer::get(source)?;
+        let buffer = PyBuffer::get(source).map_err(|_| {
+            PyValueError::new_err(
+                "must pass an object with a read() method or conforms to buffer protocol",
+            )
+        })?;
 
         Ok(Box::new(BufferSource {
             source: source.into_py(py),
