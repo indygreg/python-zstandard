@@ -477,7 +477,7 @@ impl ZstdCompressionReader {
 
 #[pyproto]
 impl PyIterProtocol for ZstdCompressionReader {
-    fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
+    fn __iter__(_slf: PyRef<Self>) -> PyResult<()> {
         let py = unsafe { Python::assume_gil_acquired() };
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -485,7 +485,7 @@ impl PyIterProtocol for ZstdCompressionReader {
         Err(PyErr::from_instance(exc))
     }
 
-    fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
+    fn __next__(_slf: PyRef<Self>) -> PyResult<Option<()>> {
         let py = unsafe { Python::assume_gil_acquired() };
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;

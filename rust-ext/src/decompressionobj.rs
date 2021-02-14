@@ -82,6 +82,7 @@ impl ZstdDecompressionObj {
         empty.call_method1("join", (chunks,))
     }
 
+    #[allow(unused_variables)]
     fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<&'p PyBytes> {
         Ok(PyBytes::new(py, &[]))
     }

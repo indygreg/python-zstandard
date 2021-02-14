@@ -22,7 +22,6 @@ const FLUSH_FRAME: usize = 1;
 pub struct ZstdCompressionWriter {
     cctx: Arc<CCtx<'static>>,
     writer: PyObject,
-    write_size: usize,
     write_return_read: bool,
     closefd: bool,
     entered: bool,
@@ -48,7 +47,6 @@ impl ZstdCompressionWriter {
         Ok(Self {
             cctx,
             writer: writer.into_py(py),
-            write_size,
             write_return_read,
             closefd,
             entered: false,
@@ -138,6 +136,7 @@ impl ZstdCompressionWriter {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -146,6 +145,7 @@ impl ZstdCompressionWriter {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -154,6 +154,7 @@ impl ZstdCompressionWriter {
     }
 
     #[args(pos, whence = "None")]
+    #[allow(unused_variables)]
     fn seek(&self, py: Python, pos: isize, whence: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -165,6 +166,7 @@ impl ZstdCompressionWriter {
         false
     }
 
+    #[allow(unused_variables)]
     fn truncate(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -176,11 +178,13 @@ impl ZstdCompressionWriter {
         true
     }
 
+    #[allow(unused_variables)]
     fn writelines(&self, lines: &PyAny) -> PyResult<()> {
         Err(PyNotImplementedError::new_err(()))
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn read(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -195,6 +199,7 @@ impl ZstdCompressionWriter {
         Err(PyErr::from_instance(exc))
     }
 
+    #[allow(unused_variables)]
     fn readinto(&self, py: Python, b: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;

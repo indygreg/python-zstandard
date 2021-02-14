@@ -229,7 +229,6 @@ impl ZstdCompressionDict {
     threads = "0"
 )]
 fn train_dictionary(
-    py: Python,
     dict_size: usize,
     samples: &PyList,
     k: u32,

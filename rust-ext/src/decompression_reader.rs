@@ -24,7 +24,6 @@ use {
 pub struct ZstdDecompressionReader {
     dctx: Arc<DCtx<'static>>,
     source: Box<dyn InBufferSource + Send>,
-    read_size: usize,
     read_across_frames: bool,
     closefd: bool,
     entered: bool,
@@ -45,7 +44,6 @@ impl ZstdDecompressionReader {
         Ok(Self {
             dctx,
             source: make_in_buffer_source(py, reader, read_size)?,
-            read_size,
             read_across_frames,
             closefd,
             entered: false,
@@ -103,6 +101,7 @@ impl ZstdDecompressionReader {
         }
     }
 
+    #[allow(unused_variables)]
     fn __exit__<'p>(
         mut slf: PyRefMut<'p, Self>,
         py: Python<'p>,
@@ -130,6 +129,7 @@ impl ZstdDecompressionReader {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -138,6 +138,7 @@ impl ZstdDecompressionReader {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -145,6 +146,7 @@ impl ZstdDecompressionReader {
         Err(PyErr::from_instance(exc))
     }
 
+    #[allow(unused_variables)]
     fn write(&self, py: Python, data: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -152,6 +154,7 @@ impl ZstdDecompressionReader {
         Err(PyErr::from_instance(exc))
     }
 
+    #[allow(unused_variables)]
     fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -458,7 +461,7 @@ impl ZstdDecompressionReader {
 
 #[pyproto]
 impl PyIterProtocol for ZstdDecompressionReader {
-    fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
+    fn __iter__(_slf: PyRef<Self>) -> PyResult<()> {
         let py = unsafe { Python::assume_gil_acquired() };
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -466,7 +469,7 @@ impl PyIterProtocol for ZstdDecompressionReader {
         Err(PyErr::from_instance(exc))
     }
 
-    fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
+    fn __next__(_slf: PyRef<Self>) -> PyResult<Option<()>> {
         let py = unsafe { Python::assume_gil_acquired() };
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;

@@ -378,6 +378,7 @@ impl ZstdDecompressor {
     }
 
     #[args(frames, decompressed_sizes = "None", threads = "0")]
+    #[allow(unused_variables)]
     fn multi_decompress_to_buffer(
         &self,
         frames: &PyAny,

@@ -22,7 +22,7 @@ use {
 
 #[pyclass(module = "zstandard.backend_rust")]
 struct ZstdCompressor {
-    threads: i32,
+    _threads: i32,
     dict: Option<Py<ZstdCompressionDict>>,
     params: CCtxParams<'static>,
     cctx: Arc<CCtx<'static>>,
@@ -133,7 +133,7 @@ impl ZstdCompressor {
         }
 
         let compressor = ZstdCompressor {
-            threads,
+            _threads: threads,
             dict: dict_data,
             params,
             cctx,

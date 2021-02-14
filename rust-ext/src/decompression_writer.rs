@@ -62,12 +62,13 @@ impl ZstdDecompressionWriter {
         }
     }
 
+    #[allow(unused_variables)]
     fn __exit__<'p>(
         mut slf: PyRefMut<'p, Self>,
         py: Python<'p>,
-        _exc_type: PyObject,
-        _exc_value: PyObject,
-        _exc_tb: PyObject,
+        exc_type: PyObject,
+        exc_value: PyObject,
+        exc_tb: PyObject,
     ) -> PyResult<bool> {
         slf.entered = false;
         slf.close(py)?;
@@ -140,6 +141,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -148,6 +150,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -156,6 +159,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[args(pos, whence = "None")]
+    #[allow(unused_variables)]
     fn seek(&self, py: Python, offset: isize, whence: Option<i32>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -175,6 +179,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn truncate(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -186,6 +191,7 @@ impl ZstdDecompressionWriter {
         true
     }
 
+    #[allow(unused_variables)]
     fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -194,6 +200,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn read(&self, py: Python, size: Option<usize>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -208,6 +215,7 @@ impl ZstdDecompressionWriter {
         Err(PyErr::from_instance(exc))
     }
 
+    #[allow(unused_variables)]
     fn readinto(&self, py: Python, buffer: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -216,6 +224,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[args(size = "None")]
+    #[allow(unused_variables)]
     fn read1(&self, py: Python, size: Option<usize>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
@@ -223,6 +232,7 @@ impl ZstdDecompressionWriter {
         Err(PyErr::from_instance(exc))
     }
 
+    #[allow(unused_variables)]
     fn readinto1(&self, py: Python, buffer: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;

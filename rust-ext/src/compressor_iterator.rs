@@ -69,8 +69,7 @@ impl PyIterProtocol for ZstdCompressorIterator {
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
             let old_pos = in_buffer.pos;
 
-            let zresult = slf
-                .cctx
+            slf.cctx
                 .compress_into_vec(
                     &mut dest_buffer,
                     &mut in_buffer,
