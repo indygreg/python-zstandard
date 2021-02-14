@@ -14,6 +14,9 @@ pub trait InBufferSource {
     /// Obtain the PyObject this instance is reading from.
     fn source_object(&self) -> &PyObject;
 
+    /// The size of the input object, if available.
+    fn source_size(&self) -> Option<usize>;
+
     /// Obtain a `zstd_sys::ZSTD_inBuffer` with input to feed to a compressor.
     fn input_buffer(&mut self, py: Python) -> PyResult<Option<ZSTD_inBuffer>>;
 
@@ -36,6 +39,10 @@ struct ReadSource {
 impl InBufferSource for ReadSource {
     fn source_object(&self) -> &PyObject {
         &self.source
+    }
+
+    fn source_size(&self) -> Option<usize> {
+        None
     }
 
     fn input_buffer(&mut self, py: Python) -> PyResult<Option<ZSTD_inBuffer>> {
@@ -98,6 +105,10 @@ struct BufferSource {
 impl InBufferSource for BufferSource {
     fn source_object(&self) -> &PyObject {
         &self.source
+    }
+
+    fn source_size(&self) -> Option<usize> {
+        Some(self.buffer.len_bytes())
     }
 
     fn input_buffer(&mut self, _py: Python) -> PyResult<Option<ZSTD_inBuffer>> {

@@ -483,7 +483,7 @@ impl ZstdCompressor {
         Ok((total_read, total_write))
     }
 
-    #[args(reader, read_size = "None", write_size = "None", skip_bytes = "None")]
+    #[args(reader, size = "None", read_size = "None", write_size = "None")]
     fn read_to_iter(
         &self,
         py: Python,
@@ -497,11 +497,8 @@ impl ZstdCompressor {
         let write_size = write_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
 
         self.cctx.reset();
-        self.cctx
-            .set_pledged_source_size(size)
-            .map_err(|msg| ZstdError::new_err(msg))?;
 
-        ZstdCompressorIterator::new(py, self.cctx.clone(), reader, read_size, write_size)
+        ZstdCompressorIterator::new(py, self.cctx.clone(), reader, size, read_size, write_size)
     }
 
     #[args(source, size = "None", read_size = "None", closefd = "true")]
