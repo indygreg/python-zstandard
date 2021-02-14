@@ -73,23 +73,13 @@ impl ZstdDecompressionReader {
 
         let old_pos = in_buffer.pos;
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_decompressStream(
-                self.dctx.dctx(),
-                out_buffer as *mut _,
-                &mut in_buffer as *mut _,
-            )
-        };
+        let zresult = self
+            .dctx
+            .decompress_buffers(out_buffer, &mut in_buffer)
+            .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
         if in_buffer.pos - old_pos > 0 {
             self.source.record_bytes_read(in_buffer.pos - old_pos);
-        }
-
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "zstd decompress error: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
         }
 
         // Emit data if there is data AND either:

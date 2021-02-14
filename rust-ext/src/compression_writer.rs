@@ -222,24 +222,17 @@ impl ZstdCompressionWriter {
         };
 
         while in_buffer.pos < in_buffer.size {
-            let zresult = unsafe {
-                zstd_sys::ZSTD_compressStream2(
-                    self.cctx.cctx(),
-                    &mut out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
+            let zresult = self
+                .cctx
+                .compress_buffers(
+                    &mut out_buffer,
+                    &mut in_buffer,
                     zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
                 )
-            };
+                .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
             unsafe {
                 self.dest_buffer.set_len(out_buffer.pos);
-            }
-
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "zstd compress error: {}",
-                    zstd_safe::get_error_name(zresult)
-                )));
             }
 
             if out_buffer.pos > 0 {
@@ -293,24 +286,13 @@ impl ZstdCompressionWriter {
         };
 
         loop {
-            let zresult = unsafe {
-                zstd_sys::ZSTD_compressStream2(
-                    self.cctx.cctx(),
-                    &mut out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
-                    flush,
-                )
-            };
+            let zresult = self
+                .cctx
+                .compress_buffers(&mut out_buffer, &mut in_buffer, flush)
+                .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
             unsafe {
                 self.dest_buffer.set_len(out_buffer.pos);
-            }
-
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "zstd compress error: {}",
-                    zstd_safe::get_error_name(zresult)
-                )));
             }
 
             if out_buffer.pos > 0 {

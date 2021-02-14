@@ -60,19 +60,10 @@ impl ZstdDecompressionObj {
         let chunks = PyList::empty(py);
 
         loop {
-            let zresult = unsafe {
-                zstd_sys::ZSTD_decompressStream(
-                    self.dctx.dctx(),
-                    &mut out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
-                )
-            };
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "zstd decompressor error: {}",
-                    zstd_safe::get_error_name(zresult)
-                )));
-            }
+            let zresult = self
+                .dctx
+                .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
             if zresult == 0 {
                 self.finished = true;

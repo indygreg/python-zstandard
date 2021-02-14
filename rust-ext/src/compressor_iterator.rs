@@ -74,20 +74,14 @@ impl PyIterProtocol for ZstdCompressorIterator {
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
             let old_pos = in_buffer.pos;
 
-            let zresult = unsafe {
-                zstd_sys::ZSTD_compressStream2(
-                    slf.cctx.cctx(),
-                    &mut out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
+            let zresult = slf
+                .cctx
+                .compress_buffers(
+                    &mut out_buffer,
+                    &mut in_buffer,
                     zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
                 )
-            };
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "zstd compress error: {}",
-                    zstd_safe::get_error_name(zresult)
-                )));
-            }
+                .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
             slf.source.record_bytes_read(in_buffer.pos - old_pos);
 
@@ -114,20 +108,16 @@ impl PyIterProtocol for ZstdCompressorIterator {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_compressStream2(
-                slf.cctx.cctx(),
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
+        let zresult = slf
+            .cctx
+            .compress_buffers(
+                &mut out_buffer,
+                &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
-        };
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "error ending compression stream: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
-        }
+            .map_err(|msg| {
+                ZstdError::new_err(format!("error ending compression stream: {}", msg))
+            })?;
 
         if zresult == 0 {
             slf.finished_output = true;

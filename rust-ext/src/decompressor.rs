@@ -50,6 +50,22 @@ impl<'a> DCtx<'a> {
     pub fn memory_size(&self) -> usize {
         unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.0) }
     }
+
+    pub fn decompress_buffers(
+        &self,
+        out_buffer: &mut zstd_sys::ZSTD_outBuffer,
+        in_buffer: &mut zstd_sys::ZSTD_inBuffer,
+    ) -> Result<usize, &'static str> {
+        let zresult = unsafe {
+            zstd_sys::ZSTD_decompressStream(self.0, out_buffer as *mut _, in_buffer as *mut _)
+        };
+
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(zresult)
+        }
+    }
 }
 
 #[pyclass(module = "zstandard.backend_rust")]
@@ -186,19 +202,10 @@ impl ZstdDecompressor {
 
             // Flush all read data to output.
             while in_buffer.pos < in_buffer.size {
-                let zresult = unsafe {
-                    zstd_sys::ZSTD_decompressStream(
-                        self.dctx.0,
-                        &mut out_buffer as *mut _,
-                        &mut in_buffer as *mut _,
-                    )
-                };
-                if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                    return Err(ZstdError::new_err(format!(
-                        "zstd decompressor error: {}",
-                        zstd_safe::get_error_name(zresult)
-                    )));
-                }
+                let zresult = self
+                    .dctx
+                    .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                    .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
                 if out_buffer.pos != 0 {
                     unsafe {
@@ -267,19 +274,12 @@ impl ZstdDecompressor {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_decompressStream(
-                self.dctx.0,
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
-            )
-        };
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            Err(ZstdError::new_err(format!(
-                "decompression error: {}",
-                zstd_safe::get_error_name(zresult),
-            )))
-        } else if zresult != 0 {
+        let zresult = self
+            .dctx
+            .decompress_buffers(&mut out_buffer, &mut in_buffer)
+            .map_err(|msg| ZstdError::new_err(format!("decompression error: {}", msg)))?;
+
+        if zresult != 0 {
             Err(ZstdError::new_err(
                 "decompression error: did not decompress full frame",
             ))
@@ -357,19 +357,12 @@ impl ZstdDecompressor {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_decompressStream(
-                self.dctx.dctx(),
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
-            )
-        };
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "could not decompress chunk 0: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
-        } else if zresult != 0 {
+        let zresult = self
+            .dctx
+            .decompress_buffers(&mut out_buffer, &mut in_buffer)
+            .map_err(|msg| ZstdError::new_err(format!("could not decompress chunk 0: {}", msg)))?;
+
+        if zresult != 0 {
             return Err(ZstdError::new_err("chunk 0 did not decompress full frame"));
         }
 
@@ -430,20 +423,14 @@ impl ZstdDecompressor {
                 pos: 0,
             };
 
-            let zresult = unsafe {
-                zstd_sys::ZSTD_decompressStream(
-                    self.dctx.dctx(),
-                    &mut out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
-                )
-            };
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "could not decompress chunk {}: {}",
-                    i,
-                    zstd_safe::get_error_name(zresult)
-                )));
-            } else if zresult != 0 {
+            let zresult = self
+                .dctx
+                .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                .map_err(|msg| {
+                    ZstdError::new_err(format!("could not decompress chunk {}: {}", i, msg))
+                })?;
+
+            if zresult != 0 {
                 return Err(ZstdError::new_err(format!(
                     "chunk {} did not decompress full frame",
                     i

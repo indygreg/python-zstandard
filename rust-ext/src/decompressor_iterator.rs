@@ -77,19 +77,10 @@ impl PyIterProtocol for ZstdDecompressorIterator {
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
             let old_pos = in_buffer.pos;
 
-            let zresult = unsafe {
-                zstd_sys::ZSTD_decompressStream(
-                    slf.dctx.dctx(),
-                    &mut out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
-                )
-            };
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "zstd decompress error: {}",
-                    zstd_safe::get_error_name(zresult)
-                )));
-            }
+            let zresult = slf
+                .dctx
+                .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
             slf.source.record_bytes_read(in_buffer.pos - old_pos);
             unsafe {

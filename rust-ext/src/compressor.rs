@@ -171,6 +171,28 @@ impl<'a> CCtx<'a> {
 
         Ok((dest, remaining, zresult != 0))
     }
+
+    pub fn compress_buffers(
+        &self,
+        out_buffer: &mut zstd_sys::ZSTD_outBuffer,
+        in_buffer: &mut zstd_sys::ZSTD_inBuffer,
+        end_mode: zstd_sys::ZSTD_EndDirective,
+    ) -> Result<usize, &'static str> {
+        let zresult = unsafe {
+            zstd_sys::ZSTD_compressStream2(
+                self.0,
+                out_buffer as *mut _,
+                in_buffer as *mut _,
+                end_mode,
+            )
+        };
+
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(zresult)
+        }
+    }
 }
 
 #[pyclass(module = "zstandard.backend_rust")]

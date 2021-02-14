@@ -209,20 +209,13 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
                 pos: slf.dest_buffer.len(),
             };
 
-            let zresult = unsafe {
-                zstd_sys::ZSTD_compressStream2(
-                    slf.cctx.cctx(),
-                    &mut out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
+            slf.cctx
+                .compress_buffers(
+                    &mut out_buffer,
+                    &mut in_buffer,
                     zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
                 )
-            };
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "zstd compress error: {}",
-                    zstd_safe::get_error_name(zresult)
-                )));
-            }
+                .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
             slf.source.record_bytes_read(in_buffer.pos - old_pos);
             unsafe {
@@ -269,20 +262,10 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_compressStream2(
-                slf.cctx.cctx(),
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
-                flush_mode,
-            )
-        };
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "zstd compress error: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
-        }
+        let zresult = slf
+            .cctx
+            .compress_buffers(&mut out_buffer, &mut in_buffer, flush_mode)
+            .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
         unsafe {
             slf.dest_buffer.set_len(out_buffer.pos);

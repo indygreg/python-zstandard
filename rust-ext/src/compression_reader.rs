@@ -76,26 +76,18 @@ impl ZstdCompressionReader {
             let old_in_pos = in_buffer.pos;
             let old_out_pos = out_buffer.pos;
 
-            let zresult = unsafe {
-                zstd_sys::ZSTD_compressStream2(
-                    self.cctx.cctx(),
-                    out_buffer as *mut _,
-                    &mut in_buffer as *mut _,
+            self.cctx
+                .compress_buffers(
+                    out_buffer,
+                    &mut in_buffer,
                     zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
                 )
-            };
+                .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
             self.bytes_compressed += out_buffer.pos - old_out_pos;
             self.source.record_bytes_read(in_buffer.pos - old_in_pos);
 
-            if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-                Err(ZstdError::new_err(format!(
-                    "zstd compress error: {}",
-                    zstd_safe::get_error_name(zresult)
-                )))
-            } else {
-                Ok(out_buffer.pos > 0 && out_buffer.pos == out_buffer.size)
-            }
+            Ok(out_buffer.pos > 0 && out_buffer.pos == out_buffer.size)
         } else {
             Ok(false)
         }
@@ -264,25 +256,20 @@ impl ZstdCompressionReader {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_compressStream2(
-                self.cctx.cctx(),
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
+        let zresult = self
+            .cctx
+            .compress_buffers(
+                &mut out_buffer,
+                &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
-        };
+            .map_err(|msg| {
+                ZstdError::new_err(format!("error ending compression stream: {}", msg))
+            })?;
 
         self.bytes_compressed += out_buffer.pos - old_pos;
         unsafe {
             dest_buffer.set_len(out_buffer.pos);
-        }
-
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "error ending compression stream: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
         }
 
         if zresult == 0 {
@@ -357,25 +344,20 @@ impl ZstdCompressionReader {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_compressStream2(
-                self.cctx.cctx(),
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
+        let zresult = self
+            .cctx
+            .compress_buffers(
+                &mut out_buffer,
+                &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
-        };
+            .map_err(|msg| {
+                ZstdError::new_err(format!("error ending compression stream: {}", msg))
+            })?;
 
         self.bytes_compressed += out_buffer.pos - old_pos;
         unsafe {
             dest_buffer.set_len(out_buffer.pos);
-        }
-
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "error ending compression stream: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
         }
 
         if zresult == 0 {
@@ -420,23 +402,18 @@ impl ZstdCompressionReader {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_compressStream2(
-                self.cctx.cctx(),
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
+        let zresult = self
+            .cctx
+            .compress_buffers(
+                &mut out_buffer,
+                &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
-        };
+            .map_err(|msg| {
+                ZstdError::new_err(format!("error ending compression stream: {}", msg))
+            })?;
 
         self.bytes_compressed += out_buffer.pos - old_pos;
-
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "error ending compression stream: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
-        }
 
         if zresult == 0 {
             self.finished_output = true;
@@ -483,23 +460,18 @@ impl ZstdCompressionReader {
             pos: 0,
         };
 
-        let zresult = unsafe {
-            zstd_sys::ZSTD_compressStream2(
-                self.cctx.cctx(),
-                &mut out_buffer as *mut _,
-                &mut in_buffer as *mut _,
+        let zresult = self
+            .cctx
+            .compress_buffers(
+                &mut out_buffer,
+                &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
-        };
+            .map_err(|msg| {
+                ZstdError::new_err(format!("error ending compression stream: {}", msg))
+            })?;
 
         self.bytes_compressed += out_buffer.pos - old_pos;
-
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "error ending compression stream: {}",
-                zstd_safe::get_error_name(zresult),
-            )));
-        }
 
         if zresult == 0 {
             self.finished_output = true;
