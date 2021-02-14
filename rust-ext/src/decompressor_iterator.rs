@@ -58,6 +58,7 @@ impl PyIterProtocol for ZstdDecompressorIterator {
     fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
         slf
     }
+
     fn __next__(mut slf: PyRefMut<Self>) -> PyResult<Option<PyObject>> {
         if slf.finished_output {
             return Ok(None);
@@ -93,14 +94,18 @@ impl PyIterProtocol for ZstdDecompressorIterator {
                 dest_buffer.set_len(out_buffer.pos);
             }
 
-            // Emit chunk if output buffer is full.
-            if out_buffer.pos == out_buffer.size {
+            if zresult == 0 {
+                slf.finished_output = true;
+            }
+
+            // Emit chunk if output buffer has data.
+            if out_buffer.pos > 0 {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &dest_buffer);
                 return Ok(Some(chunk.into_py(py)));
             }
 
-            // Try to get more input to fill output buffer.
+            // Repeat loop to collect more input data.
             continue;
         }
 
