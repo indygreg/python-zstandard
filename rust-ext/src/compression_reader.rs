@@ -90,7 +90,7 @@ impl ZstdCompressionReader {
 impl ZstdCompressionReader {
     fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
         if slf.entered {
-            Err(ZstdError::new_err("cannot __enter__ multiple times"))
+            Err(PyValueError::new_err("cannot __enter__ multiple times"))
         } else if slf.closed {
             Err(PyValueError::new_err("stream is closed"))
         } else {
