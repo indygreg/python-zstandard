@@ -167,14 +167,13 @@ OutputBuffer_Grow(BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob)
 
     /* Check max_length */
     if (buffer->max_length >= 0) {
-        /* Prevent adding unlimited number of empty bytes to the list */
-        if (buffer->max_length == 0) {
-            assert(ob->pos == ob->size);
-            return 0;
-        }
+        /* If (rest == 0), should not grow the buffer. */
+        Py_ssize_t rest = buffer->max_length - buffer->allocated;
+        assert(rest > 0);
+
         /* block_size of the last block */
-        if (block_size > buffer->max_length - buffer->allocated) {
-            block_size = (int) (buffer->max_length - buffer->allocated);
+        if (block_size > rest) {
+            block_size = (int) rest;
         }
     }
 
