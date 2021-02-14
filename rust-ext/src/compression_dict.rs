@@ -7,7 +7,7 @@
 use {
     crate::{
         compression_parameters::{get_cctx_parameter, int_to_strategy, ZstdCompressionParameters},
-        zstd_safe::{CDict, DDict},
+        zstd_safe::{CCtx, CDict, DDict},
         ZstdError,
     },
     pyo3::{
@@ -45,29 +45,15 @@ pub struct ZstdCompressionDict {
 }
 
 impl ZstdCompressionDict {
-    pub(crate) fn load_into_cctx(&self, cctx: *mut zstd_sys::ZSTD_CCtx) -> PyResult<()> {
-        let zresult = if let Some(cdict) = &self.cdict {
-            unsafe { zstd_sys::ZSTD_CCtx_refCDict(cctx, cdict.ptr) }
+    pub(crate) fn load_into_cctx(&self, cctx: &CCtx) -> PyResult<()> {
+        if let Some(cdict) = &self.cdict {
+            cctx.load_computed_dict(cdict)
         } else {
-            unsafe {
-                zstd_sys::ZSTD_CCtx_loadDictionary_advanced(
-                    cctx,
-                    self.data.as_ptr() as *const _,
-                    self.data.len(),
-                    zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
-                    self.content_type,
-                )
-            }
-        };
-
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            Err(ZstdError::new_err(format!(
-                "could not load compression dictionary: {}",
-                zstd_safe::get_error_name(zresult)
-            )))
-        } else {
-            Ok(())
+            cctx.load_dict_data(&self.data, self.content_type)
         }
+        .map_err(|msg| {
+            ZstdError::new_err(format!("could not load compression dictionary: {}", msg))
+        })
     }
 
     /// Ensure the DDict is populated.

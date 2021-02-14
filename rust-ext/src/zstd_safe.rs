@@ -7,9 +7,8 @@
 use {crate::compression_parameters::CCtxParams, std::marker::PhantomData};
 
 /// Safe wrapper for ZSTD_CDict instances.
-pub(crate) struct CDict<'a> {
-    // TODO don't expose field.
-    pub(crate) ptr: *mut zstd_sys::ZSTD_CDict,
+pub struct CDict<'a> {
+    ptr: *mut zstd_sys::ZSTD_CDict,
     _phantom: PhantomData<&'a ()>,
 }
 
@@ -35,7 +34,7 @@ unsafe impl<'a> Send for CDict<'a> {}
 unsafe impl<'a> Sync for CDict<'a> {}
 
 /// Safe wrapper for ZSTD_DDict instances.
-pub(crate) struct DDict<'a> {
+pub struct DDict<'a> {
     // TODO don't expose field.
     pub(crate) ptr: *mut zstd_sys::ZSTD_DDict,
     _phantom: PhantomData<&'a ()>,
@@ -114,6 +113,36 @@ impl<'a> CCtx<'a> {
 
     pub fn set_pledged_source_size(&self, size: u64) -> Result<(), &'static str> {
         let zresult = unsafe { zstd_sys::ZSTD_CCtx_setPledgedSrcSize(self.0, size) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn load_computed_dict<'b: 'a>(&'a self, cdict: &'b CDict) -> Result<(), &'static str> {
+        let zresult = unsafe { zstd_sys::ZSTD_CCtx_refCDict(self.0, cdict.ptr) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn load_dict_data<'b: 'a>(
+        &'a self,
+        data: &'b [u8],
+        content_type: zstd_sys::ZSTD_dictContentType_e,
+    ) -> Result<(), &'static str> {
+        let zresult = unsafe {
+            zstd_sys::ZSTD_CCtx_loadDictionary_advanced(
+                self.0,
+                data.as_ptr() as *const _,
+                data.len(),
+                zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
+                content_type,
+            )
+        };
         if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
             Err(zstd_safe::get_error_name(zresult))
         } else {

@@ -35,7 +35,7 @@ impl ZstdCompressor {
             .or_else(|msg| Err(ZstdError::new_err(msg)))?;
 
         if let Some(dict) = &self.dict {
-            dict.borrow(py).load_into_cctx(self.cctx.cctx())?;
+            dict.borrow(py).load_into_cctx(&self.cctx)?;
         }
 
         Ok(())
