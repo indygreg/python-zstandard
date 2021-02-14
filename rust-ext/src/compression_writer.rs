@@ -22,7 +22,6 @@ const FLUSH_FRAME: usize = 1;
 pub struct ZstdCompressionWriter {
     cctx: Arc<CCtx<'static>>,
     writer: PyObject,
-    source_size: u64,
     write_size: usize,
     write_return_read: bool,
     closefd: bool,
@@ -42,11 +41,13 @@ impl ZstdCompressionWriter {
         write_size: usize,
         write_return_read: bool,
         closefd: bool,
-    ) -> Self {
-        Self {
+    ) -> PyResult<Self> {
+        cctx.set_pledged_source_size(source_size)
+            .map_err(|msg| ZstdError::new_err(format!("error setting source size: {}", msg)))?;
+
+        Ok(Self {
             cctx,
             writer: writer.into_py(py),
-            source_size,
             write_size,
             write_return_read,
             closefd,
@@ -55,7 +56,7 @@ impl ZstdCompressionWriter {
             closed: false,
             bytes_compressed: 0,
             dest_buffer: Vec::with_capacity(write_size),
-        }
+        })
     }
 }
 

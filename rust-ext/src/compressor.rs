@@ -562,7 +562,7 @@ impl ZstdCompressor {
         let size = size.unwrap_or(zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _);
         let write_size = write_size.unwrap_or_else(|| unsafe { zstd_sys::ZSTD_CStreamOutSize() });
 
-        Ok(ZstdCompressionWriter::new(
+        ZstdCompressionWriter::new(
             py,
             self.cctx.clone(),
             writer,
@@ -570,7 +570,7 @@ impl ZstdCompressor {
             write_size,
             write_return_read,
             closefd,
-        ))
+        )
     }
 }
 
