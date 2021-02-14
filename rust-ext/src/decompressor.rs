@@ -375,8 +375,8 @@ impl ZstdDecompressor {
         ZstdDecompressionObj::new(self.dctx.clone(), write_size)
     }
 
-    fn memory_size(&self) -> PyResult<usize> {
-        Ok(unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.dctx.dctx()) })
+    fn memory_size(&self) -> usize {
+        self.dctx.memory_size()
     }
 
     #[args(frames, decompressed_sizes = "None", threads = "0")]
