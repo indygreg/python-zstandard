@@ -178,7 +178,9 @@ class RustBuildExt(distutils.command.build_ext.build_ext):
             super().build_extension(ext)
 
 
-def get_rust_extension(root=None,):
+def get_rust_extension(
+    root=None,
+):
     actual_root = os.path.abspath(os.path.dirname(__file__))
     root = root or actual_root
 
