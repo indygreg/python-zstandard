@@ -75,9 +75,7 @@ impl ZstdDecompressionObj {
                 break;
             }
 
-            unsafe {
-                dest_buffer.set_len(0);
-            }
+            dest_buffer.clear();
         }
 
         let empty = PyBytes::new(py, &[]);

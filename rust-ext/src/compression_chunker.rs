@@ -217,9 +217,7 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
             // If we produced a full output chunk, emit it.
             if slf.dest_buffer.len() == slf.dest_buffer.capacity() {
                 let chunk = PyBytes::new(py, &slf.dest_buffer);
-                unsafe {
-                    slf.dest_buffer.set_len(0);
-                }
+                slf.dest_buffer.clear();
 
                 return Ok(Some(chunk.into_py(py)));
             }
@@ -272,10 +270,7 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
         }
 
         let chunk = PyBytes::new(py, &slf.dest_buffer);
-
-        unsafe {
-            slf.dest_buffer.set_len(0);
-        }
+        slf.dest_buffer.clear();
 
         Ok(Some(chunk.into_py(py)))
     }

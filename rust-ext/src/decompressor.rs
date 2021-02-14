@@ -226,9 +226,7 @@ impl ZstdDecompressor {
 
                     ofh.call_method1("write", (data,))?;
                     total_write += dest_buffer.len();
-                    unsafe {
-                        dest_buffer.set_len(0);
-                    }
+                    dest_buffer.clear();
                 }
             }
             // Continue loop to keep reading.

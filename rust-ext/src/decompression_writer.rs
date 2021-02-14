@@ -255,9 +255,7 @@ impl ZstdDecompressionWriter {
                 let chunk = PyBytes::new(py, &dest_buffer);
                 self.writer.call_method1(py, "write", (chunk,))?;
                 total_write += dest_buffer.len();
-                unsafe {
-                    dest_buffer.set_len(0);
-                }
+                dest_buffer.clear();
             }
         }
 

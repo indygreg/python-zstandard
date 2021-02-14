@@ -231,9 +231,7 @@ impl ZstdCompressionWriter {
 
                 total_write += self.dest_buffer.len();
                 self.bytes_compressed += self.dest_buffer.len();
-                unsafe {
-                    self.dest_buffer.set_len(0);
-                }
+                self.dest_buffer.clear();
             }
         }
 
@@ -280,9 +278,7 @@ impl ZstdCompressionWriter {
 
                 total_write += self.dest_buffer.len();
                 self.bytes_compressed += self.dest_buffer.len();
-                unsafe {
-                    self.dest_buffer.set_len(0);
-                }
+                self.dest_buffer.clear();
             }
 
             if zresult == 0 {
