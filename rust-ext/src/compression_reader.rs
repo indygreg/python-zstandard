@@ -73,7 +73,8 @@ impl ZstdCompressionReader {
         out_buffer: &mut zstd_sys::ZSTD_outBuffer,
     ) -> PyResult<bool> {
         if let Some(mut in_buffer) = self.source.input_buffer(py)? {
-            let old_pos = out_buffer.pos;
+            let old_in_pos = in_buffer.pos;
+            let old_out_pos = out_buffer.pos;
 
             let zresult = unsafe {
                 zstd_sys::ZSTD_compressStream2(
@@ -84,8 +85,8 @@ impl ZstdCompressionReader {
                 )
             };
 
-            self.bytes_compressed += out_buffer.pos - old_pos;
-            self.source.record_bytes_read(in_buffer.pos);
+            self.bytes_compressed += out_buffer.pos - old_out_pos;
+            self.source.record_bytes_read(in_buffer.pos - old_in_pos);
 
             if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
                 Err(ZstdError::new_err(format!(

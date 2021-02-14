@@ -181,6 +181,8 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
 
         // Consume any data left in the input.
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
+            let old_pos = in_buffer.pos;
+
             let mut out_buffer = zstd_sys::ZSTD_outBuffer {
                 dst: slf.dest_buffer.as_mut_ptr() as *mut _,
                 size: slf.dest_buffer.capacity(),
@@ -202,7 +204,7 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
                 )));
             }
 
-            slf.source.record_bytes_read(in_buffer.pos);
+            slf.source.record_bytes_read(in_buffer.pos - old_pos);
             unsafe {
                 slf.dest_buffer.set_len(out_buffer.pos);
             }

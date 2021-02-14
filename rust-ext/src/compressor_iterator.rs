@@ -72,6 +72,8 @@ impl PyIterProtocol for ZstdCompressorIterator {
 
         // Feed data into the compressor until there is output data.
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
+            let old_pos = in_buffer.pos;
+
             let zresult = unsafe {
                 zstd_sys::ZSTD_compressStream2(
                     slf.cctx.cctx(),
@@ -87,7 +89,7 @@ impl PyIterProtocol for ZstdCompressorIterator {
                 )));
             }
 
-            slf.source.record_bytes_read(in_buffer.pos);
+            slf.source.record_bytes_read(in_buffer.pos - old_pos);
 
             // Emit compressed data, if available.
             if out_buffer.pos != 0 {

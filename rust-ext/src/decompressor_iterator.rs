@@ -75,6 +75,8 @@ impl PyIterProtocol for ZstdDecompressorIterator {
 
         // While input is available.
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
+            let old_pos = in_buffer.pos;
+
             let zresult = unsafe {
                 zstd_sys::ZSTD_decompressStream(
                     slf.dctx.dctx(),
@@ -89,7 +91,7 @@ impl PyIterProtocol for ZstdDecompressorIterator {
                 )));
             }
 
-            slf.source.record_bytes_read(in_buffer.pos);
+            slf.source.record_bytes_read(in_buffer.pos - old_pos);
             unsafe {
                 dest_buffer.set_len(out_buffer.pos);
             }
