@@ -20,6 +20,7 @@ pub struct ZstdCompressionChunker {
     chunk_size: usize,
     finished: bool,
     iterator: Option<Py<ZstdCompressionChunkerIterator>>,
+    partial_buffer: Option<Vec<u8>>,
 }
 
 impl ZstdCompressionChunker {
@@ -29,22 +30,41 @@ impl ZstdCompressionChunker {
             chunk_size,
             finished: false,
             iterator: None,
+            partial_buffer: None,
         })
     }
 }
 
 impl ZstdCompressionChunker {
     fn ensure_state(&mut self, py: Python) {
-        // TODO preserve partial destination buffer
         if let Some(it) = &self.iterator {
             if it.borrow(py).finished {
                 if it.borrow(py).mode == IteratorMode::Finish {
                     self.finished = true;
                 }
 
+                if !it.borrow(py).dest_buffer.is_empty() {
+                    // TODO can we avoid the memory copy?
+                    // Vec.clone() won't preserve the capacity of the source.
+                    // So we create a new Vec with desired capacity and copy to it.
+                    // This is strictly better than a clone + resize.
+                    let mut dest_buffer = Vec::with_capacity(self.chunk_size);
+                    unsafe {
+                        dest_buffer.set_len(it.borrow(py).dest_buffer.len());
+                    }
+                    dest_buffer.copy_from_slice(it.borrow(py).dest_buffer.as_slice());
+                    self.partial_buffer = Some(dest_buffer);
+                }
+
                 self.iterator = None;
             }
         }
+    }
+
+    fn get_dest_buffer(&mut self) -> Vec<u8> {
+        self.partial_buffer
+            .take()
+            .unwrap_or_else(|| Vec::with_capacity(self.chunk_size))
     }
 }
 
@@ -71,7 +91,7 @@ impl ZstdCompressionChunker {
                 cctx: self.cctx.clone(),
                 source,
                 mode: IteratorMode::Normal,
-                dest_buffer: Vec::with_capacity(self.chunk_size),
+                dest_buffer: self.get_dest_buffer(),
                 finished: false,
             },
         )?;
@@ -105,7 +125,7 @@ impl ZstdCompressionChunker {
                 cctx: self.cctx.clone(),
                 source,
                 mode: IteratorMode::Flush,
-                dest_buffer: Vec::with_capacity(self.chunk_size),
+                dest_buffer: self.get_dest_buffer(),
                 finished: false,
             },
         )?;
@@ -139,7 +159,7 @@ impl ZstdCompressionChunker {
                 cctx: self.cctx.clone(),
                 source,
                 mode: IteratorMode::Finish,
-                dest_buffer: Vec::with_capacity(self.chunk_size),
+                dest_buffer: self.get_dest_buffer(),
                 finished: false,
             },
         )?;
@@ -224,10 +244,9 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
             continue;
         }
 
-        // No more input data. A partial chunk may be in the chunker's
-        // destination buffer. If we're in normal compression mode, we're done.
-        // Otherwise if we're in flush or finish mode, we need to emit what
-        // data remains.
+        // No more input data. A partial chunk may be in the destination
+        // buffer. If we're in normal compression mode, we're done. Otherwise
+        // if we're in flush or finish mode, we need to emit what data remains.
 
         let flush_mode = match slf.mode {
             IteratorMode::Normal => {
@@ -265,6 +284,14 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
             )));
         }
 
+        unsafe {
+            slf.dest_buffer.set_len(out_buffer.pos);
+        }
+
+        // When flushing or finishing, we always emit data in the output
+        // buffer. But the operation could fill the output buffer and not be
+        // finished.
+
         // If we didn't emit anything to the output buffer, we must be finished.
         // Update state and stop iteration.
         if out_buffer.pos == 0 {
@@ -272,25 +299,16 @@ impl PyIterProtocol for ZstdCompressionChunkerIterator {
             return Ok(None);
         }
 
-        // Else we have data in the output buffer. We're either in
-        // flush or finish mode and all available data in the output buffer
-        // should be emitted.
-
-        unsafe {
-            slf.dest_buffer.set_len(out_buffer.pos);
-        }
-
         let chunk = PyBytes::new(py, &slf.dest_buffer);
+        unsafe {
+            slf.dest_buffer.set_len(0);
+        }
 
         // If the flush or finish didn't fill the output buffer, we must
         // be done.
         // If compressor said operation is finished, we are also done.
-        if out_buffer.pos < out_buffer.size || zresult == 0 {
+        if zresult == 0 || out_buffer.pos < out_buffer.size {
             slf.finished = true;
-        }
-
-        unsafe {
-            slf.dest_buffer.set_len(0);
         }
 
         Ok(Some(chunk.into_py(py)))
