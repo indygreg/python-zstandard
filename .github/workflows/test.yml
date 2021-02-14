@@ -44,13 +44,27 @@ jobs:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
 
+      - name: Install Rust
+        if: matrix.py != '3.5' && matrix.arch == 'x64'
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          profile: minimal
+
       - uses: actions/checkout@v2
 
       - name: Install Dependencies
         run: |
           pip install --require-hashes -r ci/requirements.txt
 
-      - name: Build
+      - name: Build (Rust)
+        if: matrix.py != '3.5' && matrix.arch == 'x64'
+        run: |
+          python setup.py --rust-backend develop
+
+      - name: Build (No Rust)
+        if: matrix.py == '3.5' || matrix.arch != 'x64'
         run: |
           python setup.py develop
 
@@ -61,5 +75,12 @@ jobs:
       - name: Test CFFI Backend
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
+        run: |
+          pytest --numprocesses=auto -v tests/
+
+      - name: Test Rust Backend
+        if: matrix.py != '3.5' && matrix.arch == 'x64'
+        env:
+          PYTHON_ZSTANDARD_IMPORT_POLICY: 'rust'
         run: |
           pytest --numprocesses=auto -v tests/
