@@ -244,27 +244,20 @@ impl ZstdDecompressionWriter {
         };
 
         let mut dest_buffer = Vec::with_capacity(self.write_size);
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: 0,
-        };
 
         while in_buffer.pos < in_buffer.size {
             self.dctx
-                .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                .decompress_into_vec(&mut dest_buffer, &mut in_buffer)
                 .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
-            unsafe {
-                dest_buffer.set_len(out_buffer.pos);
-            }
-
-            if out_buffer.pos > 0 {
+            if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &dest_buffer);
                 self.writer.call_method1(py, "write", (chunk,))?;
-                total_write += out_buffer.pos;
-                out_buffer.pos = 0;
+                total_write += dest_buffer.len();
+                unsafe {
+                    dest_buffer.set_len(0);
+                }
             }
         }
 

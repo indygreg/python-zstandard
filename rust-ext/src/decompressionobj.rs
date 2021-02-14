@@ -51,18 +51,13 @@ impl ZstdDecompressionObj {
         };
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(self.write_size);
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: 0,
-        };
 
         let chunks = PyList::empty(py);
 
         loop {
             let zresult = self
                 .dctx
-                .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                .decompress_into_vec(&mut dest_buffer, &mut in_buffer)
                 .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
             if zresult == 0 {
@@ -70,21 +65,16 @@ impl ZstdDecompressionObj {
                 // TODO clear out decompressor?
             }
 
-            if out_buffer.pos > 0 {
-                unsafe {
-                    dest_buffer.set_len(out_buffer.pos);
-                }
-
+            if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &dest_buffer);
                 chunks.append(chunk)?;
             }
 
-            if zresult == 0 || (in_buffer.pos == in_buffer.size && out_buffer.pos == 0) {
+            if zresult == 0 || (in_buffer.pos == in_buffer.size && dest_buffer.is_empty()) {
                 break;
             }
 
-            out_buffer.pos = 0;
             unsafe {
                 dest_buffer.set_len(0);
             }

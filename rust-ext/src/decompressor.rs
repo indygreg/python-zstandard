@@ -66,6 +66,26 @@ impl<'a> DCtx<'a> {
             Ok(zresult)
         }
     }
+
+    pub fn decompress_into_vec(
+        &self,
+        dest_buffer: &mut Vec<u8>,
+        in_buffer: &mut zstd_sys::ZSTD_inBuffer,
+    ) -> Result<usize, &'static str> {
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: dest_buffer.as_mut_ptr() as *mut _,
+            size: dest_buffer.capacity(),
+            pos: dest_buffer.len(),
+        };
+
+        let zresult = self.decompress_buffers(&mut out_buffer, in_buffer)?;
+
+        unsafe {
+            dest_buffer.set_len(out_buffer.pos);
+        }
+
+        Ok(zresult)
+    }
 }
 
 #[pyclass(module = "zstandard.backend_rust")]
@@ -175,12 +195,6 @@ impl ZstdDecompressor {
             pos: 0,
         };
 
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: 0,
-        };
-
         let mut total_read = 0;
         let mut total_write = 0;
 
@@ -202,22 +216,19 @@ impl ZstdDecompressor {
 
             // Flush all read data to output.
             while in_buffer.pos < in_buffer.size {
-                let zresult = self
-                    .dctx
-                    .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                self.dctx
+                    .decompress_into_vec(&mut dest_buffer, &mut in_buffer)
                     .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
-                if out_buffer.pos != 0 {
-                    unsafe {
-                        dest_buffer.set_len(out_buffer.pos);
-                    }
-
+                if !dest_buffer.is_empty() {
                     // TODO avoid buffer copy.
                     let data = PyBytes::new(py, &dest_buffer);
 
                     ofh.call_method1("write", (data,))?;
-                    total_write += out_buffer.pos;
-                    out_buffer.pos = 0;
+                    total_write += dest_buffer.len();
+                    unsafe {
+                        dest_buffer.set_len(0);
+                    }
                 }
             }
             // Continue loop to keep reading.
@@ -262,12 +273,6 @@ impl ZstdDecompressor {
             .try_reserve_exact(output_buffer_size)
             .map_err(|_| PyMemoryError::new_err(()))?;
 
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: 0,
-        };
-
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
             src: buffer.buf_ptr(),
             size: buffer.len_bytes(),
@@ -276,21 +281,20 @@ impl ZstdDecompressor {
 
         let zresult = self
             .dctx
-            .decompress_buffers(&mut out_buffer, &mut in_buffer)
+            .decompress_into_vec(&mut dest_buffer, &mut in_buffer)
             .map_err(|msg| ZstdError::new_err(format!("decompression error: {}", msg)))?;
 
         if zresult != 0 {
             Err(ZstdError::new_err(
                 "decompression error: did not decompress full frame",
             ))
-        } else if output_size != 0 && out_buffer.pos != output_size as _ {
+        } else if output_size != 0 && dest_buffer.len() != output_size as _ {
             Err(ZstdError::new_err(format!(
                 "decompression error: decompressed {} bytes; expected {}",
                 zresult, output_size
             )))
         } else {
             // TODO avoid memory copy
-            unsafe { dest_buffer.set_len(out_buffer.pos) };
             Ok(PyBytes::new(py, &dest_buffer))
         }
     }
@@ -345,11 +349,6 @@ impl ZstdDecompressor {
         self.setup_dctx(py, false)?;
 
         let mut last_buffer: Vec<u8> = Vec::with_capacity(params.frameContentSize as _);
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: last_buffer.as_mut_ptr() as *mut _,
-            size: last_buffer.capacity(),
-            pos: 0,
-        };
 
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
             src: chunk_buffer.buf_ptr() as *mut _,
@@ -359,15 +358,11 @@ impl ZstdDecompressor {
 
         let zresult = self
             .dctx
-            .decompress_buffers(&mut out_buffer, &mut in_buffer)
+            .decompress_into_vec(&mut last_buffer, &mut in_buffer)
             .map_err(|msg| ZstdError::new_err(format!("could not decompress chunk 0: {}", msg)))?;
 
         if zresult != 0 {
             return Err(ZstdError::new_err("chunk 0 did not decompress full frame"));
-        }
-
-        unsafe {
-            last_buffer.set_len(out_buffer.pos);
         }
 
         // Special case of chain length 1.
@@ -411,11 +406,6 @@ impl ZstdDecompressor {
             }
 
             let mut dest_buffer: Vec<u8> = Vec::with_capacity(params.frameContentSize as _);
-            let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-                dst: dest_buffer.as_mut_ptr() as *mut _,
-                size: dest_buffer.capacity(),
-                pos: 0,
-            };
 
             let mut in_buffer = zstd_sys::ZSTD_inBuffer {
                 src: chunk_buffer.buf_ptr(),
@@ -425,7 +415,7 @@ impl ZstdDecompressor {
 
             let zresult = self
                 .dctx
-                .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                .decompress_into_vec(&mut dest_buffer, &mut in_buffer)
                 .map_err(|msg| {
                     ZstdError::new_err(format!("could not decompress chunk {}: {}", i, msg))
                 })?;
@@ -435,10 +425,6 @@ impl ZstdDecompressor {
                     "chunk {} did not decompress full frame",
                     i
                 )));
-            }
-
-            unsafe {
-                dest_buffer.set_len(out_buffer.pos);
             }
 
             last_buffer = dest_buffer;

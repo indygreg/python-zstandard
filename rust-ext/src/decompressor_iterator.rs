@@ -67,11 +67,6 @@ impl PyIterProtocol for ZstdDecompressorIterator {
         let py = unsafe { Python::assume_gil_acquired() };
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(slf.write_size);
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: 0,
-        };
 
         // While input is available.
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
@@ -79,20 +74,17 @@ impl PyIterProtocol for ZstdDecompressorIterator {
 
             let zresult = slf
                 .dctx
-                .decompress_buffers(&mut out_buffer, &mut in_buffer)
+                .decompress_into_vec(&mut dest_buffer, &mut in_buffer)
                 .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
             slf.source.record_bytes_read(in_buffer.pos - old_pos);
-            unsafe {
-                dest_buffer.set_len(out_buffer.pos);
-            }
 
             if zresult == 0 {
                 slf.finished_output = true;
             }
 
             // Emit chunk if output buffer has data.
-            if out_buffer.pos > 0 {
+            if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &dest_buffer);
                 return Ok(Some(chunk.into_py(py)));
@@ -103,7 +95,7 @@ impl PyIterProtocol for ZstdDecompressorIterator {
         }
 
         // Input is exhausted. Emit what we have or finish.
-        if out_buffer.pos > 0 {
+        if !dest_buffer.is_empty() {
             // TODO avoid buffer copy.
             let chunk = PyBytes::new(py, &dest_buffer);
             Ok(Some(chunk.into_py(py)))
