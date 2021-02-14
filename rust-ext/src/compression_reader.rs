@@ -371,6 +371,10 @@ impl ZstdCompressionReader {
     }
 
     fn readinto(&mut self, py: Python, buffer: PyBuffer<u8>) -> PyResult<usize> {
+        if buffer.readonly() {
+            return Err(PyValueError::new_err("buffer is not writable"));
+        }
+
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
         }
@@ -426,6 +430,10 @@ impl ZstdCompressionReader {
     }
 
     fn readinto1(&mut self, py: Python, buffer: PyBuffer<u8>) -> PyResult<usize> {
+        if buffer.readonly() {
+            return Err(PyValueError::new_err("buffer is not writable"));
+        }
+
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
         }
