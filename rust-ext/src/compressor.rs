@@ -193,6 +193,31 @@ impl<'a> CCtx<'a> {
             Ok(zresult)
         }
     }
+
+    /// Compress data into a destination vector.
+    ///
+    /// The vector will be appended to, up to its currently allocated capacity.
+    /// The vector's length will be adjusted to account for written data.
+    pub fn compress_into_vec(
+        &self,
+        dest_buffer: &mut Vec<u8>,
+        in_buffer: &mut zstd_sys::ZSTD_inBuffer,
+        end_mode: zstd_sys::ZSTD_EndDirective,
+    ) -> Result<usize, &'static str> {
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: dest_buffer.as_mut_ptr() as *mut _,
+            size: dest_buffer.capacity(),
+            pos: dest_buffer.len(),
+        };
+
+        let zresult = self.compress_buffers(&mut out_buffer, in_buffer, end_mode)?;
+
+        unsafe {
+            dest_buffer.set_len(out_buffer.pos);
+        }
+
+        Ok(zresult)
+    }
 }
 
 #[pyclass(module = "zstandard.backend_rust")]

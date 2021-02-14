@@ -64,11 +64,6 @@ impl PyIterProtocol for ZstdCompressorIterator {
         let py = unsafe { Python::assume_gil_acquired() };
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(slf.write_size);
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: 0,
-        };
 
         // Feed data into the compressor until there is output data.
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {
@@ -76,8 +71,8 @@ impl PyIterProtocol for ZstdCompressorIterator {
 
             let zresult = slf
                 .cctx
-                .compress_buffers(
-                    &mut out_buffer,
+                .compress_into_vec(
+                    &mut dest_buffer,
                     &mut in_buffer,
                     zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
                 )
@@ -86,10 +81,7 @@ impl PyIterProtocol for ZstdCompressorIterator {
             slf.source.record_bytes_read(in_buffer.pos - old_pos);
 
             // Emit compressed data, if available.
-            if out_buffer.pos != 0 {
-                unsafe {
-                    dest_buffer.set_len(out_buffer.pos);
-                }
+            if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy
                 let chunk = PyBytes::new(py, &dest_buffer);
 
@@ -110,8 +102,8 @@ impl PyIterProtocol for ZstdCompressorIterator {
 
         let zresult = slf
             .cctx
-            .compress_buffers(
-                &mut out_buffer,
+            .compress_into_vec(
+                &mut dest_buffer,
                 &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
@@ -123,11 +115,7 @@ impl PyIterProtocol for ZstdCompressorIterator {
             slf.finished_output = true;
         }
 
-        if out_buffer.pos != 0 {
-            unsafe {
-                dest_buffer.set_len(out_buffer.pos);
-            }
-
+        if !dest_buffer.is_empty() {
             // TODO avoid buffer copy.
             let chunk = PyBytes::new(py, &dest_buffer);
 

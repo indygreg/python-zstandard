@@ -215,34 +215,22 @@ impl ZstdCompressionWriter {
             pos: 0,
         };
 
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: self.dest_buffer.as_mut_ptr() as *mut _,
-            size: self.dest_buffer.capacity(),
-            pos: 0,
-        };
-
         while in_buffer.pos < in_buffer.size {
-            let zresult = self
-                .cctx
-                .compress_buffers(
-                    &mut out_buffer,
+            self.cctx
+                .compress_into_vec(
+                    &mut self.dest_buffer,
                     &mut in_buffer,
                     zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
                 )
                 .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
-            unsafe {
-                self.dest_buffer.set_len(out_buffer.pos);
-            }
-
-            if out_buffer.pos > 0 {
+            if !self.dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &self.dest_buffer);
                 self.writer.call_method1(py, "write", (chunk,))?;
 
-                total_write += out_buffer.pos;
-                self.bytes_compressed += out_buffer.pos;
-                out_buffer.pos = 0;
+                total_write += self.dest_buffer.len();
+                self.bytes_compressed += self.dest_buffer.len();
                 unsafe {
                     self.dest_buffer.set_len(0);
                 }
@@ -273,12 +261,6 @@ impl ZstdCompressionWriter {
 
         let mut total_write = 0;
 
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: self.dest_buffer.as_mut_ptr() as *mut _,
-            size: self.dest_buffer.capacity(),
-            pos: 0,
-        };
-
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
             src: std::ptr::null_mut(),
             size: 0,
@@ -288,21 +270,16 @@ impl ZstdCompressionWriter {
         loop {
             let zresult = self
                 .cctx
-                .compress_buffers(&mut out_buffer, &mut in_buffer, flush)
+                .compress_into_vec(&mut self.dest_buffer, &mut in_buffer, flush)
                 .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
-            unsafe {
-                self.dest_buffer.set_len(out_buffer.pos);
-            }
-
-            if out_buffer.pos > 0 {
+            if !self.dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &self.dest_buffer);
                 self.writer.call_method1(py, "write", (chunk,))?;
 
-                total_write += out_buffer.pos;
-                self.bytes_compressed += out_buffer.pos;
-                out_buffer.pos = 0;
+                total_write += self.dest_buffer.len();
+                self.bytes_compressed += self.dest_buffer.len();
                 unsafe {
                     self.dest_buffer.set_len(0);
                 }

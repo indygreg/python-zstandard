@@ -92,6 +92,22 @@ impl ZstdCompressionReader {
             Ok(false)
         }
     }
+
+    fn compress_into_vec(&mut self, py: Python, dest_buffer: &mut Vec<u8>) -> PyResult<bool> {
+        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
+            dst: dest_buffer.as_mut_ptr() as *mut _,
+            size: dest_buffer.capacity(),
+            pos: dest_buffer.len(),
+        };
+
+        let res = self.compress_into_buffer(py, &mut out_buffer)?;
+
+        unsafe {
+            dest_buffer.set_len(out_buffer.pos);
+        }
+
+        Ok(res)
+    }
 }
 
 #[pymethods]
@@ -228,19 +244,10 @@ impl ZstdCompressionReader {
         }
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(size as _);
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: 0,
-        };
 
         while !self.source.finished() {
             // If the output buffer is full, return its content.
-            if self.compress_into_buffer(py, &mut out_buffer)? {
-                unsafe {
-                    dest_buffer.set_len(out_buffer.pos);
-                }
-
+            if self.compress_into_vec(py, &mut dest_buffer)? {
                 // TODO avoid buffer copy.
                 return Ok(PyBytes::new(py, &dest_buffer));
             }
@@ -248,7 +255,7 @@ impl ZstdCompressionReader {
         }
 
         // EOF.
-        let old_pos = out_buffer.pos;
+        let old_pos = dest_buffer.len();
 
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
             src: std::ptr::null_mut(),
@@ -258,8 +265,8 @@ impl ZstdCompressionReader {
 
         let zresult = self
             .cctx
-            .compress_buffers(
-                &mut out_buffer,
+            .compress_into_vec(
+                &mut dest_buffer,
                 &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
@@ -267,10 +274,7 @@ impl ZstdCompressionReader {
                 ZstdError::new_err(format!("error ending compression stream: {}", msg))
             })?;
 
-        self.bytes_compressed += out_buffer.pos - old_pos;
-        unsafe {
-            dest_buffer.set_len(out_buffer.pos);
-        }
+        self.bytes_compressed += dest_buffer.len() - old_pos;
 
         if zresult == 0 {
             self.finished_output = true;
@@ -304,11 +308,6 @@ impl ZstdCompressionReader {
         };
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(size);
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size,
-            pos: 0,
-        };
 
         // read1() dictates that we can perform at most 1 call to the
         // underlying stream to get input. However, we can't satisfy this
@@ -319,24 +318,22 @@ impl ZstdCompressionReader {
         // have any output.
 
         // Read data until we exhaust input or have output data.
-        while !self.source.finished() && out_buffer.pos == 0 {
-            self.compress_into_buffer(py, &mut out_buffer)?;
-
-            unsafe {
-                dest_buffer.set_len(out_buffer.pos);
-            }
+        while !self.source.finished() && dest_buffer.is_empty() {
+            self.compress_into_vec(py, &mut dest_buffer)?;
         }
 
         // We return immediately if:
         // a) output buffer is full
         // b) output buffer has data and input isn't exhausted.
-        if out_buffer.pos == out_buffer.size || (out_buffer.pos != 0 && !self.source.finished()) {
+        if dest_buffer.len() == dest_buffer.capacity()
+            || (!dest_buffer.is_empty() && !self.source.finished())
+        {
             // TODO avoid buffer copy.
             return Ok(PyBytes::new(py, &dest_buffer));
         }
 
         // Input must be exhausted. Finish the compression stream.
-        let old_pos = out_buffer.pos;
+        let old_pos = dest_buffer.len();
 
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
             src: std::ptr::null_mut(),
@@ -346,8 +343,8 @@ impl ZstdCompressionReader {
 
         let zresult = self
             .cctx
-            .compress_buffers(
-                &mut out_buffer,
+            .compress_into_vec(
+                &mut dest_buffer,
                 &mut in_buffer,
                 zstd_sys::ZSTD_EndDirective::ZSTD_e_end,
             )
@@ -355,10 +352,7 @@ impl ZstdCompressionReader {
                 ZstdError::new_err(format!("error ending compression stream: {}", msg))
             })?;
 
-        self.bytes_compressed += out_buffer.pos - old_pos;
-        unsafe {
-            dest_buffer.set_len(out_buffer.pos);
-        }
+        self.bytes_compressed += dest_buffer.len() - old_pos;
 
         if zresult == 0 {
             self.finished_output = true;
