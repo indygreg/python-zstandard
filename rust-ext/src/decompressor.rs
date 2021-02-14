@@ -48,9 +48,7 @@ impl ZstdDecompressor {
 
         if let Some(dict_data) = &self.dict_data {
             if load_dict {
-                dict_data
-                    .try_borrow_mut(py)?
-                    .load_into_dctx(self.dctx.dctx())?;
+                dict_data.try_borrow_mut(py)?.load_into_dctx(&self.dctx)?;
             }
         }
 

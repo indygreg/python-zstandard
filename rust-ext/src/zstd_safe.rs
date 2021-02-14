@@ -354,6 +354,15 @@ impl<'a> DCtx<'a> {
         }
     }
 
+    pub fn load_prepared_dict<'b: 'a>(&'a self, dict: &'b DDict) -> Result<(), &'static str> {
+        let zresult = unsafe { zstd_sys::ZSTD_DCtx_refDDict(self.0, dict.ptr) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn decompress_buffers(
         &self,
         out_buffer: &mut zstd_sys::ZSTD_outBuffer,

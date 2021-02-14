@@ -7,7 +7,7 @@
 use {
     crate::{
         compression_parameters::{get_cctx_parameter, int_to_strategy, ZstdCompressionParameters},
-        zstd_safe::{CCtx, CDict, DDict},
+        zstd_safe::{CCtx, CDict, DCtx, DDict},
         ZstdError,
     },
     pyo3::{
@@ -84,19 +84,13 @@ impl ZstdCompressionDict {
         Ok(())
     }
 
-    pub(crate) fn load_into_dctx(&mut self, dctx: *mut zstd_sys::ZSTD_DCtx) -> PyResult<()> {
+    pub(crate) fn load_into_dctx(&mut self, dctx: &DCtx) -> PyResult<()> {
         self.ensure_ddict()?;
 
-        let zresult =
-            unsafe { zstd_sys::ZSTD_DCtx_refDDict(dctx, self.ddict.as_ref().unwrap().ptr) };
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "unable to reference prepared dictionary: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
-        }
-
-        Ok(())
+        dctx.load_prepared_dict(self.ddict.as_ref().unwrap())
+            .map_err(|msg| {
+                ZstdError::new_err(format!("unable to reference prepared dictionary: {}", msg))
+            })
     }
 }
 
