@@ -399,3 +399,30 @@ impl<'a> DCtx<'a> {
         Ok(zresult)
     }
 }
+
+pub fn train_dictionary_fastcover(
+    dict_buffer: &mut Vec<u8>,
+    samples_buffer: &[u8],
+    samples_sizes: &[usize],
+    params: &zstd_sys::ZDICT_fastCover_params_t,
+) -> Result<(), &'static str> {
+    let zresult = unsafe {
+        zstd_sys::ZDICT_optimizeTrainFromBuffer_fastCover(
+            dict_buffer.as_mut_ptr() as *mut _,
+            dict_buffer.capacity(),
+            samples_buffer.as_ptr() as *const _,
+            samples_sizes.as_ptr(),
+            samples_sizes.len() as _,
+            params as *const _ as *mut _,
+        )
+    };
+    if unsafe { zstd_sys::ZDICT_isError(zresult) } != 0 {
+        Err(zstd_safe::get_error_name(zresult))
+    } else {
+        unsafe {
+            dict_buffer.set_len(zresult);
+        }
+
+        Ok(())
+    }
+}

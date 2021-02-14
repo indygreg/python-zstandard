@@ -7,7 +7,7 @@
 use {
     crate::{
         compression_parameters::{get_cctx_parameter, int_to_strategy, ZstdCompressionParameters},
-        zstd_safe::{CCtx, CDict, DCtx, DDict},
+        zstd_safe::{train_dictionary_fastcover, CCtx, CDict, DCtx, DDict},
         ZstdError,
     },
     pyo3::{
@@ -301,29 +301,8 @@ fn train_dictionary(
 
     let mut dict_data: Vec<u8> = Vec::with_capacity(dict_size);
 
-    let zresult = py.allow_threads(|| unsafe {
-        zstd_sys::ZDICT_optimizeTrainFromBuffer_fastCover(
-            dict_data.as_mut_ptr() as *mut _,
-            dict_data.capacity(),
-            samples_buffer.as_ptr() as *const _,
-            sample_sizes.as_ptr(),
-            sample_sizes.len() as u32,
-            &params as *const _ as *mut _,
-        )
-    });
-
-    if unsafe { zstd_sys::ZDICT_isError(zresult) } != 0 {
-        return Err(ZstdError::new_err(format!(
-            "cannot train dict: {}",
-            zstd_safe::get_error_name(zresult)
-        )));
-    }
-
-    // Since the zstd C code writes directly to the buffer, the Vec's internal
-    // length wasn't updated. So we need to tell it the new size.
-    unsafe {
-        dict_data.set_len(zresult);
-    }
+    train_dictionary_fastcover(&mut dict_data, &samples_buffer, &sample_sizes, &params)
+        .map_err(|msg| ZstdError::new_err(format!("cannot train dict: {}", msg)))?;
 
     Ok(ZstdCompressionDict {
         content_type: zstd_sys::ZSTD_dictContentType_e::ZSTD_dct_fullDict,
