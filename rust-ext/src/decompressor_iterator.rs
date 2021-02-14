@@ -6,9 +6,9 @@
 
 use {
     crate::{
-        decompressor::DCtx,
         exceptions::ZstdError,
         stream::{make_in_buffer_source, InBufferSource},
+        zstd_safe::DCtx,
     },
     pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes, PyIterProtocol},
     std::{cmp::min, sync::Arc},

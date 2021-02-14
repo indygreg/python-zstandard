@@ -5,7 +5,7 @@
 // of the BSD license. See the LICENSE file for details.
 
 use {
-    crate::{decompressor::DCtx, exceptions::ZstdError},
+    crate::{exceptions::ZstdError, zstd_safe::DCtx},
     pyo3::{
         buffer::PyBuffer,
         prelude::*,

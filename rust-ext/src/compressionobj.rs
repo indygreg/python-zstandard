@@ -6,8 +6,8 @@
 
 use {
     crate::{
-        compressor::CCtx,
         constants::{COMPRESSOBJ_FLUSH_BLOCK, COMPRESSOBJ_FLUSH_FINISH},
+        zstd_safe::CCtx,
         ZstdError,
     },
     pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*, types::PyBytes},

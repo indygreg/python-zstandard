@@ -5,7 +5,7 @@
 // of the BSD license. See the LICENSE file for details.
 
 use {
-    crate::{compressor::CCtx, exceptions::ZstdError},
+    crate::{exceptions::ZstdError, zstd_safe::CCtx},
     pyo3::{
         buffer::PyBuffer,
         exceptions::{PyNotImplementedError, PyOSError, PyValueError},

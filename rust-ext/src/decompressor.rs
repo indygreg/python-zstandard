@@ -8,7 +8,7 @@ use {
     crate::{
         compression_dict::ZstdCompressionDict, decompression_reader::ZstdDecompressionReader,
         decompression_writer::ZstdDecompressionWriter, decompressionobj::ZstdDecompressionObj,
-        decompressor_iterator::ZstdDecompressorIterator, exceptions::ZstdError,
+        decompressor_iterator::ZstdDecompressorIterator, exceptions::ZstdError, zstd_safe::DCtx,
     },
     pyo3::{
         buffer::PyBuffer,
@@ -17,76 +17,8 @@ use {
         types::{PyBytes, PyList},
         wrap_pyfunction,
     },
-    std::{marker::PhantomData, sync::Arc},
+    std::sync::Arc,
 };
-
-pub struct DCtx<'a>(*mut zstd_sys::ZSTD_DCtx, PhantomData<&'a ()>);
-
-impl<'a> Drop for DCtx<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            zstd_sys::ZSTD_freeDCtx(self.0);
-        }
-    }
-}
-
-unsafe impl<'a> Send for DCtx<'a> {}
-unsafe impl<'a> Sync for DCtx<'a> {}
-
-impl<'a> DCtx<'a> {
-    fn new() -> Result<Self, &'static str> {
-        let dctx = unsafe { zstd_sys::ZSTD_createDCtx() };
-        if dctx.is_null() {
-            return Err("could not allocate ZSTD_DCtx instance");
-        }
-
-        Ok(Self(dctx, PhantomData))
-    }
-
-    pub fn dctx(&self) -> *mut zstd_sys::ZSTD_DCtx {
-        self.0
-    }
-
-    pub fn memory_size(&self) -> usize {
-        unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.0) }
-    }
-
-    pub fn decompress_buffers(
-        &self,
-        out_buffer: &mut zstd_sys::ZSTD_outBuffer,
-        in_buffer: &mut zstd_sys::ZSTD_inBuffer,
-    ) -> Result<usize, &'static str> {
-        let zresult = unsafe {
-            zstd_sys::ZSTD_decompressStream(self.0, out_buffer as *mut _, in_buffer as *mut _)
-        };
-
-        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
-            Err(zstd_safe::get_error_name(zresult))
-        } else {
-            Ok(zresult)
-        }
-    }
-
-    pub fn decompress_into_vec(
-        &self,
-        dest_buffer: &mut Vec<u8>,
-        in_buffer: &mut zstd_sys::ZSTD_inBuffer,
-    ) -> Result<usize, &'static str> {
-        let mut out_buffer = zstd_sys::ZSTD_outBuffer {
-            dst: dest_buffer.as_mut_ptr() as *mut _,
-            size: dest_buffer.capacity(),
-            pos: dest_buffer.len(),
-        };
-
-        let zresult = self.decompress_buffers(&mut out_buffer, in_buffer)?;
-
-        unsafe {
-            dest_buffer.set_len(out_buffer.pos);
-        }
-
-        Ok(zresult)
-    }
-}
 
 #[pyclass(module = "zstandard.backend_rust")]
 struct ZstdDecompressor {
@@ -100,14 +32,15 @@ impl ZstdDecompressor {
     fn setup_dctx(&self, py: Python, load_dict: bool) -> PyResult<()> {
         unsafe {
             zstd_sys::ZSTD_DCtx_reset(
-                self.dctx.0,
+                self.dctx.dctx(),
                 zstd_sys::ZSTD_ResetDirective::ZSTD_reset_session_only,
             );
         }
 
         if self.max_window_size != 0 {
-            let zresult =
-                unsafe { zstd_sys::ZSTD_DCtx_setMaxWindowSize(self.dctx.0, self.max_window_size) };
+            let zresult = unsafe {
+                zstd_sys::ZSTD_DCtx_setMaxWindowSize(self.dctx.dctx(), self.max_window_size)
+            };
             if unsafe { zstd_sys::ZDICT_isError(zresult) } != 0 {
                 return Err(ZstdError::new_err(format!(
                     "unable to set max window size: {}",
@@ -116,7 +49,7 @@ impl ZstdDecompressor {
             }
         }
 
-        let zresult = unsafe { zstd_sys::ZSTD_DCtx_setFormat(self.dctx.0, self.format) };
+        let zresult = unsafe { zstd_sys::ZSTD_DCtx_setFormat(self.dctx.dctx(), self.format) };
         if unsafe { zstd_sys::ZDICT_isError(zresult) } != 0 {
             return Err(ZstdError::new_err(format!(
                 "unable to set decoding format: {}",
@@ -126,7 +59,9 @@ impl ZstdDecompressor {
 
         if let Some(dict_data) = &self.dict_data {
             if load_dict {
-                dict_data.try_borrow_mut(py)?.load_into_dctx(self.dctx.0)?;
+                dict_data
+                    .try_borrow_mut(py)?
+                    .load_into_dctx(self.dctx.dctx())?;
             }
         }
 
@@ -452,7 +387,7 @@ impl ZstdDecompressor {
     }
 
     fn memory_size(&self) -> PyResult<usize> {
-        Ok(unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.dctx.0) })
+        Ok(unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.dctx.dctx()) })
     }
 
     #[args(frames, decompressed_sizes = "None", threads = "0")]

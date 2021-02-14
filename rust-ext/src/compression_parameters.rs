@@ -16,7 +16,7 @@ use {
 };
 
 /// Safe wrapper for ZSTD_CCtx_params instances.
-pub(crate) struct CCtxParams<'a>(*mut zstd_sys::ZSTD_CCtx_params, PhantomData<&'a ()>);
+pub struct CCtxParams<'a>(*mut zstd_sys::ZSTD_CCtx_params, PhantomData<&'a ()>);
 
 impl<'a> Drop for CCtxParams<'a> {
     fn drop(&mut self) {
