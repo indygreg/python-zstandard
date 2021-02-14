@@ -293,6 +293,38 @@ impl<'a> DCtx<'a> {
         unsafe { zstd_sys::ZSTD_sizeof_DCtx(self.0) }
     }
 
+    pub fn reset(&self) -> Result<(), &'static str> {
+        let zresult = unsafe {
+            zstd_sys::ZSTD_DCtx_reset(
+                self.0,
+                zstd_sys::ZSTD_ResetDirective::ZSTD_reset_session_only,
+            )
+        };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn set_max_window_size(&self, size: usize) -> Result<(), &'static str> {
+        let zresult = unsafe { zstd_sys::ZSTD_DCtx_setMaxWindowSize(self.0, size) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn set_format(&self, format: zstd_sys::ZSTD_format_e) -> Result<(), &'static str> {
+        let zresult = unsafe { zstd_sys::ZSTD_DCtx_setFormat(self.0, format) };
+        if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {
+            Err(zstd_safe::get_error_name(zresult))
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn decompress_buffers(
         &self,
         out_buffer: &mut zstd_sys::ZSTD_outBuffer,

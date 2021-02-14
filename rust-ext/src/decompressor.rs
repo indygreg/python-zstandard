@@ -30,32 +30,21 @@ struct ZstdDecompressor {
 
 impl ZstdDecompressor {
     fn setup_dctx(&self, py: Python, load_dict: bool) -> PyResult<()> {
-        unsafe {
-            zstd_sys::ZSTD_DCtx_reset(
-                self.dctx.dctx(),
-                zstd_sys::ZSTD_ResetDirective::ZSTD_reset_session_only,
-            );
-        }
+        self.dctx.reset().map_err(|msg| {
+            ZstdError::new_err(format!("unable to reset decompression context: {}", msg))
+        })?;
 
         if self.max_window_size != 0 {
-            let zresult = unsafe {
-                zstd_sys::ZSTD_DCtx_setMaxWindowSize(self.dctx.dctx(), self.max_window_size)
-            };
-            if unsafe { zstd_sys::ZDICT_isError(zresult) } != 0 {
-                return Err(ZstdError::new_err(format!(
-                    "unable to set max window size: {}",
-                    zstd_safe::get_error_name(zresult)
-                )));
-            }
+            self.dctx
+                .set_max_window_size(self.max_window_size)
+                .map_err(|msg| {
+                    ZstdError::new_err(format!("unable to set max window size: {}", msg))
+                })?;
         }
 
-        let zresult = unsafe { zstd_sys::ZSTD_DCtx_setFormat(self.dctx.dctx(), self.format) };
-        if unsafe { zstd_sys::ZDICT_isError(zresult) } != 0 {
-            return Err(ZstdError::new_err(format!(
-                "unable to set decoding format: {}",
-                zstd_safe::get_error_name(zresult)
-            )));
-        }
+        self.dctx
+            .set_format(self.format)
+            .map_err(|msg| ZstdError::new_err(format!("unable to set decoding format: {}", msg)))?;
 
         if let Some(dict_data) = &self.dict_data {
             if load_dict {
