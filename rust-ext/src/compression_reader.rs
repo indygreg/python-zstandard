@@ -36,12 +36,27 @@ impl ZstdCompressionReader {
         py: Python,
         cctx: Arc<CCtx<'static>>,
         reader: &PyAny,
+        size: u64,
         read_size: usize,
         closefd: bool,
     ) -> PyResult<Self> {
+        let source = make_in_buffer_source(py, reader, read_size)?;
+
+        let size = match source.source_size() {
+            Some(size) => size as _,
+            None => size,
+        };
+
+        cctx.set_pledged_source_size(size).or_else(|msg| {
+            Err(ZstdError::new_err(format!(
+                "error setting source size: {}",
+                msg
+            )))
+        })?;
+
         Ok(Self {
             cctx,
-            source: make_in_buffer_source(py, reader, read_size)?,
+            source,
             closefd,
             closed: false,
             entered: false,

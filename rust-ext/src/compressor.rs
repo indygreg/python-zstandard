@@ -510,26 +510,12 @@ impl ZstdCompressor {
         read_size: Option<usize>,
         closefd: bool,
     ) -> PyResult<ZstdCompressionReader> {
-        self.cctx.reset();
-
-        let size = if let Some(size) = size {
-            size
-        } else if let Ok(size) = source.len() {
-            size as _
-        } else {
-            zstd_safe::CONTENTSIZE_UNKNOWN
-        };
-
+        let size = size.unwrap_or(zstd_safe::CONTENTSIZE_UNKNOWN);
         let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
 
-        self.cctx.set_pledged_source_size(size).or_else(|msg| {
-            Err(ZstdError::new_err(format!(
-                "error setting source size: {}",
-                msg
-            )))
-        })?;
+        self.cctx.reset();
 
-        ZstdCompressionReader::new(py, self.cctx.clone(), source, read_size, closefd)
+        ZstdCompressionReader::new(py, self.cctx.clone(), source, size, read_size, closefd)
     }
 
     #[args(
