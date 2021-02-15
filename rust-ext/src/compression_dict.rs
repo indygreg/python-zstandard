@@ -62,24 +62,10 @@ impl ZstdCompressionDict {
             return Ok(());
         }
 
-        let ddict = unsafe {
-            zstd_sys::ZSTD_createDDict_advanced(
-                self.data.as_ptr() as *const _,
-                self.data.len(),
-                zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
-                self.content_type,
-                zstd_sys::ZSTD_customMem {
-                    customAlloc: None,
-                    customFree: None,
-                    opaque: std::ptr::null_mut(),
-                },
-            )
-        };
-        if ddict.is_null() {
-            return Err(ZstdError::new_err("could not create decompression dict"));
-        }
-
-        self.ddict = Some(DDict::from_ptr(ddict));
+        self.ddict = Some(
+            DDict::from_data(&self.data, self.content_type)
+                .map_err(|msg| ZstdError::new_err(msg))?,
+        );
 
         Ok(())
     }
@@ -189,26 +175,10 @@ impl ZstdCompressionDict {
             ));
         };
 
-        let cdict = unsafe {
-            zstd_sys::ZSTD_createCDict_advanced(
-                self.data.as_ptr() as *const _,
-                self.data.len(),
-                zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
-                self.content_type,
-                params,
-                zstd_sys::ZSTD_customMem {
-                    customAlloc: None,
-                    customFree: None,
-                    opaque: std::ptr::null_mut(),
-                },
-            )
-        };
-
-        if cdict.is_null() {
-            return Err(ZstdError::new_err("unable to precompute dictionary"));
-        }
-
-        self.cdict = Some(CDict::from_ptr(cdict));
+        self.cdict = Some(
+            CDict::from_data(&self.data, self.content_type, params)
+                .map_err(|msg| ZstdError::new_err(msg))?,
+        );
 
         Ok(())
     }

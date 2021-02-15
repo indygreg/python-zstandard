@@ -13,10 +13,33 @@ pub struct CDict<'a> {
 }
 
 impl<'a> CDict<'a> {
-    pub fn from_ptr(ptr: *mut zstd_sys::ZSTD_CDict) -> Self {
-        Self {
-            ptr,
-            _phantom: PhantomData,
+    // TODO annotate lifetime of data to ensure outlives Self
+    pub fn from_data(
+        data: &[u8],
+        content_type: zstd_sys::ZSTD_dictContentType_e,
+        params: zstd_sys::ZSTD_compressionParameters,
+    ) -> Result<Self, &'static str> {
+        let ptr = unsafe {
+            zstd_sys::ZSTD_createCDict_advanced(
+                data.as_ptr() as *const _,
+                data.len(),
+                zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
+                content_type,
+                params,
+                zstd_sys::ZSTD_customMem {
+                    customAlloc: None,
+                    customFree: None,
+                    opaque: std::ptr::null_mut(),
+                },
+            )
+        };
+        if ptr.is_null() {
+            Err("unable to precompute dictionary")
+        } else {
+            Ok(Self {
+                ptr,
+                _phantom: PhantomData,
+            })
         }
     }
 }
@@ -35,8 +58,7 @@ unsafe impl<'a> Sync for CDict<'a> {}
 
 /// Safe wrapper for ZSTD_DDict instances.
 pub struct DDict<'a> {
-    // TODO don't expose field.
-    pub(crate) ptr: *mut zstd_sys::ZSTD_DDict,
+    ptr: *mut zstd_sys::ZSTD_DDict,
     _phantom: PhantomData<&'a ()>,
 }
 
@@ -52,10 +74,31 @@ impl<'a> Drop for DDict<'a> {
 }
 
 impl<'a> DDict<'a> {
-    pub fn from_ptr(ptr: *mut zstd_sys::ZSTD_DDict) -> Self {
-        Self {
-            ptr,
-            _phantom: PhantomData,
+    // TODO lifetime of data should be annotated to ensure it outlives Self
+    pub fn from_data(
+        data: &[u8],
+        content_type: zstd_sys::ZSTD_dictContentType_e,
+    ) -> Result<Self, &'static str> {
+        let ptr = unsafe {
+            zstd_sys::ZSTD_createDDict_advanced(
+                data.as_ptr() as *const _,
+                data.len(),
+                zstd_sys::ZSTD_dictLoadMethod_e::ZSTD_dlm_byRef,
+                content_type,
+                zstd_sys::ZSTD_customMem {
+                    customAlloc: None,
+                    customFree: None,
+                    opaque: std::ptr::null_mut(),
+                },
+            )
+        };
+        if ptr.is_null() {
+            Err("could not create compression dict")
+        } else {
+            Ok(Self {
+                ptr,
+                _phantom: PhantomData,
+            })
         }
     }
 }
