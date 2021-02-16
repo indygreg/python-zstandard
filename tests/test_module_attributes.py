@@ -22,6 +22,7 @@ class TestModuleAttributes(unittest.TestCase):
             "rust": {
                 "buffer_types",
                 "multi_compress_to_buffer",
+                "multi_decompress_to_buffer",
             },
         }[zstd.backend]
 

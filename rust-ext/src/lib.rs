@@ -24,6 +24,7 @@ mod decompression_writer;
 mod decompressionobj;
 mod decompressor;
 mod decompressor_iterator;
+mod decompressor_multi;
 mod exceptions;
 mod frame_parameters;
 mod stream;
@@ -35,7 +36,14 @@ const VERSION: &'static str = "0.16.0.dev0";
 
 #[pymodule]
 fn backend_rust(py: Python, module: &PyModule) -> PyResult<()> {
-    let features = PySet::new(py, &["buffer_types", "multi_compress_to_buffer"])?;
+    let features = PySet::new(
+        py,
+        &[
+            "buffer_types",
+            "multi_compress_to_buffer",
+            "multi_decompress_to_buffer",
+        ],
+    )?;
     module.add("backend_features", features)?;
 
     crate::buffers::init_module(module)?;

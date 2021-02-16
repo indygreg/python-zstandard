@@ -6,13 +6,15 @@
 
 use {
     crate::{
-        compression_dict::ZstdCompressionDict, decompression_reader::ZstdDecompressionReader,
+        buffers::ZstdBufferWithSegmentsCollection, compression_dict::ZstdCompressionDict,
+        decompression_reader::ZstdDecompressionReader,
         decompression_writer::ZstdDecompressionWriter, decompressionobj::ZstdDecompressionObj,
-        decompressor_iterator::ZstdDecompressorIterator, exceptions::ZstdError, zstd_safe::DCtx,
+        decompressor_iterator::ZstdDecompressorIterator,
+        decompressor_multi::multi_decompress_to_buffer, exceptions::ZstdError, zstd_safe::DCtx,
     },
     pyo3::{
         buffer::PyBuffer,
-        exceptions::{PyMemoryError, PyNotImplementedError, PyValueError},
+        exceptions::{PyMemoryError, PyValueError},
         prelude::*,
         types::{PyBytes, PyList},
         wrap_pyfunction,
@@ -381,11 +383,14 @@ impl ZstdDecompressor {
     #[allow(unused_variables)]
     fn multi_decompress_to_buffer(
         &self,
+        py: Python,
         frames: &PyAny,
         decompressed_sizes: Option<&PyAny>,
-        threads: usize,
-    ) -> PyResult<()> {
-        Err(PyNotImplementedError::new_err(()))
+        threads: isize,
+    ) -> PyResult<ZstdBufferWithSegmentsCollection> {
+        self.setup_dctx(py, true)?;
+
+        multi_decompress_to_buffer(py, &self.dctx, frames, decompressed_sizes, threads)
     }
 
     #[args(reader, read_size = "None", write_size = "None", skip_bytes = "None")]
