@@ -51,7 +51,6 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
 
         self.assertEqual(result[0].offset, 0)
         self.assertEqual(len(result[0]), 12)
-        self.assertEqual(result[1].offset, 12)
         self.assertEqual(len(result[1]), 18)
 
     def test_list_input_frame_sizes(self):
@@ -91,7 +90,6 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         self.assertEqual(len(result), len(frames))
         self.assertEqual(result[0].offset, 0)
         self.assertEqual(len(result[0]), 12)
-        self.assertEqual(result[1].offset, 12)
         self.assertEqual(len(result[1]), 18)
 
     def test_buffer_with_segments_sizes(self):
