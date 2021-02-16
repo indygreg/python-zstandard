@@ -6,6 +6,7 @@
 
 use {
     crate::{
+        buffers::ZstdBufferWithSegmentsCollection,
         compression_chunker::ZstdCompressionChunker,
         compression_dict::ZstdCompressionDict,
         compression_parameters::{CCtxParams, ZstdCompressionParameters},
@@ -13,6 +14,7 @@ use {
         compression_writer::ZstdCompressionWriter,
         compressionobj::ZstdCompressionObj,
         compressor_iterator::ZstdCompressorIterator,
+        compressor_multi::multi_compress_to_buffer,
         zstd_safe::CCtx,
         ZstdError,
     },
@@ -328,6 +330,16 @@ impl ZstdCompressor {
         }
 
         Ok((total_read, total_write))
+    }
+
+    #[args(data, threads = "0")]
+    fn multi_compress_to_buffer(
+        &self,
+        py: Python,
+        data: &PyAny,
+        threads: isize,
+    ) -> PyResult<ZstdBufferWithSegmentsCollection> {
+        multi_compress_to_buffer(py, &self.params, &self.dict, data, threads)
     }
 
     #[args(reader, size = "None", read_size = "None", write_size = "None")]
