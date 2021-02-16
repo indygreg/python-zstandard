@@ -21,6 +21,7 @@ class TestModuleAttributes(unittest.TestCase):
             "cffi": set(),
             "rust": {
                 "buffer_types",
+                "multi_compress_to_buffer",
             },
         }[zstd.backend]
 

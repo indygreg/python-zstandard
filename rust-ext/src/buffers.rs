@@ -19,9 +19,9 @@ use {
 
 #[repr(C)]
 #[derive(Clone, Debug)]
-struct BufferSegment {
-    offset: u64,
-    length: u64,
+pub(crate) struct BufferSegment {
+    pub offset: u64,
+    pub length: u64,
 }
 
 #[pyclass(module = "zstandard.backend_rust", name = "BufferSegment")]
@@ -37,7 +37,7 @@ pub struct ZstdBufferSegment {
 }
 
 impl ZstdBufferSegment {
-    fn as_slice(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         unsafe {
             std::slice::from_raw_parts(self.buffer.buf_ptr().add(self.offset) as *const _, self.len)
         }
@@ -125,8 +125,8 @@ impl PyBufferProtocol for ZstdBufferSegments {
 #[pyclass(module = "zstandard.backend_rust", name = "BufferWithSegments")]
 pub struct ZstdBufferWithSegments {
     source: PyObject,
-    buffer: PyBuffer<u8>,
-    segments: Vec<BufferSegment>,
+    pub(crate) buffer: PyBuffer<u8>,
+    pub(crate) segments: Vec<BufferSegment>,
 }
 
 impl ZstdBufferWithSegments {
@@ -135,12 +135,23 @@ impl ZstdBufferWithSegments {
             std::slice::from_raw_parts(self.buffer.buf_ptr() as *const _, self.buffer.len_bytes())
         }
     }
+
+    pub fn get_segment_slice<'p>(&self, _py: Python<'p>, i: usize) -> &'p [u8] {
+        let segment = &self.segments[i];
+
+        unsafe {
+            std::slice::from_raw_parts(
+                self.buffer.buf_ptr().add(segment.offset as usize) as *const _,
+                segment.length as usize,
+            )
+        }
+    }
 }
 
 #[pymethods]
 impl ZstdBufferWithSegments {
     #[new]
-    fn new(py: Python, data: &PyAny, segments: PyBuffer<u8>) -> PyResult<Self> {
+    pub fn new(py: Python, data: &PyAny, segments: PyBuffer<u8>) -> PyResult<Self> {
         let data_buffer = PyBuffer::get(data)?;
 
         if segments.len_bytes() % std::mem::size_of::<BufferSegment>() != 0 {
@@ -258,7 +269,7 @@ impl PyBufferProtocol for ZstdBufferWithSegments {
 )]
 pub struct ZstdBufferWithSegmentsCollection {
     // Py<ZstdBufferWithSegments>.
-    buffers: Vec<PyObject>,
+    pub(crate) buffers: Vec<PyObject>,
     first_elements: Vec<usize>,
 }
 
@@ -266,7 +277,7 @@ pub struct ZstdBufferWithSegmentsCollection {
 impl ZstdBufferWithSegmentsCollection {
     #[new]
     #[args(py_args = "*")]
-    fn new(py: Python, py_args: &PyTuple) -> PyResult<Self> {
+    pub fn new(py: Python, py_args: &PyTuple) -> PyResult<Self> {
         if py_args.is_empty() {
             return Err(PyValueError::new_err("must pass at least 1 argument"));
         }

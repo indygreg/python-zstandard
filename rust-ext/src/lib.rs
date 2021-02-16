@@ -17,6 +17,7 @@ mod compression_writer;
 mod compressionobj;
 mod compressor;
 mod compressor_iterator;
+mod compressor_multi;
 mod constants;
 mod decompression_reader;
 mod decompression_writer;
@@ -34,7 +35,7 @@ const VERSION: &'static str = "0.16.0.dev0";
 
 #[pymodule]
 fn backend_rust(py: Python, module: &PyModule) -> PyResult<()> {
-    let features = PySet::new(py, &["buffer_types"])?;
+    let features = PySet::new(py, &["buffer_types", "multi_compress_to_buffer"])?;
     module.add("backend_features", features)?;
 
     crate::buffers::init_module(module)?;
