@@ -32,7 +32,7 @@ mod zstd_safe;
 
 use exceptions::ZstdError;
 
-const VERSION: &'static str = "0.15.2";
+const VERSION: &'static str = "0.16.0.dev0";
 
 #[pymodule]
 fn backend_rust(py: Python, module: &PyModule) -> PyResult<()> {

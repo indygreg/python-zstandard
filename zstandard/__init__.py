@@ -80,7 +80,7 @@ else:
     )
 
 # Keep this in sync with python-zstandard.h, rust-ext/src/lib.rs.
-__version__ = "0.15.2"
+__version__ = "0.16.0.dev0"
 
 _MODE_CLOSED = 0
 _MODE_READ = 1
