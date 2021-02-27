@@ -91,3 +91,41 @@ If you invoke ``setup.py``, simply pass the aforementioned arguments. e.g.
 ``--install-option`` argument. e.g.
 ``python3.9 -m pip install zstandard --install-option --warning-as-errors``.
 Or in a pip requirements file: ``zstandard --install-option="--rust-backend"``.
+
+In addition, the following environment variables are recognized:
+
+``ZSTD_EXTRA_COMPILER_ARGS``
+   Extra compiler arguments to compile the C backend with.
+
+``ZSTD_WARNINGS_AS_ERRORS``
+   Equivalent to ``setup.py --warnings-as-errors``.
+
+Building Against External libzstd
+=================================
+
+By default, this package builds and links against a single file ``libzstd``
+bundled as part of the package distribution. This copy of ``libzstd`` is
+statically linked into the extension.
+
+It is possible to point ``setup.py`` at an external (typically system provided)
+``libzstd``. To do this, simply pass ``--system-zstd`` to ``setup.py``. e.g.
+
+``python3.9 setup.py --system-zstd`` or ``python3.9 -m pip install zstandard
+--install-option="--system-zstd"``.
+
+When building against a system libzstd, you may need to specify extra compiler
+arguments to help Python's build system find the external library. These can
+be specified via the ``ZSTD_EXTRA_COMPILER_ARGS`` environment variable. e.g.
+``ZSTD_EXTRA_COMPILER_ARGS="-I/usr/local/include" python3.9 setup.py
+--system-zstd``.
+
+``python-zstandard`` can be sensitive about what version of ``libzstd`` it links
+against. For best results, point this package at the exact same version of
+``libzstd`` that it bundles. See the bundled ``zstd/zstd.h`` or
+``zstd/zstdlib.c`` for which version that is.
+
+When linking against an external ``libzstd``, not all package features may be
+available. Notably, the ``multi_compress_to_buffer()`` and
+``multi_decompress_to_buffer()`` APIs are not available, as these rely on private
+symbols in the ``libzstd`` C source code, which require building against private
+header files to use.

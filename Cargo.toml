@@ -15,20 +15,16 @@ path = "rust-ext/src/lib.rs"
 [dependencies]
 libc = "0.2"
 num_cpus = "1"
-python3-sys = "0.5"
+rayon = "1.5"
 
 [dependencies.zstd-safe]
-#version = "2.0.4"
-git = "https://github.com/indygreg/zstd-rs.git"
-rev = "2f70a50ac5eddc716d356694de9ed46f6b6b37bb"
+version = "3.0.0+zstd.1.4.8"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.zstd-sys]
-#version = "1.4.16"
-git = "https://github.com/indygreg/zstd-rs.git"
-rev = "2f70a50ac5eddc716d356694de9ed46f6b6b37bb"
+version = "1.4.19+zstd.1.4.8"
 features = ["experimental", "legacy", "zstdmt"]
 
-[dependencies.cpython]
-version = "0.5"
+[dependencies.pyo3]
+version = "0.13"
 features = ["extension-module"]

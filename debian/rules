@@ -6,4 +6,4 @@ export PYBUILD_NAME=zstandard
 export PYBUILD_TEST_ARGS=-I fuzzing
 
 %:
-	dh $@ --parallel --with python2,python3 --buildsystem=pybuild
+	dh $@ --parallel --with python3 --buildsystem=pybuild

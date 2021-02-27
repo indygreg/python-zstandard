@@ -182,6 +182,7 @@ void zstd_module_init(PyObject *m) {
 
     Py_DECREF(feature);
 
+#ifdef HAVE_ZSTD_POOL_APIS
     feature = PyUnicode_FromString("multi_compress_to_buffer");
     if (NULL == feature) {
         PyErr_SetString(PyExc_ImportError, "could not create feature string");
@@ -193,7 +194,9 @@ void zstd_module_init(PyObject *m) {
     }
 
     Py_DECREF(feature);
+#endif
 
+#ifdef HAVE_ZSTD_POOL_APIS
     feature = PyUnicode_FromString("multi_decompress_to_buffer");
     if (NULL == feature) {
         PyErr_SetString(PyExc_ImportError, "could not create feature string");
@@ -205,6 +208,7 @@ void zstd_module_init(PyObject *m) {
     }
 
     Py_DECREF(feature);
+#endif
 
     if (PyObject_SetAttrString(m, "backend_features", features) == -1) {
         return;

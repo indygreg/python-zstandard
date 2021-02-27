@@ -74,6 +74,35 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.15.2 (released 2021-02-27)
+============================
+
+Backwards Compatibility Notes
+-----------------------------
+
+* ``ZstdCompressor.multi_compress_to_buffer()`` and
+  ``ZstdDecompressor.multi_decompress_to_buffer()`` are no longer
+  available when linking against a system zstd library. These
+  experimental features are only available when building against the
+  bundled single file zstd C source file distribution. (#106)
+
+Changes
+-------
+
+* ``setup.py`` now recognizes a ``ZSTD_EXTRA_COMPILER_ARGS``
+  environment variable to specify additional compiler arguments
+  to use when compiling the C backend.
+* PyPy build and test coverage has been added to CI.
+* Added CI jobs for building against external zstd library.
+* Wheels supporting macOS ARM/M1 devices are now being produced.
+* References to Python 2 have been removed from the in-repo Debian packaging
+  code.
+* Significant work has been made on a Rust backend. It is currently feature
+  complete but not yet optimized. We are not yet shipping the backend as part
+  of the distributed wheels until it is more mature.
+* The ``.pyi`` type annotations file has replaced various default argument
+  values with ``...``.
+
 0.15.1 (released 2020-12-31)
 ============================
 

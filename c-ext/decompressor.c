@@ -8,11 +8,6 @@
 
 #include "python-zstandard.h"
 
-/* TODO pool.h is a private header and we shouldn't rely on it. */
-#ifndef ZSTD_SINGLE_FILE
-#include "pool.h"
-#endif
-
 extern PyObject *ZstdError;
 
 /**
@@ -903,6 +898,7 @@ typedef struct {
     size_t zresult;
 } DecompressorWorkerState;
 
+#ifdef HAVE_ZSTD_POOL_APIS
 static void decompress_worker(DecompressorWorkerState *state) {
     size_t allocationSize;
     DecompressorDestBuffer *destBuffer;
@@ -1144,7 +1140,9 @@ static void decompress_worker(DecompressorWorkerState *state) {
         destBuffer->destSize = destOffset;
     }
 }
+#endif
 
+#ifdef HAVE_ZSTD_POOL_APIS
 ZstdBufferWithSegmentsCollection *
 decompress_from_framesources(ZstdDecompressor *decompressor,
                              FrameSources *frames, Py_ssize_t threadCount) {
@@ -1418,7 +1416,9 @@ finally:
 
     return result;
 }
+#endif
 
+#ifdef HAVE_ZSTD_POOL_APIS
 static ZstdBufferWithSegmentsCollection *
 Decompressor_multi_decompress_to_buffer(ZstdDecompressor *self, PyObject *args,
                                         PyObject *kwargs) {
@@ -1672,6 +1672,7 @@ finally:
 
     return result;
 }
+#endif
 
 static PyMethodDef Decompressor_methods[] = {
     {"copy_stream", (PyCFunction)Decompressor_copy_stream,
@@ -1689,9 +1690,11 @@ static PyMethodDef Decompressor_methods[] = {
     {"decompress_content_dict_chain",
      (PyCFunction)Decompressor_decompress_content_dict_chain,
      METH_VARARGS | METH_KEYWORDS, NULL},
+#ifdef HAVE_ZSTD_POOL_APIS
     {"multi_decompress_to_buffer",
      (PyCFunction)Decompressor_multi_decompress_to_buffer,
      METH_VARARGS | METH_KEYWORDS, NULL},
+#endif
     {"memory_size", (PyCFunction)Decompressor_memory_size, METH_NOARGS, NULL},
     {NULL, NULL}};
 

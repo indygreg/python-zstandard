@@ -7,7 +7,7 @@ class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
         self.assertEqual(zstd.ZSTD_VERSION, (1, 4, 8))
 
-        self.assertEqual(zstd.__version__, "0.15.1")
+        self.assertEqual(zstd.__version__, "0.15.2")
 
     def test_features(self):
         self.assertIsInstance(zstd.backend_features, set)
@@ -19,6 +19,11 @@ class TestModuleAttributes(unittest.TestCase):
                 "multi_decompress_to_buffer",
             },
             "cffi": set(),
+            "rust": {
+                "buffer_types",
+                "multi_compress_to_buffer",
+                "multi_decompress_to_buffer",
+            },
         }[zstd.backend]
 
         self.assertEqual(zstd.backend_features, expected)

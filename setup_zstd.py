@@ -7,6 +7,7 @@
 import distutils.ccompiler
 import distutils.command.build_ext
 import distutils.extension
+import distutils.util
 import glob
 import os
 import shutil
@@ -59,18 +60,7 @@ def get_c_extension(
     sources = sorted(set([os.path.join(actual_root, p) for p in ext_sources]))
     local_include_dirs = [os.path.join(actual_root, d) for d in ext_includes]
 
-    if system_zstd:
-        # TODO remove this once pool.h dependency goes away.
-        #
-        # This effectively causes system zstd mode to pull in our
-        # local headers instead of the system's. Then we link with the
-        # system library. This is super sketchy and could result in link
-        # time errors due to symbol mismatch or even run-time errors if
-        # APIs behave differently.
-        local_include_dirs.extend(
-            [os.path.join(actual_root, d) for d in zstd_includes]
-        )
-    else:
+    if not system_zstd:
         local_include_dirs.append(os.path.join(actual_root, "zstd"))
 
     depends = sorted(glob.glob(os.path.join(actual_root, "c-ext", "*")))
@@ -121,6 +111,11 @@ def get_c_extension(
     local_include_dirs = [os.path.relpath(p, root) for p in local_include_dirs]
     depends = [os.path.relpath(p, root) for p in depends]
 
+    if "ZSTD_EXTRA_COMPILER_ARGS" in os.environ:
+        extra_args.extend(
+            distutils.util.split_quoted(os.environ["ZSTD_EXTRA_COMPILER_ARGS"])
+        )
+
     # TODO compile with optimizations.
     return distutils.extension.Extension(
         name,
@@ -148,6 +143,8 @@ class RustExtension(distutils.extension.Extension):
     def build(self, build_dir, get_ext_path_fn):
         env = os.environ.copy()
         env["PYTHON_SYS_EXECUTABLE"] = sys.executable
+        # Needed for try_reserve()
+        env["RUSTC_BOOTSTRAP"] = "1"
 
         args = [
             "cargo",
@@ -161,12 +158,14 @@ class RustExtension(distutils.extension.Extension):
 
         dest_path = get_ext_path_fn(self.name)
 
+        libname = self.name.split(".")[-1]
+
         if os.name == "nt":
-            rust_lib_filename = "%s.dll" % self.name
+            rust_lib_filename = "%s.dll" % libname
         elif sys.platform == "darwin":
-            rust_lib_filename = "lib%s.dylib" % self.name
+            rust_lib_filename = "lib%s.dylib" % libname
         else:
-            rust_lib_filename = "lib%s.so" % self.name
+            rust_lib_filename = "lib%s.so" % libname
 
         rust_lib = os.path.join(build_dir, "release", rust_lib_filename)
         os.makedirs(os.path.dirname(rust_lib), exist_ok=True)
@@ -185,7 +184,9 @@ class RustBuildExt(distutils.command.build_ext.build_ext):
             super().build_extension(ext)
 
 
-def get_rust_extension(root=None,):
+def get_rust_extension(
+    root=None,
+):
     actual_root = os.path.abspath(os.path.dirname(__file__))
     root = root or actual_root
 

@@ -19,13 +19,18 @@
 
 #ifdef ZSTD_SINGLE_FILE
 #include <zstdlib.c>
+
+/* We use private APIs from pool.h. We can't rely on availability
+   of this header or symbols when linking against the system libzstd.
+   But we know it works when using the bundled single file library. */
+#define HAVE_ZSTD_POOL_APIS
 #else
 #include <zdict.h>
 #include <zstd.h>
 #endif
 
-/* Remember to change the string in zstandard/__init__ as well */
-#define PYTHON_ZSTANDARD_VERSION "0.15.1"
+/* Remember to change the string in zstandard/__init__.py, rust-ext/src/lib.rs as well */
+#define PYTHON_ZSTANDARD_VERSION "0.15.2"
 
 typedef enum {
     compressorobj_flush_finish,
