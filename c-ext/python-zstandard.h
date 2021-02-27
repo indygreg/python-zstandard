@@ -29,8 +29,8 @@
 #include <zstd.h>
 #endif
 
-/* Remember to change the string in zstandard/__init__ as well */
-#define PYTHON_ZSTANDARD_VERSION "0.16.0.dev0"
+/* Remember to change the string in zstandard/__init__.py, rust-ext/src/lib.rs as well */
+#define PYTHON_ZSTANDARD_VERSION "0.15.2"
 
 typedef enum {
     compressorobj_flush_finish,

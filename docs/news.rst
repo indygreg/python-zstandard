@@ -74,8 +74,8 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
-0.16.0 (not yet released)
-=========================
+0.15.2 (released 2021-02-27)
+============================
 
 Backwards Compatibility Notes
 -----------------------------
@@ -94,6 +94,14 @@ Changes
   to use when compiling the C backend.
 * PyPy build and test coverage has been added to CI.
 * Added CI jobs for building against external zstd library.
+* Wheels supporting macOS ARM/M1 devices are now being produced.
+* References to Python 2 have been removed from the in-repo Debian packaging
+  code.
+* Significant work has been made on a Rust backend. It is currently feature
+  complete but not yet optimized. We are not yet shipping the backend as part
+  of the distributed wheels until it is more mature.
+* The ``.pyi`` type annotations file has replaced various default argument
+  values with ``...``.
 
 0.15.1 (released 2020-12-31)
 ============================
