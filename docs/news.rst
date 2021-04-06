@@ -86,6 +86,8 @@ Changes
 -------
 
 * Bundled zstd library upgraded from 1.4.8 to 1.5.0.
+* ``manylinux2014_aarch64`` wheels are now being produced for CPython 3.6+.
+  (#145).
 
 0.15.2 (released 2021-02-27)
 ============================

@@ -32,6 +32,15 @@ jobs:
           - image: 'quay.io/pypa/manylinux2010_x86_64'
             py: 'cp39-cp39'
 
+          - image: 'quay.io/pypa/manylinux2014_aarch64'
+            py: 'cp36-cp36m'
+          - image: 'quay.io/pypa/manylinux2014_aarch64'
+            py: 'cp37-cp37m'
+          - image: 'quay.io/pypa/manylinux2014_aarch64'
+            py: 'cp38-cp38'
+          - image: 'quay.io/pypa/manylinux2014_aarch64'
+            py: 'cp39-cp39'
+
           - image: 'quay.io/pypa/manylinux2014_i686@sha256:5ed08e15960f1edb1c0f1babe141f6de7d51f94864d6d5b26fc226151449e4d7'
             py: 'cp35-cp35m'
           - image: 'quay.io/pypa/manylinux2014_i686'
@@ -56,6 +65,10 @@ jobs:
     runs-on: 'ubuntu-20.04'
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        if: ${{ matrix.build.image == 'quay.io/pypa/manylinux2014_aarch64' }}
+        uses: docker/setup-qemu-action@v1
 
       - name: Build Wheel
         run: |
