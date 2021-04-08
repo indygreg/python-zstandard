@@ -2769,7 +2769,7 @@ def train_dictionary(
     are available in the paper *Effective Construction of Relative Lempel-Ziv
     Dictionaries* (authors: Liao, Petri, Moffat, Wirth).
 
-    The cover algorithm takes parameters ``k` and ``d``. These are the
+    The cover algorithm takes parameters ``k`` and ``d``. These are the
     *segment size* and *dmer size*, respectively. The returned dictionary
     instance created by this function has ``k`` and ``d`` attributes
     containing the values for these parameters. If a ``ZstdCompressionDict``
