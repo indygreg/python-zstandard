@@ -6,7 +6,8 @@
 
 """Python interface to the Zstandard (zstd) compression library."""
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import as _absolute_import
+from __future__ import unicode_literals as _unicode_literals
 
 # This should match what the C extension exports.
 __all__ = [
@@ -84,8 +85,8 @@ __all__ = [
     "FORMAT_ZSTD1_MAGICLESS",
 ]
 
-import io
-import os
+import io as _io
+import os as _os
 
 from ._cffi import (  # type: ignore
     ffi,
@@ -162,13 +163,13 @@ COMPRESSOBJ_FLUSH_BLOCK = 1
 def _cpu_count():
     # os.cpu_count() was introducd in Python 3.4.
     try:
-        return os.cpu_count() or 0
+        return _os.cpu_count() or 0
     except AttributeError:
         pass
 
     # Linux.
     try:
-        return os.sysconf("SC_NPROCESSORS_ONLN")
+        return _os.sysconf("SC_NPROCESSORS_ONLN")
     except (AttributeError, ValueError):
         pass
 
@@ -815,19 +816,19 @@ class ZstdCompressionWriter(object):
         return False
 
     def readline(self, size=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readlines(self, hint=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def seek(self, offset, whence=None):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def seekable(self):
         return False
 
     def truncate(self, size=None):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def writable(self):
         return True
@@ -836,13 +837,13 @@ class ZstdCompressionWriter(object):
         raise NotImplementedError("writelines() is not yet implemented")
 
     def read(self, size=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readall(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readinto(self, b):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def write(self, data):
         """Send data to the compressor and possibly to the inner stream."""
@@ -1416,10 +1417,10 @@ class ZstdCompressionReader(object):
         return False
 
     def readline(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readlines(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def write(self, data):
         raise OSError("stream is not writable")
@@ -1463,10 +1464,10 @@ class ZstdCompressionReader(object):
         return b"".join(chunks)
 
     def __iter__(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def __next__(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     next = __next__
 
@@ -3106,16 +3107,16 @@ class ZstdDecompressionReader(object):
         return False
 
     def readline(self, size=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readlines(self, hint=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def write(self, data):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def writelines(self, lines):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def isatty(self):
         return False
@@ -3153,10 +3154,10 @@ class ZstdDecompressionReader(object):
         return b"".join(chunks)
 
     def __iter__(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def __next__(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     next = __next__
 
@@ -3342,13 +3343,13 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return out_buffer.pos
 
-    def seek(self, pos, whence=os.SEEK_SET):
+    def seek(self, pos, whence=_os.SEEK_SET):
         if self._closed:
             raise ValueError("stream is closed")
 
         read_amount = 0
 
-        if whence == os.SEEK_SET:
+        if whence == _os.SEEK_SET:
             if pos < 0:
                 raise OSError("cannot seek to negative position with SEEK_SET")
 
@@ -3359,14 +3360,14 @@ class ZstdDecompressionReader(object):
 
             read_amount = pos - self._bytes_decompressed
 
-        elif whence == os.SEEK_CUR:
+        elif whence == _os.SEEK_CUR:
             if pos < 0:
                 raise OSError(
                     "cannot seek zstd decompression stream " "backwards"
                 )
 
             read_amount = pos
-        elif whence == os.SEEK_END:
+        elif whence == _os.SEEK_END:
             raise OSError(
                 "zstd decompression streams cannot be seeked " "with SEEK_END"
             )
@@ -3508,37 +3509,37 @@ class ZstdDecompressionWriter(object):
         return False
 
     def readline(self, size=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readlines(self, hint=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def seek(self, offset, whence=None):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def seekable(self):
         return False
 
     def tell(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def truncate(self, size=None):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def writable(self):
         return True
 
     def writelines(self, lines):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def read(self, size=-1):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readall(self):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def readinto(self, b):
-        raise io.UnsupportedOperation()
+        raise _io.UnsupportedOperation()
 
     def write(self, data):
         if self._closed:
