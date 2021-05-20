@@ -164,3 +164,14 @@ class TestDecompressor_decompress(unittest.TestCase):
             "decompression error: Frame requires too much memory",
         ):
             dctx.decompress(frame, max_output_size=len(source))
+
+    def test_explicit_default_params(self):
+        cctx = zstd.ZstdCompressor(level=1)
+        compressed = cctx.compress(b"foo")
+
+        dctx = zstd.ZstdDecompressor(
+            dict_data=None,
+            max_window_size=0,
+            format=zstd.FORMAT_ZSTD1,
+        )
+        self.assertEqual(dctx.decompress(compressed), b"foo")

@@ -146,6 +146,16 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
         }
     }
 
+    if (writeChecksum == Py_None) {
+        writeChecksum = NULL;
+    }
+    if (writeContentSize == Py_None) {
+        writeContentSize = NULL;
+    }
+    if (writeDictID == Py_None) {
+        writeDictID = NULL;
+    }
+
     /* We create a ZSTD_CCtx for reuse among multiple operations to reduce the
        overhead of each compression operation. */
     self->cctx = ZSTD_createCCtx();
