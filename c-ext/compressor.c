@@ -97,17 +97,16 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
                              NULL};
 
     int level = 3;
-    ZstdCompressionDict *dict = NULL;
-    ZstdCompressionParametersObject *params = NULL;
+    PyObject *dict = NULL;
+    PyObject *params = NULL;
     PyObject *writeChecksum = NULL;
     PyObject *writeContentSize = NULL;
     PyObject *writeDictID = NULL;
     int threads = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO!O!OOOi:ZstdCompressor",
-                                     kwlist, &level, &ZstdCompressionDictType,
-                                     &dict, &ZstdCompressionParametersType,
-                                     &params, &writeChecksum, &writeContentSize,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iOOOOOi:ZstdCompressor",
+                                     kwlist, &level, &dict, &params,
+                                     &writeChecksum, &writeContentSize,
                                      &writeDictID, &threads)) {
         return -1;
     }
@@ -120,6 +119,31 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
 
     if (threads < 0) {
         threads = cpu_count();
+    }
+
+    if (dict) {
+        if (dict == Py_None) {
+            dict = NULL;
+        }
+        else if (!PyObject_IsInstance(dict,
+                                      (PyObject *)&ZstdCompressionDictType)) {
+            PyErr_Format(PyExc_TypeError,
+                         "dict_data must be zstd.ZstdCompressionDict");
+            return -1;
+        }
+    }
+
+    if (params) {
+        if (params == Py_None) {
+            params = NULL;
+        }
+        else if (!PyObject_IsInstance(params,
+                    (PyObject *)&ZstdCompressionParametersType)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "compression_params must be zstd.ZstdCompressionParameters");
+            return -1;
+        }
     }
 
     /* We create a ZSTD_CCtx for reuse among multiple operations to reduce the
@@ -166,7 +190,8 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
     }
 
     if (params) {
-        if (set_parameters(self->params, params)) {
+        if (set_parameters(self->params,
+                           (ZstdCompressionParametersObject *)params)) {
             return -1;
         }
     }
@@ -199,7 +224,7 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
     }
 
     if (dict) {
-        self->dict = dict;
+        self->dict = (ZstdCompressionDict *)dict;
         Py_INCREF(dict);
     }
 

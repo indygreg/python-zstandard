@@ -58,17 +58,28 @@ static int Decompressor_init(ZstdDecompressor *self, PyObject *args,
                              PyObject *kwargs) {
     static char *kwlist[] = {"dict_data", "max_window_size", "format", NULL};
 
-    ZstdCompressionDict *dict = NULL;
+    PyObject *dict = NULL;
     Py_ssize_t maxWindowSize = 0;
     ZSTD_format_e format = ZSTD_f_zstd1;
 
     self->dctx = NULL;
     self->dict = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!nI:ZstdDecompressor",
-                                     kwlist, &ZstdCompressionDictType, &dict,
-                                     &maxWindowSize, &format)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OnI:ZstdDecompressor",
+                                     kwlist, &dict, &maxWindowSize, &format)) {
         return -1;
+    }
+
+    if (dict) {
+        if (dict == Py_None) {
+            dict = NULL;
+        }
+        else if (!PyObject_IsInstance(dict,
+                                      (PyObject *)&ZstdCompressionDictType)) {
+            PyErr_Format(PyExc_TypeError,
+                         "dict_data must be zstd.ZstdCompressionDict");
+            return -1;
+        }
     }
 
     self->dctx = ZSTD_createDCtx();
@@ -81,7 +92,7 @@ static int Decompressor_init(ZstdDecompressor *self, PyObject *args,
     self->format = format;
 
     if (dict) {
-        self->dict = dict;
+        self->dict = (ZstdCompressionDict *)dict;
         Py_INCREF(dict);
     }
 
