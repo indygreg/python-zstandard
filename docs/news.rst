@@ -95,6 +95,11 @@ Changes
 * ``manylinux2014_aarch64`` wheels are now being produced for CPython 3.6+.
   (#145).
 * Wheels are now being produced for CPython 3.10.
+* Arguments to ``ZstdCompressor()`` and ``ZstdDecompressor()`` are now all
+  optional in the C backend and an explicit ``None`` value is accepted. Before,
+  the C backend wouldn't accept an explicit ``None`` value (but the CFFI
+  backend would). The new behavior should be consistent between the backends.
+  (#153)
 
 0.15.2 (released 2021-02-27)
 ============================
