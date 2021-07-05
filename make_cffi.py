@@ -157,6 +157,7 @@ ffi.set_source(
     """
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define ZSTD_STATIC_LINKING_ONLY
+#define ZSTD_DISABLE_DEPRECATE_WARNINGS
 #include <zstd.h>
 #define ZDICT_STATIC_LINKING_ONLY
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
