@@ -18,11 +18,11 @@ num_cpus = "1"
 rayon = "1.5"
 
 [dependencies.zstd-safe]
-version = "3.0.0+zstd.1.4.8"
+version = "4.1.1+zstd.1.5.0"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.zstd-sys]
-version = "1.4.19+zstd.1.4.8"
+version = "1.6.1+zstd.1.5.0"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.pyo3]
