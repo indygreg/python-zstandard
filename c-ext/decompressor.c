@@ -29,7 +29,7 @@ int ensure_dctx(ZstdDecompressor *decompressor, int loadDict) {
         }
     }
 
-    zresult = ZSTD_DCtx_setFormat(decompressor->dctx, decompressor->format);
+    zresult = ZSTD_DCtx_setParameter(decompressor->dctx, ZSTD_d_format, decompressor->format);
     if (ZSTD_isError(zresult)) {
         PyErr_Format(ZstdError, "unable to set decoding format: %s",
                      ZSTD_getErrorName(zresult));

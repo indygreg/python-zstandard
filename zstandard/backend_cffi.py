@@ -4320,7 +4320,7 @@ class ZstdDecompressor(object):
                     "unable to set max window size: %s" % _zstd_error(zresult)
                 )
 
-        zresult = lib.ZSTD_DCtx_setFormat(self._dctx, self._format)
+        zresult = lib.ZSTD_DCtx_setParameter(self._dctx, lib.ZSTD_d_format, self._format)
         if lib.ZSTD_isError(zresult):
             raise ZstdError(
                 "unable to set decoding format: %s" % _zstd_error(zresult)
