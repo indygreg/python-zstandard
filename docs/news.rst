@@ -58,11 +58,16 @@ Actions Blocking Release
 * Support ``ZSTD_c_stableOutBuffer``.
 * Support ``ZSTD_c_blockDelimiters``.
 * Support ``ZSTD_c_validateSequences``.
+* Support ``ZSTD_c_splitBlocks``.
+* Support ``ZSTD_c_useRowMatchFinder``.
 * Support ``ZSTD_d_forceIgnoreChecksum``.
+* Support ``ZSTD_d_refMultipleDDicts``.
 * Support ``ZSTD_generateSequences()``.
 * Support ``ZSTD_mergeBlockDelimiters()``.
 * Support ``ZSTD_compressSequences()``.
 * Support ``ZSTD_threadPool`` APIs for managing a thread pool.
+* Support ``ZSTD_refMultipleDDicts_e``.
+* Support ``ZSTD_writeSkippableFrame()``.
 * Utilize ``ZSTD_getDictID_fromCDict()``?
 * Utilize ``ZSTD_DCtx_getParameter()``.
 * Stop relying on private libzstd headers and symbols (namely ``pool.h``).
@@ -77,7 +82,10 @@ Other Actions Not Blocking Release
 0.16.0 (not yet released)
 =========================
 
-Nothing yet!
+Changes
+-------
+
+* Bundled zstd library upgraded from 1.4.8 to 1.5.0.
 
 0.15.2 (released 2021-02-27)
 ============================
