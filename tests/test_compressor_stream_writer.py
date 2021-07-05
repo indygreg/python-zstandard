@@ -308,12 +308,12 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
         params = zstd.get_frame_parameters(compressed)
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
-        self.assertEqual(params.window_size, 1024)
+        self.assertEqual(params.window_size, 2097152)
         self.assertEqual(params.dict_id, d.dict_id())
         self.assertFalse(params.has_checksum)
 
         h = hashlib.sha1(compressed).hexdigest()
-        self.assertEqual(h, "7cdf9c1f7f7918c7f57c9f6627d46fb599893755")
+        self.assertEqual(h, "8703b4316f274d26697ea5dd480f29c08e85d940")
 
         source = b"foo" + b"bar" + (b"foo" * 16384)
 
