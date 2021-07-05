@@ -6,19 +6,20 @@
 
 """Python interface to the Zstandard (zstd) compression library."""
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import as _absolute_import
+from __future__ import unicode_literals as _unicode_literals
 
 # This module serves 2 roles:
 #
 # 1) Export the C or CFFI "backend" through a central module.
 # 2) Implement additional functionality built on top of C or CFFI backend.
 
-import builtins
-import io
-import os
-import platform
+import builtins as _builtins
+import io as _io
+import os as _os
+import platform as _platform
 
-from typing import ByteString
+from typing import ByteString as _ByteString
 
 # Some Python implementations don't support C extensions. That's why we have
 # a CFFI implementation in the first place. The code here import one of our
@@ -32,14 +33,14 @@ from typing import ByteString
 # defining a variable and `setup.py` could write the file with whatever
 # policy was specified at build time. Until someone needs it, we go with
 # the hacky but simple environment variable approach.
-_module_policy = os.environ.get("PYTHON_ZSTANDARD_IMPORT_POLICY", "default")
+_module_policy = _os.environ.get("PYTHON_ZSTANDARD_IMPORT_POLICY", "default")
 
 if _module_policy == "default":
-    if platform.python_implementation() in ("CPython",):
+    if _platform.python_implementation() in ("CPython",):
         from .backend_c import *  # type: ignore
 
         backend = "cext"
-    elif platform.python_implementation() in ("PyPy",):
+    elif _platform.python_implementation() in ("PyPy",):
         from .backend_cffi import *  # type: ignore
 
         backend = "cffi"
@@ -143,13 +144,13 @@ def open(
     else:
         raise ValueError("Invalid mode: {!r}".format(mode))
 
-    if hasattr(os, "PathLike"):
-        types = (str, bytes, os.PathLike)
+    if hasattr(_os, "PathLike"):
+        types = (str, bytes, _os.PathLike)
     else:
         types = (str, bytes)
 
     if isinstance(filename, types):  # type: ignore
-        inner_fh = builtins.open(filename, raw_open_mode)
+        inner_fh = _builtins.open(filename, raw_open_mode)
         closefd = True
     elif hasattr(filename, "read") or hasattr(filename, "write"):
         inner_fh = filename
@@ -167,14 +168,14 @@ def open(
         raise RuntimeError("logic error in zstandard.open() handling open mode")
 
     if "b" not in normalized_mode:
-        return io.TextIOWrapper(
+        return _io.TextIOWrapper(
             fh, encoding=encoding, errors=errors, newline=newline
         )
     else:
         return fh
 
 
-def compress(data: ByteString, level: int = 3) -> bytes:
+def compress(data: _ByteString, level: int = 3) -> bytes:
     """Compress source data using the zstd compression format.
 
     This performs one-shot compression using basic/default compression
@@ -192,7 +193,7 @@ def compress(data: ByteString, level: int = 3) -> bytes:
     return cctx.compress(data)
 
 
-def decompress(data: ByteString, max_output_size: int = 0) -> bytes:
+def decompress(data: _ByteString, max_output_size: int = 0) -> bytes:
     """Decompress a zstd frame into its original data.
 
     This performs one-shot decompression using basic/default compression
