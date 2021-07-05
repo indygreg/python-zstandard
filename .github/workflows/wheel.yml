@@ -10,8 +10,6 @@ jobs:
 
       matrix:
         build:
-          - image: 'quay.io/pypa/manylinux2010_i686@sha256:26e69e80b67b19492fd4d5a3e060a68af0d2266b0fb7e1533ece4fc260d31b9e'
-            py: 'cp35-cp35m'
           - image: 'quay.io/pypa/manylinux2010_i686'
             py: 'cp36-cp36m'
           - image: 'quay.io/pypa/manylinux2010_i686'
@@ -21,8 +19,6 @@ jobs:
           - image: 'quay.io/pypa/manylinux2010_i686'
             py: 'cp39-cp39'
 
-          - image: 'quay.io/pypa/manylinux2010_x86_64@sha256:69d375fd30384e44017673442d4f63748d51056bb25f3db88c82301d811ad637'
-            py: 'cp35-cp35m'
           - image: 'quay.io/pypa/manylinux2010_x86_64'
             py: 'cp36-cp36m'
           - image: 'quay.io/pypa/manylinux2010_x86_64'
@@ -41,8 +37,6 @@ jobs:
           - image: 'quay.io/pypa/manylinux2014_aarch64'
             py: 'cp39-cp39'
 
-          - image: 'quay.io/pypa/manylinux2014_i686@sha256:5ed08e15960f1edb1c0f1babe141f6de7d51f94864d6d5b26fc226151449e4d7'
-            py: 'cp35-cp35m'
           - image: 'quay.io/pypa/manylinux2014_i686'
             py: 'cp36-cp36m'
           - image: 'quay.io/pypa/manylinux2014_i686'
@@ -52,8 +46,6 @@ jobs:
           - image: 'quay.io/pypa/manylinux2014_i686'
             py: 'cp39-cp39'
 
-          - image: 'quay.io/pypa/manylinux2014_x86_64@sha256:cffd074a33992fb7493f727fda59aebd81e54b8a0e016574ceab054691acdfd0'
-            py: 'cp35-cp35m'
           - image: 'quay.io/pypa/manylinux2014_x86_64'
             py: 'cp36-cp36m'
           - image: 'quay.io/pypa/manylinux2014_x86_64'
@@ -84,7 +76,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - 'cp35-*'
           - 'cp36-*'
           - 'cp37-*'
           - 'cp38-*'
@@ -146,7 +137,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - '3.5'
           - '3.6'
           - '3.7'
           - '3.8'

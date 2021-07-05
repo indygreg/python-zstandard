@@ -14,8 +14,8 @@ import sys
 from setuptools import setup
 
 
-if sys.version_info[0:2] < (3, 5):
-    print("Python 3.5+ is required", file=sys.stderr)
+if sys.version_info[0:2] < (3, 6):
+    print("Python 3.6+ is required", file=sys.stderr)
     sys.exit(1)
 
 # Need change in 1.10 for ffi.from_buffer() to handle all buffer types
@@ -126,13 +126,12 @@ setup(
     author="Gregory Szorc",
     author_email="gregory.szorc@gmail.com",
     license="BSD",
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: C",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

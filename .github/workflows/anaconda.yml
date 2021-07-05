@@ -9,7 +9,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - '3.5'
           - '3.6'
           - '3.7'
     runs-on: 'ubuntu-20.04'
@@ -54,7 +53,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - '3.5'
           - '3.6'
           - '3.7'
           - '3.8'
