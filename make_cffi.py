@@ -23,13 +23,12 @@ SOURCES = [
 
 # Headers whose preprocessed output will be fed into cdef().
 HEADERS = [
-    os.path.join(HERE, "zstd", *p)
-    for p in (("zstd.h",), ("dictBuilder", "zdict.h"),)
+    os.path.join(HERE, "zstd", p)
+    for p in ("zstd.h", "zdict.h")
 ]
 
 INCLUDE_DIRS = [
     os.path.join(HERE, "zstd"),
-    os.path.join(HERE, "zstd", "dictBuilder"),
 ]
 
 # cffi can't parse some of the primitives in zstd.h. So we invoke the
@@ -135,7 +134,7 @@ def normalize_output(output):
         if line.startswith(b'__attribute__ ((visibility ("default"))) '):
             line = line[len(b'__attribute__ ((visibility ("default"))) ') :]
 
-        if line.startswith(b"__attribute__((deprecated("):
+        if line.startswith(b"__attribute__((deprecated"):
             continue
         elif b"__declspec(deprecated(" in line:
             continue
