@@ -213,3 +213,74 @@ class TestCompressor_compress(unittest.TestCase):
         self.assertEqual(
             result, b"\x28\xb5\x2f\xfd\x20\x03\x19\x00\x00\x66\x6f\x6f"
         )
+
+    def test_explicit_default_params(self):
+        cctx = zstd.ZstdCompressor(
+            level=3,
+            dict_data=None,
+            compression_params=None,
+            write_checksum=None,
+            write_content_size=None,
+            write_dict_id=None,
+            threads=0,
+        )
+        result = cctx.compress(b"")
+        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x20\x00\x01\x00\x00")
+
+    def test_compression_params_with_other_params(self):
+        params = zstd.ZstdCompressionParameters.from_level(3)
+        cctx = zstd.ZstdCompressor(
+            level=3,
+            dict_data=None,
+            compression_params=params,
+            write_checksum=None,
+            write_content_size=None,
+            write_dict_id=None,
+            threads=0,
+        )
+        result = cctx.compress(b"")
+        self.assertEqual(result, b"\x28\xb5\x2f\xfd\x20\x00\x01\x00\x00")
+
+        with self.assertRaises(ValueError):
+            cctx = zstd.ZstdCompressor(
+                level=3,
+                dict_data=None,
+                compression_params=params,
+                write_checksum=False,
+                write_content_size=None,
+                write_dict_id=None,
+                threads=0,
+            )
+
+        with self.assertRaises(ValueError):
+            cctx = zstd.ZstdCompressor(
+                level=3,
+                dict_data=None,
+                compression_params=params,
+                write_checksum=None,
+                write_content_size=True,
+                write_dict_id=None,
+                threads=0,
+            )
+
+        with self.assertRaises(ValueError):
+            cctx = zstd.ZstdCompressor(
+                level=3,
+                dict_data=None,
+                compression_params=params,
+                write_checksum=None,
+                write_content_size=None,
+                write_dict_id=True,
+                threads=0,
+            )
+
+        with self.assertRaises(ValueError):
+            cctx = zstd.ZstdCompressor(
+                level=3,
+                dict_data=None,
+                compression_params=params,
+                write_checksum=None,
+                write_content_size=None,
+                write_dict_id=True,
+                threads=2,
+            )

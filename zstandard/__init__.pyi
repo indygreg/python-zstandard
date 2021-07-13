@@ -265,11 +265,11 @@ class ZstdCompressor(object):
     def __init__(
         self,
         level: int = ...,
-        dict_data: ZstdCompressionDict = ...,
-        compression_params: ZstdCompressionParameters = ...,
-        write_checksum: bool = ...,
-        write_content_size: bool = ...,
-        write_dict_id: bool = ...,
+        dict_data: Optional[ZstdCompressionDict] = ...,
+        compression_params: Optional[ZstdCompressionParameters] = ...,
+        write_checksum: Optional[bool] = ...,
+        write_content_size: Optional[bool] = ...,
+        write_dict_id: Optional[bool] = ...,
         threads: int = ...,
     ): ...
     def memory_size(self) -> int: ...
@@ -376,7 +376,7 @@ class ZstdDecompressionWriter(BinaryIO):
 class ZstdDecompressor(object):
     def __init__(
         self,
-        dict_data: ZstdCompressionDict = ...,
+        dict_data: Optional[ZstdCompressionDict] = ...,
         max_window_size: int = ...,
         format: int = ...,
     ): ...
