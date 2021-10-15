@@ -20,6 +20,7 @@ jobs:
           - 'cp37-cp37m'
           - 'cp38-cp38'
           - 'cp39-cp39'
+          - 'cp310-cp310'
     runs-on: 'ubuntu-20.04'
     steps:
       - uses: actions/checkout@v2
@@ -46,11 +47,14 @@ jobs:
           - 'cp37-*'
           - 'cp38-*'
           - 'cp39-*'
+          - 'cp310-*'
         arch: ['x86_64']
         include:
           - py: 'cp38-*'
             arch: 'arm64'
           - py: 'cp39-*'
+            arch: 'arm64'
+          - py: 'cp310-*'
             arch: 'arm64'
     runs-on: 'macos-10.15'
     env:
@@ -107,6 +111,7 @@ jobs:
           - '3.7'
           - '3.8'
           - '3.9'
+          - '3.10'
         arch:
           - 'x86'
           - 'x64'
