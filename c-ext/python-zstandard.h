@@ -30,7 +30,7 @@
 #endif
 
 /* Remember to change the string in zstandard/__init__.py, rust-ext/src/lib.rs as well */
-#define PYTHON_ZSTANDARD_VERSION "0.16.0.dev0"
+#define PYTHON_ZSTANDARD_VERSION "0.16.0"
 
 typedef enum {
     compressorobj_flush_finish,
