@@ -7,7 +7,7 @@ class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
         self.assertEqual(zstd.ZSTD_VERSION, (1, 5, 0))
 
-        self.assertEqual(zstd.__version__, "0.16.0")
+        self.assertEqual(zstd.__version__, "0.17.0.dev0")
 
     def test_features(self):
         self.assertIsInstance(zstd.backend_features, set)
