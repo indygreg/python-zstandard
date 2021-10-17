@@ -79,7 +79,7 @@ else:
         "cext, or cffi" % _module_policy
     )
 
-# Keep this in sync with python-zstandard.h, rust-ext/src/lib.rs.
+# Keep this in sync with python-zstandard.h, rust-ext/src/lib.rs, and debian/changelog.
 __version__ = "0.16.0"
 
 _MODE_CLOSED = 0

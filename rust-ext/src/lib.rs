@@ -32,6 +32,8 @@ mod zstd_safe;
 
 use exceptions::ZstdError;
 
+// Remember to change the string in c-ext/python-zstandard.h, zstandard/__init__.py,
+// and debian/changelog as well.
 const VERSION: &'static str = "0.16.0";
 
 #[pymodule]
