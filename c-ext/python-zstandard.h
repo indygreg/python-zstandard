@@ -127,7 +127,7 @@ typedef struct {
     size_t outSize;
     int entered;
     int closing;
-    int closed;
+    char closed;
     int writeReturnRead;
     int closefd;
     unsigned long long bytesCompressed;
@@ -164,7 +164,7 @@ typedef struct {
     int closefd;
 
     int entered;
-    int closed;
+    char closed;
     unsigned long long bytesCompressed;
 
     ZSTD_inBuffer input;
@@ -244,7 +244,7 @@ typedef struct {
     /* Whether the context manager is active. */
     int entered;
     /* Whether we've closed the stream. */
-    int closed;
+    char closed;
 
     /* Number of bytes decompressed and returned to user. */
     unsigned long long bytesDecompressed;
@@ -271,7 +271,7 @@ typedef struct {
     size_t outSize;
     int entered;
     int closing;
-    int closed;
+    char closed;
     int writeReturnRead;
     int closefd;
 } ZstdDecompressionWriter;
