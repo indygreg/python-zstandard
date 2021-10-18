@@ -82,6 +82,16 @@ Other Actions Not Blocking Release
 0.17.0 (not yet released)
 =========================
 
+Bug Fixes
+---------
+
+* The `ZstdCompressionReader`, `ZstdCompressionWriter`,
+  `ZstdDecompressionReader`, and `ZstdDecompressionWriter` types in the C
+  backend now tracks their `closed` attribute using the proper C type. Before,
+  due to a mismatch between the C struct type and the type declared to Python,
+  Python could read the wrong bits on platforms like s390x and incorrectly
+  report the value of the `closed` attribute to Python. (#105, #164)
+
 Changes
 -------
 
