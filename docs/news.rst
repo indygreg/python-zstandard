@@ -82,6 +82,14 @@ Other Actions Not Blocking Release
 0.17.0 (not yet released)
 =========================
 
+Changes
+-------
+
+* The C backend now exposes the symbols `ZstdCompressionReader`,
+  `ZstdCompressionWriter`, `ZstdDecompressionReader`, and
+  `ZstdDecompressionWriter`. This should match the behavior of the CFFI
+  backend. (#165)
+
 0.16.0 (released 2021-10-16)
 ============================
 
