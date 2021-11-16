@@ -844,4 +844,7 @@ void compressionreader_module_init(PyObject *mod) {
     if (PyType_Ready(&ZstdCompressionReaderType) < 0) {
         return;
     }
+
+    Py_INCREF((PyObject *)&ZstdCompressionReaderType);
+    PyModule_AddObject(mod, "ZstdCompressionReader", (PyObject *)&ZstdCompressionReaderType);
 }

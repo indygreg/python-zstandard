@@ -812,4 +812,7 @@ void decompressionreader_module_init(PyObject *mod) {
     if (PyType_Ready(&ZstdDecompressionReaderType) < 0) {
         return;
     }
+
+    Py_INCREF((PyObject *)&ZstdDecompressionReaderType);
+    PyModule_AddObject(mod, "ZstdDecompressionReader", (PyObject *)&ZstdDecompressionReaderType);
 }
