@@ -371,4 +371,7 @@ void compressionwriter_module_init(PyObject *mod) {
     if (PyType_Ready(&ZstdCompressionWriterType) < 0) {
         return;
     }
+    
+    Py_INCREF((PyObject *)&ZstdCompressionWriterType);
+    PyModule_AddObject(mod, "ZstdCompressionWriter", (PyObject *)&ZstdCompressionWriterType);
 }
