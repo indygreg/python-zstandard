@@ -292,4 +292,7 @@ void decompressionwriter_module_init(PyObject *mod) {
     if (PyType_Ready(&ZstdDecompressionWriterType) < 0) {
         return;
     }
+    
+    Py_INCREF((PyObject *)&ZstdDecompressionWriterType);
+    PyModule_AddObject(mod, "ZstdDecompressionWriter", (PyObject *)&ZstdDecompressionWriterType);
 }
