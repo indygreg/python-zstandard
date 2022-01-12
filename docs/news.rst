@@ -82,6 +82,15 @@ Other Actions Not Blocking Release
 0.17.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* `ZstdCompressionWriter` and `ZstdDecompressionWriter` now implement
+  `__iter__()` and `__next__()`. The methods always raise
+  `io.UnsupportedOperation`. The added methods are part of the `io.IOBase`
+  abstract base class / interface and help ensure instances look like other
+  I/O types. (#167, #168)
+
 Bug Fixes
 ---------
 
@@ -99,6 +108,8 @@ Changes
   `ZstdCompressionWriter`, `ZstdDecompressionReader`, and
   `ZstdDecompressionWriter`. This should match the behavior of the CFFI
   backend. (#165)
+* `ZstdCompressionWriter` and `ZstdDecompressionWriter` now implement `__iter__`
+  and `__next__`, which always raise `io.UnsupportedOperation`.
 
 0.16.0 (released 2021-10-16)
 ============================

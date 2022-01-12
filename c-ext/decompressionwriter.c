@@ -172,6 +172,16 @@ static PyObject *ZstdDecompressionWriter_flush(ZstdDecompressionWriter *self) {
     }
 }
 
+static PyObject *ZstdDecompressionWriter_iter(PyObject *self) {
+    set_io_unsupported_operation();
+    return NULL;
+}
+
+static PyObject *ZstdDecompressionWriter_iternext(PyObject *self) {
+    set_io_unsupported_operation();
+    return NULL;
+}
+
 static PyObject *ZstdDecompressionWriter_false(PyObject *self, PyObject *args) {
     Py_RETURN_FALSE;
 }
@@ -255,8 +265,8 @@ PyTypeObject ZstdDecompressionWriterType = {
     0,                                           /* tp_clear */
     0,                                           /* tp_richcompare */
     0,                                           /* tp_weaklistoffset */
-    0,                                           /* tp_iter */
-    0,                                           /* tp_iternext */
+    ZstdDecompressionWriter_iter,                /* tp_iter */
+    ZstdDecompressionWriter_iternext,            /* tp_iternext */
     ZstdDecompressionWriter_methods,             /* tp_methods */
     ZstdDecompressionWriter_members,             /* tp_members */
     0,                                           /* tp_getset */

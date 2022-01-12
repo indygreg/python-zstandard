@@ -253,6 +253,16 @@ static PyObject *ZstdCompressionWriter_writelines(PyObject *self,
     return NULL;
 }
 
+static PyObject *ZstdCompressionWriter_iter(PyObject *self) {
+    set_io_unsupported_operation();
+    return NULL;
+}
+
+static PyObject *ZstdCompressionWriter_iternext(PyObject *self) {
+    set_io_unsupported_operation();
+    return NULL;
+}
+
 static PyObject *ZstdCompressionWriter_false(PyObject *self, PyObject *args) {
     Py_RETURN_FALSE;
 }
@@ -334,8 +344,8 @@ PyTypeObject ZstdCompressionWriterType = {
     0,                                         /* tp_clear */
     0,                                         /* tp_richcompare */
     0,                                         /* tp_weaklistoffset */
-    0,                                         /* tp_iter */
-    0,                                         /* tp_iternext */
+    ZstdCompressionWriter_iter,                /* tp_iter */
+    ZstdCompressionWriter_iternext,            /* tp_iternext */
     ZstdCompressionWriter_methods,             /* tp_methods */
     ZstdCompressionWriter_members,             /* tp_members */
     0,                                         /* tp_getset */
