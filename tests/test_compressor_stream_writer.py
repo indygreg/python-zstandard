@@ -21,6 +21,12 @@ class TestCompressor_stream_writer(unittest.TestCase):
 
         self.assertFalse(writer.isatty())
         self.assertFalse(writer.readable())
+        
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.__iter__()
+
+        with self.assertRaises(io.UnsupportedOperation):
+            writer.__next__()
 
         with self.assertRaises(io.UnsupportedOperation):
             writer.readline()

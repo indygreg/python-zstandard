@@ -778,6 +778,12 @@ class ZstdCompressionWriter(object):
 
         return False
 
+    def __iter__(self):
+        raise io.UnsupportedOperation()
+
+    def __next__(self):
+        raise io.UnsupportedOperation()
+
     def memory_size(self):
         return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)
 

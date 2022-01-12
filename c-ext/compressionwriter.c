@@ -290,6 +290,8 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
      PyDoc_STR("Enter a compression context.")},
     {"__exit__", (PyCFunction)ZstdCompressionWriter_exit, METH_VARARGS,
      PyDoc_STR("Exit a compression context.")},
+    {"__iter__", (PyCFunction)ZstdCompressionWriter_unsupported, METH_NOARGS, NULL},
+    {"__next__", (PyCFunction)ZstdCompressionWriter_unsupported, METH_NOARGS, NULL},
     {"close", (PyCFunction)ZstdCompressionWriter_close, METH_NOARGS, NULL},
     {"fileno", (PyCFunction)ZstdCompressionWriter_fileno, METH_NOARGS, NULL},
     {"isatty", (PyCFunction)ZstdCompressionWriter_false, METH_NOARGS, NULL},
