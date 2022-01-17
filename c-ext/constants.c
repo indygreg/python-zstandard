@@ -75,7 +75,6 @@ void constants_module_init(PyObject *mod) {
     PyModule_AddIntConstant(mod, "CHAINLOG_MAX", ZSTD_CHAINLOG_MAX);
     PyModule_AddIntConstant(mod, "HASHLOG_MIN", ZSTD_HASHLOG_MIN);
     PyModule_AddIntConstant(mod, "HASHLOG_MAX", ZSTD_HASHLOG_MAX);
-    PyModule_AddIntConstant(mod, "HASHLOG3_MAX", ZSTD_HASHLOG3_MAX);
     PyModule_AddIntConstant(mod, "SEARCHLOG_MIN", ZSTD_SEARCHLOG_MIN);
     PyModule_AddIntConstant(mod, "SEARCHLOG_MAX", ZSTD_SEARCHLOG_MAX);
     PyModule_AddIntConstant(mod, "MINMATCH_MIN", ZSTD_MINMATCH_MIN);

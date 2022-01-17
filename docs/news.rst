@@ -90,6 +90,8 @@ Backwards Compatibility Notes
   ``io.UnsupportedOperation``. The added methods are part of the ``io.IOBase``
   abstract base class / interface and help ensure instances look like other
   I/O types. (#167, #168)
+* The ``HASHLOG3_MAX`` constant has been removed since it is no longer defined
+  in zstd 1.5.1.
 
 Bug Fixes
 ---------

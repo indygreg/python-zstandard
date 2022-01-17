@@ -51,7 +51,6 @@ class TestModuleAttributes(unittest.TestCase):
             "CHAINLOG_MAX",
             "HASHLOG_MIN",
             "HASHLOG_MAX",
-            "HASHLOG3_MAX",
             "MINMATCH_MIN",
             "MINMATCH_MAX",
             "SEARCHLOG_MIN",

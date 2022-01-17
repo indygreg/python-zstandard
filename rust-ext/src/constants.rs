@@ -80,7 +80,6 @@ pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
             30
         },
     )?;
-    module.add("HASHLOG3_MAX", zstd_safe::HASHLOG3_MAX)?;
     module.add("SEARCHLOG_MIN", zstd_safe::SEARCHLOG_MIN)?;
     module.add("SEARCHLOG_MAX", windowlog_max - 1)?;
     module.add("MINMATCH_MIN", zstd_sys::ZSTD_MINMATCH_MIN)?;
