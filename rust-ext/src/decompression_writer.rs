@@ -11,6 +11,7 @@ use {
         exceptions::{PyOSError, PyValueError},
         prelude::*,
         types::PyBytes,
+        PyIterProtocol,
     },
     std::sync::Arc,
 };
@@ -274,5 +275,24 @@ impl ZstdDecompressionWriter {
         } else {
             Ok(total_write)
         }
+    }
+}
+
+#[pyproto]
+impl PyIterProtocol for ZstdDecompressionWriter {
+    fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
+        let py = slf.py();
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
+        let py = slf.py();
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
     }
 }
