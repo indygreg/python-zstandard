@@ -334,12 +334,12 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         decompressor = dctx.stream_writer(buffer)
         size = decompressor.memory_size()
-        self.assertGreater(size, 100000)
+        self.assertGreater(size, 90000)
 
         with dctx.stream_writer(buffer) as decompressor:
             size = decompressor.memory_size()
 
-        self.assertGreater(size, 100000)
+        self.assertGreater(size, 90000)
 
     def test_write_size(self):
         source = zstd.ZstdCompressor().compress(b"foobarfoobar")

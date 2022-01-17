@@ -58,7 +58,7 @@ Actions Blocking Release
 * Support ``ZSTD_c_stableOutBuffer``.
 * Support ``ZSTD_c_blockDelimiters``.
 * Support ``ZSTD_c_validateSequences``.
-* Support ``ZSTD_c_splitBlocks``.
+* Support ``ZSTD_c_useBlockSplitter``.
 * Support ``ZSTD_c_useRowMatchFinder``.
 * Support ``ZSTD_d_forceIgnoreChecksum``.
 * Support ``ZSTD_d_refMultipleDDicts``.
@@ -106,6 +106,7 @@ Bug Fixes
 Changes
 -------
 
+* Bundled zstd library upgraded from 1.5.0 to 1.5.1.
 * The C backend now exposes the symbols ``ZstdCompressionReader``,
   ``ZstdCompressionWriter``, ``ZstdDecompressionReader``, and
   ``ZstdDecompressionWriter``. This should match the behavior of the CFFI

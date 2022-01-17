@@ -102,7 +102,7 @@ class TestCompressionParameters(unittest.TestCase):
 
         # 32-bit has slightly different values from 64-bit.
         self.assertAlmostEqual(
-            p.estimated_compression_context_size(), 1297424, delta=2000
+            p.estimated_compression_context_size(), 1303304, delta=4000
         )
 
     def test_strategy(self):

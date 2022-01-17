@@ -134,7 +134,7 @@ class TestCompressor_compress(unittest.TestCase):
         no_params = zstd.get_frame_parameters(no_dict_id)
         with_params = zstd.get_frame_parameters(with_dict_id)
         self.assertEqual(no_params.dict_id, 0)
-        self.assertEqual(with_params.dict_id, 1880053135)
+        self.assertEqual(with_params.dict_id, 1123828263)
 
     def test_compress_dict_multiple(self):
         samples = []
@@ -198,7 +198,7 @@ class TestCompressor_compress(unittest.TestCase):
 
         self.assertEqual(
             result,
-            b"\x28\xb5\x2f\xfd\x23\x8f\x55\x0f\x70\x03\x19\x00\x00"
+            b"\x28\xb5\x2f\xfd\x23\x27\x42\xfc\x42\x03\x19\x00\x00"
             b"\x66\x6f\x6f",
         )
 
