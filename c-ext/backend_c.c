@@ -330,3 +330,24 @@ int safe_pybytes_resize(PyObject **obj, Py_ssize_t size) {
 
     return 0;
 }
+
+// Set/raise an `io.UnsupportedOperation` exception.
+void set_io_unsupported_operation(void) {
+    PyObject *iomod;
+    PyObject *exc;
+
+    iomod = PyImport_ImportModule("io");
+    if (NULL == iomod) {
+        return;
+    }
+
+    exc = PyObject_GetAttrString(iomod, "UnsupportedOperation");
+    if (NULL == exc) {
+        Py_DECREF(iomod);
+        return;
+    }
+
+    PyErr_SetNone(exc);
+    Py_DECREF(exc);
+    Py_DECREF(iomod);
+}

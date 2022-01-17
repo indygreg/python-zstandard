@@ -183,24 +183,7 @@ static PyObject *ZstdDecompressionWriter_true(PyObject *self, PyObject *args) {
 static PyObject *ZstdDecompressionWriter_unsupported(PyObject *self,
                                                      PyObject *args,
                                                      PyObject *kwargs) {
-    PyObject *iomod;
-    PyObject *exc;
-
-    iomod = PyImport_ImportModule("io");
-    if (NULL == iomod) {
-        return NULL;
-    }
-
-    exc = PyObject_GetAttrString(iomod, "UnsupportedOperation");
-    if (NULL == exc) {
-        Py_DECREF(iomod);
-        return NULL;
-    }
-
-    PyErr_SetNone(exc);
-    Py_DECREF(exc);
-    Py_DECREF(iomod);
-
+    set_io_unsupported_operation();
     return NULL;
 }
 

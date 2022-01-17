@@ -10,26 +10,6 @@
 
 extern PyObject *ZstdError;
 
-static void compressionreader_set_unsupported_operation(void) {
-    PyObject *iomod;
-    PyObject *exc;
-
-    iomod = PyImport_ImportModule("io");
-    if (NULL == iomod) {
-        return;
-    }
-
-    exc = PyObject_GetAttrString(iomod, "UnsupportedOperation");
-    if (NULL == exc) {
-        Py_DECREF(iomod);
-        return;
-    }
-
-    PyErr_SetNone(exc);
-    Py_DECREF(exc);
-    Py_DECREF(iomod);
-}
-
 static void compressionreader_dealloc(ZstdCompressionReader *self) {
     Py_XDECREF(self->compressor);
     Py_XDECREF(self->reader);
@@ -104,12 +84,12 @@ static PyObject *compressionreader_seekable(ZstdCompressionReader *self) {
 }
 
 static PyObject *compressionreader_readline(PyObject *self, PyObject *args) {
-    compressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
 static PyObject *compressionreader_readlines(PyObject *self, PyObject *args) {
-    compressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
@@ -746,12 +726,12 @@ finally:
 }
 
 static PyObject *compressionreader_iter(PyObject *self) {
-    compressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
 static PyObject *compressionreader_iternext(PyObject *self) {
-    compressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 

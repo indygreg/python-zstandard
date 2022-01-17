@@ -10,26 +10,6 @@
 
 extern PyObject *ZstdError;
 
-static void decompressionreader_set_unsupported_operation(void) {
-    PyObject *iomod;
-    PyObject *exc;
-
-    iomod = PyImport_ImportModule("io");
-    if (NULL == iomod) {
-        return;
-    }
-
-    exc = PyObject_GetAttrString(iomod, "UnsupportedOperation");
-    if (NULL == exc) {
-        Py_DECREF(iomod);
-        return;
-    }
-
-    PyErr_SetNone(exc);
-    Py_DECREF(exc);
-    Py_DECREF(iomod);
-}
-
 static void decompressionreader_dealloc(ZstdDecompressionReader *self) {
     Py_XDECREF(self->decompressor);
     Py_XDECREF(self->reader);
@@ -607,13 +587,13 @@ static PyObject *decompressionreader_readall(PyObject *self) {
 
 static PyObject *decompressionreader_readline(PyObject *self, PyObject *args,
                                               PyObject *kwargs) {
-    decompressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
 static PyObject *decompressionreader_readlines(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
-    decompressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
@@ -700,23 +680,23 @@ static PyObject *decompressionreader_tell(ZstdDecompressionReader *self) {
 }
 
 static PyObject *decompressionreader_write(PyObject *self, PyObject *args) {
-    decompressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
 static PyObject *decompressionreader_writelines(PyObject *self,
                                                 PyObject *args) {
-    decompressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
 static PyObject *decompressionreader_iter(PyObject *self) {
-    decompressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 
 static PyObject *decompressionreader_iternext(PyObject *self) {
-    decompressionreader_set_unsupported_operation();
+    set_io_unsupported_operation();
     return NULL;
 }
 

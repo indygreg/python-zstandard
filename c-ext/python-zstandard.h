@@ -386,5 +386,6 @@ BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection *);
 int cpu_count(void);
 size_t roundpow2(size_t);
 int safe_pybytes_resize(PyObject **obj, Py_ssize_t size);
+void set_io_unsupported_operation(void);
 
 #endif
