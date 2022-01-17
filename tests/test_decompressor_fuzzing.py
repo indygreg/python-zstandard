@@ -338,14 +338,17 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         ]
     )
     @hypothesis.given(
-        originals=strategies.data(),
-        frame_count=strategies.integers(min_value=2, max_value=10),
+        chunks=strategies.lists(
+            strategies.sampled_from(random_input_data()),
+            min_size=2,
+            max_size=10,
+        ),
         level=strategies.integers(min_value=1, max_value=5),
         source_read_size=strategies.integers(1, 1048576),
         read_sizes=strategies.data(),
     )
     def test_multiple_frames(
-        self, originals, frame_count, level, source_read_size, read_sizes
+        self, chunks, level, source_read_size, read_sizes
     ):
 
         cctx = zstd.ZstdCompressor(level=level)
@@ -353,10 +356,9 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         buffer = io.BytesIO()
         writer = cctx.stream_writer(buffer)
 
-        for i in range(frame_count):
-            data = originals.draw(strategies.sampled_from(random_input_data()))
-            source.write(data)
-            writer.write(data)
+        for chunk in chunks:
+            source.write(chunk)
+            writer.write(chunk)
             writer.flush(zstd.FLUSH_FRAME)
 
         dctx = zstd.ZstdDecompressor()
