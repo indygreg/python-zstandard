@@ -85,31 +85,31 @@ Other Actions Not Blocking Release
 Backwards Compatibility Notes
 -----------------------------
 
-* `ZstdCompressionWriter` and `ZstdDecompressionWriter` now implement
-  `__iter__()` and `__next__()`. The methods always raise
-  `io.UnsupportedOperation`. The added methods are part of the `io.IOBase`
+* ``ZstdCompressionWriter`` and ``ZstdDecompressionWriter`` now implement
+  ``__iter__()`` and ``__next__()``. The methods always raise
+  ``io.UnsupportedOperation``. The added methods are part of the ``io.IOBase``
   abstract base class / interface and help ensure instances look like other
   I/O types. (#167, #168)
 
 Bug Fixes
 ---------
 
-* The `ZstdCompressionReader`, `ZstdCompressionWriter`,
-  `ZstdDecompressionReader`, and `ZstdDecompressionWriter` types in the C
-  backend now tracks their `closed` attribute using the proper C type. Before,
+* The ``ZstdCompressionReader``, ``ZstdCompressionWriter``,
+  ``ZstdDecompressionReader``, and ``ZstdDecompressionWriter`` types in the C
+  backend now tracks their ``closed`` attribute using the proper C type. Before,
   due to a mismatch between the C struct type and the type declared to Python,
   Python could read the wrong bits on platforms like s390x and incorrectly
-  report the value of the `closed` attribute to Python. (#105, #164)
+  report the value of the ``closed`` attribute to Python. (#105, #164)
 
 Changes
 -------
 
-* The C backend now exposes the symbols `ZstdCompressionReader`,
-  `ZstdCompressionWriter`, `ZstdDecompressionReader`, and
-  `ZstdDecompressionWriter`. This should match the behavior of the CFFI
+* The C backend now exposes the symbols ``ZstdCompressionReader``,
+  ``ZstdCompressionWriter``, ``ZstdDecompressionReader``, and
+  ``ZstdDecompressionWriter``. This should match the behavior of the CFFI
   backend. (#165)
-* `ZstdCompressionWriter` and `ZstdDecompressionWriter` now implement `__iter__`
-  and `__next__`, which always raise `io.UnsupportedOperation`.
+* ``ZstdCompressionWriter`` and ``ZstdDecompressionWriter`` now implement
+  ``__iter__`` and ``__next__``, which always raise ``io.UnsupportedOperation``.
 
 0.16.0 (released 2021-10-16)
 ============================
