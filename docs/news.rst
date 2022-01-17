@@ -110,6 +110,9 @@ Changes
   backend. (#165)
 * ``ZstdCompressionWriter`` and ``ZstdDecompressionWriter`` now implement
   ``__iter__`` and ``__next__``, which always raise ``io.UnsupportedOperation``.
+* Documentation on thread safety has been updated to note that derived objects
+  like ``ZstdCompressionWriter`` have the same thread unsafety as the contexts
+  they were derived from. (#166)
 
 0.16.0 (released 2021-10-16)
 ============================

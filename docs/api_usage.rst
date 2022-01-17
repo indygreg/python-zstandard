@@ -97,10 +97,21 @@ about thread safety. Do not operate on the same ``ZstdCompressor`` and
 fine to have different threads call into a single instance, just not at the
 same time.
 
+Objects derived from ``ZstdCompressor`` and ``ZstdDecompressor`` that
+perform (de)compression operations (such as ``ZstdCompressionReader`` and
+``ZstdDecompressionWriter``) are bound to the ``ZstdCompressor`` or
+``ZstdDecompressor`` from which they came and are therefore not thread safe
+by extension.
+
 Some operations require multiple function calls to complete. e.g. streaming
 operations. A single ``ZstdCompressor`` or ``ZstdDecompressor`` cannot be used
 for simultaneously active operations. e.g. you must not start a streaming
 operation when another streaming operation is already active.
+
+If you need to perform multiple compression or decompression operations in
+parallel, you MUST construct multiple ``ZstdCompressor`` or ``ZstdDecompressor``
+instances so each independent operation has its own ``ZstdCompressor`` or
+``ZstdDecompressor`` instance.
 
 The C extension releases the GIL during non-trivial calls into the zstd C
 API. Non-trivial calls are notably compression and decompression. Trivial
