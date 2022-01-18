@@ -38847,6 +38847,8 @@ static size_t ZSTD_decompressFrame(ZSTD_DCtx* dctx,
     while (1) {
         size_t decodedSize;
         blockProperties_t blockProperties;
+        blockProperties.blockType = bt_reserved;
+        blockProperties.origSize = 0;
         size_t const cBlockSize = ZSTD_getcBlockSize(ip, remainingSrcSize, &blockProperties);
         if (ZSTD_isError(cBlockSize)) return cBlockSize;
 
