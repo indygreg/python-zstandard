@@ -922,7 +922,6 @@ static void decompress_worker(DecompressorWorkerState *state) {
     Py_ssize_t destOffset = 0;
     FramePointer *framePointers = state->framePointers;
     size_t zresult;
-    unsigned long long totalOutputSize = 0;
 
     assert(NULL == state->destBuffers);
     assert(0 == state->destCount);
@@ -982,8 +981,6 @@ static void decompress_worker(DecompressorWorkerState *state) {
 
             fp->destSize = (size_t)decompressedSize;
         }
-
-        totalOutputSize += fp->destSize;
     }
 
     state->destBuffers = calloc(1, sizeof(DecompressorDestBuffer));
