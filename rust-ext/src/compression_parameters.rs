@@ -404,7 +404,7 @@ impl ZstdCompressionParameters {
             PyDict::new(py)
         };
 
-        let level = args.get_item(0).extract::<i32>()?;
+        let level = args.get_item(0)?.extract::<i32>()?;
 
         let source_size = if let Some(value) = kwargs.get_item("source_size") {
             kwargs.del_item("source_size")?;
