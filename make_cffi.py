@@ -22,10 +22,7 @@ SOURCES = [
 ]
 
 # Headers whose preprocessed output will be fed into cdef().
-HEADERS = [
-    os.path.join(HERE, "zstd", p)
-    for p in ("zstd.h", "zdict.h")
-]
+HEADERS = [os.path.join(HERE, "zstd", p) for p in ("zstd.h", "zdict.h")]
 
 INCLUDE_DIRS = [
     os.path.join(HERE, "zstd"),
@@ -49,12 +46,20 @@ if compiler.compiler_type == "unix":
     # Using .compiler respects the CC environment variable.
     args = [compiler.compiler[0]]
     args.extend(
-        ["-E", "-DZSTD_STATIC_LINKING_ONLY", "-DZDICT_STATIC_LINKING_ONLY",]
+        [
+            "-E",
+            "-DZSTD_STATIC_LINKING_ONLY",
+            "-DZDICT_STATIC_LINKING_ONLY",
+        ]
     )
 elif compiler.compiler_type == "msvc":
     args = [compiler.cc]
     args.extend(
-        ["/EP", "/DZSTD_STATIC_LINKING_ONLY", "/DZDICT_STATIC_LINKING_ONLY",]
+        [
+            "/EP",
+            "/DZSTD_STATIC_LINKING_ONLY",
+            "/DZDICT_STATIC_LINKING_ONLY",
+        ]
     )
 else:
     raise Exception("unsupported compiler type: %s" % compiler.compiler_type)

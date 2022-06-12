@@ -127,7 +127,7 @@ class TestFrameParameters(unittest.TestCase):
             zstd.get_frame_parameters(None)
 
         with self.assertRaises(TypeError):
-            zstd.get_frame_parameters(u"foobarbaz")
+            zstd.get_frame_parameters("foobarbaz")
 
     def test_invalid_input_sizes(self):
         with self.assertRaisesRegex(

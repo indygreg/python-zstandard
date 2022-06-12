@@ -3066,7 +3066,12 @@ class ZstdDecompressionReader(object):
     """
 
     def __init__(
-        self, decompressor, source, read_size, read_across_frames, closefd=True,
+        self,
+        decompressor,
+        source,
+        read_size,
+        read_across_frames,
+        closefd=True,
     ):
         self._decompressor = decompressor
         self._source = source
@@ -3438,7 +3443,12 @@ class ZstdDecompressionWriter(object):
     """
 
     def __init__(
-        self, decompressor, writer, write_size, write_return_read, closefd=True,
+        self,
+        decompressor,
+        writer,
+        write_size,
+        write_return_read,
+        closefd=True,
     ):
         decompressor._ensure_dctx()
 
@@ -3993,7 +4003,11 @@ class ZstdDecompressor(object):
             raise ValueError("must pass an object with a write() method")
 
         return ZstdDecompressionWriter(
-            self, writer, write_size, write_return_read, closefd=closefd,
+            self,
+            writer,
+            write_size,
+            write_return_read,
+            closefd=closefd,
         )
 
     def copy_stream(
@@ -4330,7 +4344,9 @@ class ZstdDecompressor(object):
                     "unable to set max window size: %s" % _zstd_error(zresult)
                 )
 
-        zresult = lib.ZSTD_DCtx_setParameter(self._dctx, lib.ZSTD_d_format, self._format)
+        zresult = lib.ZSTD_DCtx_setParameter(
+            self._dctx, lib.ZSTD_d_format, self._format
+        )
         if lib.ZSTD_isError(zresult):
             raise ZstdError(
                 "unable to set decoding format: %s" % _zstd_error(zresult)

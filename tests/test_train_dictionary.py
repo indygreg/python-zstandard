@@ -17,10 +17,10 @@ class TestTrainDictionary(unittest.TestCase):
 
     def test_bad_args(self):
         with self.assertRaises(TypeError):
-            zstd.train_dictionary(8192, u"foo")
+            zstd.train_dictionary(8192, "foo")
 
         with self.assertRaises(ValueError):
-            zstd.train_dictionary(8192, [u"foo"])
+            zstd.train_dictionary(8192, ["foo"])
 
     def test_no_params(self):
         d = zstd.train_dictionary(8192, random_input_data())

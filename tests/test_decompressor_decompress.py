@@ -100,7 +100,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         # Will get OverflowError on some Python distributions that can't
         # handle really large integers.
         with self.assertRaises((MemoryError, OverflowError)):
-            dctx.decompress(compressed, max_output_size=2 ** 62)
+            dctx.decompress(compressed, max_output_size=2**62)
 
     def test_dictionary(self):
         samples = []
@@ -157,7 +157,7 @@ class TestDecompressor_decompress(unittest.TestCase):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         frame = cctx.compress(source)
 
-        dctx = zstd.ZstdDecompressor(max_window_size=2 ** zstd.WINDOWLOG_MIN)
+        dctx = zstd.ZstdDecompressor(max_window_size=2**zstd.WINDOWLOG_MIN)
 
         with self.assertRaisesRegex(
             zstd.ZstdError,

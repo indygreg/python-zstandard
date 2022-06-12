@@ -26,7 +26,7 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         with self.assertRaisesRegex(
             TypeError, "item 0 not a bytes like object"
         ):
-            dctx.multi_decompress_to_buffer([u"foo"])
+            dctx.multi_decompress_to_buffer(["foo"])
 
         with self.assertRaisesRegex(
             ValueError, "could not determine decompressed size of item 0"

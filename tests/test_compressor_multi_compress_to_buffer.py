@@ -21,7 +21,7 @@ class TestCompressor_multi_compress_to_buffer(unittest.TestCase):
         with self.assertRaisesRegex(
             TypeError, "item 0 not a bytes like object"
         ):
-            cctx.multi_compress_to_buffer([u"foo"])
+            cctx.multi_compress_to_buffer(["foo"])
 
     def test_empty_input(self):
         cctx = zstd.ZstdCompressor()

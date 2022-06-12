@@ -149,6 +149,8 @@ setup(
         "cffi>=%s; platform_python_implementation == 'PyPy'"
         % MINIMUM_CFFI_VERSION
     ],
-    extras_require={"cffi": ["cffi>=%s" % MINIMUM_CFFI_VERSION],},
+    extras_require={
+        "cffi": ["cffi>=%s" % MINIMUM_CFFI_VERSION],
+    },
     tests_require=["hypothesis"],
 )

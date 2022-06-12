@@ -313,7 +313,9 @@ class ZstdCompressor(object):
     def multi_compress_to_buffer(
         self,
         data: Union[
-            BufferWithSegments, BufferWithSegmentsCollection, List[ByteString],
+            BufferWithSegments,
+            BufferWithSegmentsCollection,
+            List[ByteString],
         ],
         threads: int = ...,
     ) -> BufferWithSegmentsCollection: ...
@@ -420,7 +422,9 @@ class ZstdDecompressor(object):
     def multi_decompress_to_buffer(
         self,
         frames: Union[
-            BufferWithSegments, BufferWithSegmentsCollection, List[ByteString],
+            BufferWithSegments,
+            BufferWithSegmentsCollection,
+            List[ByteString],
         ],
         decompressed_sizes: ByteString = ...,
         threads: int = ...,

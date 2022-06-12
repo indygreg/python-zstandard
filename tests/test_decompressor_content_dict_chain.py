@@ -17,7 +17,7 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
             dctx.decompress_content_dict_chain([])
 
         with self.assertRaisesRegex(ValueError, "chunk 0 must be bytes"):
-            dctx.decompress_content_dict_chain([u"foo"])
+            dctx.decompress_content_dict_chain(["foo"])
 
         with self.assertRaisesRegex(ValueError, "chunk 0 must be bytes"):
             dctx.decompress_content_dict_chain([True])
@@ -55,7 +55,7 @@ class TestDecompressor_content_dict_chain(unittest.TestCase):
         dctx = zstd.ZstdDecompressor()
 
         with self.assertRaisesRegex(ValueError, "chunk 1 must be bytes"):
-            dctx.decompress_content_dict_chain([initial, u"foo"])
+            dctx.decompress_content_dict_chain([initial, "foo"])
 
         with self.assertRaisesRegex(ValueError, "chunk 1 must be bytes"):
             dctx.decompress_content_dict_chain([initial, None])
