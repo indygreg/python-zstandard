@@ -5,7 +5,7 @@ import zstandard as zstd
 
 class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
-        self.assertEqual(zstd.ZSTD_VERSION, (1, 5, 1))
+        self.assertEqual(zstd.ZSTD_VERSION, (1, 5, 2))
 
         self.assertEqual(zstd.__version__, "0.18.0.dev0")
 

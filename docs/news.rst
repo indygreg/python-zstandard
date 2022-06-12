@@ -85,6 +85,7 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* Bundled zstd library upgraded from 1.5.1 to 1.5.2.
 * ``ZstdDecompressionObj`` now has an ``unused_data`` attribute. This attribute
   currently always returns the empty bytes value (``b""``).
 * ``ZstdDecompressionObj`` now has an ``unconsumed_tail`` attribute. This
