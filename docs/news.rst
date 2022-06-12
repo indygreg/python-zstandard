@@ -82,6 +82,12 @@ Other Actions Not Blocking Release
 0.18.0 (not yet released)
 =========================
 
+Changes
+-------
+
+* ``ZstdDecompressionObj`` now has an ``unused_data`` attribute. This attribute
+  currently always returns the empty bytes value (``b""``).
+
 0.17.0 (released 2021-01-18)
 ============================
 

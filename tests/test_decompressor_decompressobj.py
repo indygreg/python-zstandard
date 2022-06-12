@@ -9,10 +9,13 @@ class TestDecompressor_decompressobj(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         dobj = dctx.decompressobj()
+        self.assertEqual(dobj.unused_data, b"")
         self.assertEqual(dobj.decompress(data), b"foobar")
+        self.assertEqual(dobj.unused_data, b"")
         self.assertEqual(dobj.flush(), b"")
         self.assertEqual(dobj.flush(10), b"")
         self.assertEqual(dobj.flush(length=100), b"")
+        self.assertEqual(dobj.unused_data, b"")
 
     def test_input_types(self):
         compressed = zstd.ZstdCompressor(level=1).compress(b"foo")
@@ -30,10 +33,12 @@ class TestDecompressor_decompressobj(unittest.TestCase):
 
         for source in sources:
             dobj = dctx.decompressobj()
+            self.assertEqual(dobj.unused_data, b"")
             self.assertEqual(dobj.flush(), b"")
             self.assertEqual(dobj.flush(10), b"")
             self.assertEqual(dobj.flush(length=100), b"")
             self.assertEqual(dobj.decompress(source), b"foo")
+            self.assertEqual(dobj.unused_data, b"")
             self.assertEqual(dobj.flush(), b"")
 
     def test_reuse(self):

@@ -129,12 +129,20 @@ static PyObject *DecompressionObj_flush(ZstdDecompressionObj *self,
     return PyBytes_FromString("");
 }
 
+static PyObject *DecompressionObj_unused_data(PyObject *self, void *unused) {
+    return PyBytes_FromString("");
+}
+
 static PyMethodDef DecompressionObj_methods[] = {
     {"decompress", (PyCFunction)DecompressionObj_decompress,
      METH_VARARGS | METH_KEYWORDS, PyDoc_STR("decompress data")},
     {"flush", (PyCFunction)DecompressionObj_flush, METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("no-op")},
     {NULL, NULL}};
+
+static PyGetSetDef DecompressionObj_getset[] = {
+    {"unused_data", DecompressionObj_unused_data, NULL, NULL, NULL },
+    {NULL}};
 
 PyTypeObject ZstdDecompressionObjType = {
     PyVarObject_HEAD_INIT(NULL, 0) "zstd.ZstdDecompressionObj", /* tp_name */
@@ -165,7 +173,7 @@ PyTypeObject ZstdDecompressionObjType = {
     0,                                        /* tp_iternext */
     DecompressionObj_methods,                 /* tp_methods */
     0,                                        /* tp_members */
-    0,                                        /* tp_getset */
+    DecompressionObj_getset,                  /* tp_getset */
     0,                                        /* tp_base */
     0,                                        /* tp_dict */
     0,                                        /* tp_descr_get */

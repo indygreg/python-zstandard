@@ -86,4 +86,9 @@ impl ZstdDecompressionObj {
     fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<&'p PyBytes> {
         Ok(PyBytes::new(py, &[]))
     }
+
+    #[getter]
+    fn unused_data<'p>(&self, py: Python<'p>) -> &'p PyBytes {
+        PyBytes::new(py, &[])
+    }
 }

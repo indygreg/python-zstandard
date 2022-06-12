@@ -3001,6 +3001,11 @@ class ZstdDecompressionObj(object):
         """
         return b""
 
+    @property
+    def unused_data(self):
+        """Bytes past the end of compressed data."""
+        return b""
+
 
 class ZstdDecompressionReader(object):
     """Read only decompressor that pull uncompressed data from another stream.
