@@ -87,6 +87,8 @@ Changes
 
 * ``ZstdDecompressionObj`` now has an ``unused_data`` attribute. This attribute
   currently always returns the empty bytes value (``b""``).
+* ``ZstdDecompressionObj`` now has an ``unconsumed_tail`` attribute. This
+  attribute currently always returns the empty bytes value (``b""``).
 
 0.17.0 (released 2021-01-18)
 ============================

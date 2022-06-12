@@ -91,4 +91,9 @@ impl ZstdDecompressionObj {
     fn unused_data<'p>(&self, py: Python<'p>) -> &'p PyBytes {
         PyBytes::new(py, &[])
     }
+
+    #[getter]
+    fn unconsumed_tail<'p>(&self, py: Python<'p>) -> &'p PyBytes {
+        PyBytes::new(py, &[])
+    }
 }

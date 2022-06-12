@@ -3006,6 +3006,11 @@ class ZstdDecompressionObj(object):
         """Bytes past the end of compressed data."""
         return b""
 
+    @property
+    def unconsumed_tail(self):
+        """Data that has not yet been fed into the decompressor."""
+        return b""
+
 
 class ZstdDecompressionReader(object):
     """Read only decompressor that pull uncompressed data from another stream.
