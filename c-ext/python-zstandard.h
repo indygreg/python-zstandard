@@ -221,6 +221,7 @@ typedef struct {
         ZstdDecompressor *decompressor;
     size_t outSize;
     int finished;
+    PyObject *unused_data;
 } ZstdDecompressionObj;
 
 extern PyTypeObject ZstdDecompressionObjType;

@@ -2933,6 +2933,7 @@ class ZstdDecompressionObj(object):
         self._decompressor = decompressor
         self._write_size = write_size
         self._finished = False
+        self._unused_input = b""
 
     def decompress(self, data):
         """Send compressed data to the decompressor and obtain decompressed data.
@@ -2983,6 +2984,9 @@ class ZstdDecompressionObj(object):
             if zresult == 0 or (
                 in_buffer.pos == in_buffer.size and out_buffer.pos == 0
             ):
+                # Preserve any remaining input to be exposed via `unused_data`.
+                self._unused_input = data[in_buffer.pos:in_buffer.size]
+
                 break
 
             out_buffer.pos = 0
@@ -3003,8 +3007,13 @@ class ZstdDecompressionObj(object):
 
     @property
     def unused_data(self):
-        """Bytes past the end of compressed data."""
-        return b""
+        """Bytes past the end of compressed data.
+
+        If ``decompress()`` is fed additional data beyond the end of a zstd
+        frame, this value will be non-empty once ``decompress()`` fully decodes
+        the input frame.
+        """
+        return self._unused_input
 
     @property
     def unconsumed_tail(self):

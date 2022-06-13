@@ -50,6 +50,16 @@ class TestDecompressor_decompressobj(unittest.TestCase):
             self.assertTrue(dobj.eof)
             self.assertEqual(dobj.flush(), b"")
 
+    def test_unused_data(self):
+        data = zstd.ZstdCompressor(level=1).compress(b"foobar")
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj()
+        self.assertEqual(dobj.unused_data, b"")
+        self.assertEqual(dobj.decompress(data + b"extra"), b"foobar")
+        self.assertTrue(dobj.eof)
+        self.assertEqual(dobj.unused_data, b"extra")
+
     def test_reuse(self):
         data = zstd.ZstdCompressor(level=1).compress(b"foobar")
 

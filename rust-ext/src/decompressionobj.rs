@@ -19,6 +19,7 @@ pub struct ZstdDecompressionObj {
     dctx: Arc<DCtx<'static>>,
     write_size: usize,
     finished: bool,
+    unused_data: Vec<u8>,
 }
 
 impl ZstdDecompressionObj {
@@ -27,6 +28,7 @@ impl ZstdDecompressionObj {
             dctx,
             write_size,
             finished: false,
+            unused_data: vec![],
         })
     }
 }
@@ -72,6 +74,11 @@ impl ZstdDecompressionObj {
             }
 
             if zresult == 0 || (in_buffer.pos == in_buffer.size && dest_buffer.is_empty()) {
+                if let Some(data) = data.as_slice(py) {
+                    let unused = &data[in_buffer.pos..in_buffer.size];
+                    self.unused_data = unused.iter().map(|x| x.get()).collect::<Vec<_>>();
+                }
+
                 break;
             }
 
@@ -89,7 +96,7 @@ impl ZstdDecompressionObj {
 
     #[getter]
     fn unused_data<'p>(&self, py: Python<'p>) -> &'p PyBytes {
-        PyBytes::new(py, &[])
+        PyBytes::new(py, &self.unused_data)
     }
 
     #[getter]

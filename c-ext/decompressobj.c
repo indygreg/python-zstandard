@@ -12,6 +12,7 @@ extern PyObject *ZstdError;
 
 static void DecompressionObj_dealloc(ZstdDecompressionObj *self) {
     Py_XDECREF(self->decompressor);
+    Py_CLEAR(self->unused_data);
 
     PyObject_Del(self);
 }
@@ -93,6 +94,10 @@ static PyObject *DecompressionObj_decompress(ZstdDecompressionObj *self,
         }
 
         if (zresult == 0 || (input.pos == input.size && output.pos == 0)) {
+            /* We should only get here at most once. */
+            assert(!self->unused_data);
+            self->unused_data = PyBytes_FromStringAndSize(input.src + input.pos, input.size - input.pos);
+
             break;
         }
 
@@ -130,7 +135,14 @@ static PyObject *DecompressionObj_flush(ZstdDecompressionObj *self,
 }
 
 static PyObject *DecompressionObj_unused_data(PyObject *self, void *unused) {
-    return PyBytes_FromString("");
+    ZstdDecompressionObj *slf = (ZstdDecompressionObj *)(self);
+
+    if (slf->unused_data) {
+        Py_INCREF(slf->unused_data);
+        return slf->unused_data;
+    } else {
+        return PyBytes_FromString("");
+    }
 }
 
 static PyObject *DecompressionObj_unconsumed_tail(PyObject *self, void *unused) {
