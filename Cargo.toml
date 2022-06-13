@@ -2,7 +2,7 @@
 name = "python-zstandard"
 version = "0.18.0-pre"
 authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "BSD-3-Clause"
 description = "Python bindings to zstandard compression library"
 readme = "README.rst"
