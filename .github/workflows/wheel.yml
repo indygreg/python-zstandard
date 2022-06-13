@@ -23,7 +23,7 @@ jobs:
           - 'cp310-cp310'
     runs-on: 'ubuntu-20.04'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up QEMU
         if: ${{ matrix.image == 'quay.io/pypa/manylinux2014_aarch64' }}
@@ -69,7 +69,7 @@ jobs:
           python-version: '3.8'
         if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Dependencies
         run: |
@@ -125,7 +125,7 @@ jobs:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Dependencies
         run: |
