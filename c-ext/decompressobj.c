@@ -137,6 +137,16 @@ static PyObject *DecompressionObj_unconsumed_tail(PyObject *self, void *unused) 
     return PyBytes_FromString("");
 }
 
+static PyObject *DecompressionObj_eof(PyObject *self, void *unused) {
+    ZstdDecompressionObj *slf = (ZstdDecompressionObj*)(self);
+
+    if (slf->finished) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
 static PyMethodDef DecompressionObj_methods[] = {
     {"decompress", (PyCFunction)DecompressionObj_decompress,
      METH_VARARGS | METH_KEYWORDS, PyDoc_STR("decompress data")},
@@ -147,6 +157,7 @@ static PyMethodDef DecompressionObj_methods[] = {
 static PyGetSetDef DecompressionObj_getset[] = {
     {"unused_data", DecompressionObj_unused_data, NULL, NULL, NULL },
     {"unconsumed_tail", DecompressionObj_unconsumed_tail, NULL, NULL, NULL },
+    {"eof", DecompressionObj_eof, NULL, NULL, NULL },
     {NULL}};
 
 PyTypeObject ZstdDecompressionObjType = {

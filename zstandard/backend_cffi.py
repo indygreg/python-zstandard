@@ -3011,6 +3011,11 @@ class ZstdDecompressionObj(object):
         """Data that has not yet been fed into the decompressor."""
         return b""
 
+    @property
+    def eof(self):
+        """Whether the end of the compressed data stream has been reached."""
+        return self._finished
+
 
 class ZstdDecompressionReader(object):
     """Read only decompressor that pull uncompressed data from another stream.

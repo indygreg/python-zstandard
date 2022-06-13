@@ -96,4 +96,9 @@ impl ZstdDecompressionObj {
     fn unconsumed_tail<'p>(&self, py: Python<'p>) -> &'p PyBytes {
         PyBytes::new(py, &[])
     }
+
+    #[getter]
+    fn eof(&self) -> bool {
+        self.finished
+    }
 }
