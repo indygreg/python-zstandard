@@ -96,7 +96,7 @@ static PyObject *DecompressionObj_decompress(ZstdDecompressionObj *self,
         if (zresult == 0 || (input.pos == input.size && output.pos == 0)) {
             /* We should only get here at most once. */
             assert(!self->unused_data);
-            self->unused_data = PyBytes_FromStringAndSize(input.src + input.pos, input.size - input.pos);
+            self->unused_data = PyBytes_FromStringAndSize((char *)(input.src) + input.pos, input.size - input.pos);
 
             break;
         }
