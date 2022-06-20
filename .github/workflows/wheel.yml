@@ -78,8 +78,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          /Applications/Xcode_12.2.app/Contents/Developer/usr/bin/pip3 install --user --require-hashes -r ci/requirements.macoswheels.txt
-          /Applications/Xcode_12.2.app/Contents/Developer/usr/bin/pip3 install --user wheel
+          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/pip3 install --user --require-hashes -r ci/requirements.macoswheels.txt
+          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/pip3 install --user wheel
         if: ${{ matrix.py == 'cp38-*' && matrix.arch == 'arm64' }}
 
       - name: Build Wheel
@@ -89,12 +89,12 @@ jobs:
 
       - name: Build Wheel
         run: |
-          /Applications/Xcode_12.2.app/Contents/Developer/usr/bin/python3 setup.py bdist_wheel
+          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/python3 setup.py bdist_wheel
         env:
           _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
           ARCHFLAGS: '-arch arm64'
           MACOSX_DEPLOYMENT_TARGET: '11.0'
-          SDKROOT: '/Applications/Xcode_12.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.0.sdk'
+          SDKROOT: '/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk'
         if: ${{ matrix.py == 'cp38-*' && matrix.arch == 'arm64' }}
 
       - name: Upload Wheel
