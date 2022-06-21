@@ -32,7 +32,7 @@ use exceptions::ZstdError;
 
 // Remember to change the string in c-ext/python-zstandard.h, zstandard/__init__.py,
 // and debian/changelog as well.
-const VERSION: &'static str = "0.18.0.dev0";
+const VERSION: &'static str = "0.18.0";
 
 #[pymodule]
 fn backend_rust(py: Python, module: &PyModule) -> PyResult<()> {

@@ -1,6 +1,6 @@
 [package]
 name = "python-zstandard"
-version = "0.18.0-pre"
+version = "0.18.0"
 authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
 edition = "2021"
 license = "BSD-3-Clause"
