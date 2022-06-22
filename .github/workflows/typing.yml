@@ -26,7 +26,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install --require-hashes -r ci/requirements.txt
+          if [ "${{matrix.py}}" = "3.6" ]; then
+            python -m pip install --require-hashes -r ci/requirements.py36.txt
+          else
+            python -m pip install --require-hashes -r ci/requirements.txt
+          fi
 
       - name: Run mypy
         run: |
