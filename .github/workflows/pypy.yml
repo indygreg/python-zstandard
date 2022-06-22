@@ -13,8 +13,9 @@ jobs:
           - 'macos-11'
           - 'windows-2019'
         py:
-          - 'pypy-3.6'
           - 'pypy-3.7'
+          - 'pypy-3.8'
+          - 'pypy-3.9'
         arch:
           - 'x86'
           - 'x64'
@@ -51,8 +52,9 @@ jobs:
           - 'macos-11'
           - 'windows-2019'
         py:
-          - 'pypy-3.6'
           - 'pypy-3.7'
+          - 'pypy-3.8'
+          - 'pypy-3.9'
         arch:
           - 'x86'
           - 'x64'

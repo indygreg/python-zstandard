@@ -82,6 +82,11 @@ Other Actions Not Blocking Release
 0.19.0 (not yet released)
 =========================
 
+Changes
+-------
+
+* PyPy 3.6 support dropped; Pypy 3.8 and 3.9 support added.
+
 0.18.0 (released 2022-06-20)
 ============================
 
