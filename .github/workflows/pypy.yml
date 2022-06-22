@@ -41,7 +41,8 @@ jobs:
 
       - name: Build
         run: |
-          python setup.py install
+          python -m pip install --upgrade pip wheel
+          python -m pip wheel -w wheelhouse .
 
   test:
     strategy:
