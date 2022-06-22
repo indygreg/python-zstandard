@@ -61,6 +61,7 @@ jobs:
       CIBW_ARCHS: ${{ matrix.arch }}
       CIBW_BUILD: ${{ matrix.py }}
       CIBW_BUILD_VERBOSITY: '1'
+      CIBW_PRERELEASE_PYTHONS: '1'
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
