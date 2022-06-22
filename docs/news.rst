@@ -87,6 +87,8 @@ Changes
 
 * PyPy 3.6 support dropped; Pypy 3.8 and 3.9 support added.
 * Anaconda 3.6 support dropped.
+* Official support for Python 3.11. This did not require meaningful code changes
+  and previous release(s) likely worked with 3.11 without any changes.
 
 0.18.0 (released 2022-06-20)
 ============================
