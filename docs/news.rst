@@ -86,6 +86,7 @@ Changes
 -------
 
 * PyPy 3.6 support dropped; Pypy 3.8 and 3.9 support added.
+* Anaconda 3.6 support dropped.
 
 0.18.0 (released 2022-06-20)
 ============================
