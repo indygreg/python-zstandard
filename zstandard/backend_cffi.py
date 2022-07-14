@@ -1758,7 +1758,7 @@ class ZstdCompressor(object):
 
     :param level:
        Integer compression level. Valid values are all negative integers
-       through 22.
+       through 22. Default 3.
     :param dict_data:
        A ``ZstdCompressionDict`` to be used to compress with dictionary
         data.
