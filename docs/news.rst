@@ -89,6 +89,8 @@ Changes
 * Anaconda 3.6 support dropped.
 * Official support for Python 3.11. This did not require meaningful code changes
   and previous release(s) likely worked with 3.11 without any changes.
+* CFFI's build system now respects distutils's ``compiler.preprocessor`` if it
+  is set. (#179)
 
 0.18.0 (released 2022-06-20)
 ============================

@@ -40,23 +40,24 @@ if hasattr(compiler, "initialize"):
 # environment variables like CC.
 distutils.sysconfig.customize_compiler(compiler)
 
-# Distutils doesn't set compiler.preprocessor, so invoke the preprocessor
-# manually.
+# Distutils doesn't always set compiler.preprocessor, so invoke the
+# preprocessor manually when needed.
+args = getattr(compiler, "preprocessor", None)
 if compiler.compiler_type == "unix":
-    # Using .compiler respects the CC environment variable.
-    args = [compiler.compiler[0]]
+    if not args:
+        # Using .compiler respects the CC environment variable.
+        args = [compiler.compiler[0], "-E"]
     args.extend(
         [
-            "-E",
             "-DZSTD_STATIC_LINKING_ONLY",
             "-DZDICT_STATIC_LINKING_ONLY",
         ]
     )
 elif compiler.compiler_type == "msvc":
-    args = [compiler.cc]
+    if not args:
+        args = [compiler.cc, "/EP"]
     args.extend(
         [
-            "/EP",
             "/DZSTD_STATIC_LINKING_ONLY",
             "/DZDICT_STATIC_LINKING_ONLY",
         ]
