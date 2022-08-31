@@ -82,6 +82,14 @@ Other Actions Not Blocking Release
 0.19.0 (not yet released)
 =========================
 
+Bug Fixes
+---------
+
+* The C backend implementation of ``ZstdDecompressionObj.decompress()`` could
+  have raised an assertion in cases where the function was called multiple
+  times on an instance. In non-debug builds, calls to this method could have
+  leaked memory.
+
 Changes
 -------
 

@@ -73,6 +73,27 @@ class TestDecompressor_decompressobj(unittest.TestCase):
             dobj.decompress(data)
             self.assertEqual(dobj.flush(), b"")
 
+    def test_multiple_decompress_calls(self):
+        expected = b"foobar" * 10
+        data = zstd.ZstdCompressor(level=1).compress(expected)
+
+        N = 3
+        partitioned_data = [
+            data[len(data) * i // N : len(data) * (i + 1) // N]
+            for i in range(N)
+        ]
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj()
+
+        for partition in partitioned_data[:-1]:
+            decompressed = dobj.decompress(partition)
+            self.assertEqual(decompressed, b"")
+            self.assertEqual(dobj.unused_data, b"")
+
+        decompressed = dobj.decompress(partitioned_data[-1])
+        self.assertEqual(decompressed, expected)
+
     def test_bad_write_size(self):
         dctx = zstd.ZstdDecompressor()
 
