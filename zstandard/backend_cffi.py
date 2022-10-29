@@ -2985,7 +2985,7 @@ class ZstdDecompressionObj(object):
                 in_buffer.pos == in_buffer.size and out_buffer.pos == 0
             ):
                 # Preserve any remaining input to be exposed via `unused_data`.
-                self._unused_input = data[in_buffer.pos:in_buffer.size]
+                self._unused_input = data[in_buffer.pos : in_buffer.size]
 
                 break
 
