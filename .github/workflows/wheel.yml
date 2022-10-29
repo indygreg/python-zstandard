@@ -28,7 +28,7 @@ jobs:
             py: 'cp311-cp311'
           - image: 'quay.io/pypa/manylinux2010_x86_64'
             py: 'cp311-cp311'
-    runs-on: 'ubuntu-20.04'
+    runs-on: 'ubuntu-22.04'
     steps:
       - uses: actions/checkout@v3
 
