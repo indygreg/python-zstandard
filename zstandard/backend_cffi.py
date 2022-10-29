@@ -1751,6 +1751,16 @@ class ZstdCompressor(object):
     ``write_checksum``, ``write_content_size``, ``write_dict_id``, and
     ``threads``.
 
+    Assume that each ``ZstdCompressor`` instance can only handle a single
+    logical compression operation at the same time. i.e. if you call a method
+    like ``stream_reader()`` to obtain multiple objects derived from the same
+    ``ZstdCompressor`` instance and attempt to use them simultaneously, errors
+    will likely occur.
+
+    If you need to perform multiple logical compression operations and you
+    can't guarantee those operations are temporally non-overlapping, you need
+    to obtain multiple ``ZstdCompressor`` instances.
+
     Unless specified otherwise, assume that no two methods of
     ``ZstdCompressor`` instances can be called from multiple Python
     threads simultaneously. In other words, assume instances are not thread safe
@@ -3644,6 +3654,16 @@ class ZstdDecompressor(object):
 
     The interface of this class is very similar to
     :py:class:`zstandard.ZstdCompressor` (by design).
+
+    Assume that each ``ZstdDecompressor`` instance can only handle a single
+    logical compression operation at the same time. i.e. if you call a method
+    like ``decompressobj()`` to obtain multiple objects derived from the same
+    ``ZstdDecompressor`` instance and attempt to use them simultaneously, errors
+    will likely occur.
+
+    If you need to perform multiple logical decompression operations and you
+    can't guarantee those operations are temporally non-overlapping, you need
+    to obtain multiple ``ZstdDecompressor`` instances.
 
     Unless specified otherwise, assume that no two methods of
     ``ZstdDecompressor`` instances can be called from multiple Python

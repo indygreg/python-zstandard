@@ -88,8 +88,14 @@ There is potential for long pauses as data is read or written from the
 underlying stream (say from interacting with a filesystem or network). This
 could add considerable overhead.
 
-Thread Safety
-=============
+Thread and Object Reuse Safety
+==============================
+
+Unless stated otherwise, ``ZstdCompressor`` and ``ZstdDecompressor`` instances
+cannot be used for temporally overlapping (de)compression operations. i.e.
+if you start a (de)compression operation on an instance or a helper object
+derived from it, it isn't safe to start another (de)compression operation
+from the same instance until the first one has finished.
 
 ``ZstdCompressor`` and ``ZstdDecompressor`` instances have no guarantees
 about thread safety. Do not operate on the same ``ZstdCompressor`` and
