@@ -1768,7 +1768,10 @@ class ZstdCompressor(object):
 
     :param level:
        Integer compression level. Valid values are all negative integers
-       through 22.
+       through 22. Lower values generally yield faster operations with lower
+       compression ratios. Higher values are generally slower but compress
+       better. The default is 3, which is what the ``zstd`` CLI uses. Negative
+       levels effectively engage ``--fast`` mode from the ``zstd`` CLI.
     :param dict_data:
        A ``ZstdCompressionDict`` to be used to compress with dictionary
         data.
