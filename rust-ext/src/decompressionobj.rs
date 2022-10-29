@@ -62,27 +62,28 @@ impl ZstdDecompressionObj {
                 .decompress_into_vec(&mut dest_buffer, &mut in_buffer)
                 .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
-            if zresult == 0 {
-                self.finished = true;
-                // TODO clear out decompressor?
-            }
-
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &dest_buffer);
                 chunks.append(chunk)?;
             }
 
-            if zresult == 0 || (in_buffer.pos == in_buffer.size && dest_buffer.is_empty()) {
+            if zresult == 0 {
+                self.finished = true;
+                // TODO clear out decompressor?
+
                 if let Some(data) = data.as_slice(py) {
                     let unused = &data[in_buffer.pos..in_buffer.size];
                     self.unused_data = unused.iter().map(|x| x.get()).collect::<Vec<_>>();
                 }
 
                 break;
+            } else if in_buffer.pos == in_buffer.size && dest_buffer.len() < dest_buffer.capacity()
+            {
+                break;
+            } else {
+                dest_buffer.clear();
             }
-
-            dest_buffer.clear();
         }
 
         let empty = PyBytes::new(py, &[]);

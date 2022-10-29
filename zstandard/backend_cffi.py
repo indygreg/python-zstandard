@@ -2974,22 +2974,29 @@ class ZstdDecompressionObj(object):
                     "zstd decompressor error: %s" % _zstd_error(zresult)
                 )
 
-            if zresult == 0:
-                self._finished = True
-                self._decompressor = None
-
+            # Always record any output from decompressor.
             if out_buffer.pos:
                 chunks.append(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
 
-            if zresult == 0 or (
-                in_buffer.pos == in_buffer.size and out_buffer.pos == 0
-            ):
-                # Preserve any remaining input to be exposed via `unused_data`.
+            # 0 is only seen when a frame is fully decoded *and* fully flushed.
+            # But there may be extra input data: make that available to
+            # `unused_input`.
+            if zresult == 0:
+                self._finished = True
+                self._decompressor = None
                 self._unused_input = data[in_buffer.pos : in_buffer.size]
-
                 break
 
-            out_buffer.pos = 0
+            # We're not at the end of the frame *or* we're not fully flushed.
+
+            # The decompressor will write out all the bytes it can to the output
+            # buffer. So if the output buffer is partially filled and the input
+            # is exhausted, there's nothing more to write. So we've done all we
+            # can.
+            elif in_buffer.pos == in_buffer.size and out_buffer.pos < out_buffer.size:
+                break
+            else:
+                out_buffer.pos = 0
 
         return b"".join(chunks)
 

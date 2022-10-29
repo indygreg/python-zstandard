@@ -91,6 +91,10 @@ Changes
   and previous release(s) likely worked with 3.11 without any changes.
 * CFFI's build system now respects distutils's ``compiler.preprocessor`` if it
   is set. (#179)
+* The internal logic of ``ZstdDecompressionObj.decompress()`` was refactored.
+  This may have fixed unconfirmed issues where ``unused_data`` was set
+  prematurely. The new logic will also avoid an extra call to
+  ``ZSTD_decompressStream()`` in some scenarios, possibly improving performance.
 
 0.18.0 (released 2022-06-20)
 ============================

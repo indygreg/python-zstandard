@@ -63,14 +63,10 @@ static PyObject *DecompressionObj_decompress(ZstdDecompressionObj *self,
             ZSTD_decompressStream(self->decompressor->dctx, &output, &input);
         Py_END_ALLOW_THREADS
 
-            if (ZSTD_isError(zresult)) {
+        if (ZSTD_isError(zresult)) {
             PyErr_Format(ZstdError, "zstd decompressor error: %s",
                          ZSTD_getErrorName(zresult));
             goto except;
-        }
-
-        if (0 == zresult) {
-            self->finished = 1;
         }
 
         if (output.pos) {
@@ -93,15 +89,21 @@ static PyObject *DecompressionObj_decompress(ZstdDecompressionObj *self,
             }
         }
 
-        if (zresult == 0 || (input.pos == input.size && output.pos == 0)) {
+        if (0 == zresult) {
+            self->finished = 1;
+
             /* We should only get here at most once. */
             assert(!self->unused_data);
             self->unused_data = PyBytes_FromStringAndSize((char *)(input.src) + input.pos, input.size - input.pos);
 
             break;
         }
-
-        output.pos = 0;
+        else if (input.pos == input.size && output.pos == 0) {
+            break;
+        }
+        else {
+            output.pos = 0;
+        }
     }
 
     if (!result) {
