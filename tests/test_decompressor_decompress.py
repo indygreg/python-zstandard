@@ -175,3 +175,18 @@ class TestDecompressor_decompress(unittest.TestCase):
             format=zstd.FORMAT_ZSTD1,
         )
         self.assertEqual(dctx.decompress(compressed), b"foo")
+
+    def test_multiple_frames(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b"foo")
+        bar = cctx.compress(b"bar")
+
+        dctx = zstd.ZstdDecompressor()
+        self.assertEqual(dctx.decompress(foo + bar), b"foo")
+
+    def test_junk_after_frame(self):
+        cctx = zstd.ZstdCompressor()
+        frame = cctx.compress(b"foo")
+
+        dctx = zstd.ZstdDecompressor()
+        self.assertEqual(dctx.decompress(frame + b"junk"), b"foo")
