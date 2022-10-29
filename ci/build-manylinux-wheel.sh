@@ -59,11 +59,11 @@ pycparser==2.20 \
     --hash=sha256:7582ad22678f0fcd81102833f60ef8d0e57288b6b5fb00323d101be910e35705
 EOF
 
-${PYPATH}/bin/pip install -r /tmp/requirements.txt
+${PYPATH}/bin/python -m pip install -r /tmp/requirements.txt
 
 mkdir -p /tmp/wheels
 
-${PYPATH}/bin/pip wheel -v /project -w /tmp/wheels --no-deps
+${PYPATH}/bin/python -m pip wheel -v /project -w /tmp/wheels --no-deps
 wheel=$(ls /tmp/wheels/*.whl)
 
 # Apply fixups.
