@@ -22,6 +22,12 @@ jobs:
           - 'cp39-cp39'
           - 'cp310-cp310'
           - 'cp311-cp311'
+        exclude:
+          # manylinux2010 dropped in Python 3.11.
+          - image: 'quay.io/pypa/manylinux2010_i686'
+            py: 'cp311-cp311'
+          - image: 'quay.io/pypa/manylinux2010_x86_64'
+            py: 'cp311-cp311'
     runs-on: 'ubuntu-20.04'
     steps:
       - uses: actions/checkout@v3
