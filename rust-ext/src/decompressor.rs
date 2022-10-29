@@ -159,13 +159,26 @@ impl ZstdDecompressor {
         Ok((total_read, total_write))
     }
 
-    #[args(buffer, max_output_size = "0")]
+    #[args(
+        buffer,
+        max_output_size = "0",
+        read_across_frames = "false",
+        allow_extra_data = "true"
+    )]
     fn decompress<'p>(
         &mut self,
         py: Python<'p>,
         buffer: PyBuffer<u8>,
         max_output_size: usize,
+        read_across_frames: bool,
+        allow_extra_data: bool,
     ) -> PyResult<&'p PyBytes> {
+        if read_across_frames {
+            return Err(ZstdError::new_err(
+                "ZstdDecompressor.read_across_frames=True is not yet implemented",
+            ));
+        }
+
         self.setup_dctx(py, true)?;
 
         let output_size =
@@ -214,6 +227,11 @@ impl ZstdDecompressor {
             Err(ZstdError::new_err(format!(
                 "decompression error: decompressed {} bytes; expected {}",
                 zresult, output_size
+            )))
+        } else if !allow_extra_data && in_buffer.pos < in_buffer.size {
+            Err(ZstdError::new_err(format!(
+                "compressed input contains {} bytes of unused data, which is disallowed",
+                in_buffer.size - in_buffer.pos
             )))
         } else {
             // TODO avoid memory copy

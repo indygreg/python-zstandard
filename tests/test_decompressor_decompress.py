@@ -183,6 +183,20 @@ class TestDecompressor_decompress(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         self.assertEqual(dctx.decompress(foo + bar), b"foo")
+        self.assertEqual(
+            dctx.decompress(foo + bar, allow_extra_data=True), b"foo"
+        )
+
+        with self.assertRaisesRegex(
+            zstd.ZstdError,
+            "ZstdDecompressor.read_across_frames=True is not yet implemented",
+        ):
+            dctx.decompress(foo + bar, read_across_frames=True)
+
+        with self.assertRaisesRegex(
+            zstd.ZstdError, "%d bytes of unused data, which is disallowed" % len(bar)
+        ):
+            dctx.decompress(foo + bar, allow_extra_data=False)
 
     def test_junk_after_frame(self):
         cctx = zstd.ZstdCompressor()
@@ -190,3 +204,10 @@ class TestDecompressor_decompress(unittest.TestCase):
 
         dctx = zstd.ZstdDecompressor()
         self.assertEqual(dctx.decompress(frame + b"junk"), b"foo")
+
+        self.assertEqual(dctx.decompress(frame + b"junk", allow_extra_data=True), b"foo")
+
+        with self.assertRaisesRegex(
+            zstd.ZstdError, "4 bytes of unused data, which is disallowed"
+        ):
+            dctx.decompress(frame + b"junk", allow_extra_data=False)

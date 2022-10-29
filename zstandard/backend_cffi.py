@@ -3006,7 +3006,10 @@ class ZstdDecompressionObj(object):
             # buffer. So if the output buffer is partially filled and the input
             # is exhausted, there's nothing more to write. So we've done all we
             # can.
-            elif in_buffer.pos == in_buffer.size and out_buffer.pos < out_buffer.size:
+            elif (
+                in_buffer.pos == in_buffer.size
+                and out_buffer.pos < out_buffer.size
+            ):
                 break
             else:
                 out_buffer.pos = 0
@@ -3715,7 +3718,13 @@ class ZstdDecompressor(object):
         """
         return lib.ZSTD_sizeof_DCtx(self._dctx)
 
-    def decompress(self, data, max_output_size=0):
+    def decompress(
+        self,
+        data,
+        max_output_size=0,
+        read_across_frames=False,
+        allow_extra_data=True,
+    ):
         """
         Decompress data in a single operation.
 
@@ -3727,10 +3736,19 @@ class ZstdDecompressor(object):
         similar). If the input does not contain a full frame, an exception will
         be raised.
 
-        If the input contains multiple frames, only the first frame will be
-        decompressed. If you need to decompress multiple frames, use an API
-        like :py:meth:`ZstdCompressor.stream_reader` with
+        ``read_across_frames`` controls whether to read multiple zstandard
+        frames in the input. When False, decompression stops after reading the
+        first frame. This feature is not yet implemented but the argument is
+        provided for forward API compatibility when the default is changed to
+        True in a future release. For now, if you need to decompress multiple
+        frames, use an API like :py:meth:`ZstdCompressor.stream_reader` with
         ``read_across_frames=True``.
+
+        ``allow_extra_data`` controls how to handle extra input data after a
+        fully decoded frame. If False, any extra data (which could be a valid
+        zstd frame) will result in ``ZstdError`` being raised. If True, extra
+        data is silently ignored. The default will likely change to False in a
+        future release when ``read_across_frames`` defaults to True.
 
         If the input contains extra data after a full frame, that extra input
         data is silently ignored. This behavior is undesirable in many scenarios
@@ -3783,6 +3801,11 @@ class ZstdDecompressor(object):
            ``bytes`` representing decompressed output.
         """
 
+        if read_across_frames:
+            raise ZstdError(
+                "ZstdDecompressor.read_across_frames=True is not yet implemented"
+            )
+
         self._ensure_dctx()
 
         data_buffer = ffi.from_buffer(data)
@@ -3829,6 +3852,13 @@ class ZstdDecompressor(object):
             raise ZstdError(
                 "decompression error: decompressed %d bytes; expected %d"
                 % (zresult, output_size)
+            )
+        elif not allow_extra_data and in_buffer.pos < in_buffer.size:
+            count = in_buffer.size - in_buffer.pos
+
+            raise ZstdError(
+                "compressed input contains %d bytes of unused data, which is disallowed"
+                % count
             )
 
         return ffi.buffer(result_buffer, out_buffer.pos)[:]

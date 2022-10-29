@@ -103,6 +103,17 @@ Changes
   This may have fixed unconfirmed issues where ``unused_data`` was set
   prematurely. The new logic will also avoid an extra call to
   ``ZSTD_decompressStream()`` in some scenarios, possibly improving performance.
+* ``ZstdDecompressor.decompress()`` how has a ``read_across_frames`` keyword
+  argument. It defaults to False. True is not yet implemented and will raise an
+  exception if used. The new argument will default to True in a future release
+  and is provided now so callers can start passing ``read_across_frames=False``
+  to preserve the existing functionality during a future upgrade.
+* ``ZstdDecompressor.decompress()`` now has an ``allow_extra_data`` keyword
+  argument to control whether an exception is raised if input contains extra
+  data. It defaults to True, preserving existing behavior of ignoring extra
+  data. It will likely default to False in a future release. Callers desiring
+  the current behavior are encouraged to explicitly pass
+  ``allow_extra_data=True`` so behavior won't change during a future upgrade.
 
 0.18.0 (released 2022-06-20)
 ============================

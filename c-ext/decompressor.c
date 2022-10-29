@@ -262,20 +262,37 @@ finally:
 
 PyObject *Decompressor_decompress(ZstdDecompressor *self, PyObject *args,
                                   PyObject *kwargs) {
-    static char *kwlist[] = {"data", "max_output_size", NULL};
+    static char *kwlist[] = {
+        "data",
+        "max_output_size",
+        "read_across_frames",
+        "allow_extra_data",
+        NULL
+    };
 
     Py_buffer source;
     Py_ssize_t maxOutputSize = 0;
+
     unsigned long long decompressedSize;
+    PyObject *readAcrossFrames = NULL;
+    PyObject *allowExtraData = NULL;
     size_t destCapacity;
     PyObject *result = NULL;
     size_t zresult;
     ZSTD_outBuffer outBuffer;
     ZSTD_inBuffer inBuffer;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress", kwlist,
-                                     &source, &maxOutputSize)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|nOO:decompress", kwlist,
+                                     &source, &maxOutputSize, &readAcrossFrames,
+                                     &allowExtraData)) {
         return NULL;
+    }
+
+    if (readAcrossFrames ? PyObject_IsTrue(readAcrossFrames) : 0) {
+        PyErr_SetString(ZstdError,
+            "ZstdDecompressor.read_across_frames=True is not yet implemented"
+        );
+        goto finally;
     }
 
     if (ensure_dctx(self, 1)) {
@@ -360,6 +377,16 @@ PyObject *Decompressor_decompress(ZstdDecompressor *self, PyObject *args,
             Py_CLEAR(result);
             goto finally;
         }
+    }
+    else if ((allowExtraData ? PyObject_IsTrue(allowExtraData) : 1) == 0
+             && inBuffer.pos < inBuffer.size) {
+        PyErr_Format(
+            ZstdError,
+            "compressed input contains %zu bytes of unused data, which is disallowed",
+            inBuffer.size - inBuffer.pos
+        );
+        Py_CLEAR(result);
+        goto finally;
     }
 
 finally:
