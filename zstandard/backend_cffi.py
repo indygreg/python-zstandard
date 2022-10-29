@@ -3717,18 +3717,28 @@ class ZstdDecompressor(object):
 
     def decompress(self, data, max_output_size=0):
         """
-        Decompress data in its entirety in a single operation.
+        Decompress data in a single operation.
 
-        This method will decompress the entirety of the argument and return the
-        result.
+        This method will decompress the input data in a single operation and
+        return the decompressed data.
 
-        The input bytes are expected to contain a full Zstandard frame
+        The input bytes are expected to contain at least 1 full Zstandard frame
         (something compressed with :py:meth:`ZstdCompressor.compress` or
         similar). If the input does not contain a full frame, an exception will
         be raised.
 
+        If the input contains multiple frames, only the first frame will be
+        decompressed. If you need to decompress multiple frames, use an API
+        like :py:meth:`ZstdCompressor.stream_reader` with
+        ``read_across_frames=True``.
+
+        If the input contains extra data after a full frame, that extra input
+        data is silently ignored. This behavior is undesirable in many scenarios
+        and will likely be changed or controllable in a future release (see
+        #181).
+
         If the frame header of the compressed data does not contain the content
-        size ``max_output_size`` must be specified or ``ZstdError`` will be
+        size, ``max_output_size`` must be specified or ``ZstdError`` will be
         raised. An allocation of size ``max_output_size`` will be performed and an
         attempt will be made to perform decompression into that buffer. If the
         buffer is too small or cannot be allocated, ``ZstdError`` will be
@@ -3737,9 +3747,11 @@ class ZstdDecompressor(object):
         Uncompressed data could be much larger than compressed data. As a result,
         calling this function could result in a very large memory allocation
         being performed to hold the uncompressed data. This could potentially
-        result in ``MemoryError`` or system memory swapping. Therefore it is
-        **highly** recommended to use a streaming decompression method instead
-        of this one.
+        result in ``MemoryError`` or system memory swapping. If you don't need
+        the full output data in a single contiguous array in memory, consider
+        using streaming decompression for more resilient memory behavior.
+
+        Usage:
 
         >>> dctx = zstandard.ZstdDecompressor()
         >>> decompressed = dctx.decompress(data)
