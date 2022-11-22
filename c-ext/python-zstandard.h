@@ -187,7 +187,7 @@ typedef struct {
     size_t chunkSize;
 } ZstdCompressionChunker;
 
-extern PyTypeObject ZstdCompressionChunkerType;
+extern PyTypeObject *ZstdCompressionChunkerType;
 
 typedef enum {
     compressionchunker_mode_normal,

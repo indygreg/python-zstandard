@@ -780,7 +780,7 @@ ZstdCompressor_chunker(ZstdCompressor *self, PyObject *args, PyObject *kwargs) {
     }
 
     chunker = (ZstdCompressionChunker *)PyObject_CallObject(
-        (PyObject *)&ZstdCompressionChunkerType, NULL);
+        (PyObject *)ZstdCompressionChunkerType, NULL);
     if (!chunker) {
         return NULL;
     }
