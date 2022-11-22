@@ -319,7 +319,7 @@ typedef struct {
     Py_ssize_t segmentCount;
 } ZstdBufferSegments;
 
-extern PyTypeObject ZstdBufferSegmentsType;
+extern PyTypeObject *ZstdBufferSegmentsType;
 
 typedef struct {
     PyObject_HEAD

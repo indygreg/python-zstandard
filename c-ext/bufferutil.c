@@ -214,7 +214,7 @@ static PyObject *BufferWithSegments_tobytes(ZstdBufferWithSegments *self) {
 static ZstdBufferSegments *
 BufferWithSegments_segments(ZstdBufferWithSegments *self) {
     ZstdBufferSegments *result = (ZstdBufferSegments *)PyObject_CallObject(
-        (PyObject *)&ZstdBufferSegmentsType, NULL);
+        (PyObject *)ZstdBufferSegmentsType, NULL);
     if (NULL == result) {
         return NULL;
     }
@@ -305,48 +305,29 @@ static int BufferSegments_getbuffer(ZstdBufferSegments *self, Py_buffer *view,
                              flags);
 }
 
+PyType_Slot ZstdBufferSegmentsSlots[] = {
+    {Py_tp_dealloc, BufferSegments_dealloc},
+#if PY_VERSION_HEX >= 0x03090000
+    {Py_bf_getbuffer, BufferSegments_getbuffer},
+#endif
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
+};
+
+PyType_Spec ZstdBufferSegmentsSpec = {
+    "zstd.BufferSegments",
+    sizeof(ZstdBufferSegments),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    ZstdBufferSegmentsSlots,
+};
+
+#if PY_VERSION_HEX < 0x03090000
 static PyBufferProcs BufferSegments_as_buffer = {
     (getbufferproc)BufferSegments_getbuffer, 0};
+#endif
 
-PyTypeObject ZstdBufferSegmentsType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "zstd.BufferSegments", /* tp_name */
-    sizeof(ZstdBufferSegments),                           /* tp_basicsize */
-    0,                                                    /* tp_itemsize */
-    (destructor)BufferSegments_dealloc,                   /* tp_dealloc */
-    0,                                                    /* tp_print */
-    0,                                                    /* tp_getattr */
-    0,                                                    /* tp_setattr */
-    0,                                                    /* tp_compare */
-    0,                                                    /* tp_repr */
-    0,                                                    /* tp_as_number */
-    0,                                                    /* tp_as_sequence */
-    0,                                                    /* tp_as_mapping */
-    0,                                                    /* tp_hash  */
-    0,                                                    /* tp_call */
-    0,                                                    /* tp_str */
-    0,                                                    /* tp_getattro */
-    0,                                                    /* tp_setattro */
-    &BufferSegments_as_buffer,                            /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                                   /* tp_flags */
-    0,                                                    /* tp_doc */
-    0,                                                    /* tp_traverse */
-    0,                                                    /* tp_clear */
-    0,                                                    /* tp_richcompare */
-    0,                 /* tp_weaklistoffset */
-    0,                 /* tp_iter */
-    0,                 /* tp_iternext */
-    0,                 /* tp_methods */
-    0,                 /* tp_members */
-    0,                 /* tp_getset */
-    0,                 /* tp_base */
-    0,                 /* tp_dict */
-    0,                 /* tp_descr_get */
-    0,                 /* tp_descr_set */
-    0,                 /* tp_dictoffset */
-    0,                 /* tp_init */
-    0,                 /* tp_alloc */
-    PyType_GenericNew, /* tp_new */
-};
+PyTypeObject *ZstdBufferSegmentsType;
 
 static void BufferSegment_dealloc(ZstdBufferSegment *self) {
     Py_CLEAR(self->parent);
@@ -641,14 +622,18 @@ void bufferutil_module_init(PyObject *mod) {
     PyModule_AddObject(mod, "BufferWithSegments",
                        (PyObject *)&ZstdBufferWithSegmentsType);
 
-    Py_SET_TYPE(&ZstdBufferSegmentsType, &PyType_Type);
-    if (PyType_Ready(&ZstdBufferSegmentsType) < 0) {
+    ZstdBufferSegmentsType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdBufferSegmentsSpec);
+#if PY_VERSION_HEX < 0x03090000
+    ZstdBufferSegmentsType->tp_as_buffer = &BufferSegments_as_buffer;
+#endif
+    if (PyType_Ready(ZstdBufferSegmentsType) < 0) {
         return;
     }
 
-    Py_INCREF(&ZstdBufferSegmentsType);
+    Py_INCREF(ZstdBufferSegmentsType);
     PyModule_AddObject(mod, "BufferSegments",
-                       (PyObject *)&ZstdBufferSegmentsType);
+                       (PyObject *)ZstdBufferSegmentsType);
 
     Py_SET_TYPE(&ZstdBufferSegmentType, &PyType_Type);
     if (PyType_Ready(&ZstdBufferSegmentType) < 0) {
