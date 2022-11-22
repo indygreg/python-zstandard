@@ -455,7 +455,7 @@ static ZstdCompressionReader *ZstdCompressor_stream_reader(ZstdCompressor *self,
     }
 
     result = (ZstdCompressionReader *)PyObject_CallObject(
-        (PyObject *)&ZstdCompressionReaderType, NULL);
+        (PyObject *)ZstdCompressionReaderType, NULL);
     if (!result) {
         return NULL;
     }

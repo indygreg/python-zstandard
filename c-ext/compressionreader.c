@@ -777,54 +777,36 @@ static PyMemberDef compressionreader_members[] = {
      "whether stream is closed"},
     {NULL}};
 
-PyTypeObject ZstdCompressionReaderType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "zstd.ZstdCompressionReader", /* tp_name */
-    sizeof(ZstdCompressionReader),         /* tp_basicsize */
-    0,                                     /* tp_itemsize */
-    (destructor)compressionreader_dealloc, /* tp_dealloc */
-    0,                                     /* tp_print */
-    0,                                     /* tp_getattr */
-    0,                                     /* tp_setattr */
-    0,                                     /* tp_compare */
-    0,                                     /* tp_repr */
-    0,                                     /* tp_as_number */
-    0,                                     /* tp_as_sequence */
-    0,                                     /* tp_as_mapping */
-    0,                                     /* tp_hash */
-    0,                                     /* tp_call */
-    0,                                     /* tp_str */
-    0,                                     /* tp_getattro */
-    0,                                     /* tp_setattro */
-    0,                                     /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                    /* tp_flags */
-    0,                                     /* tp_doc */
-    0,                                     /* tp_traverse */
-    0,                                     /* tp_clear */
-    0,                                     /* tp_richcompare */
-    0,                                     /* tp_weaklistoffset */
-    compressionreader_iter,                /* tp_iter */
-    compressionreader_iternext,            /* tp_iternext */
-    compressionreader_methods,             /* tp_methods */
-    compressionreader_members,             /* tp_members */
-    0,                                     /* tp_getset */
-    0,                                     /* tp_base */
-    0,                                     /* tp_dict */
-    0,                                     /* tp_descr_get */
-    0,                                     /* tp_descr_set */
-    0,                                     /* tp_dictoffset */
-    0,                                     /* tp_init */
-    0,                                     /* tp_alloc */
-    PyType_GenericNew,                     /* tp_new */
+PyType_Slot ZstdCompressionReaderSlots[] = {
+    {Py_tp_dealloc, compressionreader_dealloc},
+    {Py_tp_iter, compressionreader_iter},
+    {Py_tp_iternext, compressionreader_iternext},
+    {Py_tp_methods, compressionreader_methods},
+    {Py_tp_members, compressionreader_members},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
+
+PyType_Spec ZstdCompressionReaderSpec = {
+    "zstd.ZstdCompressionReader",
+    sizeof(ZstdCompressionReader),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    ZstdCompressionReaderSlots,
+};
+
+PyTypeObject *ZstdCompressionReaderType;
 
 void compressionreader_module_init(PyObject *mod) {
     /* TODO make reader a sub-class of io.RawIOBase */
 
-    Py_SET_TYPE(&ZstdCompressionReaderType, &PyType_Type);
-    if (PyType_Ready(&ZstdCompressionReaderType) < 0) {
+    ZstdCompressionReaderType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdCompressionReaderSpec);
+    if (PyType_Ready(ZstdCompressionReaderType) < 0) {
         return;
     }
 
-    Py_INCREF((PyObject *)&ZstdCompressionReaderType);
-    PyModule_AddObject(mod, "ZstdCompressionReader", (PyObject *)&ZstdCompressionReaderType);
+    Py_INCREF((PyObject *)ZstdCompressionReaderType);
+    PyModule_AddObject(mod, "ZstdCompressionReader",
+                       (PyObject *)ZstdCompressionReaderType);
 }
