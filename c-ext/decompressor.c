@@ -454,7 +454,7 @@ Decompressor_read_to_iter(ZstdDecompressor *self, PyObject *args,
     }
 
     result = (ZstdDecompressorIterator *)PyObject_CallObject(
-        (PyObject *)&ZstdDecompressorIteratorType, NULL);
+        (PyObject *)ZstdDecompressorIteratorType, NULL);
     if (!result) {
         return NULL;
     }
