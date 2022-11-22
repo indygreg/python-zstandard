@@ -173,7 +173,7 @@ static ZstdBufferSegment *BufferWithSegments_item(ZstdBufferWithSegments *self,
     }
 
     result = (ZstdBufferSegment *)PyObject_CallObject(
-        (PyObject *)&ZstdBufferSegmentType, NULL);
+        (PyObject *)ZstdBufferSegmentType, NULL);
     if (NULL == result) {
         return NULL;
     }
@@ -348,19 +348,10 @@ static PyObject *BufferSegment_tobytes(ZstdBufferSegment *self) {
     return PyBytes_FromStringAndSize(self->data, self->dataSize);
 }
 
-static PySequenceMethods BufferSegment_sq = {
-    (lenfunc)BufferSegment_length, /* sq_length */
-    0,                             /* sq_concat */
-    0,                             /* sq_repeat */
-    0,                             /* sq_item */
-    0,                             /* sq_ass_item */
-    0,                             /* sq_contains */
-    0,                             /* sq_inplace_concat */
-    0                              /* sq_inplace_repeat */
-};
-
+#if PY_VERSION_HEX < 0x03090000
 static PyBufferProcs BufferSegment_as_buffer = {
     (getbufferproc)BufferSegment_getbuffer, 0};
+#endif
 
 static PyMethodDef BufferSegment_methods[] = {
     {"tobytes", (PyCFunction)BufferSegment_tobytes, METH_NOARGS, NULL},
@@ -371,45 +362,27 @@ static PyMemberDef BufferSegment_members[] = {
      "offset of segment within parent buffer"},
     {NULL}};
 
-PyTypeObject ZstdBufferSegmentType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "zstd.BufferSegment", /* tp_name */
-    sizeof(ZstdBufferSegment),                           /* tp_basicsize */
-    0,                                                   /* tp_itemsize */
-    (destructor)BufferSegment_dealloc,                   /* tp_dealloc */
-    0,                                                   /* tp_print */
-    0,                                                   /* tp_getattr */
-    0,                                                   /* tp_setattr */
-    0,                                                   /* tp_compare */
-    0,                                                   /* tp_repr */
-    0,                                                   /* tp_as_number */
-    &BufferSegment_sq,                                   /* tp_as_sequence */
-    0,                                                   /* tp_as_mapping */
-    0,                                                   /* tp_hash  */
-    0,                                                   /* tp_call */
-    0,                                                   /* tp_str */
-    0,                                                   /* tp_getattro */
-    0,                                                   /* tp_setattro */
-    &BufferSegment_as_buffer,                            /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                                  /* tp_flags */
-    0,                                                   /* tp_doc */
-    0,                                                   /* tp_traverse */
-    0,                                                   /* tp_clear */
-    0,                                                   /* tp_richcompare */
-    0,                                                   /* tp_weaklistoffset */
-    0,                                                   /* tp_iter */
-    0,                                                   /* tp_iternext */
-    BufferSegment_methods,                               /* tp_methods */
-    BufferSegment_members,                               /* tp_members */
-    0,                                                   /* tp_getset */
-    0,                                                   /* tp_base */
-    0,                                                   /* tp_dict */
-    0,                                                   /* tp_descr_get */
-    0,                                                   /* tp_descr_set */
-    0,                                                   /* tp_dictoffset */
-    0,                                                   /* tp_init */
-    0,                                                   /* tp_alloc */
-    PyType_GenericNew,                                   /* tp_new */
+PyType_Slot ZstdBufferSegmentSlots[] = {
+    {Py_tp_dealloc, BufferSegment_dealloc},
+    {Py_sq_length, BufferSegment_length},
+#if PY_VERSION_HEX >= 0x03090000
+    {Py_bf_getbuffer, BufferSegment_getbuffer},
+#endif
+    {Py_tp_methods, BufferSegment_methods},
+    {Py_tp_members, BufferSegment_members},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
+
+PyType_Spec ZstdBufferSegmentSpec = {
+    "zstd.BufferSegment",
+    sizeof(ZstdBufferSegment),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    ZstdBufferSegmentSlots,
+};
+
+PyTypeObject *ZstdBufferSegmentType;
 
 static void
 BufferWithSegmentsCollection_dealloc(ZstdBufferWithSegmentsCollection *self) {
@@ -635,14 +608,17 @@ void bufferutil_module_init(PyObject *mod) {
     PyModule_AddObject(mod, "BufferSegments",
                        (PyObject *)ZstdBufferSegmentsType);
 
-    Py_SET_TYPE(&ZstdBufferSegmentType, &PyType_Type);
-    if (PyType_Ready(&ZstdBufferSegmentType) < 0) {
+    ZstdBufferSegmentType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdBufferSegmentSpec);
+#if PY_VERSION_HEX < 0x03090000
+    ZstdBufferSegmentType->tp_as_buffer = &BufferSegment_as_buffer;
+#endif
+    if (PyType_Ready(ZstdBufferSegmentType) < 0) {
         return;
     }
 
-    Py_INCREF(&ZstdBufferSegmentType);
-    PyModule_AddObject(mod, "BufferSegment",
-                       (PyObject *)&ZstdBufferSegmentType);
+    Py_INCREF(ZstdBufferSegmentType);
+    PyModule_AddObject(mod, "BufferSegment", (PyObject *)ZstdBufferSegmentType);
 
     Py_SET_TYPE(&ZstdBufferWithSegmentsCollectionType, &PyType_Type);
     if (PyType_Ready(&ZstdBufferWithSegmentsCollectionType) < 0) {
