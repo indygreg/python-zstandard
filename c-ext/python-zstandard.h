@@ -224,7 +224,7 @@ typedef struct {
     PyObject *unused_data;
 } ZstdDecompressionObj;
 
-extern PyTypeObject ZstdDecompressionObjType;
+extern PyTypeObject *ZstdDecompressionObjType;
 
 typedef struct {
     PyObject_HEAD
