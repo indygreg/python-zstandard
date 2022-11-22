@@ -502,63 +502,30 @@ BufferWithSegmentsCollection_item(ZstdBufferWithSegmentsCollection *self,
     return NULL;
 }
 
-static PySequenceMethods BufferWithSegmentsCollection_sq = {
-    (lenfunc)BufferWithSegmentsCollection_length,    /* sq_length */
-    0,                                               /* sq_concat */
-    0,                                               /* sq_repeat */
-    (ssizeargfunc)BufferWithSegmentsCollection_item, /* sq_item */
-    0,                                               /* sq_ass_item */
-    0,                                               /* sq_contains */
-    0,                                               /* sq_inplace_concat */
-    0                                                /* sq_inplace_repeat */
-};
-
 static PyMethodDef BufferWithSegmentsCollection_methods[] = {
     {"size", (PyCFunction)BufferWithSegmentsCollection_size, METH_NOARGS,
      PyDoc_STR("total size in bytes of all segments")},
     {NULL, NULL}};
 
-PyTypeObject ZstdBufferWithSegmentsCollectionType = {
-    PyVarObject_HEAD_INIT(NULL,
-                          0) "zstd.BufferWithSegmentsCollection", /* tp_name */
-    sizeof(ZstdBufferWithSegmentsCollection),         /* tp_basicsize */
-    0,                                                /* tp_itemsize */
-    (destructor)BufferWithSegmentsCollection_dealloc, /* tp_dealloc */
-    0,                                                /* tp_print */
-    0,                                                /* tp_getattr */
-    0,                                                /* tp_setattr */
-    0,                                                /* tp_compare */
-    0,                                                /* tp_repr */
-    0,                                                /* tp_as_number */
-    &BufferWithSegmentsCollection_sq,                 /* tp_as_sequence */
-    0,                                                /* tp_as_mapping */
-    0,                                                /* tp_hash  */
-    0,                                                /* tp_call */
-    0,                                                /* tp_str */
-    0,                                                /* tp_getattro */
-    0,                                                /* tp_setattro */
-    0,                                                /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                               /* tp_flags */
-    0,                                                /* tp_doc */
-    0,                                                /* tp_traverse */
-    0,                                                /* tp_clear */
-    0,                                                /* tp_richcompare */
-    0,                                                /* tp_weaklistoffset */
-    /* TODO implement iterator for performance. */
-    0,                                           /* tp_iter */
-    0,                                           /* tp_iternext */
-    BufferWithSegmentsCollection_methods,        /* tp_methods */
-    0,                                           /* tp_members */
-    0,                                           /* tp_getset */
-    0,                                           /* tp_base */
-    0,                                           /* tp_dict */
-    0,                                           /* tp_descr_get */
-    0,                                           /* tp_descr_set */
-    0,                                           /* tp_dictoffset */
-    (initproc)BufferWithSegmentsCollection_init, /* tp_init */
-    0,                                           /* tp_alloc */
-    PyType_GenericNew,                           /* tp_new */
+PyType_Slot ZstdBufferWithSegmentsCollectionSlots[] = {
+    {Py_tp_dealloc, BufferWithSegmentsCollection_dealloc},
+    {Py_sq_length, BufferWithSegmentsCollection_length},
+    {Py_sq_item, BufferWithSegmentsCollection_item},
+    {Py_tp_methods, BufferWithSegmentsCollection_methods},
+    {Py_tp_init, BufferWithSegmentsCollection_init},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
+
+PyType_Spec ZstdBufferWithSegmentsCollectionSpec = {
+    "zstd.BufferWithSegmentsCollection",
+    sizeof(ZstdBufferWithSegmentsCollection),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    ZstdBufferWithSegmentsCollectionSlots,
+};
+
+PyTypeObject *ZstdBufferWithSegmentsCollectionType;
 
 void bufferutil_module_init(PyObject *mod) {
     ZstdBufferWithSegmentsType =
@@ -599,12 +566,13 @@ void bufferutil_module_init(PyObject *mod) {
     Py_INCREF(ZstdBufferSegmentType);
     PyModule_AddObject(mod, "BufferSegment", (PyObject *)ZstdBufferSegmentType);
 
-    Py_SET_TYPE(&ZstdBufferWithSegmentsCollectionType, &PyType_Type);
-    if (PyType_Ready(&ZstdBufferWithSegmentsCollectionType) < 0) {
+    ZstdBufferWithSegmentsCollectionType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdBufferWithSegmentsCollectionSpec);
+    if (PyType_Ready(ZstdBufferWithSegmentsCollectionType) < 0) {
         return;
     }
 
-    Py_INCREF(&ZstdBufferWithSegmentsCollectionType);
+    Py_INCREF(ZstdBufferWithSegmentsCollectionType);
     PyModule_AddObject(mod, "BufferWithSegmentsCollection",
-                       (PyObject *)&ZstdBufferWithSegmentsCollectionType);
+                       (PyObject *)ZstdBufferWithSegmentsCollectionType);
 }

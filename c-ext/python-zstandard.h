@@ -366,7 +366,7 @@ typedef struct {
     Py_ssize_t *firstElements;
 } ZstdBufferWithSegmentsCollection;
 
-extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
+extern PyTypeObject *ZstdBufferWithSegmentsCollectionType;
 
 int set_parameter(ZSTD_CCtx_params *params, ZSTD_cParameter param, int value);
 int set_parameters(ZSTD_CCtx_params *params,

@@ -1298,7 +1298,7 @@ compress_from_datasources(ZstdCompressor *compressor, DataSources *sources,
     }
 
     result = (ZstdBufferWithSegmentsCollection *)PyObject_CallObject(
-        (PyObject *)&ZstdBufferWithSegmentsCollectionType, segmentsArg);
+        (PyObject *)ZstdBufferWithSegmentsCollectionType, segmentsArg);
 
 finally:
     Py_CLEAR(segmentsArg);
@@ -1392,7 +1392,7 @@ ZstdCompressor_multi_compress_to_buffer(ZstdCompressor *self, PyObject *args,
 
         sources.sourcesSize = buffer->segmentCount;
     }
-    else if (PyObject_TypeCheck(data, &ZstdBufferWithSegmentsCollectionType)) {
+    else if (PyObject_TypeCheck(data, ZstdBufferWithSegmentsCollectionType)) {
         Py_ssize_t j;
         Py_ssize_t offset = 0;
         ZstdBufferWithSegments *buffer;
