@@ -116,7 +116,7 @@ typedef struct {
     int finished;
 } ZstdCompressionObj;
 
-extern PyTypeObject ZstdCompressionObjType;
+extern PyTypeObject *ZstdCompressionObjType;
 
 typedef struct {
     PyObject_HEAD

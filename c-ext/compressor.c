@@ -598,7 +598,7 @@ static ZstdCompressionObj *ZstdCompressor_compressobj(ZstdCompressor *self,
     }
 
     result = (ZstdCompressionObj *)PyObject_CallObject(
-        (PyObject *)&ZstdCompressionObjType, NULL);
+        (PyObject *)ZstdCompressionObjType, NULL);
     if (!result) {
         return NULL;
     }
