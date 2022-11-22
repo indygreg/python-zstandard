@@ -526,7 +526,7 @@ Decompressor_stream_reader(ZstdDecompressor *self, PyObject *args,
     }
 
     result = (ZstdDecompressionReader *)PyObject_CallObject(
-        (PyObject *)&ZstdDecompressionReaderType, NULL);
+        (PyObject *)ZstdDecompressionReaderType, NULL);
     if (NULL == result) {
         return NULL;
     }
