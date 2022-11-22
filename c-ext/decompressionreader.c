@@ -745,54 +745,36 @@ static PyMemberDef decompressionreader_members[] = {
      "whether stream is closed"},
     {NULL}};
 
-PyTypeObject ZstdDecompressionReaderType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "zstd.ZstdDecompressionReader", /* tp_name */
-    sizeof(ZstdDecompressionReader),         /* tp_basicsize */
-    0,                                       /* tp_itemsize */
-    (destructor)decompressionreader_dealloc, /* tp_dealloc */
-    0,                                       /* tp_print */
-    0,                                       /* tp_getattr */
-    0,                                       /* tp_setattr */
-    0,                                       /* tp_compare */
-    0,                                       /* tp_repr */
-    0,                                       /* tp_as_number */
-    0,                                       /* tp_as_sequence */
-    0,                                       /* tp_as_mapping */
-    0,                                       /* tp_hash */
-    0,                                       /* tp_call */
-    0,                                       /* tp_str */
-    0,                                       /* tp_getattro */
-    0,                                       /* tp_setattro */
-    0,                                       /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                      /* tp_flags */
-    0,                                       /* tp_doc */
-    0,                                       /* tp_traverse */
-    0,                                       /* tp_clear */
-    0,                                       /* tp_richcompare */
-    0,                                       /* tp_weaklistoffset */
-    decompressionreader_iter,                /* tp_iter */
-    decompressionreader_iternext,            /* tp_iternext */
-    decompressionreader_methods,             /* tp_methods */
-    decompressionreader_members,             /* tp_members */
-    0,                                       /* tp_getset */
-    0,                                       /* tp_base */
-    0,                                       /* tp_dict */
-    0,                                       /* tp_descr_get */
-    0,                                       /* tp_descr_set */
-    0,                                       /* tp_dictoffset */
-    0,                                       /* tp_init */
-    0,                                       /* tp_alloc */
-    PyType_GenericNew,                       /* tp_new */
+PyType_Slot ZstdDecompressionReaderSlots[] = {
+    {Py_tp_dealloc, decompressionreader_dealloc},
+    {Py_tp_iter, decompressionreader_iter},
+    {Py_tp_iternext, decompressionreader_iternext},
+    {Py_tp_methods, decompressionreader_methods},
+    {Py_tp_members, decompressionreader_members},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
+
+PyType_Spec ZstdDecompressionReaderSpec = {
+    "zstd.ZstdDecompressionReader",
+    sizeof(ZstdDecompressionReader),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    ZstdDecompressionReaderSlots,
+};
+
+PyTypeObject *ZstdDecompressionReaderType;
 
 void decompressionreader_module_init(PyObject *mod) {
     /* TODO make reader a sub-class of io.RawIOBase */
 
-    Py_SET_TYPE(&ZstdDecompressionReaderType, &PyType_Type);
-    if (PyType_Ready(&ZstdDecompressionReaderType) < 0) {
+    ZstdDecompressionReaderType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdDecompressionReaderSpec);
+    if (PyType_Ready(ZstdDecompressionReaderType) < 0) {
         return;
     }
 
-    Py_INCREF((PyObject *)&ZstdDecompressionReaderType);
-    PyModule_AddObject(mod, "ZstdDecompressionReader", (PyObject *)&ZstdDecompressionReaderType);
+    Py_INCREF((PyObject *)ZstdDecompressionReaderType);
+    PyModule_AddObject(mod, "ZstdDecompressionReader",
+                       (PyObject *)ZstdDecompressionReaderType);
 }

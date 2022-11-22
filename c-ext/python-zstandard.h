@@ -262,7 +262,7 @@ typedef struct {
     int finishedOutput;
 } ZstdDecompressionReader;
 
-extern PyTypeObject ZstdDecompressionReaderType;
+extern PyTypeObject *ZstdDecompressionReaderType;
 
 typedef struct {
     PyObject_HEAD
