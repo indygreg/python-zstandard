@@ -87,7 +87,7 @@ typedef struct {
     ZSTD_DDict *ddict;
 } ZstdCompressionDict;
 
-extern PyTypeObject ZstdCompressionDictType;
+extern PyTypeObject *ZstdCompressionDictType;
 
 /*
    Represents a ZstdCompressor type.
