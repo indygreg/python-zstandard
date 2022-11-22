@@ -1413,7 +1413,7 @@ decompress_from_framesources(ZstdDecompressor *decompressor,
     }
 
     result = (ZstdBufferWithSegmentsCollection *)PyObject_CallObject(
-        (PyObject *)&ZstdBufferWithSegmentsCollectionType, resultArg);
+        (PyObject *)ZstdBufferWithSegmentsCollectionType, resultArg);
 
 finally:
     Py_CLEAR(resultArg);
@@ -1549,8 +1549,7 @@ Decompressor_multi_decompress_to_buffer(ZstdDecompressor *self, PyObject *args,
             framePointers[i].destSize = (size_t)decompressedSize;
         }
     }
-    else if (PyObject_TypeCheck(frames,
-                                &ZstdBufferWithSegmentsCollectionType)) {
+    else if (PyObject_TypeCheck(frames, ZstdBufferWithSegmentsCollectionType)) {
         Py_ssize_t offset = 0;
         ZstdBufferWithSegments *buffer;
         ZstdBufferWithSegmentsCollection *collection =
