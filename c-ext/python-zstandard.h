@@ -330,7 +330,7 @@ typedef struct {
     unsigned long long offset;
 } ZstdBufferSegment;
 
-extern PyTypeObject ZstdBufferSegmentType;
+extern PyTypeObject *ZstdBufferSegmentType;
 
 typedef struct {
     PyObject_HEAD
