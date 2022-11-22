@@ -213,7 +213,7 @@ typedef struct {
     ZSTD_format_e format;
 } ZstdDecompressor;
 
-extern PyTypeObject ZstdDecompressorType;
+extern PyTypeObject *ZstdDecompressorType;
 
 typedef struct {
     PyObject_HEAD
