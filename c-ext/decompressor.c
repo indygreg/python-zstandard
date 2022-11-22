@@ -591,7 +591,7 @@ Decompressor_stream_writer(ZstdDecompressor *self, PyObject *args,
     }
 
     result = (ZstdDecompressionWriter *)PyObject_CallObject(
-        (PyObject *)&ZstdDecompressionWriterType, NULL);
+        (PyObject *)ZstdDecompressionWriterType, NULL);
     if (!result) {
         return NULL;
     }
