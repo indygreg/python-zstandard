@@ -174,7 +174,7 @@ typedef struct {
     PyObject *readResult;
 } ZstdCompressionReader;
 
-extern PyTypeObject ZstdCompressionReaderType;
+extern PyTypeObject *ZstdCompressionReaderType;
 
 typedef struct {
     PyObject_HEAD
