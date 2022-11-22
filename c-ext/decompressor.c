@@ -413,7 +413,7 @@ static ZstdDecompressionObj *Decompressor_decompressobj(ZstdDecompressor *self,
     }
 
     result = (ZstdDecompressionObj *)PyObject_CallObject(
-        (PyObject *)&ZstdDecompressionObjType, NULL);
+        (PyObject *)ZstdDecompressionObjType, NULL);
     if (!result) {
         return NULL;
     }
