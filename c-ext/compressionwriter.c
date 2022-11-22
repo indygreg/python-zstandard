@@ -319,52 +319,34 @@ static PyMemberDef ZstdCompressionWriter_members[] = {
     {"closed", T_BOOL, offsetof(ZstdCompressionWriter, closed), READONLY, NULL},
     {NULL}};
 
-PyTypeObject ZstdCompressionWriterType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "zstd.ZstdCompressionWriter", /* tp_name */
-    sizeof(ZstdCompressionWriter),             /* tp_basicsize */
-    0,                                         /* tp_itemsize */
-    (destructor)ZstdCompressionWriter_dealloc, /* tp_dealloc */
-    0,                                         /* tp_print */
-    0,                                         /* tp_getattr */
-    0,                                         /* tp_setattr */
-    0,                                         /* tp_compare */
-    0,                                         /* tp_repr */
-    0,                                         /* tp_as_number */
-    0,                                         /* tp_as_sequence */
-    0,                                         /* tp_as_mapping */
-    0,                                         /* tp_hash */
-    0,                                         /* tp_call */
-    0,                                         /* tp_str */
-    0,                                         /* tp_getattro */
-    0,                                         /* tp_setattro */
-    0,                                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
-    0,                                         /* tp_doc */
-    0,                                         /* tp_traverse */
-    0,                                         /* tp_clear */
-    0,                                         /* tp_richcompare */
-    0,                                         /* tp_weaklistoffset */
-    ZstdCompressionWriter_iter,                /* tp_iter */
-    ZstdCompressionWriter_iternext,            /* tp_iternext */
-    ZstdCompressionWriter_methods,             /* tp_methods */
-    ZstdCompressionWriter_members,             /* tp_members */
-    0,                                         /* tp_getset */
-    0,                                         /* tp_base */
-    0,                                         /* tp_dict */
-    0,                                         /* tp_descr_get */
-    0,                                         /* tp_descr_set */
-    0,                                         /* tp_dictoffset */
-    0,                                         /* tp_init */
-    0,                                         /* tp_alloc */
-    PyType_GenericNew,                         /* tp_new */
+PyType_Slot ZstdCompressionWriterSlots[] = {
+    {Py_tp_dealloc, ZstdCompressionWriter_dealloc},
+    {Py_tp_iter, ZstdCompressionWriter_iter},
+    {Py_tp_iternext, ZstdCompressionWriter_iternext},
+    {Py_tp_methods, ZstdCompressionWriter_methods},
+    {Py_tp_members, ZstdCompressionWriter_members},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
 
+PyType_Spec ZstdCompressionWriterSpec = {
+    "zstd.ZstdCompressionWriter",
+    sizeof(ZstdCompressionWriter),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    ZstdCompressionWriterSlots,
+};
+
+PyTypeObject *ZstdCompressionWriterType;
+
 void compressionwriter_module_init(PyObject *mod) {
-    Py_SET_TYPE(&ZstdCompressionWriterType, &PyType_Type);
-    if (PyType_Ready(&ZstdCompressionWriterType) < 0) {
+    ZstdCompressionWriterType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdCompressionWriterSpec);
+    if (PyType_Ready(ZstdCompressionWriterType) < 0) {
         return;
     }
 
-    Py_INCREF((PyObject *)&ZstdCompressionWriterType);
-    PyModule_AddObject(mod, "ZstdCompressionWriter", (PyObject *)&ZstdCompressionWriterType);
+    Py_INCREF((PyObject *)ZstdCompressionWriterType);
+    PyModule_AddObject(mod, "ZstdCompressionWriter",
+                       (PyObject *)ZstdCompressionWriterType);
 }

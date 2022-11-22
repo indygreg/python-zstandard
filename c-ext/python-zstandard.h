@@ -133,7 +133,7 @@ typedef struct {
     unsigned long long bytesCompressed;
 } ZstdCompressionWriter;
 
-extern PyTypeObject ZstdCompressionWriterType;
+extern PyTypeObject *ZstdCompressionWriterType;
 
 typedef struct {
     PyObject_HEAD

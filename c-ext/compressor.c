@@ -723,7 +723,7 @@ static ZstdCompressionWriter *ZstdCompressor_stream_writer(ZstdCompressor *self,
     }
 
     result = (ZstdCompressionWriter *)PyObject_CallObject(
-        (PyObject *)&ZstdCompressionWriterType, NULL);
+        (PyObject *)ZstdCompressionWriterType, NULL);
     if (!result) {
         return NULL;
     }
