@@ -61,7 +61,7 @@ typedef struct {
     char checksumFlag;
 } FrameParametersObject;
 
-extern PyTypeObject FrameParametersType;
+extern PyTypeObject *FrameParametersType;
 
 /*
    Represents a ZstdCompressionDict type.
