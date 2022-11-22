@@ -277,7 +277,7 @@ typedef struct {
     int closefd;
 } ZstdDecompressionWriter;
 
-extern PyTypeObject ZstdDecompressionWriterType;
+extern PyTypeObject *ZstdDecompressionWriterType;
 
 typedef struct {
     PyObject_HEAD

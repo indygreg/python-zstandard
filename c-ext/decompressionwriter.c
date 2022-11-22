@@ -240,52 +240,34 @@ static PyMemberDef ZstdDecompressionWriter_members[] = {
      NULL},
     {NULL}};
 
-PyTypeObject ZstdDecompressionWriterType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "zstd.ZstdDecompressionWriter", /* tp_name */
-    sizeof(ZstdDecompressionWriter),             /* tp_basicsize */
-    0,                                           /* tp_itemsize */
-    (destructor)ZstdDecompressionWriter_dealloc, /* tp_dealloc */
-    0,                                           /* tp_print */
-    0,                                           /* tp_getattr */
-    0,                                           /* tp_setattr */
-    0,                                           /* tp_compare */
-    0,                                           /* tp_repr */
-    0,                                           /* tp_as_number */
-    0,                                           /* tp_as_sequence */
-    0,                                           /* tp_as_mapping */
-    0,                                           /* tp_hash */
-    0,                                           /* tp_call */
-    0,                                           /* tp_str */
-    0,                                           /* tp_getattro */
-    0,                                           /* tp_setattro */
-    0,                                           /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,    /* tp_flags */
-    0,                                           /* tp_doc */
-    0,                                           /* tp_traverse */
-    0,                                           /* tp_clear */
-    0,                                           /* tp_richcompare */
-    0,                                           /* tp_weaklistoffset */
-    ZstdDecompressionWriter_iter,                /* tp_iter */
-    ZstdDecompressionWriter_iternext,            /* tp_iternext */
-    ZstdDecompressionWriter_methods,             /* tp_methods */
-    ZstdDecompressionWriter_members,             /* tp_members */
-    0,                                           /* tp_getset */
-    0,                                           /* tp_base */
-    0,                                           /* tp_dict */
-    0,                                           /* tp_descr_get */
-    0,                                           /* tp_descr_set */
-    0,                                           /* tp_dictoffset */
-    0,                                           /* tp_init */
-    0,                                           /* tp_alloc */
-    PyType_GenericNew,                           /* tp_new */
+PyType_Slot ZstdDecompressionWriterSlots[] = {
+    {Py_tp_dealloc, ZstdDecompressionWriter_dealloc},
+    {Py_tp_iter, ZstdDecompressionWriter_iter},
+    {Py_tp_iternext, ZstdDecompressionWriter_iternext},
+    {Py_tp_methods, ZstdDecompressionWriter_methods},
+    {Py_tp_members, ZstdDecompressionWriter_members},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
 
+PyType_Spec ZstdDecompressionWriterSpec = {
+    "zstd.ZstdDecompressionWriter",
+    sizeof(ZstdDecompressionWriter),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    ZstdDecompressionWriterSlots,
+};
+
+PyTypeObject *ZstdDecompressionWriterType;
+
 void decompressionwriter_module_init(PyObject *mod) {
-    Py_SET_TYPE(&ZstdDecompressionWriterType, &PyType_Type);
-    if (PyType_Ready(&ZstdDecompressionWriterType) < 0) {
+    ZstdDecompressionWriterType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdDecompressionWriterSpec);
+    if (PyType_Ready(ZstdDecompressionWriterType) < 0) {
         return;
     }
 
-    Py_INCREF((PyObject *)&ZstdDecompressionWriterType);
-    PyModule_AddObject(mod, "ZstdDecompressionWriter", (PyObject *)&ZstdDecompressionWriterType);
+    Py_INCREF((PyObject *)ZstdDecompressionWriterType);
+    PyModule_AddObject(mod, "ZstdDecompressionWriter",
+                       (PyObject *)ZstdDecompressionWriterType);
 }
