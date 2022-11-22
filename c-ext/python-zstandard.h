@@ -296,7 +296,7 @@ typedef struct {
     int finishedOutput;
 } ZstdDecompressorIterator;
 
-extern PyTypeObject ZstdDecompressorIteratorType;
+extern PyTypeObject *ZstdDecompressorIteratorType;
 
 typedef struct {
     int errored;
