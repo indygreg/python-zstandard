@@ -126,7 +126,7 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
             dict = NULL;
         }
         else if (!PyObject_IsInstance(dict,
-                                      (PyObject *)&ZstdCompressionDictType)) {
+                                      (PyObject *)ZstdCompressionDictType)) {
             PyErr_Format(PyExc_TypeError,
                          "dict_data must be zstd.ZstdCompressionDict");
             return -1;

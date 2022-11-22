@@ -124,7 +124,7 @@ ZstdCompressionDict *train_dictionary(PyObject *self, PyObject *args,
         goto finally;
     }
 
-    result = PyObject_New(ZstdCompressionDict, &ZstdCompressionDictType);
+    result = PyObject_New(ZstdCompressionDict, ZstdCompressionDictType);
     if (!result) {
         PyMem_Free(dict);
         goto finally;
@@ -315,64 +315,34 @@ static Py_ssize_t ZstdCompressionDict_length(ZstdCompressionDict *self) {
     return self->dictSize;
 }
 
-static PySequenceMethods ZstdCompressionDict_sq = {
-    (lenfunc)ZstdCompressionDict_length, /* sq_length */
-    0,                                   /* sq_concat */
-    0,                                   /* sq_repeat */
-    0,                                   /* sq_item */
-    0,                                   /* sq_ass_item */
-    0,                                   /* sq_contains */
-    0,                                   /* sq_inplace_concat */
-    0                                    /* sq_inplace_repeat */
+PyType_Slot ZstdCompressionDictSlots[] = {
+    {Py_tp_dealloc, ZstdCompressionDict_dealloc},
+    {Py_sq_length, ZstdCompressionDict_length},
+    {Py_tp_methods, ZstdCompressionDict_methods},
+    {Py_tp_members, ZstdCompressionDict_members},
+    {Py_tp_init, ZstdCompressionDict_init},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
 
-PyTypeObject ZstdCompressionDictType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "zstd.ZstdCompressionDict", /* tp_name */
-    sizeof(ZstdCompressionDict),              /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)ZstdCompressionDict_dealloc,  /* tp_dealloc */
-    0,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_compare */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    &ZstdCompressionDict_sq,                  /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    0,                                        /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    ZstdCompressionDict_methods,              /* tp_methods */
-    ZstdCompressionDict_members,              /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    (initproc)ZstdCompressionDict_init,       /* tp_init */
-    0,                                        /* tp_alloc */
-    PyType_GenericNew,                        /* tp_new */
+PyType_Spec ZstdCompressionDictSpec = {
+    "zstd.ZstdCompressionDict",
+    sizeof(ZstdCompressionDict),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    ZstdCompressionDictSlots,
 };
+
+PyTypeObject *ZstdCompressionDictType;
 
 void compressiondict_module_init(PyObject *mod) {
-    Py_SET_TYPE(&ZstdCompressionDictType, &PyType_Type);
-    if (PyType_Ready(&ZstdCompressionDictType) < 0) {
+    ZstdCompressionDictType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdCompressionDictSpec);
+    if (PyType_Ready(ZstdCompressionDictType) < 0) {
         return;
     }
 
-    Py_INCREF((PyObject *)&ZstdCompressionDictType);
+    Py_INCREF((PyObject *)ZstdCompressionDictType);
     PyModule_AddObject(mod, "ZstdCompressionDict",
-                       (PyObject *)&ZstdCompressionDictType);
+                       (PyObject *)ZstdCompressionDictType);
 }
