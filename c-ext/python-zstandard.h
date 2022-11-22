@@ -152,7 +152,7 @@ typedef struct {
     PyObject *readResult;
 } ZstdCompressorIterator;
 
-extern PyTypeObject ZstdCompressorIteratorType;
+extern PyTypeObject *ZstdCompressorIteratorType;
 
 typedef struct {
     PyObject_HEAD

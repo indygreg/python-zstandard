@@ -634,7 +634,7 @@ static ZstdCompressorIterator *ZstdCompressor_read_to_iter(ZstdCompressor *self,
     }
 
     result = (ZstdCompressorIterator *)PyObject_CallObject(
-        (PyObject *)&ZstdCompressorIteratorType, NULL);
+        (PyObject *)ZstdCompressorIteratorType, NULL);
     if (!result) {
         return NULL;
     }
