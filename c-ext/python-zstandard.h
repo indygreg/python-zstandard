@@ -343,7 +343,7 @@ typedef struct {
     int useFree;
 } ZstdBufferWithSegments;
 
-extern PyTypeObject ZstdBufferWithSegmentsType;
+extern PyTypeObject *ZstdBufferWithSegmentsType;
 
 /**
  * An ordered collection of BufferWithSegments exposed as a squashed collection.
