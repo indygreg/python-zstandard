@@ -1492,7 +1492,7 @@ Decompressor_multi_decompress_to_buffer(ZstdDecompressor *self, PyObject *args,
         threads = 1;
     }
 
-    if (PyObject_TypeCheck(frames, &ZstdBufferWithSegmentsType)) {
+    if (PyObject_TypeCheck(frames, ZstdBufferWithSegmentsType)) {
         ZstdBufferWithSegments *buffer = (ZstdBufferWithSegments *)frames;
         frameCount = buffer->segmentCount;
 

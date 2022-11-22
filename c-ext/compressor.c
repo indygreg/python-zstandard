@@ -1366,7 +1366,7 @@ ZstdCompressor_multi_compress_to_buffer(ZstdCompressor *self, PyObject *args,
         threads = 1;
     }
 
-    if (PyObject_TypeCheck(data, &ZstdBufferWithSegmentsType)) {
+    if (PyObject_TypeCheck(data, ZstdBufferWithSegmentsType)) {
         ZstdBufferWithSegments *buffer = (ZstdBufferWithSegments *)data;
 
         sources.sources =
