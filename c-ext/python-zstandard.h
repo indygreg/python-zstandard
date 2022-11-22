@@ -202,7 +202,7 @@ typedef struct {
     CompressionChunkerMode mode;
 } ZstdCompressionChunkerIterator;
 
-extern PyTypeObject ZstdCompressionChunkerIteratorType;
+extern PyTypeObject *ZstdCompressionChunkerIteratorType;
 
 typedef struct {
     PyObject_HEAD
