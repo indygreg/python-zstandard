@@ -106,7 +106,7 @@ typedef struct {
     ZSTD_CCtx_params *params;
 } ZstdCompressor;
 
-extern PyTypeObject ZstdCompressorType;
+extern PyTypeObject *ZstdCompressorType;
 
 typedef struct {
     PyObject_HEAD
