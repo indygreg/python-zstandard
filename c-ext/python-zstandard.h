@@ -47,7 +47,7 @@ typedef struct {
     PyObject_HEAD ZSTD_CCtx_params *params;
 } ZstdCompressionParametersObject;
 
-extern PyTypeObject ZstdCompressionParametersType;
+extern PyTypeObject *ZstdCompressionParametersType;
 
 /*
    Represents a FrameParameters type.

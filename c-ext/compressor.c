@@ -138,7 +138,7 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
             params = NULL;
         }
         else if (!PyObject_IsInstance(
-                     params, (PyObject *)&ZstdCompressionParametersType)) {
+                     params, (PyObject *)ZstdCompressionParametersType)) {
             PyErr_Format(
                 PyExc_TypeError,
                 "compression_params must be zstd.ZstdCompressionParameters");

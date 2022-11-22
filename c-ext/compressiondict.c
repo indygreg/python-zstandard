@@ -237,7 +237,7 @@ ZstdCompressionDict_precompute_compress(ZstdCompressionDict *self,
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kwargs, "|iO!:precompute_compress", kwlist, &level,
-            &ZstdCompressionParametersType, &compressionParams)) {
+            ZstdCompressionParametersType, &compressionParams)) {
         return NULL;
     }
 

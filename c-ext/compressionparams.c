@@ -351,7 +351,7 @@ CompressionParameters_from_level(PyObject *undef, PyObject *args,
     }
 
     result = PyObject_New(ZstdCompressionParametersObject,
-                          &ZstdCompressionParametersType);
+                          ZstdCompressionParametersType);
     if (!result) {
         goto cleanup;
     }
@@ -469,53 +469,33 @@ static PyGetSetDef ZstdCompressionParameters_getset[] = {
     GET_SET_ENTRY(ldm_hash_rate_log),
     {NULL}};
 
-PyTypeObject ZstdCompressionParametersType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "ZstdCompressionParameters", /* tp_name */
-    sizeof(ZstdCompressionParametersObject),       /* tp_basicsize */
-    0,                                             /* tp_itemsize */
-    (destructor)ZstdCompressionParameters_dealloc, /* tp_dealloc */
-    0,                                             /* tp_print */
-    0,                                             /* tp_getattr */
-    0,                                             /* tp_setattr */
-    0,                                             /* tp_compare */
-    0,                                             /* tp_repr */
-    0,                                             /* tp_as_number */
-    0,                                             /* tp_as_sequence */
-    0,                                             /* tp_as_mapping */
-    0,                                             /* tp_hash  */
-    0,                                             /* tp_call */
-    0,                                             /* tp_str */
-    0,                                             /* tp_getattro */
-    0,                                             /* tp_setattro */
-    0,                                             /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,      /* tp_flags */
-    0,                                             /* tp_doc */
-    0,                                             /* tp_traverse */
-    0,                                             /* tp_clear */
-    0,                                             /* tp_richcompare */
-    0,                                             /* tp_weaklistoffset */
-    0,                                             /* tp_iter */
-    0,                                             /* tp_iternext */
-    ZstdCompressionParameters_methods,             /* tp_methods */
-    0,                                             /* tp_members */
-    ZstdCompressionParameters_getset,              /* tp_getset */
-    0,                                             /* tp_base */
-    0,                                             /* tp_dict */
-    0,                                             /* tp_descr_get */
-    0,                                             /* tp_descr_set */
-    0,                                             /* tp_dictoffset */
-    (initproc)ZstdCompressionParameters_init,      /* tp_init */
-    0,                                             /* tp_alloc */
-    PyType_GenericNew,                             /* tp_new */
+PyType_Slot ZstdCompressionParametersSlots[] = {
+    {Py_tp_dealloc, ZstdCompressionParameters_dealloc},
+    {Py_tp_methods, ZstdCompressionParameters_methods},
+    {Py_tp_getset, ZstdCompressionParameters_getset},
+    {Py_tp_init, ZstdCompressionParameters_init},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
 };
 
+PyType_Spec ZstdCompressionParametersSpec = {
+    "zstd.ZstdCompressionParameters",
+    sizeof(ZstdCompressionParametersObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    ZstdCompressionParametersSlots,
+};
+
+PyTypeObject *ZstdCompressionParametersType;
+
 void compressionparams_module_init(PyObject *mod) {
-    Py_SET_TYPE(&ZstdCompressionParametersType, &PyType_Type);
-    if (PyType_Ready(&ZstdCompressionParametersType) < 0) {
+    ZstdCompressionParametersType =
+        (PyTypeObject *)PyType_FromSpec(&ZstdCompressionParametersSpec);
+    if (PyType_Ready(ZstdCompressionParametersType) < 0) {
         return;
     }
 
-    Py_INCREF(&ZstdCompressionParametersType);
+    Py_INCREF(ZstdCompressionParametersType);
     PyModule_AddObject(mod, "ZstdCompressionParameters",
-                       (PyObject *)&ZstdCompressionParametersType);
+                       (PyObject *)ZstdCompressionParametersType);
 }
