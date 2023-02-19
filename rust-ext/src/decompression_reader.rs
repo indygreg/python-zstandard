@@ -96,7 +96,7 @@ impl ZstdDecompressionReader {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_instance(exc))
+        Err(PyErr::from_value(exc))
     }
 
     fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
@@ -104,7 +104,7 @@ impl ZstdDecompressionReader {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_instance(exc))
+        Err(PyErr::from_value(exc))
     }
 
     fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
@@ -151,7 +151,7 @@ impl ZstdDecompressionReader {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_instance(exc))
+        Err(PyErr::from_value(exc))
     }
 
     #[args(hint = "None")]
@@ -160,7 +160,7 @@ impl ZstdDecompressionReader {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_instance(exc))
+        Err(PyErr::from_value(exc))
     }
 
     #[allow(unused_variables)]
@@ -168,7 +168,7 @@ impl ZstdDecompressionReader {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_instance(exc))
+        Err(PyErr::from_value(exc))
     }
 
     #[allow(unused_variables)]
@@ -176,7 +176,7 @@ impl ZstdDecompressionReader {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_instance(exc))
+        Err(PyErr::from_value(exc))
     }
 
     fn isatty(&self) -> bool {
