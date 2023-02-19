@@ -410,7 +410,13 @@ impl ZstdDecompressor {
     ) -> PyResult<ZstdBufferWithSegmentsCollection> {
         self.setup_dctx(py, true)?;
 
-        multi_decompress_to_buffer(py, &self.dctx, frames, decompressed_sizes, threads)
+        multi_decompress_to_buffer(
+            py,
+            self.dict_data.as_ref(),
+            frames,
+            decompressed_sizes,
+            threads,
+        )
     }
 
     #[args(reader, read_size = "None", write_size = "None", skip_bytes = "None")]

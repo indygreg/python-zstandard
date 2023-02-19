@@ -1248,8 +1248,6 @@ decompress_from_framesources(ZstdDecompressor *decompressor,
             goto finally;
         }
 
-        ZSTD_copyDCtx(workerStates[i].dctx, decompressor->dctx);
-
         if (decompressor->dict) {
             zresult = ZSTD_DCtx_refDDict(workerStates[i].dctx,
                                          decompressor->dict->ddict);

@@ -357,17 +357,6 @@ impl<'a> DCtx<'a> {
         Ok(Self(dctx, PhantomData))
     }
 
-    /// Attempt to create a copy of this instance.
-    pub fn try_clone(&self) -> Result<Self, &'static str> {
-        let dctx = Self::new()?;
-
-        unsafe {
-            zstd_sys::ZSTD_copyDCtx(dctx.0, self.0);
-        }
-
-        Ok(dctx)
-    }
-
     pub fn dctx(&self) -> *mut zstd_sys::ZSTD_DCtx {
         self.0
     }

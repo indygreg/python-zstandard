@@ -86,6 +86,8 @@ Changes
 -------
 
 * Bundled zstd library upgraded from 1.5.2 to 1.5.4.
+* Use of the deprecated ``ZSTD_copyDCtx()`` was removed from the C and
+  Rust backends.
 
 0.19.0 (released 2022-10-29)
 ============================

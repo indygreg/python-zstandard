@@ -7,6 +7,7 @@
 use {
     crate::{
         buffers::{BufferSegment, ZstdBufferWithSegments, ZstdBufferWithSegmentsCollection},
+        compression_dict::ZstdCompressionDict,
         exceptions::ZstdError,
         zstd_safe::DCtx,
     },
@@ -27,7 +28,7 @@ struct DataSource<'a> {
 
 pub fn multi_decompress_to_buffer(
     py: Python,
-    dctx: &DCtx,
+    dict_data: Option<&Py<ZstdCompressionDict>>,
     frames: &PyAny,
     decompressed_sizes: Option<&PyAny>,
     threads: isize,
@@ -129,7 +130,7 @@ pub fn multi_decompress_to_buffer(
         ));
     }
 
-    decompress_from_datasources(py, dctx, sources, threads)
+    decompress_from_datasources(py, dict_data, sources, threads)
 }
 
 #[derive(Debug, PartialEq)]
@@ -148,7 +149,7 @@ struct WorkerResult {
 
 fn decompress_from_datasources(
     py: Python,
-    dctx: &DCtx,
+    dict_data: Option<&Py<ZstdCompressionDict>>,
     sources: Vec<DataSource>,
     thread_count: usize,
 ) -> PyResult<ZstdBufferWithSegmentsCollection> {
@@ -165,7 +166,12 @@ fn decompress_from_datasources(
     // to the C backend.
 
     for _ in 0..thread_count {
-        let dctx = dctx.try_clone().map_err(ZstdError::new_err)?;
+        let dctx = DCtx::new().map_err(ZstdError::new_err)?;
+
+        if let Some(dict_data) = dict_data {
+            dict_data.borrow_mut(py).load_into_dctx(&dctx)?;
+        }
+
         dctxs.push(dctx);
     }
 
