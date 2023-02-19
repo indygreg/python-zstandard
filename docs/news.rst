@@ -54,6 +54,11 @@ Backwards Compatibility Notes
 * Support for Python 3.6 has been dropped. Python 3.7 is the minimum supported
   Python version.
 
+Changes
+-------
+
+* PyO3 Rust crate upgraded from 0.15 to 0.16.
+
 0.20.0 (released 2023-02-20)
 ============================
 
