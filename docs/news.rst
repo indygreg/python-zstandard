@@ -57,7 +57,7 @@ Backwards Compatibility Notes
 Changes
 -------
 
-* PyO3 Rust crate upgraded from 0.15 to 0.17.
+* PyO3 Rust crate upgraded from 0.15 to 0.18.
 
 0.20.0 (released 2023-02-20)
 ============================
