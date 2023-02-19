@@ -83,7 +83,7 @@ impl ZstdCompressionChunker {
             ));
         }
 
-        let source = make_in_buffer_source(py, data, zstd_safe::cstream_in_size())?;
+        let source = make_in_buffer_source(py, data, zstd_safe::CCtx::in_size())?;
 
         let it = Py::new(
             py,
@@ -116,8 +116,7 @@ impl ZstdCompressionChunker {
             ));
         }
 
-        let source =
-            make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::cstream_in_size())?;
+        let source = make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::CCtx::in_size())?;
 
         let it = Py::new(
             py,
@@ -150,8 +149,7 @@ impl ZstdCompressionChunker {
             ));
         }
 
-        let source =
-            make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::cstream_in_size())?;
+        let source = make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::CCtx::in_size())?;
 
         let it = Py::new(
             py,

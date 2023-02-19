@@ -94,8 +94,8 @@ impl ZstdDecompressor {
         read_size: Option<usize>,
         write_size: Option<usize>,
     ) -> PyResult<(usize, usize)> {
-        let read_size = read_size.unwrap_or_else(|| zstd_safe::dstream_in_size());
-        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::DCtx::in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::DCtx::out_size());
 
         if !ifh.hasattr("read")? {
             return Err(PyValueError::new_err(
@@ -386,7 +386,7 @@ impl ZstdDecompressor {
             }
         }
 
-        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::DCtx::out_size());
 
         self.setup_dctx(py, true)?;
 
@@ -420,8 +420,8 @@ impl ZstdDecompressor {
         write_size: Option<usize>,
         skip_bytes: Option<usize>,
     ) -> PyResult<ZstdDecompressorIterator> {
-        let read_size = read_size.unwrap_or_else(|| zstd_safe::dstream_in_size());
-        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::DCtx::in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::DCtx::out_size());
         let skip_bytes = skip_bytes.unwrap_or(0);
 
         if skip_bytes >= read_size {
@@ -462,7 +462,7 @@ impl ZstdDecompressor {
         read_across_frames: bool,
         closefd: bool,
     ) -> PyResult<ZstdDecompressionReader> {
-        let read_size = read_size.unwrap_or_else(|| zstd_safe::dstream_in_size());
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::DCtx::in_size());
 
         self.setup_dctx(py, true)?;
 
@@ -490,7 +490,7 @@ impl ZstdDecompressor {
         write_return_read: bool,
         closefd: bool,
     ) -> PyResult<ZstdDecompressionWriter> {
-        let write_size = write_size.unwrap_or_else(|| zstd_safe::dstream_out_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::DCtx::out_size());
 
         self.setup_dctx(py, true)?;
 

@@ -35,19 +35,19 @@ pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
     module.add("MAX_COMPRESSION_LEVEL", zstd_safe::max_c_level())?;
     module.add(
         "COMPRESSION_RECOMMENDED_INPUT_SIZE",
-        zstd_safe::cstream_in_size(),
+        zstd_safe::CCtx::in_size(),
     )?;
     module.add(
         "COMPRESSION_RECOMMENDED_OUTPUT_SIZE",
-        zstd_safe::cstream_out_size(),
+        zstd_safe::CCtx::out_size(),
     )?;
     module.add(
         "DECOMPRESSION_RECOMMENDED_INPUT_SIZE",
-        zstd_safe::dstream_in_size(),
+        zstd_safe::DCtx::in_size(),
     )?;
     module.add(
         "DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE",
-        zstd_safe::dstream_out_size(),
+        zstd_safe::DCtx::out_size(),
     )?;
 
     module.add("MAGIC_NUMBER", zstd_safe::MAGICNUMBER)?;

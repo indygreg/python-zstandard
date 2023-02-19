@@ -333,7 +333,7 @@ impl ZstdDecompressionReader {
 
         // -1 returns arbitrary number of bytes.
         let size = match size {
-            -1 => zstd_safe::dstream_out_size(),
+            -1 => zstd_safe::DCtx::out_size(),
             size => size as _,
         };
 
@@ -443,10 +443,7 @@ impl ZstdDecompressionReader {
         };
 
         while read_amount > 0 {
-            let result = self.read(
-                py,
-                Some(min(read_amount, zstd_safe::dstream_out_size()) as _),
-            )?;
+            let result = self.read(py, Some(min(read_amount, zstd_safe::DCtx::out_size()) as _))?;
 
             if result.len()? == 0 {
                 break;

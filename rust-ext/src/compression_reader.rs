@@ -302,7 +302,7 @@ impl ZstdCompressionReader {
 
         // -1 returns arbitrary number of bytes.
         let size = if size == -1 {
-            zstd_safe::cstream_out_size()
+            zstd_safe::CCtx::out_size()
         } else {
             size as _
         };

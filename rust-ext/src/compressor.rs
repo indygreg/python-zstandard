@@ -183,7 +183,7 @@ impl ZstdCompressor {
         self.cctx.reset();
 
         let size = size.unwrap_or(zstd_safe::CONTENTSIZE_UNKNOWN);
-        let chunk_size = chunk_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
+        let chunk_size = chunk_size.unwrap_or_else(|| zstd_safe::CCtx::out_size());
 
         self.cctx.set_pledged_source_size(size).or_else(|msg| {
             Err(ZstdError::new_err(format!(
@@ -231,8 +231,8 @@ impl ZstdCompressor {
             zstd_safe::CONTENTSIZE_UNKNOWN
         };
 
-        let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
-        let write_size = write_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::CCtx::in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::CCtx::in_size());
 
         if !ifh.hasattr("read")? {
             return Err(PyValueError::new_err(
@@ -352,8 +352,8 @@ impl ZstdCompressor {
         write_size: Option<usize>,
     ) -> PyResult<ZstdCompressorIterator> {
         let size = size.unwrap_or(zstd_safe::CONTENTSIZE_UNKNOWN);
-        let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
-        let write_size = write_size.unwrap_or_else(|| zstd_safe::cstream_out_size());
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::CCtx::in_size());
+        let write_size = write_size.unwrap_or_else(|| zstd_safe::CCtx::in_size());
 
         self.cctx.reset();
 
@@ -370,7 +370,7 @@ impl ZstdCompressor {
         closefd: bool,
     ) -> PyResult<ZstdCompressionReader> {
         let size = size.unwrap_or(zstd_safe::CONTENTSIZE_UNKNOWN);
-        let read_size = read_size.unwrap_or_else(|| zstd_safe::cstream_in_size());
+        let read_size = read_size.unwrap_or_else(|| zstd_safe::CCtx::in_size());
 
         self.cctx.reset();
 

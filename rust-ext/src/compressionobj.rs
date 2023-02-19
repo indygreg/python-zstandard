@@ -45,7 +45,7 @@ impl ZstdCompressionObj {
         // TODO consider collecting chunks and joining
         // TODO try to use zero copy into return value.
         let mut compressed = Vec::new();
-        let write_size = zstd_safe::cstream_out_size();
+        let write_size = zstd_safe::CCtx::out_size();
 
         let cctx = &self.cctx;
         while !source.is_empty() {
@@ -85,7 +85,7 @@ impl ZstdCompressionObj {
             self.finished = true;
         }
 
-        let write_size = zstd_safe::cstream_out_size();
+        let write_size = zstd_safe::CCtx::out_size();
         let cctx = &self.cctx;
 
         // TODO avoid extra buffer copy.
