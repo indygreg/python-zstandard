@@ -15,7 +15,6 @@ use {
         exceptions::{PyOSError, PyValueError},
         prelude::*,
         types::{PyBytes, PyList},
-        PyIterProtocol,
     },
     std::sync::Arc,
 };
@@ -112,6 +111,24 @@ impl ZstdCompressionReader {
 
 #[pymethods]
 impl ZstdCompressionReader {
+    // PyIterProtocol.
+
+    fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
+        let py = slf.py();
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
+        let py = slf.py();
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
     fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
         if slf.entered {
             Err(PyValueError::new_err("cannot __enter__ multiple times"))
@@ -474,24 +491,5 @@ impl ZstdCompressionReader {
         }
 
         Ok(out_buffer.pos)
-    }
-}
-
-#[pyproto]
-impl PyIterProtocol for ZstdCompressionReader {
-    fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
-        let py = slf.py();
-        let io = py.import("io")?;
-        let exc = io.getattr("UnsupportedOperation")?;
-
-        Err(PyErr::from_instance(exc))
-    }
-
-    fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
-        let py = slf.py();
-        let io = py.import("io")?;
-        let exc = io.getattr("UnsupportedOperation")?;
-
-        Err(PyErr::from_instance(exc))
     }
 }

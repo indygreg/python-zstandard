@@ -10,7 +10,7 @@ use {
         stream::{make_in_buffer_source, InBufferSource},
         zstd_safe::CCtx,
     },
-    pyo3::{prelude::*, types::PyBytes, PyIterProtocol},
+    pyo3::{prelude::*, types::PyBytes},
     std::sync::Arc,
 };
 
@@ -22,36 +22,10 @@ pub struct ZstdCompressorIterator {
     finished_output: bool,
 }
 
+#[pymethods]
 impl ZstdCompressorIterator {
-    pub fn new(
-        py: Python,
-        cctx: Arc<CCtx<'static>>,
-        reader: &PyAny,
-        size: u64,
-        read_size: usize,
-        write_size: usize,
-    ) -> PyResult<Self> {
-        let source = make_in_buffer_source(py, reader, read_size)?;
+    // PyIterProtocol.
 
-        let size = match source.source_size() {
-            Some(size) => size as _,
-            None => size,
-        };
-
-        cctx.set_pledged_source_size(size)
-            .map_err(|msg| ZstdError::new_err(format!("error setting source size: {}", msg)))?;
-
-        Ok(Self {
-            cctx,
-            source,
-            write_size,
-            finished_output: false,
-        })
-    }
-}
-
-#[pyproto]
-impl PyIterProtocol for ZstdCompressorIterator {
     fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
         slf
     }
@@ -122,5 +96,33 @@ impl PyIterProtocol for ZstdCompressorIterator {
         }
 
         Ok(None)
+    }
+}
+
+impl ZstdCompressorIterator {
+    pub fn new(
+        py: Python,
+        cctx: Arc<CCtx<'static>>,
+        reader: &PyAny,
+        size: u64,
+        read_size: usize,
+        write_size: usize,
+    ) -> PyResult<Self> {
+        let source = make_in_buffer_source(py, reader, read_size)?;
+
+        let size = match source.source_size() {
+            Some(size) => size as _,
+            None => size,
+        };
+
+        cctx.set_pledged_source_size(size)
+            .map_err(|msg| ZstdError::new_err(format!("error setting source size: {}", msg)))?;
+
+        Ok(Self {
+            cctx,
+            source,
+            write_size,
+            finished_output: false,
+        })
     }
 }

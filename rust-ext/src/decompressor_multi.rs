@@ -16,7 +16,6 @@ use {
         exceptions::{PyTypeError, PyValueError},
         prelude::*,
         types::{PyBytes, PyList, PyTuple},
-        PySequenceProtocol,
     },
     rayon::prelude::*,
 };
@@ -72,7 +71,7 @@ pub fn multi_decompress_to_buffer(
             });
         }
     } else if let Ok(collection) = frames.extract::<&PyCell<ZstdBufferWithSegmentsCollection>>() {
-        let frames_count = collection.borrow().__len__();
+        let frames_count = collection.len()?;
 
         if decompressed_sizes.is_some() && frame_sizes.len() != frames_count {
             return Err(PyValueError::new_err(format!(

@@ -17,7 +17,6 @@ use {
         exceptions::{PyTypeError, PyValueError},
         prelude::*,
         types::{PyBytes, PyList, PyTuple},
-        PySequenceProtocol,
     },
     rayon::prelude::*,
 };
@@ -56,7 +55,7 @@ pub fn multi_compress_to_buffer(
             total_source_size += slice.len();
         }
     } else if let Ok(collection) = data.extract::<&PyCell<ZstdBufferWithSegmentsCollection>>() {
-        sources.reserve_exact(collection.borrow().__len__());
+        sources.reserve_exact(collection.len()?);
 
         for buffer_obj in &collection.borrow().buffers {
             let buffer = buffer_obj.extract::<&PyCell<ZstdBufferWithSegments>>(py)?;

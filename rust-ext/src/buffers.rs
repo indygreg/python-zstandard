@@ -8,7 +8,6 @@ use {
     crate::exceptions::ZstdError,
     pyo3::{
         buffer::PyBuffer,
-        class::{PyBufferProtocol, PySequenceProtocol},
         exceptions::{PyIndexError, PyTypeError, PyValueError},
         ffi::Py_buffer,
         prelude::*,
@@ -46,31 +45,18 @@ impl ZstdBufferSegment {
 
 #[pymethods]
 impl ZstdBufferSegment {
-    #[getter]
-    fn offset(&self) -> usize {
-        self.offset
-    }
-
-    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<&'p PyBytes> {
-        Ok(PyBytes::new(py, self.as_slice()))
-    }
-}
-
-#[pyproto]
-impl PySequenceProtocol for ZstdBufferSegment {
+    // PySequenceProtocol.
     fn __len__(&self) -> usize {
         self.len
     }
-}
 
-#[pyproto]
-impl PyBufferProtocol for ZstdBufferSegment {
-    fn bf_getbuffer(slf: PyRefMut<Self>, view: *mut Py_buffer, flags: i32) -> PyResult<()> {
+    // PyBufferProtocol.
+    fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
         let slice = slf.as_slice();
 
         if unsafe {
             pyo3::ffi::PyBuffer_FillInfo(
-                view,
+                view.as_ptr() as *mut Py_buffer,
                 slf.as_ptr(),
                 slice.as_ptr() as *mut _,
                 slice.len() as _,
@@ -86,7 +72,18 @@ impl PyBufferProtocol for ZstdBufferSegment {
     }
 
     #[allow(unused_variables)]
-    fn bf_releasebuffer(slf: PyRefMut<Self>, view: *mut Py_buffer) {}
+    fn bf_releasebuffer(slf: PyRefMut<Self>, view: PyObject) {}
+
+    // Our methods.
+
+    #[getter]
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<&'p PyBytes> {
+        Ok(PyBytes::new(py, self.as_slice()))
+    }
 }
 
 #[pyclass(module = "zstandard.backend_rust", name = "BufferSegments")]
@@ -94,16 +91,17 @@ pub struct ZstdBufferSegments {
     parent: PyObject,
 }
 
-#[pyproto]
-impl PyBufferProtocol for ZstdBufferSegments {
-    fn bf_getbuffer(slf: PyRefMut<Self>, view: *mut Py_buffer, flags: i32) -> PyResult<()> {
+#[pymethods]
+impl ZstdBufferSegments {
+    // PyBufferProtocol.
+    fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
         let py = slf.py();
 
         let parent: &PyCell<ZstdBufferWithSegments> = slf.parent.extract(py)?;
 
         if unsafe {
             pyo3::ffi::PyBuffer_FillInfo(
-                view,
+                view.as_ptr() as *mut Py_buffer,
                 slf.as_ptr(),
                 parent.borrow().segments.as_ptr() as *const _ as *mut _,
                 (parent.borrow().segments.len() * std::mem::size_of::<BufferSegment>()) as isize,
@@ -119,7 +117,7 @@ impl PyBufferProtocol for ZstdBufferSegments {
     }
 
     #[allow(unused_variables)]
-    fn bf_releasebuffer(slf: PyRefMut<Self>, view: *mut Py_buffer) {}
+    fn bf_releasebuffer(slf: PyRefMut<Self>, view: PyObject) {}
 }
 
 #[pyclass(module = "zstandard.backend_rust", name = "BufferWithSegments")]
@@ -150,6 +148,62 @@ impl ZstdBufferWithSegments {
 
 #[pymethods]
 impl ZstdBufferWithSegments {
+    // PySequenceProtocol.
+
+    fn __len__(&self) -> usize {
+        self.segments.len()
+    }
+
+    fn __getitem__(&self, key: isize) -> PyResult<ZstdBufferSegment> {
+        let py = unsafe { Python::assume_gil_acquired() };
+
+        if key < 0 {
+            return Err(PyIndexError::new_err("offset must be non-negative"));
+        }
+
+        let key = key as usize;
+
+        if key >= self.segments.len() {
+            return Err(PyIndexError::new_err(format!(
+                "offset must be less than {}",
+                self.segments.len()
+            )));
+        }
+
+        let segment = &self.segments[key];
+
+        Ok(ZstdBufferSegment {
+            _parent: self.source.clone_ref(py),
+            buffer: PyBuffer::get(self.source.extract(py)?)?,
+            offset: segment.offset as _,
+            len: segment.length as _,
+        })
+    }
+
+    // PyBufferProtocol.
+    fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
+        if unsafe {
+            pyo3::ffi::PyBuffer_FillInfo(
+                view.as_ptr() as *mut Py_buffer,
+                slf.as_ptr(),
+                slf.buffer.buf_ptr(),
+                slf.buffer.len_bytes() as _,
+                1,
+                flags,
+            )
+        } != 0
+        {
+            Err(PyErr::fetch(slf.py()))
+        } else {
+            Ok(())
+        }
+    }
+
+    #[allow(unused_variables)]
+    fn bf_releasebuffer(slf: PyRefMut<Self>, view: PyObject) {}
+
+    // Our methods.
+
     #[new]
     pub fn new(py: Python, data: &PyAny, segments: PyBuffer<u8>) -> PyResult<Self> {
         let data_buffer = PyBuffer::get(data)?;
@@ -206,63 +260,6 @@ impl ZstdBufferWithSegments {
     }
 }
 
-#[pyproto]
-impl PySequenceProtocol for ZstdBufferWithSegments {
-    fn __len__(&self) -> usize {
-        self.segments.len()
-    }
-
-    fn __getitem__(&self, key: isize) -> PyResult<ZstdBufferSegment> {
-        let py = unsafe { Python::assume_gil_acquired() };
-
-        if key < 0 {
-            return Err(PyIndexError::new_err("offset must be non-negative"));
-        }
-
-        let key = key as usize;
-
-        if key >= self.segments.len() {
-            return Err(PyIndexError::new_err(format!(
-                "offset must be less than {}",
-                self.segments.len()
-            )));
-        }
-
-        let segment = &self.segments[key];
-
-        Ok(ZstdBufferSegment {
-            _parent: self.source.clone_ref(py),
-            buffer: PyBuffer::get(self.source.extract(py)?)?,
-            offset: segment.offset as _,
-            len: segment.length as _,
-        })
-    }
-}
-
-#[pyproto]
-impl PyBufferProtocol for ZstdBufferWithSegments {
-    fn bf_getbuffer(slf: PyRefMut<Self>, view: *mut Py_buffer, flags: i32) -> PyResult<()> {
-        if unsafe {
-            pyo3::ffi::PyBuffer_FillInfo(
-                view,
-                slf.as_ptr(),
-                slf.buffer.buf_ptr(),
-                slf.buffer.len_bytes() as _,
-                1,
-                flags,
-            )
-        } != 0
-        {
-            Err(PyErr::fetch(slf.py()))
-        } else {
-            Ok(())
-        }
-    }
-
-    #[allow(unused_variables)]
-    fn bf_releasebuffer(slf: PyRefMut<Self>, view: *mut Py_buffer) {}
-}
-
 #[pyclass(
     module = "zstandard.backend_rust",
     name = "BufferWithSegmentsCollection"
@@ -275,6 +272,46 @@ pub struct ZstdBufferWithSegmentsCollection {
 
 #[pymethods]
 impl ZstdBufferWithSegmentsCollection {
+    // PySequenceProtocol.
+
+    fn __len__(&self) -> usize {
+        self.first_elements.last().unwrap().clone()
+    }
+
+    fn __getitem__(&self, key: isize) -> PyResult<ZstdBufferSegment> {
+        let py = unsafe { Python::assume_gil_acquired() };
+
+        if key < 0 {
+            return Err(PyIndexError::new_err("offset must be non-negative"));
+        }
+
+        let key = key as usize;
+
+        if key >= self.__len__() {
+            return Err(PyIndexError::new_err(format!(
+                "offset must be less than {}",
+                self.__len__()
+            )));
+        }
+
+        let mut offset = 0;
+        for (buffer_index, segment) in self.buffers.iter().enumerate() {
+            if key < self.first_elements[buffer_index] {
+                if buffer_index > 0 {
+                    offset = self.first_elements[buffer_index - 1];
+                }
+
+                let item: &PyCell<ZstdBufferWithSegments> = segment.extract(py)?;
+
+                return item.borrow().__getitem__((key - offset) as isize);
+            }
+        }
+
+        Err(ZstdError::new_err(
+            "error resolving segment; this should not happen",
+        ))
+    }
+
     #[new]
     #[args(py_args = "*")]
     pub fn new(py: Python, py_args: &PyTuple) -> PyResult<Self> {
@@ -322,47 +359,6 @@ impl ZstdBufferWithSegmentsCollection {
         }
 
         Ok(size)
-    }
-}
-
-#[pyproto]
-impl PySequenceProtocol for ZstdBufferWithSegmentsCollection {
-    fn __len__(&self) -> usize {
-        self.first_elements.last().unwrap().clone()
-    }
-
-    fn __getitem__(&self, key: isize) -> PyResult<ZstdBufferSegment> {
-        let py = unsafe { Python::assume_gil_acquired() };
-
-        if key < 0 {
-            return Err(PyIndexError::new_err("offset must be non-negative"));
-        }
-
-        let key = key as usize;
-
-        if key >= self.__len__() {
-            return Err(PyIndexError::new_err(format!(
-                "offset must be less than {}",
-                self.__len__()
-            )));
-        }
-
-        let mut offset = 0;
-        for (buffer_index, segment) in self.buffers.iter().enumerate() {
-            if key < self.first_elements[buffer_index] {
-                if buffer_index > 0 {
-                    offset = self.first_elements[buffer_index - 1];
-                }
-
-                let item: &PyCell<ZstdBufferWithSegments> = segment.extract(py)?;
-
-                return item.borrow().__getitem__((key - offset) as isize);
-            }
-        }
-
-        Err(ZstdError::new_err(
-            "error resolving segment; this should not happen",
-        ))
     }
 }
 

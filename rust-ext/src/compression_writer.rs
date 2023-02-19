@@ -11,7 +11,6 @@ use {
         exceptions::{PyNotImplementedError, PyOSError, PyValueError},
         prelude::*,
         types::PyBytes,
-        PyIterProtocol,
     },
     std::sync::Arc,
 };
@@ -61,6 +60,24 @@ impl ZstdCompressionWriter {
 
 #[pymethods]
 impl ZstdCompressionWriter {
+    // PyIterProtocol.
+
+    fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
+        let py = slf.py();
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
+    fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
+        let py = slf.py();
+        let io = py.import("io")?;
+        let exc = io.getattr("UnsupportedOperation")?;
+
+        Err(PyErr::from_instance(exc))
+    }
+
     fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
         if slf.closed {
             Err(PyValueError::new_err("stream is closed"))
@@ -303,24 +320,5 @@ impl ZstdCompressionWriter {
 
     fn tell(&self) -> usize {
         self.bytes_compressed
-    }
-}
-
-#[pyproto]
-impl PyIterProtocol for ZstdCompressionWriter {
-    fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
-        let py = slf.py();
-        let io = py.import("io")?;
-        let exc = io.getattr("UnsupportedOperation")?;
-
-        Err(PyErr::from_instance(exc))
-    }
-
-    fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
-        let py = slf.py();
-        let io = py.import("io")?;
-        let exc = io.getattr("UnsupportedOperation")?;
-
-        Err(PyErr::from_instance(exc))
     }
 }

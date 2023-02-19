@@ -10,7 +10,7 @@ use {
         stream::{make_in_buffer_source, InBufferSource},
         zstd_safe::CCtx,
     },
-    pyo3::{prelude::*, types::PyBytes, PyIterProtocol},
+    pyo3::{prelude::*, types::PyBytes},
     std::sync::Arc,
 };
 
@@ -184,8 +184,10 @@ struct ZstdCompressionChunkerIterator {
     finished: bool,
 }
 
-#[pyproto]
-impl PyIterProtocol for ZstdCompressionChunkerIterator {
+#[pymethods]
+impl ZstdCompressionChunkerIterator {
+    // PyIterProtocol.
+
     fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
         slf
     }

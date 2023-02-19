@@ -10,7 +10,7 @@ use {
         stream::{make_in_buffer_source, InBufferSource},
         zstd_safe::DCtx,
     },
-    pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes, PyIterProtocol},
+    pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes},
     std::{cmp::min, sync::Arc},
 };
 
@@ -22,39 +22,10 @@ pub struct ZstdDecompressorIterator {
     finished_output: bool,
 }
 
+#[pymethods]
 impl ZstdDecompressorIterator {
-    pub fn new(
-        py: Python,
-        dctx: Arc<DCtx<'static>>,
-        reader: &PyAny,
-        read_size: usize,
-        write_size: usize,
-        skip_bytes: usize,
-    ) -> PyResult<Self> {
-        let mut source = make_in_buffer_source(py, reader, read_size)?;
+    // PyIterProtocol.
 
-        let mut skip_bytes = skip_bytes;
-        while skip_bytes > 0 {
-            let in_buffer = source
-                .input_buffer(py)?
-                .ok_or_else(|| PyValueError::new_err("skip_bytes larger than first input chunk"))?;
-
-            let read = min(skip_bytes, in_buffer.size - in_buffer.pos);
-            source.record_bytes_read(read);
-            skip_bytes -= read;
-        }
-
-        Ok(Self {
-            dctx,
-            source,
-            write_size,
-            finished_output: false,
-        })
-    }
-}
-
-#[pyproto]
-impl PyIterProtocol for ZstdDecompressorIterator {
     fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
         slf
     }
@@ -102,5 +73,36 @@ impl PyIterProtocol for ZstdDecompressorIterator {
         } else {
             Ok(None)
         }
+    }
+}
+
+impl ZstdDecompressorIterator {
+    pub fn new(
+        py: Python,
+        dctx: Arc<DCtx<'static>>,
+        reader: &PyAny,
+        read_size: usize,
+        write_size: usize,
+        skip_bytes: usize,
+    ) -> PyResult<Self> {
+        let mut source = make_in_buffer_source(py, reader, read_size)?;
+
+        let mut skip_bytes = skip_bytes;
+        while skip_bytes > 0 {
+            let in_buffer = source
+                .input_buffer(py)?
+                .ok_or_else(|| PyValueError::new_err("skip_bytes larger than first input chunk"))?;
+
+            let read = min(skip_bytes, in_buffer.size - in_buffer.pos);
+            source.record_bytes_read(read);
+            skip_bytes -= read;
+        }
+
+        Ok(Self {
+            dctx,
+            source,
+            write_size,
+            finished_output: false,
+        })
     }
 }
