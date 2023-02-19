@@ -58,6 +58,8 @@ Changes
 -------
 
 * PyO3 Rust crate upgraded from 0.15 to 0.18.
+* CI environment changed from Ubuntu 20.04 -> 22.04, Windows 2019 -> 2022,
+  macOS 11 -> macOS 12.
 
 0.20.0 (released 2023-02-20)
 ============================

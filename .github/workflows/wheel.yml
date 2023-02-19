@@ -64,7 +64,7 @@ jobs:
             arch: 'arm64'
           - py: 'cp311-*'
             arch: 'arm64'
-    runs-on: 'macos-11'
+    runs-on: 'macos-12'
     env:
       CIBW_ARCHS: ${{ matrix.arch }}
       CIBW_BUILD: ${{ matrix.py }}
@@ -124,7 +124,7 @@ jobs:
         arch:
           - 'x86'
           - 'x64'
-    runs-on: 'windows-2019'
+    runs-on: 'windows-2022'
     env:
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:

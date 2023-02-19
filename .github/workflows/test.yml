@@ -9,9 +9,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - 'ubuntu-20.04'
-          - 'macos-11'
-          - 'windows-2019'
+          - 'ubuntu-22.04'
+          - 'macos-12'
+          - 'windows-2022'
         py:
           - '3.7'
           - '3.8'
@@ -22,9 +22,9 @@ jobs:
           - 'x86'
           - 'x64'
         exclude:
-          - os: 'ubuntu-20.04'
+          - os: 'ubuntu-22.04'
             arch: 'x86'
-          - os: 'macos-11'
+          - os: 'macos-12'
             arch: 'x86'
     runs-on: ${{ matrix.os }}
     env:
