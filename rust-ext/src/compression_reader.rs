@@ -157,7 +157,9 @@ impl ZstdCompressionReader {
         Err(PyErr::from_instance(exc))
     }
 
-    fn readlines(&self, py: Python) -> PyResult<()> {
+    #[args(hint = "None")]
+    #[allow(unused_variables)]
+    fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 

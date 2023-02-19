@@ -137,7 +137,7 @@ impl ZstdDecompressionReader {
         Err(PyErr::from_instance(exc))
     }
 
-    #[args(size = "None")]
+    #[args(hint = "None")]
     #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
