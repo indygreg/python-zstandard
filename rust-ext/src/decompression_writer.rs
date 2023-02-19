@@ -158,7 +158,7 @@ impl ZstdDecompressionWriter {
         false
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -167,7 +167,7 @@ impl ZstdDecompressionWriter {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(hint = "None")]
+    #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -176,7 +176,7 @@ impl ZstdDecompressionWriter {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(pos, whence = "None")]
+    #[pyo3(signature = (offset, whence=None))]
     #[allow(unused_variables)]
     fn seek(&self, py: Python, offset: isize, whence: Option<i32>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -196,7 +196,7 @@ impl ZstdDecompressionWriter {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn truncate(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -209,6 +209,7 @@ impl ZstdDecompressionWriter {
         true
     }
 
+    #[pyo3(signature = (lines))]
     #[allow(unused_variables)]
     fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
@@ -217,7 +218,7 @@ impl ZstdDecompressionWriter {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn read(&self, py: Python, size: Option<usize>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -241,7 +242,7 @@ impl ZstdDecompressionWriter {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn read1(&self, py: Python, size: Option<usize>) -> PyResult<()> {
         let io = py.import("io")?;

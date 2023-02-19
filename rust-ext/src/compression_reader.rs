@@ -174,7 +174,7 @@ impl ZstdCompressionReader {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(hint = "None")]
+    #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -242,7 +242,7 @@ impl ZstdCompressionReader {
         empty.call_method1("join", (chunks,))
     }
 
-    #[args(size = "-1")]
+    #[pyo3(signature = (size=-1))]
     fn read<'p>(&mut self, py: Python<'p>, size: isize) -> PyResult<&'p PyAny> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
@@ -303,7 +303,7 @@ impl ZstdCompressionReader {
         Ok(PyBytes::new(py, &dest_buffer))
     }
 
-    #[args(size = "-1")]
+    #[pyo3(signature = (size=-1))]
     fn read1<'p>(&mut self, py: Python<'p>, size: isize) -> PyResult<&'p PyAny> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));

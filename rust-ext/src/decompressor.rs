@@ -61,7 +61,7 @@ impl ZstdDecompressor {
 #[pymethods]
 impl ZstdDecompressor {
     #[new]
-    #[args(dict_data = "None", max_window_size = "0", format = "0")]
+    #[pyo3(signature = (dict_data=None, max_window_size=0, format=0))]
     fn new(
         dict_data: Option<Py<ZstdCompressionDict>>,
         max_window_size: usize,
@@ -85,7 +85,7 @@ impl ZstdDecompressor {
         })
     }
 
-    #[args(ifh, ofh, read_size = "None", write_size = "None")]
+    #[pyo3(signature = (ifh, ofh, read_size=None, write_size=None))]
     fn copy_stream(
         &self,
         py: Python,
@@ -159,12 +159,7 @@ impl ZstdDecompressor {
         Ok((total_read, total_write))
     }
 
-    #[args(
-        buffer,
-        max_output_size = "0",
-        read_across_frames = "false",
-        allow_extra_data = "true"
-    )]
+    #[pyo3(signature = (buffer, max_output_size=0, read_across_frames=false, allow_extra_data=true))]
     fn decompress<'p>(
         &mut self,
         py: Python<'p>,
@@ -376,7 +371,7 @@ impl ZstdDecompressor {
         Ok(PyBytes::new(py, &last_buffer))
     }
 
-    #[args(write_size = "None")]
+    #[pyo3(signature = (write_size=None))]
     fn decompressobj(
         &self,
         py: Python,
@@ -399,7 +394,7 @@ impl ZstdDecompressor {
         self.dctx.memory_size()
     }
 
-    #[args(frames, decompressed_sizes = "None", threads = "0")]
+    #[pyo3(signature = (frames, decompressed_sizes=None, threads=0))]
     #[allow(unused_variables)]
     fn multi_decompress_to_buffer(
         &self,
@@ -419,7 +414,7 @@ impl ZstdDecompressor {
         )
     }
 
-    #[args(reader, read_size = "None", write_size = "None", skip_bytes = "None")]
+    #[pyo3(signature = (reader, read_size=None, write_size=None, skip_bytes=None))]
     fn read_to_iter(
         &self,
         py: Python,
@@ -456,12 +451,7 @@ impl ZstdDecompressor {
         )
     }
 
-    #[args(
-        source,
-        read_size = "None",
-        read_across_frames = "false",
-        closefd = "true"
-    )]
+    #[pyo3(signature = (source, read_size=None, read_across_frames=false, closefd=true))]
     fn stream_reader(
         &self,
         py: Python,
@@ -484,12 +474,7 @@ impl ZstdDecompressor {
         )
     }
 
-    #[args(
-        writer,
-        write_size = "None",
-        write_return_read = "true",
-        closefd = "true"
-    )]
+    #[pyo3(signature = (writer, write_size=None, write_return_read=true, closefd=true))]
     fn stream_writer(
         &self,
         py: Python,

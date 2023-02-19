@@ -145,7 +145,7 @@ impl ZstdDecompressionReader {
         false
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -154,7 +154,7 @@ impl ZstdDecompressionReader {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(hint = "None")]
+    #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -163,6 +163,7 @@ impl ZstdDecompressionReader {
         Err(PyErr::from_value(exc))
     }
 
+    #[pyo3(signature = (data))]
     #[allow(unused_variables)]
     fn write(&self, py: Python, data: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
@@ -171,6 +172,7 @@ impl ZstdDecompressionReader {
         Err(PyErr::from_value(exc))
     }
 
+    #[pyo3(signature = (lines))]
     #[allow(unused_variables)]
     fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
         let io = py.import("io")?;
@@ -229,7 +231,7 @@ impl ZstdDecompressionReader {
         empty.call_method1("join", (chunks,))
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     fn read<'p>(&mut self, py: Python<'p>, size: Option<isize>) -> PyResult<&'p PyAny> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
@@ -330,7 +332,7 @@ impl ZstdDecompressionReader {
         Ok(out_buffer.pos)
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     fn read1<'p>(&mut self, py: Python<'p>, size: Option<isize>) -> PyResult<&'p PyAny> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
@@ -415,7 +417,7 @@ impl ZstdDecompressionReader {
         Ok(out_buffer.pos)
     }
 
-    #[args(pos, whence = "None")]
+    #[pyo3(signature = (pos, whence=None))]
     fn seek(&mut self, py: Python, pos: isize, whence: Option<i32>) -> PyResult<usize> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));

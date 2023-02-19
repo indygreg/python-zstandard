@@ -384,7 +384,7 @@ impl ZstdCompressionParameters {
 #[pymethods]
 impl ZstdCompressionParameters {
     #[classmethod]
-    #[args(args = "*", kwargs = "**")]
+    #[pyo3(signature = (*args, **kwargs))]
     fn from_level(
         _cls: &PyType,
         py: Python,
@@ -449,7 +449,7 @@ impl ZstdCompressionParameters {
     }
 
     #[new]
-    #[args(_args = "*", kwargs = "**")]
+    #[pyo3(signature = (*_args, **kwargs))]
     fn new(py: Python, _args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<Self> {
         let params = unsafe { zstd_sys::ZSTD_createCCtxParams() };
         if params.is_null() {

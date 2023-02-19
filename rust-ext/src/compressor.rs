@@ -47,15 +47,15 @@ impl ZstdCompressor {
 #[pymethods]
 impl ZstdCompressor {
     #[new]
-    #[args(
-        level = "3",
-        dict_data = "None",
-        compression_params = "None",
-        write_checksum = "None",
-        write_content_size = "None",
-        write_dict_id = "None",
-        threads = "0"
-    )]
+    #[pyo3(signature = (
+        level=3,
+        dict_data=None,
+        compression_params=None,
+        write_checksum=None,
+        write_content_size=None,
+        write_dict_id=None,
+        threads=0,
+    ))]
     fn new(
         py: Python,
         level: i32,
@@ -174,7 +174,7 @@ impl ZstdCompressor {
         Ok(PyBytes::new(py, &data))
     }
 
-    #[args(size = "None", chunk_size = "None")]
+    #[pyo3(signature = (size=None, chunk_size=None))]
     fn chunker(
         &self,
         size: Option<u64>,
@@ -195,7 +195,7 @@ impl ZstdCompressor {
         ZstdCompressionChunker::new(self.cctx.clone(), chunk_size)
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     fn compressobj(&self, size: Option<u64>) -> PyResult<ZstdCompressionObj> {
         self.cctx.reset();
 
@@ -215,7 +215,7 @@ impl ZstdCompressor {
         ZstdCompressionObj::new(self.cctx.clone())
     }
 
-    #[args(ifh, ofh, size = "None", read_size = "None", write_size = "None")]
+    #[pyo3(signature = (ifh, ofh, size=None, read_size=None, write_size=None))]
     fn copy_stream(
         &self,
         py: Python,
@@ -332,7 +332,7 @@ impl ZstdCompressor {
         Ok((total_read, total_write))
     }
 
-    #[args(data, threads = "0")]
+    #[pyo3(signature = (data, threads=0))]
     fn multi_compress_to_buffer(
         &self,
         py: Python,
@@ -342,7 +342,7 @@ impl ZstdCompressor {
         multi_compress_to_buffer(py, &self.params, &self.dict, data, threads)
     }
 
-    #[args(reader, size = "None", read_size = "None", write_size = "None")]
+    #[pyo3(signature = (reader, size=None, read_size=None, write_size=None))]
     fn read_to_iter(
         &self,
         py: Python,
@@ -360,7 +360,7 @@ impl ZstdCompressor {
         ZstdCompressorIterator::new(py, self.cctx.clone(), reader, size, read_size, write_size)
     }
 
-    #[args(source, size = "None", read_size = "None", closefd = "true")]
+    #[pyo3(signature = (source, size=None, read_size=None, closefd=true))]
     fn stream_reader(
         &self,
         py: Python,
@@ -377,13 +377,7 @@ impl ZstdCompressor {
         ZstdCompressionReader::new(py, self.cctx.clone(), source, size, read_size, closefd)
     }
 
-    #[args(
-        writer,
-        size = "None",
-        write_size = "None",
-        write_return_read = "true",
-        closefd = "true"
-    )]
+    #[pyo3(signature = (writer, size=None, write_size=None, write_return_read=true, closefd=true))]
     fn stream_writer(
         &self,
         py: Python,

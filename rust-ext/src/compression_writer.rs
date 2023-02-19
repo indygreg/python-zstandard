@@ -153,7 +153,7 @@ impl ZstdCompressionWriter {
         false
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -162,7 +162,7 @@ impl ZstdCompressionWriter {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(hint = "None")]
+    #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -171,7 +171,7 @@ impl ZstdCompressionWriter {
         Err(PyErr::from_value(exc))
     }
 
-    #[args(pos, whence = "None")]
+    #[pyo3(signature = (pos, whence=None))]
     #[allow(unused_variables)]
     fn seek(&self, py: Python, pos: isize, whence: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -201,7 +201,7 @@ impl ZstdCompressionWriter {
         Err(PyNotImplementedError::new_err(()))
     }
 
-    #[args(size = "None")]
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn read(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
         let io = py.import("io")?;
@@ -265,7 +265,7 @@ impl ZstdCompressionWriter {
         }
     }
 
-    #[args(flush_mode = "FLUSH_BLOCK")]
+    #[pyo3(signature = (flush_mode=FLUSH_BLOCK))]
     fn flush(&mut self, py: Python, flush_mode: usize) -> PyResult<usize> {
         let flush = match flush_mode {
             FLUSH_BLOCK => Ok(zstd_sys::ZSTD_EndDirective::ZSTD_e_flush),

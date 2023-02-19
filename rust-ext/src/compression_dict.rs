@@ -83,7 +83,7 @@ impl ZstdCompressionDict {
 #[pymethods]
 impl ZstdCompressionDict {
     #[new]
-    #[args(data, dict_type = "None")]
+    #[pyo3(signature = (buffer, dict_type = None))]
     fn new(py: Python, buffer: PyBuffer<u8>, dict_type: Option<u32>) -> PyResult<Self> {
         let dict_type = if dict_type == Some(zstd_sys::ZSTD_dictContentType_e::ZSTD_dct_auto as u32)
         {
@@ -127,7 +127,7 @@ impl ZstdCompressionDict {
             .unwrap_or(0)
     }
 
-    #[args(level = "None", compression_params = "None")]
+    #[pyo3(signature = (level=None, compression_params=None))]
     fn precompute_compress(
         &mut self,
         py: Python,
@@ -186,20 +186,21 @@ impl ZstdCompressionDict {
     }
 }
 
-#[pyfunction(
+#[pyfunction]
+#[pyo3(signature = (
     dict_size,
     samples,
-    k = "0",
-    d = "0",
-    f = "0",
-    split_point = "0.0",
-    accel = "0",
-    notifications = "0",
-    dict_id = "0",
-    level = "0",
-    steps = "0",
-    threads = "0"
-)]
+    k=0,
+    d=0,
+    f=0,
+    split_point=0.0,
+    accel=0,
+    notifications=0,
+    dict_id=0,
+    level=0,
+    steps=0,
+    threads=0,
+))]
 fn train_dictionary(
     dict_size: usize,
     samples: &PyList,
