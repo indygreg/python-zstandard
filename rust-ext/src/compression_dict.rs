@@ -122,7 +122,9 @@ impl ZstdCompressionDict {
     }
 
     fn dict_id(&self) -> u32 {
-        zstd_safe::get_dict_id(&self.data).unwrap_or(0)
+        zstd_safe::get_dict_id(&self.data)
+            .map(u32::from)
+            .unwrap_or(0)
     }
 
     #[args(level = "None", compression_params = "None")]

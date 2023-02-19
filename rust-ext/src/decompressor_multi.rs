@@ -190,13 +190,17 @@ fn decompress_from_datasources(
                 };
 
                 let decompressed_size = if source.decompressed_size == 0 {
-                    let frame_size = zstd_safe::get_frame_content_size(source.data);
-
-                    if frame_size == zstd_safe::CONTENTSIZE_ERROR
-                        || frame_size == zstd_safe::CONTENTSIZE_UNKNOWN
-                    {
-                        result.error = WorkerError::NoSize;
-                    }
+                    let frame_size = match zstd_safe::get_frame_content_size(source.data) {
+                        Err(zstd_safe::ContentSizeError) => {
+                            result.error = WorkerError::NoSize;
+                            zstd_safe::CONTENTSIZE_ERROR
+                        }
+                        Ok(None) => {
+                            result.error = WorkerError::NoSize;
+                            zstd_safe::CONTENTSIZE_UNKNOWN
+                        }
+                        Ok(Some(frame_size)) => frame_size,
+                    };
 
                     frame_size as _
                 } else {
