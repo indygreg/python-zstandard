@@ -82,6 +82,11 @@ Other Actions Not Blocking Release
 0.20.0 (not yet released)
 =========================
 
+Changes
+-------
+
+* Bundled zstd library upgraded from 1.5.2 to 1.5.4.
+
 0.19.0 (released 2022-10-29)
 ============================
 

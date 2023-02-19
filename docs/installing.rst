@@ -122,7 +122,7 @@ be specified via the ``ZSTD_EXTRA_COMPILER_ARGS`` environment variable. e.g.
 ``python-zstandard`` can be sensitive about what version of ``libzstd`` it links
 against. For best results, point this package at the exact same version of
 ``libzstd`` that it bundles. See the bundled ``zstd/zstd.h`` or
-``zstd/zstdlib.c`` for which version that is.
+``zstd/zstd.c`` for which version that is.
 
 When linking against an external ``libzstd``, not all package features may be
 available. Notably, the ``multi_compress_to_buffer()`` and

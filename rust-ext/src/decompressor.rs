@@ -264,6 +264,8 @@ impl ZstdDecompressor {
             headerSize: 0,
             dictID: 0,
             checksumFlag: 0,
+            _reserved1: 0,
+            _reserved2: 0,
         };
         let zresult = unsafe {
             zstd_sys::ZSTD_getFrameHeader(

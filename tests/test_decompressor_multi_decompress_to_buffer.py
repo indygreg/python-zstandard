@@ -216,16 +216,12 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
 
         with self.assertRaisesRegex(
             zstd.ZstdError,
-            "error decompressing item 1: ("
-            "Corrupted block|"
-            "Destination buffer is too small)",
+            "error decompressing item 1: (Data corruption detected|Destination buffer is too small)",
         ):
             dctx.multi_decompress_to_buffer(frames)
 
         with self.assertRaisesRegex(
             zstd.ZstdError,
-            "error decompressing item 1: ("
-            "Corrupted block|"
-            "Destination buffer is too small)",
+            "error decompressing item 1: (Data corruption detected|Destination buffer is too small)",
         ):
             dctx.multi_decompress_to_buffer(frames, threads=2)

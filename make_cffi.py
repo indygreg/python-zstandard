@@ -18,7 +18,7 @@ import tempfile
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 SOURCES = [
-    "zstd/zstdlib.c",
+    "zstd/zstd.c",
 ]
 
 # Headers whose preprocessed output will be fed into cdef().
@@ -101,9 +101,15 @@ def preprocess(path):
                 l = b"#define INT_MAX 2147483647\n"
 
             # ZSTDLIB_API may not be defined if we dropped zstd.h. It isn't
-            # important so just filter it out.
-            if l.startswith(b"ZSTDLIB_API"):
-                l = l[len(b"ZSTDLIB_API ") :]
+            # important so just filter it out. Ditto for ZSTDLIB_STATIC_API and
+            # ZDICTLIB_STATIC_API.
+            for prefix in (
+                b"ZSTDLIB_API",
+                b"ZSTDLIB_STATIC_API",
+                b"ZDICTLIB_STATIC_API",
+            ):
+                if l.startswith(prefix):
+                    l = l[len(prefix) :]
 
             lines.append(l)
 

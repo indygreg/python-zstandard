@@ -80,6 +80,8 @@ fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FramePa
         headerSize: 0,
         dictID: 0,
         checksumFlag: 0,
+        _reserved1: 0,
+        _reserved2: 0,
     };
     let zresult = unsafe {
         zstd_sys::ZSTD_getFrameHeader(&mut header, raw_data.as_ptr() as *const _, raw_data.len())

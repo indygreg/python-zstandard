@@ -80,9 +80,9 @@ def get_c_extension(
         extra_args.append("-DZSTD_MULTITHREAD")
     else:
         extra_args.append("-DZSTD_SINGLE_FILE")
-        extra_args.append("-DZSTDLIB_VISIBILITY=")
-        extra_args.append("-DZDICTLIB_VISIBILITY=")
-        extra_args.append("-DZSTDERRORLIB_VISIBILITY=")
+        extra_args.append("-DZSTDLIB_VISIBLE=")
+        extra_args.append("-DZDICTLIB_VISIBLE=")
+        extra_args.append("-DZSTDERRORLIB_VISIBLE=")
 
         if compiler_type == "unix":
             extra_args.append("-fvisibility=hidden")

@@ -18,7 +18,7 @@
 #define ZDICT_STATIC_LINKING_ONLY
 
 #ifdef ZSTD_SINGLE_FILE
-#include <zstdlib.c>
+#include <zstd.c>
 
 /* We use private APIs from pool.h. We can't rely on availability
    of this header or symbols when linking against the system libzstd.
