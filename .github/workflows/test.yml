@@ -45,11 +45,9 @@ jobs:
 
       - name: Install Rust
         if: matrix.arch == 'x64'
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-          default: true
-          profile: minimal
 
       - uses: actions/checkout@v3
 
