@@ -87,7 +87,7 @@ Python Buffer Protocol
 ======================
 
 Many functions in the library operate on objects that implement Python's
-`buffer protocol <https://docs.python.org/3.6/c-api/buffer.html>`_.
+`buffer protocol <https://docs.python.org/3.11/c-api/buffer.html>`_.
 
 The *buffer protocol* is an internal implementation detail of a Python
 type that allows instances of that type (objects) to be exposed as a raw

@@ -13,7 +13,6 @@ jobs:
           - 'macos-11'
           - 'windows-2019'
         py:
-          - '3.6'
           - '3.7'
           - '3.8'
           - '3.9'
@@ -57,11 +56,7 @@ jobs:
       - name: Install Dependencies
         shell: bash
         run: |
-          if [ "${{matrix.py}}" = "3.6" ]; then
-            python -m pip install --require-hashes -r ci/requirements.py36.txt
-          else
-            python -m pip install --require-hashes -r ci/requirements.txt
-          fi
+          python -m pip install --require-hashes -r ci/requirements.txt
 
       - name: Build (Rust)
         if: matrix.arch == 'x64'

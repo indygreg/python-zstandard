@@ -48,6 +48,12 @@ Other Actions Not Blocking Release
 0.21.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* Support for Python 3.6 has been dropped. Python 3.7 is the minimum supported
+  Python version.
+
 0.20.0 (released 2023-02-20)
 ============================
 
