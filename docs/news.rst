@@ -82,6 +82,12 @@ Other Actions Not Blocking Release
 0.20.0 (not yet released)
 =========================
 
+Backwards Compatibility Notes
+-----------------------------
+
+* This will likely be the last release officially supporting Python 3.6.
+  Python 3.6 is end of life as of 2021-12-23.
+
 Changes
 -------
 
