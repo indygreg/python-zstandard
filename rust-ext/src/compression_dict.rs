@@ -254,7 +254,7 @@ fn train_dictionary(
     // validated to be PyBytes.
     for sample in samples.iter() {
         let bytes = sample
-            .cast_as::<PyBytes>()
+            .downcast::<PyBytes>()
             .or_else(|_| Err(PyValueError::new_err("samples must be bytes")))?;
 
         samples_len += bytes.as_bytes().len();
