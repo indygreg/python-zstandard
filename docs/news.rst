@@ -30,46 +30,12 @@ Actions Blocking Release
 * Detect memory leaks via bench.py.
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``ZstdCompressionParameters``.
-* Expose ``ZSTD_getFrameProgression()`` from more compressor types.
-* Support modifying compression parameters mid operation when supported by
-  zstd API.
-* Expose ``ZSTD_CLEVEL_DEFAULT`` constant.
-* Expose ``ZSTD_SRCSIZEHINT_{MIN,MAX}`` constants.
-* Support ``ZSTD_p_forceAttachDict`` compression parameter.
-* Support ``ZSTD_dictForceLoad`` dictionary compression parameter.
-* Support ``ZSTD_c_targetCBlockSize`` compression parameter.
-* Support ``ZSTD_c_literalCompressionMode`` compression parameter.
-* Support ``ZSTD_c_srcSizeHint`` compression parameter.
-* Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
-  compression parameters.
-* Consider exposing ``ZSTDMT_toFlushNow()``.
-* Expose ``ZSTD_Sequence`` struct and related ``ZSTD_getSequences()`` API.
-* Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
 * Consider a ``chunker()`` API for decompression.
 * Consider stats for ``chunker()`` API, including finding the last consumed
   offset of input data.
-* Consider exposing ``ZSTD_cParam_getBounds()`` and
-  ``ZSTD_dParam_getBounds()`` APIs.
 * Consider controls over resetting compression contexts (session only, parameters,
   or session and parameters).
-* Consider exposing ``ZSTD_d_stableOutBuffer``.
-* Support ``ZSTD_c_enableDedicatedDictSearch``.
-* Support ``ZSTD_c_stableInBuffer``.
-* Support ``ZSTD_c_stableOutBuffer``.
-* Support ``ZSTD_c_blockDelimiters``.
-* Support ``ZSTD_c_validateSequences``.
-* Support ``ZSTD_c_useBlockSplitter``.
-* Support ``ZSTD_c_useRowMatchFinder``.
-* Support ``ZSTD_d_forceIgnoreChecksum``.
-* Support ``ZSTD_d_refMultipleDDicts``.
-* Support ``ZSTD_generateSequences()``.
-* Support ``ZSTD_mergeBlockDelimiters()``.
-* Support ``ZSTD_compressSequences()``.
-* Support ``ZSTD_threadPool`` APIs for managing a thread pool.
-* Support ``ZSTD_refMultipleDDicts_e``.
-* Support ``ZSTD_writeSkippableFrame()``.
 * Utilize ``ZSTD_getDictID_fromCDict()``?
-* Utilize ``ZSTD_DCtx_getParameter()``.
 * Stop relying on private libzstd headers and symbols (namely ``pool.h``).
 
 Other Actions Not Blocking Release

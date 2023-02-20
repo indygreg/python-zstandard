@@ -18,3 +18,4 @@ python-zstandard
    buffer
    contributing
    news
+   missing_features
