@@ -57,6 +57,7 @@ Backwards Compatibility Notes
 Changes
 -------
 
+* Bundled zstd library upgraded from 1.5.4 to 1.5.5.
 * PyO3 Rust crate upgraded from 0.15 to 0.18.
 * CI environment changed from Ubuntu 20.04 -> 22.04, Windows 2019 -> 2022,
   macOS 11 -> macOS 12.
