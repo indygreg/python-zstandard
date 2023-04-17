@@ -1,8 +1,8 @@
-python-zstandard (0.21.0~dev0-1) unstable; urgency=low
+python-zstandard (0.21.0) unstable; urgency=low
 
   * New version.
 
- -- Gregory Szorc <gregory.szorc@gmail.com>  Mon, 20 Feb 2023 13:00:00 -0700
+ -- Gregory Szorc <gregory.szorc@gmail.com>  Mon, 16 Apr 2023 18:00:00 -0700
 
 python-zstandard (0.20.0) unstable; urgency=low
 
