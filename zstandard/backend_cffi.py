@@ -424,7 +424,6 @@ class ZstdCompressionParameters(object):
         ldm_hash_rate_log=-1,
         threads=0,
     ):
-
         params = lib.ZSTD_createCCtxParams()
         if params == ffi.NULL:
             raise MemoryError()
