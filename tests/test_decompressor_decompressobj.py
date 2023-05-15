@@ -109,3 +109,15 @@ class TestDecompressor_decompressobj(unittest.TestCase):
         for i in range(128):
             dobj = dctx.decompressobj(write_size=i + 1)
             self.assertEqual(dobj.decompress(data), source)
+
+    def test_multiple_frames(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b"foo")
+        bar = cctx.compress(b"bar")
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj()
+
+        self.assertEqual(dobj.decompress(foo + bar), b"foo")
+        self.assertEqual(dobj.unused_data, bar)
+        self.assertEqual(dobj.unconsumed_tail, b"")
