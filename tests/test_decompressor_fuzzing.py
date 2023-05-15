@@ -517,6 +517,54 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @hypothesis.given(
+        chunks=strategies.lists(
+            strategies.sampled_from(random_input_data()),
+            min_size=2,
+            max_size=10,
+        ),
+        level=strategies.integers(min_value=1, max_value=5),
+        write_size=strategies.integers(
+            min_value=1,
+            max_value=4 * zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        ),
+        read_sizes=strategies.data(),
+    )
+    def test_multiple_frames(self, chunks, level, write_size, read_sizes):
+        cctx = zstd.ZstdCompressor(level=level)
+
+        source = io.BytesIO()
+        source_chunks = []
+        compressed = io.BytesIO()
+
+        for chunk in chunks:
+            source.write(chunk)
+            source_chunks.append(chunk)
+            compressed.write(cctx.compress(chunk))
+
+        compressed.seek(0)
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj(write_size=write_size)
+
+        decompressed = io.BytesIO()
+
+        while True:
+            read_size = read_sizes.draw(strategies.integers(1, 4096))
+            chunk = compressed.read(read_size)
+            if not chunk:
+                break
+
+            try:
+                decompressed.write(dobj.decompress(chunk))
+            except zstd.ZstdError as e:
+                if e.args[0] == "cannot use a decompressobj multiple times":
+                    break
+                else:
+                    raise
+
+        self.assertEqual(decompressed.getvalue(), source_chunks[0])
+
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 class TestDecompressor_read_to_iter_fuzzing(unittest.TestCase):
