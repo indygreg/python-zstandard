@@ -18,15 +18,21 @@ use {
 pub struct ZstdDecompressionObj {
     dctx: Arc<DCtx<'static>>,
     write_size: usize,
+    read_across_frames: bool,
     finished: bool,
     unused_data: Vec<u8>,
 }
 
 impl ZstdDecompressionObj {
-    pub fn new(dctx: Arc<DCtx<'static>>, write_size: usize) -> PyResult<Self> {
+    pub fn new(
+        dctx: Arc<DCtx<'static>>,
+        write_size: usize,
+        read_across_frames: bool,
+    ) -> PyResult<Self> {
         Ok(ZstdDecompressionObj {
             dctx,
             write_size,
+            read_across_frames,
             finished: false,
             unused_data: vec![],
         })
@@ -68,7 +74,7 @@ impl ZstdDecompressionObj {
                 chunks.append(chunk)?;
             }
 
-            if zresult == 0 {
+            if zresult == 0 && !self.read_across_frames {
                 self.finished = true;
                 // TODO clear out decompressor?
 
@@ -78,6 +84,12 @@ impl ZstdDecompressionObj {
                 }
 
                 break;
+            } else if zresult == 0 && self.read_across_frames {
+                if in_buffer.pos == in_buffer.size {
+                    break;
+                } else {
+                    dest_buffer.clear();
+                }
             } else if in_buffer.pos == in_buffer.size && dest_buffer.len() < dest_buffer.capacity()
             {
                 break;

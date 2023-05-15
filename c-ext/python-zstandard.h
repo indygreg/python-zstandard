@@ -220,6 +220,7 @@ typedef struct {
 
         ZstdDecompressor *decompressor;
     size_t outSize;
+    int readAcrossFrames;
     int finished;
     PyObject *unused_data;
 } ZstdDecompressionObj;

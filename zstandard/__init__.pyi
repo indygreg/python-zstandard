@@ -403,7 +403,9 @@ class ZstdDecompressor(object):
         *,
         closefd=False,
     ) -> ZstdDecompressionReader: ...
-    def decompressobj(self, write_size: int = ...) -> ZstdDecompressionObj: ...
+    def decompressobj(
+        self, write_size: int = ..., read_across_frames: bool = False
+    ) -> ZstdDecompressionObj: ...
     def read_to_iter(
         self,
         reader: Union[IO[bytes], ByteString],

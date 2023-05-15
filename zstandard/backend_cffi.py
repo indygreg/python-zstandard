@@ -2918,8 +2918,9 @@ class ZstdDecompressionObj(object):
     subsequent calls needs to be concatenated to reassemble the full
     decompressed byte sequence.
 
-    Each instance is single use: once an input frame is decoded,
-    ``decompress()`` can no longer be called.
+    If ``read_across_frames=False``, each instance is single use: once an
+    input frame is decoded, ``decompress()`` will raise an exception. If
+    ``read_across_frames=True``, instances can decode multiple frames.
 
     >>> dctx = zstandard.ZstdDecompressor()
     >>> dobj = dctx.decompressobj()
@@ -2941,10 +2942,11 @@ class ZstdDecompressionObj(object):
        efficient as other APIs.
     """
 
-    def __init__(self, decompressor, write_size):
+    def __init__(self, decompressor, write_size, read_across_frames):
         self._decompressor = decompressor
         self._write_size = write_size
         self._finished = False
+        self._read_across_frames = read_across_frames
         self._unused_input = b""
 
     def decompress(self, data):
@@ -2991,13 +2993,22 @@ class ZstdDecompressionObj(object):
                 chunks.append(ffi.buffer(out_buffer.dst, out_buffer.pos)[:])
 
             # 0 is only seen when a frame is fully decoded *and* fully flushed.
-            # But there may be extra input data: make that available to
-            # `unused_input`.
-            if zresult == 0:
+            # Behavior depends on whether we're in single or multiple frame
+            # mode.
+            if zresult == 0 and not self._read_across_frames:
+                # Mark the instance as done and make any unconsumed input available
+                # for retrieval.
                 self._finished = True
                 self._decompressor = None
                 self._unused_input = data[in_buffer.pos : in_buffer.size]
                 break
+            elif zresult == 0 and self._read_across_frames:
+                # We're at the end of a fully flushed frame and we can read more.
+                # Try to read more if there's any more input.
+                if in_buffer.pos == in_buffer.size:
+                    break
+                else:
+                    out_buffer.pos = 0
 
             # We're not at the end of the frame *or* we're not fully flushed.
 
@@ -3899,13 +3910,21 @@ class ZstdDecompressor(object):
             self, source, read_size, read_across_frames, closefd=closefd
         )
 
-    def decompressobj(self, write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+    def decompressobj(
+        self,
+        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        read_across_frames=False,
+    ):
         """Obtain a standard library compatible incremental decompressor.
 
         See :py:class:`ZstdDecompressionObj` for more documentation
         and usage examples.
 
-        :param write_size:
+        :param write_size: size of internal output buffer to collect decompressed
+          chunks in.
+        :param read_across_frames: whether to read across multiple zstd frames.
+          If False, reading stops after 1 frame and subsequent decompress
+          attempts will raise an exception.
         :return:
            :py:class:`zstandard.ZstdDecompressionObj`
         """
@@ -3913,7 +3932,9 @@ class ZstdDecompressor(object):
             raise ValueError("write_size must be positive")
 
         self._ensure_dctx()
-        return ZstdDecompressionObj(self, write_size=write_size)
+        return ZstdDecompressionObj(
+            self, write_size=write_size, read_across_frames=read_across_frames
+        )
 
     def read_to_iter(
         self,

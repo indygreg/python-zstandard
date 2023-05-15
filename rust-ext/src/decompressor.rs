@@ -371,11 +371,12 @@ impl ZstdDecompressor {
         Ok(PyBytes::new(py, &last_buffer))
     }
 
-    #[pyo3(signature = (write_size=None))]
+    #[pyo3(signature = (write_size=None, read_across_frames=false))]
     fn decompressobj(
         &self,
         py: Python,
         write_size: Option<usize>,
+        read_across_frames: bool,
     ) -> PyResult<ZstdDecompressionObj> {
         if let Some(write_size) = write_size {
             if write_size < 1 {
@@ -387,7 +388,7 @@ impl ZstdDecompressor {
 
         self.setup_dctx(py, true)?;
 
-        ZstdDecompressionObj::new(self.dctx.clone(), write_size)
+        ZstdDecompressionObj::new(self.dctx.clone(), write_size, read_across_frames)
     }
 
     fn memory_size(&self) -> usize {

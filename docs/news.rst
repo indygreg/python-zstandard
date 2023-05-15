@@ -48,7 +48,21 @@ Other Actions Not Blocking Release
 0.22.0 (not yet released)
 =========================
 
-None yet.
+Backwards Compatibility Notes
+-----------------------------
+
+* ``ZstdDecompressor.decompressobj()`` will change ``read_across_frames`` to
+  default to ``True`` in a future release. If you depend on the current
+  functionality of stopping at frame boundaries, start explicitly passing
+  ``read_across_frames=False`` to preserve the current behavior.
+
+Changes
+-------
+
+* ``ZstdDecompressor.decompressobj()`` now accepts a ``read_across_frames``
+  boolean named argument to control whether to transparently read across
+  multiple zstd frames. It defaults to ``False`` to preserve existing
+  behavior.
 
 0.21.0 (released 2023-04-16)
 ============================

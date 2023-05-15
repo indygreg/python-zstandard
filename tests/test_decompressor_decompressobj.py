@@ -110,7 +110,7 @@ class TestDecompressor_decompressobj(unittest.TestCase):
             dobj = dctx.decompressobj(write_size=i + 1)
             self.assertEqual(dobj.decompress(data), source)
 
-    def test_multiple_frames(self):
+    def test_multiple_frames_default(self):
         cctx = zstd.ZstdCompressor()
         foo = cctx.compress(b"foo")
         bar = cctx.compress(b"bar")
@@ -120,4 +120,28 @@ class TestDecompressor_decompressobj(unittest.TestCase):
 
         self.assertEqual(dobj.decompress(foo + bar), b"foo")
         self.assertEqual(dobj.unused_data, bar)
+        self.assertEqual(dobj.unconsumed_tail, b"")
+
+    def test_read_across_frames_false(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b"foo")
+        bar = cctx.compress(b"bar")
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj(read_across_frames=False)
+
+        self.assertEqual(dobj.decompress(foo + bar), b"foo")
+        self.assertEqual(dobj.unused_data, bar)
+        self.assertEqual(dobj.unconsumed_tail, b"")
+
+    def test_read_across_frames_true(self):
+        cctx = zstd.ZstdCompressor()
+        foo = cctx.compress(b"foo")
+        bar = cctx.compress(b"bar")
+
+        dctx = zstd.ZstdDecompressor()
+        dobj = dctx.decompressobj(read_across_frames=True)
+
+        self.assertEqual(dobj.decompress(foo + bar), b"foobar")
+        self.assertEqual(dobj.unused_data, b"")
         self.assertEqual(dobj.unconsumed_tail, b"")
