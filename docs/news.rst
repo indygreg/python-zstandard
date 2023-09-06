@@ -57,6 +57,8 @@ Changes
 * We now use GitHub's native ARM Linux runners to build wheels and run tests.
   Previously Linux ARM wheels were built inside a QEMU virtualized environment
   and we didn't run tests on this platform.
+* We now use `Py_REFCNT(obj)` instead of accessing `(*obj)->ob_refcnt` directly.
+  This fixes a nogil / multi-threaded compile error. (#201)
 
 Backwards Compatibility Notes
 -----------------------------
