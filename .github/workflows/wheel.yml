@@ -65,7 +65,7 @@ jobs:
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'
         if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
@@ -121,7 +121,7 @@ jobs:
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
