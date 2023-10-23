@@ -7,12 +7,17 @@
 
 from __future__ import print_function
 
-from distutils.version import LooseVersion
 import platform
 import os
 import sys
 from setuptools import setup
 
+# Python 3.12 dropped distutils from the stdlib. Try to access it via
+# setuptools.
+try:
+    from setuptools._distutils.version import LooseVersion
+except ImportError:
+    from distutils.version import LooseVersion
 
 if sys.version_info[0:2] < (3, 8):
     print("Python 3.8+ is required", file=sys.stderr)
