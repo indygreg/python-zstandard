@@ -68,6 +68,7 @@ Changes
   multiple zstd frames. It defaults to ``False`` to preserve existing
   behavior.
 * Added CI coverage for PyPy 3.10.
+* Added CI coverage for newer Anaconda Python versions.
 
 0.21.0 (released 2023-04-16)
 ============================
