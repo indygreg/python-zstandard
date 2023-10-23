@@ -80,6 +80,8 @@ Changes
   behavior.
 * Added CI coverage for PyPy 3.10.
 * Added CI coverage for newer Anaconda Python versions.
+* Packages used in CI have been upgraded to latest versions. This should
+  nominally only impact developers of this project and not end-users.
 
 0.21.0 (released 2023-04-16)
 ============================
