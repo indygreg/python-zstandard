@@ -55,6 +55,8 @@ Backwards Compatibility Notes
   default to ``True`` in a future release. If you depend on the current
   functionality of stopping at frame boundaries, start explicitly passing
   ``read_across_frames=False`` to preserve the current behavior.
+* ``manylinux2010`` wheels are no longer published since this wheel format
+  is no longer supported by the pypa/manylinux project.
 
 Changes
 -------
