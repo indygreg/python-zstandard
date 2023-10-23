@@ -16,6 +16,7 @@ jobs:
           - 'pypy-3.7'
           - 'pypy-3.8'
           - 'pypy-3.9'
+          - 'pypy-3.10'
         arch:
           - 'x86'
           - 'x64'
@@ -56,6 +57,7 @@ jobs:
           - 'pypy-3.7'
           - 'pypy-3.8'
           - 'pypy-3.9'
+          - 'pypy-3.10'
         arch:
           - 'x86'
           - 'x64'

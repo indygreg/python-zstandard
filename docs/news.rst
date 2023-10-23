@@ -65,6 +65,7 @@ Changes
   boolean named argument to control whether to transparently read across
   multiple zstd frames. It defaults to ``False`` to preserve existing
   behavior.
+* Added CI coverage for PyPy 3.10.
 
 0.21.0 (released 2023-04-16)
 ============================
