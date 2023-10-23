@@ -3,11 +3,6 @@ import os
 
 from typing import List
 
-try:
-    import hypothesis  # type: ignore
-except ImportError:
-    hypothesis = None  # type: ignore
-
 
 class NonClosingBytesIO(io.BytesIO):
     """BytesIO that saves the underlying buffer on close().
@@ -121,18 +116,3 @@ def generate_samples():
         samples.append(inputs[-(i % 5)] * (i + 2))
 
     return samples
-
-
-if hypothesis:
-    default_settings = hypothesis.settings(deadline=10000)
-    hypothesis.settings.register_profile("default", default_settings)
-
-    ci_settings = hypothesis.settings(deadline=20000, max_examples=1000)
-    hypothesis.settings.register_profile("ci", ci_settings)
-
-    expensive_settings = hypothesis.settings(deadline=None, max_examples=10000)
-    hypothesis.settings.register_profile("expensive", expensive_settings)
-
-    hypothesis.settings.load_profile(
-        os.environ.get("HYPOTHESIS_PROFILE", "default")
-    )

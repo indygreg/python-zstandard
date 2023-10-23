@@ -91,4 +91,4 @@ jobs:
 
       - name: Test
         run: |
-          pytest --numprocesses=auto -v tests/
+          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/

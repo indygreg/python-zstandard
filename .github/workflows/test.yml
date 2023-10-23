@@ -67,13 +67,13 @@ jobs:
 
       - name: Test C Backend
         run: |
-          pytest --numprocesses=auto -v tests/
+          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test CFFI Backend
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
         run: |
-          pytest --numprocesses=auto -v tests/
+          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test Rust Backend
         if: matrix.arch == 'x64'
@@ -82,4 +82,4 @@ jobs:
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'rust'
         run: |
-          pytest --numprocesses=auto -v tests/
+          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
