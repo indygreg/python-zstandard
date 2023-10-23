@@ -78,7 +78,6 @@ jobs:
       - name: Install Dependencies
         run: |
           /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/pip3 install --user --require-hashes -r ci/requirements.macoswheels.txt
-          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/pip3 install --user wheel
         if: ${{ matrix.py == 'cp38-*' && matrix.arch == 'arm64' }}
 
       - name: Build Wheel
@@ -88,7 +87,7 @@ jobs:
 
       - name: Build Wheel
         run: |
-          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/python3 setup.py bdist_wheel
+          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/python3 -m pip wheel -w dist .
         env:
           _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
           ARCHFLAGS: '-arch arm64'
@@ -125,14 +124,9 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        shell: bash
-        run: |
-          python -m pip install --require-hashes -r ci/requirements.txt
-
       - name: Build Wheel
         run: |
-          python setup.py bdist_wheel
+          python -m pip wheel -w dist .
 
       - name: Upload Wheel
         uses: actions/upload-artifact@v3
