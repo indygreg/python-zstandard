@@ -43,7 +43,7 @@ jobs:
           python ci/copy-conda-package.py
 
       - name: Upload Package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: dist
 
@@ -85,6 +85,6 @@ jobs:
           C:\Miniconda\envs\env\python.exe ci/copy-conda-package.py
 
       - name: Upload Package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: dist
