@@ -18,6 +18,7 @@ jobs:
           - 'cp39-cp39'
           - 'cp310-cp310'
           - 'cp311-cp311'
+          - 'cp312-cp312'
     runs-on: 'ubuntu-22.04'
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +45,7 @@ jobs:
           - 'cp39-*'
           - 'cp310-*'
           - 'cp311-*'
+          - 'cp312-*'
         arch: ['x86_64']
         include:
           - py: 'cp38-*'
@@ -53,6 +55,8 @@ jobs:
           - py: 'cp310-*'
             arch: 'arm64'
           - py: 'cp311-*'
+            arch: 'arm64'
+          - py: 'cp312-*'
             arch: 'arm64'
     runs-on: 'macos-12'
     env:
@@ -91,6 +95,7 @@ jobs:
           - '3.9'
           - '3.10'
           - '3.11'
+          - '3.12'
         arch:
           - 'x86'
           - 'x64'

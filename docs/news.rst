@@ -85,6 +85,8 @@ Changes
 * ``pyproject.toml`` now declares a ``[build-system]`` section saying to build
   with setuptools.
 * CI now builds wheels with pip instead of ``setup.py`` directly.
+* Official support for CPython 3.12. Binary wheels for 3.12 are now published
+  during releases. There were no meaningful code changes to support Python 3.12.
 
 0.21.0 (released 2023-04-16)
 ============================
