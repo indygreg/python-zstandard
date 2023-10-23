@@ -298,6 +298,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
