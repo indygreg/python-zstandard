@@ -59,6 +59,17 @@ Backwards Compatibility Notes
   is no longer supported by the pypa/manylinux project.
 * Removed CI coverage for PyPy 3.7 and 3.8, which are no longer supported
   PyPy versions.
+* Support for Python 3.7 has been dropped because it reached end of life.
+  Python 3.8 is the minimum supported Python version. The code should still be
+  compatible with Python 3.7 and removing of version checks from ``setup.py``
+  will likely yield a working install. However, this is no officially supported.
+
+Bug Fixes
+---------
+
+* ``ZstdDecompressor.decompress()`` with ``allow_extra_data=False`` would
+  previously allow extra data to exist after an *empty* zstd frame (a frame
+  holding 0 length input). This scenario now raises an exception.
 
 Changes
 -------

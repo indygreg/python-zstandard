@@ -15,7 +15,7 @@ breakage when this change occurs!
 This project is vendored and distributed with Mercurial 4.1, where it is
 used in a production capacity.
 
-There is continuous integration for Python versions and 3.7+
+There is continuous integration for Python versions and 3.8+
 on Linux x86_x64 and Windows x86 and x86_64. The author is reasonably
 confident the extension is stable and works as advertised on these
 platforms.
