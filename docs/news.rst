@@ -57,6 +57,8 @@ Backwards Compatibility Notes
   ``read_across_frames=False`` to preserve the current behavior.
 * ``manylinux2010`` wheels are no longer published since this wheel format
   is no longer supported by the pypa/manylinux project.
+* Removed CI coverage for PyPy 3.7 and 3.8, which are no longer supported
+  PyPy versions.
 
 Changes
 -------
