@@ -21,7 +21,7 @@ jobs:
           - 'cp311-cp311'
     runs-on: 'ubuntu-22.04'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
         if: ${{ matrix.image == 'quay.io/pypa/manylinux2014_aarch64' }}
@@ -70,7 +70,7 @@ jobs:
           python-version: '3.8'
         if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Dependencies
         run: |
@@ -126,7 +126,7 @@ jobs:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Dependencies
         shell: bash
