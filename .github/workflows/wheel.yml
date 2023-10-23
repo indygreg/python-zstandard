@@ -25,7 +25,7 @@ jobs:
 
       - name: Set up QEMU
         if: ${{ matrix.image == 'quay.io/pypa/manylinux2014_aarch64' }}
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Build Wheel
         run: |
