@@ -58,12 +58,12 @@ jobs:
       - name: Build (Rust)
         if: matrix.arch == 'x64'
         run: |
-          python setup.py --rust-backend develop
+          python -m pip install --config-setting='--build-option=--rust-backend' -e .
 
       - name: Build (No Rust)
         if: matrix.arch != 'x64'
         run: |
-          python setup.py develop
+          python -m pip install -e .
 
       - name: Test C Backend
         run: |
