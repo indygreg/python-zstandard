@@ -46,6 +46,8 @@ try:
 except ImportError:
     cffi = None
 
+sys.path.insert(0, ".")
+
 import setup_zstd
 
 SUPPORT_LEGACY = False
