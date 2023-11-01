@@ -8,7 +8,9 @@
 set -ex
 
 # Missing libffi on aarch64
-yum install -y libffi-devel
+if [ -x /usr/bin/yum ]; then
+    yum install -y libffi-devel
+fi
 
 if [ -e /tmp/wheels ]; then
     echo "/tmp/wheels should not exist!"

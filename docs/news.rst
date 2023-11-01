@@ -87,6 +87,8 @@ Changes
 * CI now builds wheels with pip instead of ``setup.py`` directly.
 * Official support for CPython 3.12. Binary wheels for 3.12 are now published
   during releases. There were no meaningful code changes to support Python 3.12.
+* Binary wheels for musllinux_1_1 x86_64 and aarch64 are now being built and
+  published.
 
 0.21.0 (released 2023-04-16)
 ============================
