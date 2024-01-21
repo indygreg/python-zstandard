@@ -67,13 +67,6 @@ Backwards Compatibility Notes
   compatible with Python 3.7 and removing of version checks from ``setup.py``
   will likely yield a working install. However, this is no officially supported.
 
-Bug Fixes
----------
-
-* ``ZstdDecompressor.decompress()`` with ``allow_extra_data=False`` would
-  previously allow extra data to exist after an *empty* zstd frame (a frame
-  holding 0 length input). This scenario now raises an exception.
-
 Changes
 -------
 
