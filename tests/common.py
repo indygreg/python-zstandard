@@ -76,11 +76,14 @@ def random_input_data():
         # We filter out __pycache__ because there is a race between another
         # process writing cache files and us reading them.
         dirs[:] = list(sorted(d for d in dirs if d != "__pycache__"))
+
         for f in sorted(files):
             try:
                 with open(os.path.join(root, f), "rb") as fh:
                     data = fh.read()
-                    if data:
+                    # Exclude large files because it can cause us to easily exceed
+                    # deadlines during fuzz testing.
+                    if data and len(data) < 131072:
                         _source_files.append(data)
             except OSError:
                 pass
