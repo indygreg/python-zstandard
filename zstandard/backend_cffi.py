@@ -2635,7 +2635,7 @@ class ZstdCompressionDict(object):
 
     Dictionaries have unique integer IDs. You can retrieve this ID via:
 
-    >>> dict_id = zstandard.dictionary_id(dict_data)
+    >>> dict_id = dict_data.dict_id()
 
     You can obtain the raw data in the dict (useful for persisting and constructing
     a ``ZstdCompressionDict`` later) via ``as_bytes()``:
