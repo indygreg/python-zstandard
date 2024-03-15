@@ -3822,13 +3822,12 @@ class ZstdDecompressor(object):
 
         data_buffer = ffi.from_buffer(data)
 
-        output_size = lib.ZSTD_getFrameContentSize(
-            data_buffer, len(data_buffer)
-        )
-
-        if output_size == lib.ZSTD_CONTENTSIZE_ERROR:
+        params = ffi.new("ZSTD_frameHeader *")
+        zresult = lib.ZSTD_getFrameHeader_advanced(params, data_buffer, len(data_buffer), self._format)
+        if zresult != 0:
             raise ZstdError("error determining content size from frame header")
-        elif output_size == 0:
+        output_size = params.frameContentSize
+        if output_size == 0:
             return b""
         elif output_size == lib.ZSTD_CONTENTSIZE_UNKNOWN:
             if not max_output_size:

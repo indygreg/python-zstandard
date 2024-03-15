@@ -176,17 +176,31 @@ impl ZstdDecompressor {
 
         self.setup_dctx(py, true)?;
 
-        let output_size =
-            unsafe { zstd_sys::ZSTD_getFrameContentSize(buffer.buf_ptr(), buffer.len_bytes()) };
+        let mut header = zstd_sys::ZSTD_frameHeader {
+            frameContentSize: 0,
+            windowSize: 0,
+            blockSizeMax: 0,
+            frameType: zstd_sys::ZSTD_frameType_e::ZSTD_frame,
+            headerSize: 0,
+            dictID: 0,
+            checksumFlag: 0,
+            _reserved1: 0,
+            _reserved2: 0,
+        };
+        let zresult = unsafe {
+            zstd_sys::ZSTD_getFrameHeader_advanced(&mut header, buffer.buf_ptr(), buffer.len_bytes(), self.format)
+        };
+
+        if zresult != 0 {
+            return Err(ZstdError::new_err(
+                "error determining content size from frame header"
+            ))
+        }
 
         let (output_buffer_size, output_size) =
-            if output_size == zstd_sys::ZSTD_CONTENTSIZE_ERROR as _ {
-                return Err(ZstdError::new_err(
-                    "error determining content size from frame header",
-                ));
-            } else if output_size == 0 {
+            if header.frameContentSize == 0 {
                 return Ok(PyBytes::new(py, &[]));
-            } else if output_size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _ {
+            } else if header.frameContentSize == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _ {
                 if max_output_size == 0 {
                     return Err(ZstdError::new_err(
                         "could not determine content size in frame header",
@@ -195,7 +209,7 @@ impl ZstdDecompressor {
 
                 (max_output_size, 0)
             } else {
-                (output_size as _, output_size)
+                (header.frameContentSize as _, header.frameContentSize)
             };
 
         let mut dest_buffer: Vec<u8> = Vec::new();
