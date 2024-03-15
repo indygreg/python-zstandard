@@ -299,13 +299,13 @@ PyObject *Decompressor_decompress(ZstdDecompressor *self, PyObject *args,
         goto finally;
     }
 
-    ZSTD_frameHeader zfh;
-    if (ZSTD_getFrameHeader_advanced(&zfh, source.buf, source.len, self->format) != 0) {
+    ZSTD_frameHeader frameHeader;
+    if (ZSTD_getFrameHeader_advanced(&frameHeader, source.buf, source.len, self->format) != 0) {
         PyErr_SetString(ZstdError,
                         "error determining content size from frame header");
         goto finally;
     }
-    decompressedSize=zfh.frameContentSize;
+    decompressedSize=frameHeader.frameContentSize;
     /* Special case of empty frame. */
     if (0 == decompressedSize) {
         result = PyBytes_FromStringAndSize("", 0);
