@@ -19,10 +19,7 @@ use {
         types::{PyBytes, PyList},
         wrap_pyfunction,
     },
-    std::{
-        ffi::c_ulonglong,
-        sync::Arc
-    },
+    std::{ffi::c_ulonglong, sync::Arc},
 };
 
 #[pyclass(module = "zstandard.backend_rust")]
@@ -181,27 +178,35 @@ impl ZstdDecompressor {
 
         self.setup_dctx(py, true)?;
 
-        let output_size =
-            unsafe { zstd_sys::ZSTD_getFrameContentSize(buffer.buf_ptr(), buffer.len_bytes()) };
+        let mut header: zstd_sys::ZSTD_FrameHeader = unsafe { std::mem::zeroed() };
+        let zresult = unsafe {
+            zstd_sys::ZSTD_getFrameHeader_advanced(
+                &mut header,
+                buffer.buf_ptr(),
+                buffer.len_bytes(),
+                self.format,
+            )
+        };
 
-        let (output_buffer_size, output_size) =
-            if output_size == zstd_sys::ZSTD_CONTENTSIZE_ERROR as c_ulonglong {
+        if zresult != 0 {
+            return Err(ZstdError::new_err(
+                "error determining content size from frame header",
+            ));
+        }
+
+        let (output_buffer_size, output_size) = if header.frameContentSize == 0 {
+            return Ok(PyBytes::new(py, &[]));
+        } else if header.frameContentSize == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as c_ulonglong {
+            if max_output_size == 0 {
                 return Err(ZstdError::new_err(
-                    "error determining content size from frame header",
+                    "could not determine content size in frame header",
                 ));
-            } else if output_size == 0 {
-                return Ok(PyBytes::new(py, &[]));
-            } else if output_size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as c_ulonglong {
-                if max_output_size == 0 {
-                    return Err(ZstdError::new_err(
-                        "could not determine content size in frame header",
-                    ));
-                }
+            }
 
-                (max_output_size, 0)
-            } else {
-                (output_size as _, output_size)
-            };
+            (max_output_size, 0)
+        } else {
+            (header.frameContentSize as _, header.frameContentSize)
+        };
 
         let mut dest_buffer: Vec<u8> = Vec::new();
         dest_buffer

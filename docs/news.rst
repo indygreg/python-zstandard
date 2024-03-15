@@ -70,6 +70,10 @@ Changes
   an apparant conda bug.
 * Added CI coverage for Anaconda 3.12 and 3.13 on Linux and Windows x86-64
   (but the Windows builds no-op due to above issue).
+* ``get_frame_parameters()`` now accepts an optional ``format`` argument
+  defining the zstandard frame type. You can pass e.g.
+  ``zstandard.FORMAT_ZSTD1_MAGICLESS`` to decode frames without header magic.
+  (#217)
 
 Backwards Compatibility Notes
 -----------------------------
