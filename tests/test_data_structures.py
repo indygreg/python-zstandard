@@ -190,6 +190,16 @@ class TestFrameParameters(unittest.TestCase):
         self.assertEqual(params.dict_id, 15)
         self.assertTrue(params.has_checksum)
 
+    def test_attributes_without_header(self):
+        # Set multiple things without magic header
+        params = zstd.get_frame_parameters(
+            b"\x45\x40\x0f\x10\x00", format=zstd.FORMAT_ZSTD1_MAGICLESS
+        )
+        self.assertEqual(params.content_size, 272)
+        self.assertEqual(params.window_size, 262144)
+        self.assertEqual(params.dict_id, 15)
+        self.assertTrue(params.has_checksum)
+
     def test_input_types(self):
         v = zstd.FRAME_HEADER + b"\x00\x00"
 
