@@ -767,7 +767,7 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
         dctx = zstd.ZstdDecompressor(**kwargs)
 
         for i, frame in enumerate(result):
-            self.assertEqual(dctx.decompress(frame), original[i])
+            self.assertEqual(dctx.decompress(frame.tobytes()), original[i])
 
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
