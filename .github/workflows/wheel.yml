@@ -48,18 +48,9 @@ jobs:
           - 'cp310-*'
           - 'cp311-*'
           - 'cp312-*'
-        arch: ['x86_64']
-        include:
-          - py: 'cp38-*'
-            arch: 'arm64'
-          - py: 'cp39-*'
-            arch: 'arm64'
-          - py: 'cp310-*'
-            arch: 'arm64'
-          - py: 'cp311-*'
-            arch: 'arm64'
-          - py: 'cp312-*'
-            arch: 'arm64'
+        arch:
+          - 'arm64'
+          - 'x86_64'
     runs-on: 'macos-12'
     env:
       CIBW_ARCHS: ${{ matrix.arch }}
