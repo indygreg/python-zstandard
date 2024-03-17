@@ -46,8 +46,9 @@ jobs:
           python ci/copy-conda-package.py
 
       - name: Upload Package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: linux-${{ matrix.py }}
           path: dist
 
   windows:
@@ -90,6 +91,7 @@ jobs:
           C:\Miniconda\envs\env\python.exe ci/copy-conda-package.py
 
       - name: Upload Package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: windows-${{ matrix.py }}
           path: dist

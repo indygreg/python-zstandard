@@ -118,6 +118,7 @@ jobs:
           python -m pip wheel -w dist .
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: windows-${{ matrix.py }}-${{ matrix.arch }}
           path: dist
