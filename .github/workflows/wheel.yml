@@ -51,7 +51,7 @@ jobs:
         arch:
           - 'arm64'
           - 'x86_64'
-    runs-on: 'macos-12'
+    runs-on: 'macos-13'
     env:
       CIBW_ARCHS: ${{ matrix.arch }}
       CIBW_BUILD: ${{ matrix.py }}

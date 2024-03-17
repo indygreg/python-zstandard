@@ -10,7 +10,7 @@ jobs:
       matrix:
         os:
           - 'ubuntu-22.04'
-          - 'macos-12'
+          - 'macos-13'
           - 'windows-2022'
         py:
           - '3.8'
@@ -24,7 +24,7 @@ jobs:
         exclude:
           - os: 'ubuntu-22.04'
             arch: 'x86'
-          - os: 'macos-12'
+          - os: 'macos-13'
             arch: 'x86'
     runs-on: ${{ matrix.os }}
     env:

@@ -29,7 +29,7 @@ jobs:
           python -m pip install --config-settings=--build-option=--system-zstd .
 
   macOS:
-    runs-on: 'macos-11'
+    runs-on: 'macos-13'
     env:
       # Make all compile warnings fatal.
       ZSTD_WARNINGS_AS_ERRORS: '1'
