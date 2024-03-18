@@ -2560,7 +2560,7 @@ def frame_header_size(data):
     return zresult
 
 
-def get_frame_parameters(data):
+def get_frame_parameters(data, format=FORMAT_ZSTD1):
     """
     Parse a zstd frame header into frame parameters.
 
@@ -2571,13 +2571,15 @@ def get_frame_parameters(data):
 
     :param data:
        Data from which to read frame parameters.
+    :param format:
+       Set the format of data for the decoder.
     :return:
        :py:class:`FrameParameters`
     """
     params = ffi.new("ZSTD_frameHeader *")
 
     data_buffer = ffi.from_buffer(data)
-    zresult = lib.ZSTD_getFrameHeader(params, data_buffer, len(data_buffer))
+    zresult = lib.ZSTD_getFrameHeader_advanced(params, data_buffer, len(data_buffer), format)
     if lib.ZSTD_isError(zresult):
         raise ZstdError(
             "cannot get frame parameters: %s" % _zstd_error(zresult)
@@ -3822,13 +3824,12 @@ class ZstdDecompressor(object):
 
         data_buffer = ffi.from_buffer(data)
 
-        output_size = lib.ZSTD_getFrameContentSize(
-            data_buffer, len(data_buffer)
-        )
-
-        if output_size == lib.ZSTD_CONTENTSIZE_ERROR:
+        params = ffi.new("ZSTD_frameHeader *")
+        zresult = lib.ZSTD_getFrameHeader_advanced(params, data_buffer, len(data_buffer), self._format)
+        if zresult != 0:
             raise ZstdError("error determining content size from frame header")
-        elif output_size == 0:
+        output_size = params.frameContentSize
+        if output_size == 0:
             return b""
         elif output_size == lib.ZSTD_CONTENTSIZE_UNKNOWN:
             if not max_output_size:

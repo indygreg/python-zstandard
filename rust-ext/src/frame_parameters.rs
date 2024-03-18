@@ -6,7 +6,7 @@
 
 use {
     crate::ZstdError,
-    pyo3::{buffer::PyBuffer, prelude::*, wrap_pyfunction},
+    pyo3::{buffer::PyBuffer, prelude::*, wrap_pyfunction, exceptions::{PyValueError}},
 };
 
 #[pyclass(module = "zstandard.backend_rust")]
@@ -67,10 +67,19 @@ fn frame_header_size(data: PyBuffer<u8>) -> PyResult<usize> {
 }
 
 #[pyfunction]
-fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FrameParameters>> {
+#[pyo3(signature = (buffer, format=zstd_sys::ZSTD_format_e::ZSTD_f_zstd1 as u32))]
+fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>, format: u32) -> PyResult<Py<FrameParameters>> {
     let raw_data = unsafe {
         std::slice::from_raw_parts::<u8>(buffer.buf_ptr() as *const _, buffer.len_bytes())
     };
+    let format = if format == zstd_sys::ZSTD_format_e::ZSTD_f_zstd1 as _ {
+        zstd_sys::ZSTD_format_e::ZSTD_f_zstd1
+    } else if format == zstd_sys::ZSTD_format_e::ZSTD_f_zstd1_magicless as _ {
+        zstd_sys::ZSTD_format_e::ZSTD_f_zstd1_magicless
+    } else {
+        return Err(PyValueError::new_err(format!("invalid format value")));
+    };
+
 
     let mut header = zstd_sys::ZSTD_frameHeader {
         frameContentSize: 0,
@@ -84,7 +93,7 @@ fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FramePa
         _reserved2: 0,
     };
     let zresult = unsafe {
-        zstd_sys::ZSTD_getFrameHeader(&mut header, raw_data.as_ptr() as *const _, raw_data.len())
+        zstd_sys::ZSTD_getFrameHeader_advanced(&mut header, raw_data.as_ptr() as *const _, raw_data.len(), format)
     };
 
     if unsafe { zstd_sys::ZSTD_isError(zresult) } != 0 {

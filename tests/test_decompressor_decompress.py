@@ -37,6 +37,16 @@ class TestDecompressor_decompress(unittest.TestCase):
         for source in sources:
             self.assertEqual(dctx.decompress(source), b"foo")
 
+    def test_headerless(self):
+        compression_params = zstd.ZstdCompressionParameters(
+            format=zstd.FORMAT_ZSTD1_MAGICLESS,
+        )
+        cctx = zstd.ZstdCompressor(compression_params=compression_params)
+        compressed = cctx.compress(b"foo")
+
+        dctx = zstd.ZstdDecompressor(format=zstd.FORMAT_ZSTD1_MAGICLESS)
+        self.assertEqual(dctx.decompress(compressed), b"foo")
+
     def test_no_content_size_in_frame(self):
         cctx = zstd.ZstdCompressor(write_content_size=False)
         compressed = cctx.compress(b"foobar")
