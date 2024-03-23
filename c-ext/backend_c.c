@@ -17,6 +17,8 @@
 
 #include <sys/sysctl.h>
 
+#elif defined(__linux__) && defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 
 #include "python-zstandard.h"
