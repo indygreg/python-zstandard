@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "cffi==1.16.0",
+    "cffi==1.17.0.dev0",
     "setuptools==68.2.2",
     "wheel==0.41.2",
 ]
