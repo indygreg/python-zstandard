@@ -387,7 +387,7 @@ impl ZstdCompressionParameters {
     #[classmethod]
     #[pyo3(signature = (* args, * * kwargs))]
     fn from_level(
-        _cls: &PyType,
+        _cls: Bound<'_, PyType>,
         py: Python,
         args: &PyTuple,
         kwargs: Option<&PyDict>,
