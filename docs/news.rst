@@ -48,6 +48,11 @@ Other Actions Not Blocking Release
 0.23.0 (not yet released)
 =========================
 
+Changes
+-------
+
+* PyO3 Rust crate upgraded from 0.18 to 0.19.
+
 0.22.0 (released 2023-11-01)
 ============================
 

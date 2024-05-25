@@ -26,5 +26,5 @@ version = "2.0.8+zstd.1.5.5"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.pyo3]
-version = "0.18.3"
+version = "0.19.2"
 features = ["extension-module"]

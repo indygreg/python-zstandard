@@ -246,7 +246,7 @@ impl ZstdDecompressor {
         // First chunk should not be using a dictionary. We handle it specially.
         let chunk = frames.get_item(0)?;
 
-        if !chunk.is_instance_of::<PyBytes>()? {
+        if !chunk.is_instance_of::<PyBytes>() {
             return Err(PyValueError::new_err("chunk 0 must be bytes"));
         }
 
@@ -310,7 +310,7 @@ impl ZstdDecompressor {
         }
 
         for (i, chunk) in frames.iter().enumerate().skip(1) {
-            if !chunk.is_instance_of::<PyBytes>()? {
+            if !chunk.is_instance_of::<PyBytes>() {
                 return Err(PyValueError::new_err(format!("chunk {} must be bytes", i)));
             }
 
