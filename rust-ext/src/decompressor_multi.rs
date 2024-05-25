@@ -49,7 +49,7 @@ pub fn multi_decompress_to_buffer(
 
     let mut sources = vec![];
 
-    if let Ok(buffer) = frames.extract::<&PyCell<ZstdBufferWithSegments>>() {
+    if let Ok(buffer) = frames.downcast::<ZstdBufferWithSegments>() {
         if decompressed_sizes.is_some() && frame_sizes.len() != buffer.len()? {
             return Err(PyValueError::new_err(format!(
                 "decompressed_sizes size mismatch; expected {}, got {}",
@@ -70,7 +70,7 @@ pub fn multi_decompress_to_buffer(
                 decompressed_size: *frame_sizes.get(i).unwrap_or(&0) as _,
             });
         }
-    } else if let Ok(collection) = frames.extract::<&PyCell<ZstdBufferWithSegmentsCollection>>() {
+    } else if let Ok(collection) = frames.downcast::<ZstdBufferWithSegmentsCollection>() {
         let frames_count = collection.len()?;
 
         if decompressed_sizes.is_some() && frame_sizes.len() != frames_count {
@@ -85,7 +85,7 @@ pub fn multi_decompress_to_buffer(
 
         let mut offset = 0;
         for buffer_obj in &collection.borrow().buffers {
-            let buffer = buffer_obj.extract::<&PyCell<ZstdBufferWithSegments>>(py)?;
+            let buffer = buffer_obj.downcast_bound::<ZstdBufferWithSegments>(py)?;
             let borrow = buffer.borrow();
 
             for i in 0..borrow.segments.len() {

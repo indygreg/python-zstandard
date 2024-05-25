@@ -96,7 +96,7 @@ impl ZstdBufferSegments {
     fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
         let py = slf.py();
 
-        let parent: &PyCell<ZstdBufferWithSegments> = slf.parent.extract(py)?;
+        let parent = slf.parent.downcast_bound::<ZstdBufferWithSegments>(py)?;
 
         if unsafe {
             pyo3::ffi::PyBuffer_FillInfo(
@@ -300,7 +300,7 @@ impl ZstdBufferWithSegmentsCollection {
                     offset = self.first_elements[buffer_index - 1];
                 }
 
-                let item: &PyCell<ZstdBufferWithSegments> = segment.extract(py)?;
+                let item = segment.downcast_bound::<ZstdBufferWithSegments>(py)?;
 
                 return item.borrow().__getitem__((key - offset) as isize);
             }
@@ -350,7 +350,7 @@ impl ZstdBufferWithSegmentsCollection {
         let mut size = 0;
 
         for buffer in &self.buffers {
-            let item: &PyCell<ZstdBufferWithSegments> = buffer.extract(py)?;
+            let item = buffer.downcast_bound::<ZstdBufferWithSegments>(py)?;
 
             for segment in &item.borrow().segments {
                 size += segment.length as usize;
