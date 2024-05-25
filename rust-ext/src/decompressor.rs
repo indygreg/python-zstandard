@@ -237,7 +237,7 @@ impl ZstdDecompressor {
     fn decompress_content_dict_chain<'p>(
         &self,
         py: Python<'p>,
-        frames: &PyList,
+        frames: &Bound<'_, PyList>,
     ) -> PyResult<&'p PyBytes> {
         if frames.is_empty() {
             return Err(PyValueError::new_err("empty input chain"));

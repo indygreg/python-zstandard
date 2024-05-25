@@ -203,7 +203,7 @@ impl ZstdCompressionDict {
 ))]
 fn train_dictionary(
     dict_size: usize,
-    samples: &PyList,
+    samples: &Bound<'_, PyList>,
     k: u32,
     d: u32,
     f: u32,
@@ -265,7 +265,7 @@ fn train_dictionary(
     let mut sample_sizes: Vec<libc::size_t> = Vec::with_capacity(samples.len());
 
     for sample in samples.iter() {
-        let bytes: &PyBytes = sample.downcast()?;
+        let bytes = sample.downcast::<PyBytes>()?;
         let data = bytes.as_bytes();
         sample_sizes.push(data.len());
         samples_buffer.extend_from_slice(data);
