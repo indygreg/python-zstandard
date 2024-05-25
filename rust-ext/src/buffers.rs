@@ -12,7 +12,6 @@ use {
         ffi::Py_buffer,
         prelude::*,
         types::{PyBytes, PyTuple},
-        AsPyPointer,
     },
 };
 
@@ -313,7 +312,7 @@ impl ZstdBufferWithSegmentsCollection {
     }
 
     #[new]
-    #[pyo3(signature = (*py_args))]
+    #[pyo3(signature = (* py_args))]
     pub fn new(py: Python, py_args: &PyTuple) -> PyResult<Self> {
         if py_args.is_empty() {
             return Err(PyValueError::new_err("must pass at least 1 argument"));

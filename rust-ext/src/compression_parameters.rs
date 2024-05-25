@@ -27,6 +27,7 @@ impl<'a> Drop for CCtxParams<'a> {
 }
 
 unsafe impl<'a> Send for CCtxParams<'a> {}
+
 unsafe impl<'a> Sync for CCtxParams<'a> {}
 
 impl<'a> CCtxParams<'a> {
@@ -304,7 +305,7 @@ impl ZstdCompressionParameters {
                     return Err(PyTypeError::new_err(format!(
                         "'{}' is an invalid keyword argument",
                         key
-                    )))
+                    )));
                 }
             }
         }
@@ -384,7 +385,7 @@ impl ZstdCompressionParameters {
 #[pymethods]
 impl ZstdCompressionParameters {
     #[classmethod]
-    #[pyo3(signature = (*args, **kwargs))]
+    #[pyo3(signature = (* args, * * kwargs))]
     fn from_level(
         _cls: &PyType,
         py: Python,
@@ -406,14 +407,14 @@ impl ZstdCompressionParameters {
 
         let level = args.get_item(0)?.extract::<i32>()?;
 
-        let source_size = if let Some(value) = kwargs.get_item("source_size") {
+        let source_size = if let Some(value) = kwargs.get_item("source_size")? {
             kwargs.del_item("source_size")?;
             value.extract::<u64>()?
         } else {
             0
         };
 
-        let dict_size = if let Some(value) = kwargs.get_item("dict_size") {
+        let dict_size = if let Some(value) = kwargs.get_item("dict_size")? {
             kwargs.del_item("dict_size")?;
             value.extract::<usize>()?
         } else {
@@ -449,7 +450,7 @@ impl ZstdCompressionParameters {
     }
 
     #[new]
-    #[pyo3(signature = (*_args, **kwargs))]
+    #[pyo3(signature = (* _args, * * kwargs))]
     fn new(py: Python, _args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<Self> {
         let params = unsafe { zstd_sys::ZSTD_createCCtxParams() };
         if params.is_null() {
