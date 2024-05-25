@@ -238,7 +238,7 @@ impl ZstdDecompressor {
         &self,
         py: Python<'p>,
         frames: &Bound<'_, PyList>,
-    ) -> PyResult<&'p PyBytes> {
+    ) -> PyResult<Bound<'p, PyBytes>> {
         if frames.is_empty() {
             return Err(PyValueError::new_err("empty input chain"));
         }
@@ -305,7 +305,7 @@ impl ZstdDecompressor {
         // Special case of chain length 1.
         if frames.len() == 1 {
             // TODO avoid buffer copy.
-            let chunk = PyBytes::new(py, &last_buffer);
+            let chunk = PyBytes::new_bound(py, &last_buffer);
             return Ok(chunk);
         }
 
@@ -368,7 +368,7 @@ impl ZstdDecompressor {
         }
 
         // TODO avoid buffer copy.
-        Ok(PyBytes::new(py, &last_buffer))
+        Ok(PyBytes::new_bound(py, &last_buffer))
     }
 
     #[pyo3(signature = (write_size=None, read_across_frames=false))]

@@ -27,7 +27,7 @@ pub(crate) fn init_module(py: Python, module: &Bound<'_, PyModule>) -> PyResult<
             zstd_safe::VERSION_RELEASE,
         ),
     )?;
-    module.add("FRAME_HEADER", PyBytes::new(py, b"\x28\xb5\x2f\xfd"))?;
+    module.add("FRAME_HEADER", PyBytes::new_bound(py, b"\x28\xb5\x2f\xfd"))?;
 
     module.add("CONTENTSIZE_UNKNOWN", zstd_safe::CONTENTSIZE_UNKNOWN)?;
     module.add("CONTENTSIZE_ERROR", zstd_safe::CONTENTSIZE_ERROR)?;

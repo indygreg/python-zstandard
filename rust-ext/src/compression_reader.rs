@@ -224,7 +224,7 @@ impl ZstdCompressionReader {
         self.bytes_compressed
     }
 
-    fn readall<'p>(&mut self, py: Python<'p>) -> PyResult<&'p PyAny> {
+    fn readall<'p>(&mut self, py: Python<'p>) -> PyResult<Bound<'p, PyAny>> {
         let chunks = PyList::empty_bound(py);
 
         loop {
@@ -237,13 +237,13 @@ impl ZstdCompressionReader {
             chunks.append(chunk)?;
         }
 
-        let empty = PyBytes::new(py, &[]);
+        let empty = PyBytes::new_bound(py, &[]);
 
         empty.call_method1("join", (chunks,))
     }
 
     #[pyo3(signature = (size=-1))]
-    fn read<'p>(&mut self, py: Python<'p>, size: isize) -> PyResult<&'p PyAny> {
+    fn read<'p>(&mut self, py: Python<'p>, size: isize) -> PyResult<Bound<'p, PyAny>> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
         }
@@ -259,7 +259,7 @@ impl ZstdCompressionReader {
         }
 
         if self.finished_output || size == 0 {
-            return Ok(PyBytes::new(py, &[]));
+            return Ok(PyBytes::new_bound(py, &[]).into_any());
         }
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(size as _);
@@ -268,7 +268,7 @@ impl ZstdCompressionReader {
             // If the output buffer is full, return its content.
             if self.compress_into_vec(py, &mut dest_buffer)? {
                 // TODO avoid buffer copy.
-                return Ok(PyBytes::new(py, &dest_buffer));
+                return Ok(PyBytes::new_bound(py, &dest_buffer).into_any());
             }
             // Else continue to read new input into the compressor.
         }
@@ -300,11 +300,11 @@ impl ZstdCompressionReader {
         }
 
         // TODO avoid buffer copy.
-        Ok(PyBytes::new(py, &dest_buffer))
+        Ok(PyBytes::new_bound(py, &dest_buffer).into_any())
     }
 
     #[pyo3(signature = (size=-1))]
-    fn read1<'p>(&mut self, py: Python<'p>, size: isize) -> PyResult<&'p PyAny> {
+    fn read1<'p>(&mut self, py: Python<'p>, size: isize) -> PyResult<Bound<'p, PyAny>> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
         }
@@ -316,7 +316,7 @@ impl ZstdCompressionReader {
         }
 
         if self.finished_output || size == 0 {
-            return Ok(PyBytes::new(py, &[]));
+            return Ok(PyBytes::new_bound(py, &[]).into_any());
         }
 
         // -1 returns arbitrary number of bytes.
@@ -348,7 +348,7 @@ impl ZstdCompressionReader {
             || (!dest_buffer.is_empty() && !self.source.finished())
         {
             // TODO avoid buffer copy.
-            return Ok(PyBytes::new(py, &dest_buffer));
+            return Ok(PyBytes::new_bound(py, &dest_buffer).into_any());
         }
 
         // Input must be exhausted. Finish the compression stream.
@@ -378,7 +378,7 @@ impl ZstdCompressionReader {
         }
 
         // TODO avoid buffer copy
-        Ok(PyBytes::new(py, &dest_buffer))
+        Ok(PyBytes::new_bound(py, &dest_buffer).into_any())
     }
 
     fn readinto(&mut self, py: Python, buffer: PyBuffer<u8>) -> PyResult<usize> {

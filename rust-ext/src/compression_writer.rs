@@ -249,7 +249,7 @@ impl ZstdCompressionWriter {
 
             if !self.dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &self.dest_buffer);
+                let chunk = PyBytes::new_bound(py, &self.dest_buffer);
                 self.writer.call_method1(py, "write", (chunk,))?;
 
                 total_write += self.dest_buffer.len();
@@ -296,7 +296,7 @@ impl ZstdCompressionWriter {
 
             if !self.dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &self.dest_buffer);
+                let chunk = PyBytes::new_bound(py, &self.dest_buffer);
                 self.writer.call_method1(py, "write", (chunk,))?;
 
                 total_write += self.dest_buffer.len();
