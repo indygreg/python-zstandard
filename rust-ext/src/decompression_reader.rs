@@ -93,18 +93,18 @@ impl ZstdDecompressionReader {
 
     fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
         let py = slf.py();
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
         let py = slf.py();
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
@@ -148,37 +148,37 @@ impl ZstdDecompressionReader {
     #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     #[pyo3(signature = (data))]
     #[allow(unused_variables)]
     fn write(&self, py: Python, data: &PyAny) -> PyResult<()> {
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     #[pyo3(signature = (lines))]
     #[allow(unused_variables)]
     fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn isatty(&self) -> bool {
@@ -423,7 +423,7 @@ impl ZstdDecompressionReader {
             return Err(PyValueError::new_err("stream is closed"));
         }
 
-        let os = py.import("os")?;
+        let os = py.import_bound("os")?;
 
         let seek_set = os.getattr("SEEK_SET")?.extract::<i32>()?;
         let seek_cur = os.getattr("SEEK_CUR")?.extract::<i32>()?;

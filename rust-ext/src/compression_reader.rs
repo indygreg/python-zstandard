@@ -115,18 +115,18 @@ impl ZstdCompressionReader {
 
     fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
         let py = slf.py();
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
         let py = slf.py();
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
@@ -168,19 +168,19 @@ impl ZstdCompressionReader {
     }
 
     fn readline(&self, py: Python) -> PyResult<()> {
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
     fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn write(&self, _data: &PyAny) -> PyResult<()> {
