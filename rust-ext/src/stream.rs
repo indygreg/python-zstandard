@@ -58,7 +58,7 @@ impl InBufferSource for ReadSource {
         // Attempt to read new data.
         } else {
             let data = self.source.call_method1(py, "read", (self.read_size,))?;
-            let buffer = PyBuffer::get(data.as_ref(py))?;
+            let buffer = PyBuffer::get_bound(data.bind(py))?;
 
             if buffer.len_bytes() == 0 {
                 self.finished = true;

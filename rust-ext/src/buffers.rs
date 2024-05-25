@@ -173,7 +173,7 @@ impl ZstdBufferWithSegments {
 
         Ok(ZstdBufferSegment {
             _parent: self.source.clone_ref(py),
-            buffer: PyBuffer::get(self.source.extract(py)?)?,
+            buffer: PyBuffer::get_bound(self.source.downcast_bound(py)?)?,
             offset: segment.offset as _,
             len: segment.length as _,
         })
