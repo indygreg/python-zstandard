@@ -215,7 +215,7 @@ impl ZstdDecompressionReader {
     }
 
     fn readall<'p>(&mut self, py: Python<'p>) -> PyResult<&'p PyAny> {
-        let chunks = PyList::empty(py);
+        let chunks = PyList::empty_bound(py);
 
         loop {
             let chunk = self.read(py, Some(1048576))?;

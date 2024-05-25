@@ -60,7 +60,7 @@ impl ZstdDecompressionObj {
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(self.write_size);
 
-        let chunks = PyList::empty(py);
+        let chunks = PyList::empty_bound(py);
 
         loop {
             let zresult = self
