@@ -103,18 +103,18 @@ impl ZstdDecompressionObj {
     }
 
     #[allow(unused_variables)]
-    fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<&'p PyBytes> {
-        Ok(PyBytes::new(py, &[]))
+    fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<Bound<'p, PyBytes>> {
+        Ok(PyBytes::new_bound(py, &[]))
     }
 
     #[getter]
-    fn unused_data<'p>(&self, py: Python<'p>) -> &'p PyBytes {
-        PyBytes::new(py, &self.unused_data)
+    fn unused_data<'p>(&self, py: Python<'p>) -> Bound<'p, PyBytes> {
+        PyBytes::new_bound(py, &self.unused_data)
     }
 
     #[getter]
-    fn unconsumed_tail<'p>(&self, py: Python<'p>) -> &'p PyBytes {
-        PyBytes::new(py, &[])
+    fn unconsumed_tail<'p>(&self, py: Python<'p>) -> Bound<'p, PyBytes> {
+        PyBytes::new_bound(py, &[])
     }
 
     #[getter]

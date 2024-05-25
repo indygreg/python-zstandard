@@ -281,7 +281,7 @@ impl ZstdDecompressionWriter {
 
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &dest_buffer);
+                let chunk = PyBytes::new_bound(py, &dest_buffer);
                 self.writer.call_method1(py, "write", (chunk,))?;
                 total_write += dest_buffer.len();
                 dest_buffer.clear();

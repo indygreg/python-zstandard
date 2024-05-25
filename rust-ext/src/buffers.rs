@@ -80,8 +80,8 @@ impl ZstdBufferSegment {
         self.offset
     }
 
-    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<&'p PyBytes> {
-        Ok(PyBytes::new(py, self.as_slice()))
+    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<Bound<'p, PyBytes>> {
+        Ok(PyBytes::new_bound(py, self.as_slice()))
     }
 }
 
@@ -254,8 +254,8 @@ impl ZstdBufferWithSegments {
         })
     }
 
-    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<&'p PyBytes> {
-        Ok(PyBytes::new(py, self.as_slice()))
+    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<Bound<'p, PyBytes>> {
+        Ok(PyBytes::new_bound(py, self.as_slice()))
     }
 }
 

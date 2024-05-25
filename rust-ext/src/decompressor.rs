@@ -146,7 +146,7 @@ impl ZstdDecompressor {
 
                 if !dest_buffer.is_empty() {
                     // TODO avoid buffer copy.
-                    let data = PyBytes::new(py, &dest_buffer);
+                    let data = PyBytes::new_bound(py, &dest_buffer);
 
                     ofh.call_method1("write", (data,))?;
                     total_write += dest_buffer.len();
@@ -167,7 +167,7 @@ impl ZstdDecompressor {
         max_output_size: usize,
         read_across_frames: bool,
         allow_extra_data: bool,
-    ) -> PyResult<&'p PyBytes> {
+    ) -> PyResult<Bound<'p, PyBytes>> {
         if read_across_frames {
             return Err(ZstdError::new_err(
                 "ZstdDecompressor.read_across_frames=True is not yet implemented",
@@ -185,7 +185,7 @@ impl ZstdDecompressor {
                     "error determining content size from frame header",
                 ));
             } else if output_size == 0 {
-                return Ok(PyBytes::new(py, &[]));
+                return Ok(PyBytes::new_bound(py, &[]));
             } else if output_size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _ {
                 if max_output_size == 0 {
                     return Err(ZstdError::new_err(
@@ -230,7 +230,7 @@ impl ZstdDecompressor {
             )))
         } else {
             // TODO avoid memory copy
-            Ok(PyBytes::new(py, &dest_buffer))
+            Ok(PyBytes::new_bound(py, &dest_buffer))
         }
     }
 

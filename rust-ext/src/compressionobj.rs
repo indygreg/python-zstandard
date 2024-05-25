@@ -66,7 +66,11 @@ impl ZstdCompressionObj {
         Ok(PyBytes::new(py, &compressed))
     }
 
-    fn flush<'p>(&mut self, py: Python<'p>, flush_mode: Option<i32>) -> PyResult<&'p PyBytes> {
+    fn flush<'p>(
+        &mut self,
+        py: Python<'p>,
+        flush_mode: Option<i32>,
+    ) -> PyResult<Bound<'p, PyBytes>> {
         let flush_mode = if let Some(flush_mode) = flush_mode {
             match flush_mode {
                 COMPRESSOBJ_FLUSH_FINISH => Ok(zstd_sys::ZSTD_EndDirective::ZSTD_e_end),
@@ -104,7 +108,7 @@ impl ZstdCompressionObj {
             result.extend(&chunk);
 
             if !call_again {
-                return Ok(PyBytes::new(py, &result));
+                return Ok(PyBytes::new_bound(py, &result));
             }
         }
     }

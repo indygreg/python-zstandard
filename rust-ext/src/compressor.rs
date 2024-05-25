@@ -160,7 +160,7 @@ impl ZstdCompressor {
         ))
     }
 
-    fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<&'p PyBytes> {
+    fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<Bound<'p, PyBytes>> {
         let source: &[u8] =
             unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const _, buffer.len_bytes()) };
 
@@ -171,7 +171,7 @@ impl ZstdCompressor {
             .allow_threads(|| cctx.compress(source))
             .or_else(|msg| Err(ZstdError::new_err(format!("cannot compress: {}", msg))))?;
 
-        Ok(PyBytes::new(py, &data))
+        Ok(PyBytes::new_bound(py, &data))
     }
 
     #[pyo3(signature = (size=None, chunk_size=None))]
@@ -296,7 +296,7 @@ impl ZstdCompressor {
 
                 if !chunk.is_empty() {
                     // TODO avoid buffer copy.
-                    let data = PyBytes::new(py, chunk);
+                    let data = PyBytes::new_bound(py, chunk);
                     ofh.call_method("write", (data,), None)?;
                     total_write += chunk.len();
                 }
@@ -319,7 +319,7 @@ impl ZstdCompressor {
 
             if !chunk.is_empty() {
                 // TODO avoid buffer copy.
-                let data = PyBytes::new(py, &chunk);
+                let data = PyBytes::new_bound(py, &chunk);
                 ofh.call_method("write", (data,), None)?;
                 total_write += chunk.len();
             }
