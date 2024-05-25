@@ -242,7 +242,7 @@ fn decompress_from_datasources(
         .sort_by(|a, b| a.source_offset.cmp(&b.source_offset));
 
     // TODO this is horribly inefficient due to memory copies.
-    let els = PyTuple::new(
+    let els = PyTuple::new_bound(
         py,
         results
             .lock()
@@ -282,5 +282,5 @@ fn decompress_from_datasources(
             .collect::<PyResult<Vec<_>>>()?,
     );
 
-    ZstdBufferWithSegmentsCollection::new(py, els)
+    ZstdBufferWithSegmentsCollection::new(py, els.as_gil_ref())
 }
