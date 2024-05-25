@@ -8,7 +8,7 @@ use pyo3::{create_exception, exceptions::PyException, prelude::*};
 
 create_exception!(module, ZstdError, PyException);
 
-pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("ZstdError", py.get_type_bound::<ZstdError>())?;
 
     Ok(())

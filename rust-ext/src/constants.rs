@@ -9,7 +9,7 @@ use pyo3::{prelude::*, types::PyBytes};
 pub(crate) const COMPRESSOBJ_FLUSH_FINISH: i32 = 0;
 pub(crate) const COMPRESSOBJ_FLUSH_BLOCK: i32 = 1;
 
-pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("__version", super::VERSION)?;
     module.add("__doc__", "Rust backend for zstandard bindings")?;
 

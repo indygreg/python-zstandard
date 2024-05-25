@@ -410,7 +410,7 @@ impl ZstdCompressor {
     }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdCompressor>()?;
 
     Ok(())

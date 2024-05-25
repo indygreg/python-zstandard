@@ -286,7 +286,7 @@ fn train_dictionary(
     })
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdCompressionDict>()?;
     module.add_function(wrap_pyfunction!(train_dictionary, module)?)?;
 

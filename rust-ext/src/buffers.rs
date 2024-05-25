@@ -361,7 +361,7 @@ impl ZstdBufferWithSegmentsCollection {
     }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdBufferSegment>()?;
     module.add_class::<ZstdBufferSegments>()?;
     module.add_class::<ZstdBufferWithSegments>()?;

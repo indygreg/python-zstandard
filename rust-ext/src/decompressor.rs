@@ -504,7 +504,7 @@ fn estimate_decompression_context_size() -> usize {
     unsafe { zstd_sys::ZSTD_estimateDCtxSize() }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdDecompressor>()?;
     module.add_function(wrap_pyfunction!(
         estimate_decompression_context_size,
