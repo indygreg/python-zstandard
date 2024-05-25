@@ -73,7 +73,7 @@ impl ZstdCompressionChunker {
     fn compress(
         &mut self,
         py: Python,
-        data: &PyAny,
+        data: &Bound<'_, PyAny>,
     ) -> PyResult<Py<ZstdCompressionChunkerIterator>> {
         self.ensure_state(py);
 
@@ -116,7 +116,8 @@ impl ZstdCompressionChunker {
             ));
         }
 
-        let source = make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::CCtx::in_size())?;
+        let source =
+            make_in_buffer_source(py, &PyBytes::new_bound(py, &[]), zstd_safe::CCtx::in_size())?;
 
         let it = Py::new(
             py,
@@ -149,7 +150,8 @@ impl ZstdCompressionChunker {
             ));
         }
 
-        let source = make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::CCtx::in_size())?;
+        let source =
+            make_in_buffer_source(py, &PyBytes::new_bound(py, &[]), zstd_safe::CCtx::in_size())?;
 
         let it = Py::new(
             py,

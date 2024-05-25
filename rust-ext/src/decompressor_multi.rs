@@ -28,7 +28,7 @@ struct DataSource<'a> {
 pub fn multi_decompress_to_buffer(
     py: Python,
     dict_data: Option<&Py<ZstdCompressionDict>>,
-    frames: &PyAny,
+    frames: &Bound<'_, PyAny>,
     decompressed_sizes: Option<&Bound<'_, PyAny>>,
     threads: isize,
 ) -> PyResult<ZstdBufferWithSegmentsCollection> {
@@ -262,7 +262,7 @@ fn decompress_from_datasources(
                 }?;
 
                 let data = result.data.as_ref().unwrap();
-                let chunk = PyBytes::new(py, data);
+                let chunk = PyBytes::new_bound(py, data);
                 let segments = vec![BufferSegment {
                     offset: 0,
                     length: data.len() as _,
@@ -277,7 +277,10 @@ fn decompress_from_datasources(
                 };
                 let segments_buffer = PyBuffer::get_bound(&segments)?;
 
-                Py::new(py, ZstdBufferWithSegments::new(py, chunk, segments_buffer)?)
+                Py::new(
+                    py,
+                    ZstdBufferWithSegments::new(py, &chunk, segments_buffer)?,
+                )
             })
             .collect::<PyResult<Vec<_>>>()?,
     );

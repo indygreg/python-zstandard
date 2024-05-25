@@ -31,7 +31,7 @@ impl ZstdDecompressionWriter {
     pub fn new(
         py: Python,
         dctx: Arc<DCtx<'static>>,
-        writer: &PyAny,
+        writer: &Bound<'_, PyAny>,
         write_size: usize,
         write_return_read: bool,
         closefd: bool,
@@ -211,7 +211,7 @@ impl ZstdDecompressionWriter {
 
     #[pyo3(signature = (lines))]
     #[allow(unused_variables)]
-    fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
+    fn writelines(&self, py: Python, lines: &Bound<'_, PyAny>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
@@ -235,7 +235,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[allow(unused_variables)]
-    fn readinto(&self, py: Python, buffer: &PyAny) -> PyResult<()> {
+    fn readinto(&self, py: Python, buffer: &Bound<'_, PyAny>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
@@ -252,7 +252,7 @@ impl ZstdDecompressionWriter {
     }
 
     #[allow(unused_variables)]
-    fn readinto1(&self, py: Python, buffer: &PyAny) -> PyResult<()> {
+    fn readinto1(&self, py: Python, buffer: &Bound<'_, PyAny>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 

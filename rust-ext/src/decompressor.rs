@@ -89,8 +89,8 @@ impl ZstdDecompressor {
     fn copy_stream(
         &self,
         py: Python,
-        ifh: &PyAny,
-        ofh: &PyAny,
+        ifh: &Bound<'_, PyAny>,
+        ofh: &Bound<'_, PyAny>,
         read_size: Option<usize>,
         write_size: Option<usize>,
     ) -> PyResult<(usize, usize)> {
@@ -125,7 +125,7 @@ impl ZstdDecompressor {
         // Read all available input.
         loop {
             let read_object = ifh.call_method1("read", (read_size,))?;
-            let read_bytes: &PyBytes = read_object.downcast()?;
+            let read_bytes = read_object.downcast::<PyBytes>()?;
             let read_data = read_bytes.as_bytes();
 
             if read_data.len() == 0 {
@@ -400,7 +400,7 @@ impl ZstdDecompressor {
     fn multi_decompress_to_buffer(
         &self,
         py: Python,
-        frames: &PyAny,
+        frames: &Bound<'_, PyAny>,
         decompressed_sizes: Option<&Bound<'_, PyAny>>,
         threads: isize,
     ) -> PyResult<ZstdBufferWithSegmentsCollection> {
@@ -419,7 +419,7 @@ impl ZstdDecompressor {
     fn read_to_iter(
         &self,
         py: Python,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         read_size: Option<usize>,
         write_size: Option<usize>,
         skip_bytes: Option<usize>,
@@ -456,7 +456,7 @@ impl ZstdDecompressor {
     fn stream_reader(
         &self,
         py: Python,
-        source: &PyAny,
+        source: &Bound<'_, PyAny>,
         read_size: Option<usize>,
         read_across_frames: bool,
         closefd: bool,
@@ -479,7 +479,7 @@ impl ZstdDecompressor {
     fn stream_writer(
         &self,
         py: Python,
-        writer: &PyAny,
+        writer: &Bound<'_, PyAny>,
         write_size: Option<usize>,
         write_return_read: bool,
         closefd: bool,

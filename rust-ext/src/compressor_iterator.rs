@@ -103,7 +103,7 @@ impl ZstdCompressorIterator {
     pub fn new(
         py: Python,
         cctx: Arc<CCtx<'static>>,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         size: u64,
         read_size: usize,
         write_size: usize,

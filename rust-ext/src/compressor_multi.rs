@@ -29,7 +29,7 @@ pub fn multi_compress_to_buffer(
     py: Python,
     params: &CCtxParams,
     dict: &Option<Py<ZstdCompressionDict>>,
-    data: &PyAny,
+    data: &Bound<'_, PyAny>,
     threads: isize,
 ) -> PyResult<ZstdBufferWithSegmentsCollection> {
     let threads = if threads < 0 {
@@ -193,7 +193,7 @@ fn compress_from_datasources(
                 }
 
                 let data = result.data.as_ref().unwrap();
-                let chunk = PyBytes::new(py, data);
+                let chunk = PyBytes::new_bound(py, data);
                 let segments = vec![BufferSegment {
                     offset: 0,
                     length: data.len() as _,
@@ -208,7 +208,10 @@ fn compress_from_datasources(
                 };
                 let segments_buffer = PyBuffer::get_bound(&segments)?;
 
-                Py::new(py, ZstdBufferWithSegments::new(py, chunk, segments_buffer)?)
+                Py::new(
+                    py,
+                    ZstdBufferWithSegments::new(py, &chunk, segments_buffer)?,
+                )
             })
             .collect::<PyResult<Vec<_>>>()?,
     );

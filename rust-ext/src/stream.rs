@@ -134,7 +134,7 @@ impl InBufferSource for BufferSource {
 
 pub(crate) fn make_in_buffer_source(
     py: Python,
-    source: &PyAny,
+    source: &Bound<'_, PyAny>,
     read_size: usize,
 ) -> PyResult<Box<dyn InBufferSource + Send>> {
     if source.hasattr("read")? {

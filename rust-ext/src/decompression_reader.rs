@@ -35,7 +35,7 @@ impl ZstdDecompressionReader {
     pub fn new(
         py: Python,
         dctx: Arc<DCtx<'static>>,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         read_size: usize,
         read_across_frames: bool,
         closefd: bool,
@@ -122,9 +122,9 @@ impl ZstdDecompressionReader {
     fn __exit__<'p>(
         mut slf: PyRefMut<'p, Self>,
         py: Python<'p>,
-        exc_type: &PyAny,
-        exc_value: &PyAny,
-        exc_tb: &PyAny,
+        exc_type: &Bound<'_, PyAny>,
+        exc_value: &Bound<'_, PyAny>,
+        exc_tb: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
         slf.entered = false;
         // TODO release decompressor and source?
@@ -165,7 +165,7 @@ impl ZstdDecompressionReader {
 
     #[pyo3(signature = (data))]
     #[allow(unused_variables)]
-    fn write(&self, py: Python, data: &PyAny) -> PyResult<()> {
+    fn write(&self, py: Python, data: &Bound<'_, PyAny>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
@@ -174,7 +174,7 @@ impl ZstdDecompressionReader {
 
     #[pyo3(signature = (lines))]
     #[allow(unused_variables)]
-    fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
+    fn writelines(&self, py: Python, lines: &Bound<'_, PyAny>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 

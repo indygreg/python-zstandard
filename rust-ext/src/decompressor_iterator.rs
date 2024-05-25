@@ -80,7 +80,7 @@ impl ZstdDecompressorIterator {
     pub fn new(
         py: Python,
         dctx: Arc<DCtx<'static>>,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         read_size: usize,
         write_size: usize,
         skip_bytes: usize,

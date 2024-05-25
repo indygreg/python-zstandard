@@ -35,7 +35,7 @@ impl ZstdCompressionWriter {
     pub fn new(
         py: Python,
         cctx: Arc<CCtx<'static>>,
-        writer: &PyAny,
+        writer: &Bound<'_, PyAny>,
         source_size: u64,
         write_size: usize,
         write_return_read: bool,
@@ -92,9 +92,9 @@ impl ZstdCompressionWriter {
     fn __exit__<'p>(
         mut slf: PyRefMut<'p, Self>,
         py: Python<'p>,
-        _exc_type: &PyAny,
-        _exc_value: &PyAny,
-        _exc_tb: &PyAny,
+        _exc_type: &Bound<'_, PyAny>,
+        _exc_value: &Bound<'_, PyAny>,
+        _exc_tb: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
         slf.entered = false;
         slf.close(py)?;
@@ -197,7 +197,7 @@ impl ZstdCompressionWriter {
     }
 
     #[allow(unused_variables)]
-    fn writelines(&self, lines: &PyAny) -> PyResult<()> {
+    fn writelines(&self, lines: &Bound<'_, PyAny>) -> PyResult<()> {
         Err(PyNotImplementedError::new_err(()))
     }
 
@@ -218,7 +218,7 @@ impl ZstdCompressionWriter {
     }
 
     #[allow(unused_variables)]
-    fn readinto(&self, py: Python, b: &PyAny) -> PyResult<()> {
+    fn readinto(&self, py: Python, b: &Bound<'_, PyAny>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 

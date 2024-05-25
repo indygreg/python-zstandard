@@ -34,7 +34,7 @@ impl ZstdCompressionReader {
     pub fn new(
         py: Python,
         cctx: Arc<CCtx<'static>>,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         size: u64,
         read_size: usize,
         closefd: bool,
@@ -183,11 +183,11 @@ impl ZstdCompressionReader {
         Err(PyErr::from_value_bound(exc))
     }
 
-    fn write(&self, _data: &PyAny) -> PyResult<()> {
+    fn write(&self, _data: &Bound<'_, PyAny>) -> PyResult<()> {
         Err(PyOSError::new_err("stream is not writable"))
     }
 
-    fn writelines(&self, _data: &PyAny) -> PyResult<()> {
+    fn writelines(&self, _data: &Bound<'_, PyAny>) -> PyResult<()> {
         Err(PyOSError::new_err("stream is not writable"))
     }
 
