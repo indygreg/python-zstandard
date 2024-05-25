@@ -147,7 +147,7 @@ impl ZstdDecompressionReader {
 
     #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
-    fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
+    fn readline(&self, py: Python, size: Option<&Bound<'_, PyAny>>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
@@ -156,7 +156,7 @@ impl ZstdDecompressionReader {
 
     #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
-    fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
+    fn readlines(&self, py: Python, hint: Option<&Bound<'_, PyAny>>) -> PyResult<()> {
         let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 

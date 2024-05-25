@@ -401,7 +401,7 @@ impl ZstdDecompressor {
         &self,
         py: Python,
         frames: &PyAny,
-        decompressed_sizes: Option<&PyAny>,
+        decompressed_sizes: Option<&Bound<'_, PyAny>>,
         threads: isize,
     ) -> PyResult<ZstdBufferWithSegmentsCollection> {
         self.setup_dctx(py, true)?;

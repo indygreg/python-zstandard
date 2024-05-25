@@ -29,7 +29,7 @@ pub fn multi_decompress_to_buffer(
     py: Python,
     dict_data: Option<&Py<ZstdCompressionDict>>,
     frames: &PyAny,
-    decompressed_sizes: Option<&PyAny>,
+    decompressed_sizes: Option<&Bound<'_, PyAny>>,
     threads: isize,
 ) -> PyResult<ZstdBufferWithSegmentsCollection> {
     let threads = if threads < 0 {
