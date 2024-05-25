@@ -10,11 +10,11 @@ jobs:
 
       matrix:
         image:
-          - 'quay.io/pypa/manylinux2014_aarch64'
-          - 'quay.io/pypa/musllinux_1_1_aarch64'
-          - 'quay.io/pypa/manylinux2014_i686'
-          - 'quay.io/pypa/manylinux2014_x86_64'
-          - 'quay.io/pypa/musllinux_1_1_x86_64'
+          - 'manylinux2014_aarch64'
+          - 'musllinux_1_1_aarch64'
+          - 'manylinux2014_i686'
+          - 'manylinux2014_x86_64'
+          - 'musllinux_1_1_x86_64'
         py:
           - 'cp38-cp38'
           - 'cp39-cp39'
@@ -31,11 +31,12 @@ jobs:
 
       - name: Build Wheel
         run: |
-          docker run -e PYPATH=/opt/python/${{ matrix.py }} -e ZSTD_WARNINGS_AS_ERRORS=1 --rm -v `pwd`:/project ${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
+          docker run -e PYPATH=/opt/python/${{ matrix.py }} -e ZSTD_WARNINGS_AS_ERRORS=1 --rm -v `pwd`:/project quay.io/pypa/${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: linux-${{ matrix.py }}-${{ matrix.image }}
           path: dist
 
   macos:
@@ -43,18 +44,18 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - 'cp38-*'
-          - 'cp39-*'
-          - 'cp310-*'
-          - 'cp311-*'
-          - 'cp312-*'
+          - 'cp38'
+          - 'cp39'
+          - 'cp310'
+          - 'cp311'
+          - 'cp312'
         arch:
           - 'arm64'
           - 'x86_64'
     runs-on: 'macos-13'
     env:
       CIBW_ARCHS: ${{ matrix.arch }}
-      CIBW_BUILD: ${{ matrix.py }}
+      CIBW_BUILD: ${{ matrix.py }}-*
       CIBW_BUILD_VERBOSITY: '1'
       CIBW_PRERELEASE_PYTHONS: '1'
       ZSTD_WARNINGS_AS_ERRORS: '1'
@@ -75,8 +76,9 @@ jobs:
           cibuildwheel --output-dir dist
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: macos-${{ matrix.py }}-${{ matrix.arch }}
           path: dist
 
   windows:
