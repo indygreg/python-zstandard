@@ -41,7 +41,7 @@ pub fn multi_decompress_to_buffer(
     };
 
     let frame_sizes: &[u64] = if let Some(frames_sizes) = decompressed_sizes {
-        let buffer: PyBuffer<u8> = PyBuffer::get(frames_sizes)?;
+        let buffer: PyBuffer<u8> = PyBuffer::get_bound(&frames_sizes.as_borrowed())?;
         unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const _, buffer.len_bytes() / 8) }
     } else {
         &[]
@@ -111,7 +111,7 @@ pub fn multi_decompress_to_buffer(
         sources.reserve_exact(list.len());
 
         for (i, item) in list.iter().enumerate() {
-            let buffer: PyBuffer<u8> = PyBuffer::get(item)
+            let buffer: PyBuffer<u8> = PyBuffer::get_bound(&item.as_borrowed())
                 .map_err(|_| PyTypeError::new_err(format!("item {} not a bytes like object", i)))?;
 
             let slice = unsafe {

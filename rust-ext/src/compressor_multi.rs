@@ -72,7 +72,7 @@ pub fn multi_compress_to_buffer(
         sources.reserve_exact(list.len());
 
         for (i, item) in list.iter().enumerate() {
-            let buffer: PyBuffer<u8> = PyBuffer::get(item)
+            let buffer: PyBuffer<u8> = PyBuffer::get_bound(&item.as_borrowed())
                 .map_err(|_| PyTypeError::new_err(format!("item {} not a bytes like object", i)))?;
 
             let slice = unsafe {

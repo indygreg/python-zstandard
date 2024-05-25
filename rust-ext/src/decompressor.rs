@@ -250,7 +250,7 @@ impl ZstdDecompressor {
             return Err(PyValueError::new_err("chunk 0 must be bytes"));
         }
 
-        let chunk_buffer: PyBuffer<u8> = PyBuffer::get(chunk)?;
+        let chunk_buffer: PyBuffer<u8> = PyBuffer::get_bound(&chunk.as_borrowed())?;
         let mut params = zstd_sys::ZSTD_frameHeader {
             frameContentSize: 0,
             windowSize: 0,
@@ -314,7 +314,7 @@ impl ZstdDecompressor {
                 return Err(PyValueError::new_err(format!("chunk {} must be bytes", i)));
             }
 
-            let chunk_buffer: PyBuffer<u8> = PyBuffer::get(chunk)?;
+            let chunk_buffer: PyBuffer<u8> = PyBuffer::get_bound(&chunk.as_borrowed())?;
 
             let zresult = unsafe {
                 zstd_sys::ZSTD_getFrameHeader(

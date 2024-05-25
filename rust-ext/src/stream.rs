@@ -146,7 +146,7 @@ pub(crate) fn make_in_buffer_source(
             offset: 0,
         }))
     } else {
-        let buffer = PyBuffer::get(source).map_err(|_| {
+        let buffer = PyBuffer::get_bound(&source.as_borrowed()).map_err(|_| {
             PyValueError::new_err(
                 "must pass an object with a read() method or conforms to buffer protocol",
             )

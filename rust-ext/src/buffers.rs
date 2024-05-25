@@ -205,7 +205,7 @@ impl ZstdBufferWithSegments {
 
     #[new]
     pub fn new(py: Python, data: &PyAny, segments: PyBuffer<u8>) -> PyResult<Self> {
-        let data_buffer = PyBuffer::get(data)?;
+        let data_buffer = PyBuffer::get_bound(&data.as_borrowed())?;
 
         if segments.len_bytes() % std::mem::size_of::<BufferSegment>() != 0 {
             return Err(PyValueError::new_err(format!(
