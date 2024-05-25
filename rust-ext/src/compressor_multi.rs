@@ -200,13 +200,13 @@ fn compress_from_datasources(
                 }];
 
                 let segments = unsafe {
-                    PyBytes::from_ptr(
+                    PyBytes::bound_from_ptr(
                         py,
                         segments.as_ptr() as *const _,
                         segments.len() * std::mem::size_of::<BufferSegment>(),
                     )
                 };
-                let segments_buffer = PyBuffer::get(segments)?;
+                let segments_buffer = PyBuffer::get_bound(&segments)?;
 
                 Py::new(py, ZstdBufferWithSegments::new(py, chunk, segments_buffer)?)
             })
