@@ -52,6 +52,16 @@ Changes
 -------
 
 * PyO3 Rust crate upgraded from 0.18 to 0.21.
+* Semi official support for CPython 3.13. Binary wheels for 3.13 are now published
+  during releases. There were no meaningful code changes to support Python 3.12.
+  Support is *semi official* since 3.13 is still in beta and 3.13 is currently being
+  built against a pre-release version of cffi 1.17. We also lack a Rust extension
+  for 3.13 since PyO3 lacks a release with 3.13 support.
+* ``pyproject.toml`` now lists version constraints of `[build-system]` requirements,
+  not exact versions. This should provide more compatibility with more environments.
+  ``setuptools`` is held back before 69.0.0 because that version apparently broke
+  support for using ``--global-settings=--build-option`` in editable installs, which
+  our CI relies on.
 
 0.22.0 (released 2023-11-01)
 ============================

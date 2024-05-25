@@ -29,6 +29,10 @@ if sys.version_info[0:2] < (3, 8):
 # garbage collection pitfalls.
 MINIMUM_CFFI_VERSION = "1.11"
 
+# Need 1.17+ on 3.13 to avoid deprecated and removed APIs.
+if sys.version_info[0:2] >= (3, 13):
+    MINIMUM_CFFI_VERSION = "1.17"
+
 try:
     import cffi
 
@@ -37,8 +41,8 @@ try:
     cffi_version = LooseVersion(cffi.__version__)
     if cffi_version < LooseVersion(MINIMUM_CFFI_VERSION):
         print(
-            "CFFI 1.11 or newer required (%s found); "
-            "not building CFFI backend" % cffi_version,
+            "CFFI %s or newer required (%s found); "
+            "not building CFFI backend" % (MINIMUM_CFFI_VERSION, cffi_version),
             file=sys.stderr,
         )
         cffi = None
@@ -144,6 +148,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
     keywords=["zstandard", "zstd", "compression"],
     packages=["zstandard"],

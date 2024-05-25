@@ -14,12 +14,14 @@ jobs:
           - '3.10'
           - '3.11'
           - '3.12'
+          - '3.13'
     runs-on: 'ubuntu-22.04'
     steps:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
+          allow-prereleases: ${{ matrix.py == '3.13' && true || false }}
 
       - uses: actions/checkout@v4
 

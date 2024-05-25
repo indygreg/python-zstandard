@@ -19,6 +19,7 @@ jobs:
           - '3.10'
           - '3.11'
           - '3.12'
+          - '3.13'
         arch:
           - 'arm64'
           - 'x86'
@@ -49,7 +50,8 @@ jobs:
     env:
       # Enable fuzzing tests, other expensive tests.
       ZSTD_SLOW_TESTS: '1'
-      # Make all compile warnings fatal.
+      # Make all compile warnings fatal except on 3.13, which has some deprecations
+      # at the moment.
       ZSTD_WARNINGS_AS_ERRORS: '1'
       # More thorough fuzzing coverage.
       HYPOTHESIS_PROFILE: 'ci'
@@ -61,6 +63,7 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
+          allow-prereleases: ${{ matrix.py == '3.13' && true || false }}
 
       - name: Install Rust
         if: matrix.arch == 'x64'
@@ -71,17 +74,26 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Dependencies
+        if: matrix.py != '3.13'
         shell: bash
         run: |
           python -m pip install --require-hashes -r ci/requirements.txt
 
-      - name: Build (Rust)
-        if: matrix.arch == 'x64'
+      # TODO remove once cffi 1.17 is released and is part of requirements.txt.
+      - name: Install Dependencies (Python 3.13)
+        if: matrix.py == '3.13'
+        shell: bash
         run: |
-          python -m pip install --config-setting='--build-option=--rust-backend' -e .
+          python -m pip install --require-hashes -r ci/requirements.313.txt
+
+      # TODO enable once PyO3 supports 3.13.
+      - name: Build (Rust)
+        if: matrix.arch == 'x64' && matrix.py != '3.13'
+        run: |
+          python -m pip install --config-settings='--build-option=--rust-backend' -e .
 
       - name: Build (No Rust)
-        if: matrix.arch != 'x64'
+        if: matrix.arch != 'x64' || matrix.py == '3.13'
         run: |
           python -m pip install -e .
 
