@@ -249,7 +249,7 @@ impl ZstdCompressionParameters {
     }
 
     /// Set parameters from a dictionary of options.
-    fn set_parameters(&self, kwargs: &PyDict) -> PyResult<()> {
+    fn set_parameters(&self, kwargs: &Bound<'_, PyDict>) -> PyResult<()> {
         unsafe {
             zstd_sys::ZSTD_CCtxParams_reset(self.params);
         }
@@ -390,7 +390,7 @@ impl ZstdCompressionParameters {
         _cls: Bound<'_, PyType>,
         py: Python,
         args: &Bound<'_, PyTuple>,
-        kwargs: Option<&PyDict>,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         if args.len() != 1 {
             return Err(PyTypeError::new_err(format!(
@@ -402,7 +402,7 @@ impl ZstdCompressionParameters {
         let kwargs = if let Some(v) = kwargs {
             v.copy()?
         } else {
-            PyDict::new(py)
+            PyDict::new_bound(py)
         };
 
         let level = args.get_item(0)?.extract::<i32>()?;
@@ -446,12 +446,16 @@ impl ZstdCompressionParameters {
             kwargs.set_item("strategy", compression_params.strategy as u32)?;
         }
 
-        Self::new(py, &PyTuple::empty_bound(py), Some(kwargs))
+        Self::new(py, &PyTuple::empty_bound(py), Some(&kwargs))
     }
 
     #[new]
     #[pyo3(signature = (* _args, * * kwargs))]
-    fn new(py: Python, _args: &Bound<'_, PyTuple>, kwargs: Option<&PyDict>) -> PyResult<Self> {
+    fn new(
+        py: Python,
+        _args: &Bound<'_, PyTuple>,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
         let params = unsafe { zstd_sys::ZSTD_createCCtxParams() };
         if params.is_null() {
             return Err(PyMemoryError::new_err("unable to create ZSTD_CCtx_params"));
@@ -462,7 +466,7 @@ impl ZstdCompressionParameters {
         let kwargs = if let Some(v) = kwargs {
             v.copy()?
         } else {
-            PyDict::new(py)
+            PyDict::new_bound(py)
         };
 
         instance.set_parameters(&kwargs)?;
