@@ -323,7 +323,7 @@ impl ZstdBufferWithSegmentsCollection {
         let mut offset = 0;
 
         for item in py_args {
-            let item: &PyCell<ZstdBufferWithSegments> = item.extract().map_err(|_| {
+            let item = item.downcast::<ZstdBufferWithSegments>().map_err(|_| {
                 PyTypeError::new_err("arguments must be BufferWithSegments instances")
             })?;
             let segment = item.borrow();
