@@ -389,7 +389,7 @@ impl ZstdCompressionParameters {
     fn from_level(
         _cls: Bound<'_, PyType>,
         py: Python,
-        args: &PyTuple,
+        args: &Bound<'_, PyTuple>,
         kwargs: Option<&PyDict>,
     ) -> PyResult<Self> {
         if args.len() != 1 {
@@ -446,12 +446,12 @@ impl ZstdCompressionParameters {
             kwargs.set_item("strategy", compression_params.strategy as u32)?;
         }
 
-        Self::new(py, PyTuple::empty(py), Some(kwargs))
+        Self::new(py, &PyTuple::empty_bound(py), Some(kwargs))
     }
 
     #[new]
     #[pyo3(signature = (* _args, * * kwargs))]
-    fn new(py: Python, _args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<Self> {
+    fn new(py: Python, _args: &Bound<'_, PyTuple>, kwargs: Option<&PyDict>) -> PyResult<Self> {
         let params = unsafe { zstd_sys::ZSTD_createCCtxParams() };
         if params.is_null() {
             return Err(PyMemoryError::new_err("unable to create ZSTD_CCtx_params"));

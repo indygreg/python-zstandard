@@ -216,5 +216,5 @@ fn compress_from_datasources(
             .collect::<PyResult<Vec<_>>>()?,
     );
 
-    ZstdBufferWithSegmentsCollection::new(py, els.as_gil_ref())
+    ZstdBufferWithSegmentsCollection::new(py, &els)
 }
