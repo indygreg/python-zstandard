@@ -51,6 +51,7 @@ Other Actions Not Blocking Release
 Changes
 -------
 
+* Bundled zstd library upgraded from 1.5.5 to 1.5.6.
 * PyO3 Rust crate upgraded from 0.18 to 0.21.
 * Semi official support for CPython 3.13. Binary wheels for 3.13 are now published
   during releases. There were no meaningful code changes to support Python 3.12.
