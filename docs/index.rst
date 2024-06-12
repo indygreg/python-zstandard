@@ -9,6 +9,7 @@ python-zstandard
    installing
    concepts
    api_usage
+   one_shot_api
    compressor
    decompressor
    multithreaded
