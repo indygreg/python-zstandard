@@ -52,9 +52,12 @@ Changes
 -------
 
 * Bundled zstd library upgraded from 1.5.5 to 1.5.6.
+* Releases now publish wheels for ``manylinux2014_ppc64le``,
+  ``manylinux2014_s390x``, ``musllinux_1_2_aarch64``, ``musllinux_1_2_i686``,
+  ``musllinux_1_2_ppc64le``, ``musllinux_1_2_s390x``, and ``musllinux_1_2_x86_64``.
 * PyO3 Rust crate upgraded from 0.18 to 0.21.
 * Semi official support for CPython 3.13. Binary wheels for 3.13 are now published
-  during releases. There were no meaningful code changes to support Python 3.12.
+  during releases. There were no meaningful code changes to support Python 3.13.
   Support is *semi official* since 3.13 is still in beta and 3.13 is currently being
   built against a pre-release version of cffi 1.17. We also lack a Rust extension
   for 3.13 since PyO3 lacks a release with 3.13 support.

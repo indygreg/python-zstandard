@@ -12,9 +12,16 @@ jobs:
         image:
           - 'manylinux2014_aarch64'
           - 'musllinux_1_1_aarch64'
+          - 'musllinux_1_2_aarch64'
           - 'manylinux2014_i686'
+          - 'musllinux_1_2_i686'
+          - 'manylinux2014_ppc64le'
+          - 'musllinux_1_2_ppc64le'
+          - 'manylinux2014_s390x'
+          - 'musllinux_1_2_s390x'
           - 'manylinux2014_x86_64'
           - 'musllinux_1_1_x86_64'
+          - 'musllinux_1_2_x86_64'
         py:
           - 'cp38-cp38'
           - 'cp39-cp39'
@@ -27,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up QEMU
-        if: ${{ endsWith(matrix.image, 'aarch64') }}
+        if: ${{ endsWith(matrix.image, 'aarch64') || endsWith(matrix.image, 'ppc64le') || endsWith(matrix.image, 's390x') }}
         uses: docker/setup-qemu-action@v3
 
       - name: Build Wheel
