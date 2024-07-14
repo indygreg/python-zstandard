@@ -29,9 +29,10 @@ if sys.version_info[0:2] < (3, 8):
 # garbage collection pitfalls.
 MINIMUM_CFFI_VERSION = "1.11"
 
-# Need 1.17+ on 3.13 to avoid deprecated and removed APIs.
+# Need 1.17.0rc1+ on 3.13 to avoid deprecated and removed APIs:
+# https://github.com/python-cffi/cffi/releases/tag/v1.17.0rc1
 if sys.version_info[0:2] >= (3, 13):
-    MINIMUM_CFFI_VERSION = "1.17"
+    MINIMUM_CFFI_VERSION = "1.17.0rc1"
 
 try:
     import cffi
