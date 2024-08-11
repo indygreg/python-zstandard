@@ -58,7 +58,7 @@ impl InBufferSource for ReadSource {
         // Attempt to read new data.
         } else {
             let data = self.source.call_method1(py, "read", (self.read_size,))?;
-            let buffer = PyBuffer::get(data.as_ref(py))?;
+            let buffer = PyBuffer::get_bound(data.bind(py))?;
 
             if buffer.len_bytes() == 0 {
                 self.finished = true;
@@ -134,7 +134,7 @@ impl InBufferSource for BufferSource {
 
 pub(crate) fn make_in_buffer_source(
     py: Python,
-    source: &PyAny,
+    source: &Bound<'_, PyAny>,
     read_size: usize,
 ) -> PyResult<Box<dyn InBufferSource + Send>> {
     if source.hasattr("read")? {
@@ -146,7 +146,7 @@ pub(crate) fn make_in_buffer_source(
             offset: 0,
         }))
     } else {
-        let buffer = PyBuffer::get(source).map_err(|_| {
+        let buffer = PyBuffer::get_bound(&source.as_borrowed()).map_err(|_| {
             PyValueError::new_err(
                 "must pass an object with a read() method or conforms to buffer protocol",
             )

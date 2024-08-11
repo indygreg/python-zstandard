@@ -9,7 +9,10 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - '3.7'
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
     runs-on: 'ubuntu-22.04'
     env:
       # Enable fuzzing tests, other expensive tests.
@@ -20,11 +23,11 @@ jobs:
       HYPOTHESIS_PROFILE: 'ci'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Create Anaconda Environment
         run: |
@@ -43,8 +46,9 @@ jobs:
           python ci/copy-conda-package.py
 
       - name: Upload Package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
+          name: linux-${{ matrix.py }}
           path: dist
 
   windows:
@@ -52,8 +56,10 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - '3.7'
           - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
     runs-on: 'windows-2022'
     env:
       # Enable fuzzing tests, other expensive tests.
@@ -64,11 +70,11 @@ jobs:
       HYPOTHESIS_PROFILE: 'ci'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Create Anaconda Environment
         run: |
@@ -85,6 +91,7 @@ jobs:
           C:\Miniconda\envs\env\python.exe ci/copy-conda-package.py
 
       - name: Upload Package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
+          name: windows-${{ matrix.py }}
           path: dist

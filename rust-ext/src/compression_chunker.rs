@@ -73,7 +73,7 @@ impl ZstdCompressionChunker {
     fn compress(
         &mut self,
         py: Python,
-        data: &PyAny,
+        data: &Bound<'_, PyAny>,
     ) -> PyResult<Py<ZstdCompressionChunkerIterator>> {
         self.ensure_state(py);
 
@@ -116,7 +116,8 @@ impl ZstdCompressionChunker {
             ));
         }
 
-        let source = make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::CCtx::in_size())?;
+        let source =
+            make_in_buffer_source(py, &PyBytes::new_bound(py, &[]), zstd_safe::CCtx::in_size())?;
 
         let it = Py::new(
             py,
@@ -149,7 +150,8 @@ impl ZstdCompressionChunker {
             ));
         }
 
-        let source = make_in_buffer_source(py, PyBytes::new(py, &[]), zstd_safe::CCtx::in_size())?;
+        let source =
+            make_in_buffer_source(py, &PyBytes::new_bound(py, &[]), zstd_safe::CCtx::in_size())?;
 
         let it = Py::new(
             py,
@@ -216,7 +218,7 @@ impl ZstdCompressionChunkerIterator {
 
             // If we produced a full output chunk, emit it.
             if slf.dest_buffer.len() == slf.dest_buffer.capacity() {
-                let chunk = PyBytes::new(py, &slf.dest_buffer);
+                let chunk = PyBytes::new_bound(py, &slf.dest_buffer);
                 slf.dest_buffer.clear();
 
                 return Ok(Some(chunk.into_py(py)));
@@ -269,7 +271,7 @@ impl ZstdCompressionChunkerIterator {
             slf.finished = true;
         }
 
-        let chunk = PyBytes::new(py, &slf.dest_buffer);
+        let chunk = PyBytes::new_bound(py, &slf.dest_buffer);
         slf.dest_buffer.clear();
 
         Ok(Some(chunk.into_py(py)))

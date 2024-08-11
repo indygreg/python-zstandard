@@ -57,7 +57,7 @@ impl ZstdDecompressorIterator {
             // Emit chunk if output buffer has data.
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &dest_buffer);
+                let chunk = PyBytes::new_bound(py, &dest_buffer);
                 return Ok(Some(chunk.into_py(py)));
             }
 
@@ -68,7 +68,7 @@ impl ZstdDecompressorIterator {
         // Input is exhausted. Emit what we have or finish.
         if !dest_buffer.is_empty() {
             // TODO avoid buffer copy.
-            let chunk = PyBytes::new(py, &dest_buffer);
+            let chunk = PyBytes::new_bound(py, &dest_buffer);
             Ok(Some(chunk.into_py(py)))
         } else {
             Ok(None)
@@ -80,7 +80,7 @@ impl ZstdDecompressorIterator {
     pub fn new(
         py: Python,
         dctx: Arc<DCtx<'static>>,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         read_size: usize,
         write_size: usize,
         skip_bytes: usize,

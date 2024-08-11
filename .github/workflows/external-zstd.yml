@@ -18,18 +18,18 @@ jobs:
           sudo apt-get install -y libzstd1 libzstd-dev python3-cffi
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build
         run: |
-          python setup.py --system-zstd install
+          python -m pip install --config-settings=--build-option=--system-zstd .
 
   macOS:
-    runs-on: 'macos-11'
+    runs-on: 'macos-13'
     env:
       # Make all compile warnings fatal.
       ZSTD_WARNINGS_AS_ERRORS: '1'
@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
@@ -47,8 +47,8 @@ jobs:
           brew install -v zstd
           python -m pip install cffi
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build
         run: |
-          python setup.py --system-zstd install
+          python -m pip install --config-settings=--build-option=--system-zstd .

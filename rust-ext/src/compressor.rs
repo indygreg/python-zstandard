@@ -160,7 +160,7 @@ impl ZstdCompressor {
         ))
     }
 
-    fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<&'p PyBytes> {
+    fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<Bound<'p, PyBytes>> {
         let source: &[u8] =
             unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const _, buffer.len_bytes()) };
 
@@ -171,7 +171,7 @@ impl ZstdCompressor {
             .allow_threads(|| cctx.compress(source))
             .or_else(|msg| Err(ZstdError::new_err(format!("cannot compress: {}", msg))))?;
 
-        Ok(PyBytes::new(py, &data))
+        Ok(PyBytes::new_bound(py, &data))
     }
 
     #[pyo3(signature = (size=None, chunk_size=None))]
@@ -219,8 +219,8 @@ impl ZstdCompressor {
     fn copy_stream(
         &self,
         py: Python,
-        ifh: &PyAny,
-        ofh: &PyAny,
+        ifh: &Bound<'_, PyAny>,
+        ofh: &Bound<'_, PyAny>,
         size: Option<u64>,
         read_size: Option<usize>,
         write_size: Option<usize>,
@@ -262,7 +262,7 @@ impl ZstdCompressor {
             // Try to read from source stream.
             let read_object = ifh.call_method("read", (read_size,), None)?;
 
-            let read_bytes: &PyBytes = read_object.downcast()?;
+            let read_bytes = read_object.downcast::<PyBytes>()?;
             let read_data = read_bytes.as_bytes();
 
             // If no data was read we are at EOF.
@@ -296,7 +296,7 @@ impl ZstdCompressor {
 
                 if !chunk.is_empty() {
                     // TODO avoid buffer copy.
-                    let data = PyBytes::new(py, chunk);
+                    let data = PyBytes::new_bound(py, chunk);
                     ofh.call_method("write", (data,), None)?;
                     total_write += chunk.len();
                 }
@@ -319,7 +319,7 @@ impl ZstdCompressor {
 
             if !chunk.is_empty() {
                 // TODO avoid buffer copy.
-                let data = PyBytes::new(py, &chunk);
+                let data = PyBytes::new_bound(py, &chunk);
                 ofh.call_method("write", (data,), None)?;
                 total_write += chunk.len();
             }
@@ -336,7 +336,7 @@ impl ZstdCompressor {
     fn multi_compress_to_buffer(
         &self,
         py: Python,
-        data: &PyAny,
+        data: &Bound<'_, PyAny>,
         threads: isize,
     ) -> PyResult<ZstdBufferWithSegmentsCollection> {
         multi_compress_to_buffer(py, &self.params, &self.dict, data, threads)
@@ -346,7 +346,7 @@ impl ZstdCompressor {
     fn read_to_iter(
         &self,
         py: Python,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         size: Option<u64>,
         read_size: Option<usize>,
         write_size: Option<usize>,
@@ -364,7 +364,7 @@ impl ZstdCompressor {
     fn stream_reader(
         &self,
         py: Python,
-        source: &PyAny,
+        source: &Bound<'_, PyAny>,
         size: Option<u64>,
         read_size: Option<usize>,
         closefd: bool,
@@ -381,7 +381,7 @@ impl ZstdCompressor {
     fn stream_writer(
         &self,
         py: Python,
-        writer: &PyAny,
+        writer: &Bound<'_, PyAny>,
         size: Option<u64>,
         write_size: Option<usize>,
         write_return_read: bool,
@@ -410,7 +410,7 @@ impl ZstdCompressor {
     }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdCompressor>()?;
 
     Ok(())

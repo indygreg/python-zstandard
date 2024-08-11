@@ -774,6 +774,7 @@ class TestCompressor_multi_compress_to_buffer_fuzzing(unittest.TestCase):
 class TestCompressor_chunker_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]

@@ -27,6 +27,7 @@ impl<'a> Drop for CCtxParams<'a> {
 }
 
 unsafe impl<'a> Send for CCtxParams<'a> {}
+
 unsafe impl<'a> Sync for CCtxParams<'a> {}
 
 impl<'a> CCtxParams<'a> {
@@ -248,7 +249,7 @@ impl ZstdCompressionParameters {
     }
 
     /// Set parameters from a dictionary of options.
-    fn set_parameters(&self, kwargs: &PyDict) -> PyResult<()> {
+    fn set_parameters(&self, kwargs: &Bound<'_, PyDict>) -> PyResult<()> {
         unsafe {
             zstd_sys::ZSTD_CCtxParams_reset(self.params);
         }
@@ -304,7 +305,7 @@ impl ZstdCompressionParameters {
                     return Err(PyTypeError::new_err(format!(
                         "'{}' is an invalid keyword argument",
                         key
-                    )))
+                    )));
                 }
             }
         }
@@ -384,12 +385,12 @@ impl ZstdCompressionParameters {
 #[pymethods]
 impl ZstdCompressionParameters {
     #[classmethod]
-    #[pyo3(signature = (*args, **kwargs))]
+    #[pyo3(signature = (* args, * * kwargs))]
     fn from_level(
-        _cls: &PyType,
+        _cls: Bound<'_, PyType>,
         py: Python,
-        args: &PyTuple,
-        kwargs: Option<&PyDict>,
+        args: &Bound<'_, PyTuple>,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         if args.len() != 1 {
             return Err(PyTypeError::new_err(format!(
@@ -401,19 +402,19 @@ impl ZstdCompressionParameters {
         let kwargs = if let Some(v) = kwargs {
             v.copy()?
         } else {
-            PyDict::new(py)
+            PyDict::new_bound(py)
         };
 
         let level = args.get_item(0)?.extract::<i32>()?;
 
-        let source_size = if let Some(value) = kwargs.get_item("source_size") {
+        let source_size = if let Some(value) = kwargs.get_item("source_size")? {
             kwargs.del_item("source_size")?;
             value.extract::<u64>()?
         } else {
             0
         };
 
-        let dict_size = if let Some(value) = kwargs.get_item("dict_size") {
+        let dict_size = if let Some(value) = kwargs.get_item("dict_size")? {
             kwargs.del_item("dict_size")?;
             value.extract::<usize>()?
         } else {
@@ -445,12 +446,16 @@ impl ZstdCompressionParameters {
             kwargs.set_item("strategy", compression_params.strategy as u32)?;
         }
 
-        Self::new(py, PyTuple::empty(py), Some(kwargs))
+        Self::new(py, &PyTuple::empty_bound(py), Some(&kwargs))
     }
 
     #[new]
-    #[pyo3(signature = (*_args, **kwargs))]
-    fn new(py: Python, _args: &PyTuple, kwargs: Option<&PyDict>) -> PyResult<Self> {
+    #[pyo3(signature = (* _args, * * kwargs))]
+    fn new(
+        py: Python,
+        _args: &Bound<'_, PyTuple>,
+        kwargs: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
         let params = unsafe { zstd_sys::ZSTD_createCCtxParams() };
         if params.is_null() {
             return Err(PyMemoryError::new_err("unable to create ZSTD_CCtx_params"));
@@ -461,7 +466,7 @@ impl ZstdCompressionParameters {
         let kwargs = if let Some(v) = kwargs {
             v.copy()?
         } else {
-            PyDict::new(py)
+            PyDict::new_bound(py)
         };
 
         instance.set_parameters(&kwargs)?;
@@ -581,7 +586,7 @@ impl ZstdCompressionParameters {
     }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdCompressionParameters>()?;
 
     Ok(())

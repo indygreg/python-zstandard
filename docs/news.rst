@@ -45,8 +45,30 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
-0.22.0 (not yet released)
-=========================
+0.23.0 (released 2024-07-14)
+============================
+
+Changes
+-------
+
+* Bundled zstd library upgraded from 1.5.5 to 1.5.6.
+* Releases now publish wheels for ``manylinux2014_ppc64le``,
+  ``manylinux2014_s390x``, ``musllinux_1_2_aarch64``, ``musllinux_1_2_i686``,
+  ``musllinux_1_2_ppc64le``, ``musllinux_1_2_s390x``, and ``musllinux_1_2_x86_64``.
+* PyO3 Rust crate upgraded from 0.18 to 0.21.
+* Semi official support for CPython 3.13. Binary wheels for 3.13 are now published
+  during releases. There were no meaningful code changes to support Python 3.13.
+  Support is *semi official* since 3.13 is still in beta and 3.13 is currently being
+  built against a pre-release version of cffi 1.17. We also lack a Rust extension
+  for 3.13 since PyO3 lacks a release with 3.13 support.
+* ``pyproject.toml`` now lists version constraints of `[build-system]` requirements,
+  not exact versions. This should provide more compatibility with more environments.
+  ``setuptools`` is held back before 69.0.0 because that version apparently broke
+  support for using ``--global-settings=--build-option`` in editable installs, which
+  our CI relies on.
+
+0.22.0 (released 2023-11-01)
+============================
 
 Backwards Compatibility Notes
 -----------------------------
@@ -55,6 +77,14 @@ Backwards Compatibility Notes
   default to ``True`` in a future release. If you depend on the current
   functionality of stopping at frame boundaries, start explicitly passing
   ``read_across_frames=False`` to preserve the current behavior.
+* ``manylinux2010`` wheels are no longer published since this wheel format
+  is no longer supported by the pypa/manylinux project.
+* Removed CI coverage for PyPy 3.7 and 3.8, which are no longer supported
+  PyPy versions.
+* Support for Python 3.7 has been dropped because it reached end of life.
+  Python 3.8 is the minimum supported Python version. The code should still be
+  compatible with Python 3.7 and removing of version checks from ``setup.py``
+  will likely yield a working install. However, this is no officially supported.
 
 Changes
 -------
@@ -63,6 +93,17 @@ Changes
   boolean named argument to control whether to transparently read across
   multiple zstd frames. It defaults to ``False`` to preserve existing
   behavior.
+* Added CI coverage for PyPy 3.10.
+* Added CI coverage for newer Anaconda Python versions.
+* Packages used in CI have been upgraded to latest versions. This should
+  nominally only impact developers of this project and not end-users.
+* ``pyproject.toml`` now declares a ``[build-system]`` section saying to build
+  with setuptools.
+* CI now builds wheels with pip instead of ``setup.py`` directly.
+* Official support for CPython 3.12. Binary wheels for 3.12 are now published
+  during releases. There were no meaningful code changes to support Python 3.12.
+* Binary wheels for musllinux_1_1 x86_64 and aarch64 are now being built and
+  published.
 
 0.21.0 (released 2023-04-16)
 ============================

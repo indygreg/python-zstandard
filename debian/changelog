@@ -1,4 +1,10 @@
-python-zstandard (0.22.0~dev0-1) unstable; urgency=low
+python-zstandard (0.23.0) unstable; urgency=low
+
+  * New version.
+
+ -- Gregory Szorc <gregory.szorc@gmail.com>  Sun, 14 Jul 2024 12:15:00 -0700
+
+python-zstandard (0.22.0) unstable; urgency=low
 
   * New version.
 

@@ -9,7 +9,7 @@ use pyo3::{prelude::*, types::PyBytes};
 pub(crate) const COMPRESSOBJ_FLUSH_FINISH: i32 = 0;
 pub(crate) const COMPRESSOBJ_FLUSH_BLOCK: i32 = 1;
 
-pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("__version", super::VERSION)?;
     module.add("__doc__", "Rust backend for zstandard bindings")?;
 
@@ -27,7 +27,7 @@ pub(crate) fn init_module(py: Python, module: &PyModule) -> PyResult<()> {
             zstd_safe::VERSION_RELEASE,
         ),
     )?;
-    module.add("FRAME_HEADER", PyBytes::new(py, b"\x28\xb5\x2f\xfd"))?;
+    module.add("FRAME_HEADER", PyBytes::new_bound(py, b"\x28\xb5\x2f\xfd"))?;
 
     module.add("CONTENTSIZE_UNKNOWN", zstd_safe::CONTENTSIZE_UNKNOWN)?;
     module.add("CONTENTSIZE_ERROR", zstd_safe::CONTENTSIZE_ERROR)?;

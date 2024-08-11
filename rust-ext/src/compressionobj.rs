@@ -31,7 +31,7 @@ impl ZstdCompressionObj {
 
 #[pymethods]
 impl ZstdCompressionObj {
-    fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<&'p PyBytes> {
+    fn compress<'p>(&self, py: Python<'p>, buffer: PyBuffer<u8>) -> PyResult<Bound<'p, PyBytes>> {
         if self.finished {
             return Err(ZstdError::new_err(
                 "cannot call compress() after compressor finished",
@@ -63,10 +63,14 @@ impl ZstdCompressionObj {
             source = result.1;
         }
 
-        Ok(PyBytes::new(py, &compressed))
+        Ok(PyBytes::new_bound(py, &compressed))
     }
 
-    fn flush<'p>(&mut self, py: Python<'p>, flush_mode: Option<i32>) -> PyResult<&'p PyBytes> {
+    fn flush<'p>(
+        &mut self,
+        py: Python<'p>,
+        flush_mode: Option<i32>,
+    ) -> PyResult<Bound<'p, PyBytes>> {
         let flush_mode = if let Some(flush_mode) = flush_mode {
             match flush_mode {
                 COMPRESSOBJ_FLUSH_FINISH => Ok(zstd_sys::ZSTD_EndDirective::ZSTD_e_end),
@@ -104,7 +108,7 @@ impl ZstdCompressionObj {
             result.extend(&chunk);
 
             if !call_again {
-                return Ok(PyBytes::new(py, &result));
+                return Ok(PyBytes::new_bound(py, &result));
             }
         }
     }

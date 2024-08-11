@@ -1,2 +1,15 @@
+[build-system]
+requires = [
+    "cffi>=1.16.0; python_version <= '3.12'",
+    "cffi==1.17.0rc1; python_version >= '3.13'",
+    # 69.0.0 breaks handling of --config-settings=--build-option, which our CI
+    # relies on. So constrained to an older version until we figure out a
+    # workaround. See comment at
+    # https://github.com/pypa/pip/issues/11859#issuecomment-2132287974.
+    "setuptools<69.0.0",
+]
+# Need to use legacy backend because setup_zstd.py breaks build isolation.
+build-backend = "setuptools.build_meta:__legacy__"
+
 [tool.black]
 line-length = 80

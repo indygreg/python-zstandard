@@ -10,27 +10,48 @@ jobs:
       matrix:
         os:
           - 'ubuntu-22.04'
-          - 'macos-12'
+          - 'macos-13'
+          - 'macos-14'
           - 'windows-2022'
         py:
-          - '3.7'
           - '3.8'
           - '3.9'
           - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
         arch:
+          - 'arm64'
           - 'x86'
           - 'x64'
         exclude:
           - os: 'ubuntu-22.04'
+            arch: 'arm64'
+          - os: 'ubuntu-22.04'
             arch: 'x86'
-          - os: 'macos-12'
+          - os: 'macos-13'
+            arch: 'arm64'
+          - os: 'macos-13'
             arch: 'x86'
+          - os: 'macos-14'
+            arch: 'x86'
+          - os: 'macos-14'
+            arch: 'x64'
+          - os: 'macos-14'
+            arch: 'arm64'
+            py: '3.8'
+          - os: 'macos-14'
+            arch: 'arm64'
+            py: '3.9'
+          - os: 'windows-2022'
+            arch: 'arm64'
+
     runs-on: ${{ matrix.os }}
     env:
       # Enable fuzzing tests, other expensive tests.
       ZSTD_SLOW_TESTS: '1'
-      # Make all compile warnings fatal.
+      # Make all compile warnings fatal except on 3.13, which has some deprecations
+      # at the moment.
       ZSTD_WARNINGS_AS_ERRORS: '1'
       # More thorough fuzzing coverage.
       HYPOTHESIS_PROFILE: 'ci'
@@ -38,10 +59,11 @@ jobs:
       PYTHONDEVMODE: '1'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
+          allow-prereleases: ${{ matrix.py == '3.13' && true || false }}
 
       - name: Install Rust
         if: matrix.arch == 'x64'
@@ -49,32 +71,41 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Dependencies
+        if: matrix.py != '3.13'
         shell: bash
         run: |
           python -m pip install --require-hashes -r ci/requirements.txt
 
-      - name: Build (Rust)
-        if: matrix.arch == 'x64'
+      # TODO remove once cffi 1.17 is released and is part of requirements.txt.
+      - name: Install Dependencies (Python 3.13)
+        if: matrix.py == '3.13'
+        shell: bash
         run: |
-          python setup.py --rust-backend develop
+          python -m pip install --require-hashes -r ci/requirements.313.txt
+
+      # TODO enable once PyO3 supports 3.13.
+      - name: Build (Rust)
+        if: matrix.arch == 'x64' && matrix.py != '3.13'
+        run: |
+          python -m pip install --config-settings='--build-option=--rust-backend' -e .
 
       - name: Build (No Rust)
-        if: matrix.arch != 'x64'
+        if: matrix.arch != 'x64' || matrix.py == '3.13'
         run: |
-          python setup.py develop
+          python -m pip install -e .
 
       - name: Test C Backend
         run: |
-          pytest --numprocesses=auto -v tests/
+          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test CFFI Backend
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
         run: |
-          pytest --numprocesses=auto -v tests/
+          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test Rust Backend
         if: matrix.arch == 'x64'
@@ -83,4 +114,4 @@ jobs:
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'rust'
         run: |
-          pytest --numprocesses=auto -v tests/
+          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/

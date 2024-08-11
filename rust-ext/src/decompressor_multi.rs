@@ -28,8 +28,8 @@ struct DataSource<'a> {
 pub fn multi_decompress_to_buffer(
     py: Python,
     dict_data: Option<&Py<ZstdCompressionDict>>,
-    frames: &PyAny,
-    decompressed_sizes: Option<&PyAny>,
+    frames: &Bound<'_, PyAny>,
+    decompressed_sizes: Option<&Bound<'_, PyAny>>,
     threads: isize,
 ) -> PyResult<ZstdBufferWithSegmentsCollection> {
     let threads = if threads < 0 {
@@ -41,7 +41,7 @@ pub fn multi_decompress_to_buffer(
     };
 
     let frame_sizes: &[u64] = if let Some(frames_sizes) = decompressed_sizes {
-        let buffer: PyBuffer<u8> = PyBuffer::get(frames_sizes)?;
+        let buffer: PyBuffer<u8> = PyBuffer::get_bound(&frames_sizes.as_borrowed())?;
         unsafe { std::slice::from_raw_parts(buffer.buf_ptr() as *const _, buffer.len_bytes() / 8) }
     } else {
         &[]
@@ -49,7 +49,7 @@ pub fn multi_decompress_to_buffer(
 
     let mut sources = vec![];
 
-    if let Ok(buffer) = frames.extract::<&PyCell<ZstdBufferWithSegments>>() {
+    if let Ok(buffer) = frames.downcast::<ZstdBufferWithSegments>() {
         if decompressed_sizes.is_some() && frame_sizes.len() != buffer.len()? {
             return Err(PyValueError::new_err(format!(
                 "decompressed_sizes size mismatch; expected {}, got {}",
@@ -70,7 +70,7 @@ pub fn multi_decompress_to_buffer(
                 decompressed_size: *frame_sizes.get(i).unwrap_or(&0) as _,
             });
         }
-    } else if let Ok(collection) = frames.extract::<&PyCell<ZstdBufferWithSegmentsCollection>>() {
+    } else if let Ok(collection) = frames.downcast::<ZstdBufferWithSegmentsCollection>() {
         let frames_count = collection.len()?;
 
         if decompressed_sizes.is_some() && frame_sizes.len() != frames_count {
@@ -85,7 +85,7 @@ pub fn multi_decompress_to_buffer(
 
         let mut offset = 0;
         for buffer_obj in &collection.borrow().buffers {
-            let buffer = buffer_obj.extract::<&PyCell<ZstdBufferWithSegments>>(py)?;
+            let buffer = buffer_obj.downcast_bound::<ZstdBufferWithSegments>(py)?;
             let borrow = buffer.borrow();
 
             for i in 0..borrow.segments.len() {
@@ -111,7 +111,7 @@ pub fn multi_decompress_to_buffer(
         sources.reserve_exact(list.len());
 
         for (i, item) in list.iter().enumerate() {
-            let buffer: PyBuffer<u8> = PyBuffer::get(item)
+            let buffer: PyBuffer<u8> = PyBuffer::get_bound(&item.as_borrowed())
                 .map_err(|_| PyTypeError::new_err(format!("item {} not a bytes like object", i)))?;
 
             let slice = unsafe {
@@ -242,7 +242,7 @@ fn decompress_from_datasources(
         .sort_by(|a, b| a.source_offset.cmp(&b.source_offset));
 
     // TODO this is horribly inefficient due to memory copies.
-    let els = PyTuple::new(
+    let els = PyTuple::new_bound(
         py,
         results
             .lock()
@@ -262,25 +262,28 @@ fn decompress_from_datasources(
                 }?;
 
                 let data = result.data.as_ref().unwrap();
-                let chunk = PyBytes::new(py, data);
+                let chunk = PyBytes::new_bound(py, data);
                 let segments = vec![BufferSegment {
                     offset: 0,
                     length: data.len() as _,
                 }];
 
                 let segments = unsafe {
-                    PyBytes::from_ptr(
+                    PyBytes::bound_from_ptr(
                         py,
                         segments.as_ptr() as *const _,
                         segments.len() * std::mem::size_of::<BufferSegment>(),
                     )
                 };
-                let segments_buffer = PyBuffer::get(segments)?;
+                let segments_buffer = PyBuffer::get_bound(&segments)?;
 
-                Py::new(py, ZstdBufferWithSegments::new(py, chunk, segments_buffer)?)
+                Py::new(
+                    py,
+                    ZstdBufferWithSegments::new(py, &chunk, segments_buffer)?,
+                )
             })
             .collect::<PyResult<Vec<_>>>()?,
     );
 
-    ZstdBufferWithSegmentsCollection::new(py, els)
+    ZstdBufferWithSegmentsCollection::new(py, &els)
 }

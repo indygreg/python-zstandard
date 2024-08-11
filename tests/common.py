@@ -3,11 +3,6 @@ import os
 
 from typing import List
 
-try:
-    import hypothesis  # type: ignore
-except ImportError:
-    hypothesis = None  # type: ignore
-
 
 class NonClosingBytesIO(io.BytesIO):
     """BytesIO that saves the underlying buffer on close().
@@ -81,11 +76,14 @@ def random_input_data():
         # We filter out __pycache__ because there is a race between another
         # process writing cache files and us reading them.
         dirs[:] = list(sorted(d for d in dirs if d != "__pycache__"))
+
         for f in sorted(files):
             try:
                 with open(os.path.join(root, f), "rb") as fh:
                     data = fh.read()
-                    if data:
+                    # Exclude large files because it can cause us to easily exceed
+                    # deadlines during fuzz testing.
+                    if data and len(data) < 131072:
                         _source_files.append(data)
             except OSError:
                 pass
@@ -121,18 +119,3 @@ def generate_samples():
         samples.append(inputs[-(i % 5)] * (i + 2))
 
     return samples
-
-
-if hypothesis:
-    default_settings = hypothesis.settings(deadline=10000)
-    hypothesis.settings.register_profile("default", default_settings)
-
-    ci_settings = hypothesis.settings(deadline=20000, max_examples=1000)
-    hypothesis.settings.register_profile("ci", ci_settings)
-
-    expensive_settings = hypothesis.settings(deadline=None, max_examples=10000)
-    hypothesis.settings.register_profile("expensive", expensive_settings)
-
-    hypothesis.settings.load_profile(
-        os.environ.get("HYPOTHESIS_PROFILE", "default")
-    )

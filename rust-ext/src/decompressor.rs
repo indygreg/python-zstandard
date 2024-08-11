@@ -89,8 +89,8 @@ impl ZstdDecompressor {
     fn copy_stream(
         &self,
         py: Python,
-        ifh: &PyAny,
-        ofh: &PyAny,
+        ifh: &Bound<'_, PyAny>,
+        ofh: &Bound<'_, PyAny>,
         read_size: Option<usize>,
         write_size: Option<usize>,
     ) -> PyResult<(usize, usize)> {
@@ -125,7 +125,7 @@ impl ZstdDecompressor {
         // Read all available input.
         loop {
             let read_object = ifh.call_method1("read", (read_size,))?;
-            let read_bytes: &PyBytes = read_object.downcast()?;
+            let read_bytes = read_object.downcast::<PyBytes>()?;
             let read_data = read_bytes.as_bytes();
 
             if read_data.len() == 0 {
@@ -146,7 +146,7 @@ impl ZstdDecompressor {
 
                 if !dest_buffer.is_empty() {
                     // TODO avoid buffer copy.
-                    let data = PyBytes::new(py, &dest_buffer);
+                    let data = PyBytes::new_bound(py, &dest_buffer);
 
                     ofh.call_method1("write", (data,))?;
                     total_write += dest_buffer.len();
@@ -167,7 +167,7 @@ impl ZstdDecompressor {
         max_output_size: usize,
         read_across_frames: bool,
         allow_extra_data: bool,
-    ) -> PyResult<&'p PyBytes> {
+    ) -> PyResult<Bound<'p, PyBytes>> {
         if read_across_frames {
             return Err(ZstdError::new_err(
                 "ZstdDecompressor.read_across_frames=True is not yet implemented",
@@ -185,7 +185,7 @@ impl ZstdDecompressor {
                     "error determining content size from frame header",
                 ));
             } else if output_size == 0 {
-                return Ok(PyBytes::new(py, &[]));
+                return Ok(PyBytes::new_bound(py, &[]));
             } else if output_size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _ {
                 if max_output_size == 0 {
                     return Err(ZstdError::new_err(
@@ -230,15 +230,15 @@ impl ZstdDecompressor {
             )))
         } else {
             // TODO avoid memory copy
-            Ok(PyBytes::new(py, &dest_buffer))
+            Ok(PyBytes::new_bound(py, &dest_buffer))
         }
     }
 
     fn decompress_content_dict_chain<'p>(
         &self,
         py: Python<'p>,
-        frames: &PyList,
-    ) -> PyResult<&'p PyBytes> {
+        frames: &Bound<'_, PyList>,
+    ) -> PyResult<Bound<'p, PyBytes>> {
         if frames.is_empty() {
             return Err(PyValueError::new_err("empty input chain"));
         }
@@ -246,11 +246,11 @@ impl ZstdDecompressor {
         // First chunk should not be using a dictionary. We handle it specially.
         let chunk = frames.get_item(0)?;
 
-        if !chunk.is_instance_of::<PyBytes>()? {
+        if !chunk.is_instance_of::<PyBytes>() {
             return Err(PyValueError::new_err("chunk 0 must be bytes"));
         }
 
-        let chunk_buffer: PyBuffer<u8> = PyBuffer::get(chunk)?;
+        let chunk_buffer: PyBuffer<u8> = PyBuffer::get_bound(&chunk.as_borrowed())?;
         let mut params = zstd_sys::ZSTD_frameHeader {
             frameContentSize: 0,
             windowSize: 0,
@@ -305,16 +305,16 @@ impl ZstdDecompressor {
         // Special case of chain length 1.
         if frames.len() == 1 {
             // TODO avoid buffer copy.
-            let chunk = PyBytes::new(py, &last_buffer);
+            let chunk = PyBytes::new_bound(py, &last_buffer);
             return Ok(chunk);
         }
 
         for (i, chunk) in frames.iter().enumerate().skip(1) {
-            if !chunk.is_instance_of::<PyBytes>()? {
+            if !chunk.is_instance_of::<PyBytes>() {
                 return Err(PyValueError::new_err(format!("chunk {} must be bytes", i)));
             }
 
-            let chunk_buffer: PyBuffer<u8> = PyBuffer::get(chunk)?;
+            let chunk_buffer: PyBuffer<u8> = PyBuffer::get_bound(&chunk.as_borrowed())?;
 
             let zresult = unsafe {
                 zstd_sys::ZSTD_getFrameHeader(
@@ -368,7 +368,7 @@ impl ZstdDecompressor {
         }
 
         // TODO avoid buffer copy.
-        Ok(PyBytes::new(py, &last_buffer))
+        Ok(PyBytes::new_bound(py, &last_buffer))
     }
 
     #[pyo3(signature = (write_size=None, read_across_frames=false))]
@@ -400,8 +400,8 @@ impl ZstdDecompressor {
     fn multi_decompress_to_buffer(
         &self,
         py: Python,
-        frames: &PyAny,
-        decompressed_sizes: Option<&PyAny>,
+        frames: &Bound<'_, PyAny>,
+        decompressed_sizes: Option<&Bound<'_, PyAny>>,
         threads: isize,
     ) -> PyResult<ZstdBufferWithSegmentsCollection> {
         self.setup_dctx(py, true)?;
@@ -419,7 +419,7 @@ impl ZstdDecompressor {
     fn read_to_iter(
         &self,
         py: Python,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         read_size: Option<usize>,
         write_size: Option<usize>,
         skip_bytes: Option<usize>,
@@ -456,7 +456,7 @@ impl ZstdDecompressor {
     fn stream_reader(
         &self,
         py: Python,
-        source: &PyAny,
+        source: &Bound<'_, PyAny>,
         read_size: Option<usize>,
         read_across_frames: bool,
         closefd: bool,
@@ -479,7 +479,7 @@ impl ZstdDecompressor {
     fn stream_writer(
         &self,
         py: Python,
-        writer: &PyAny,
+        writer: &Bound<'_, PyAny>,
         write_size: Option<usize>,
         write_return_read: bool,
         closefd: bool,
@@ -504,7 +504,7 @@ fn estimate_decompression_context_size() -> usize {
     unsafe { zstd_sys::ZSTD_estimateDCtxSize() }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdDecompressor>()?;
     module.add_function(wrap_pyfunction!(
         estimate_decompression_context_size,

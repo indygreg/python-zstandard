@@ -35,7 +35,7 @@ impl ZstdDecompressionReader {
     pub fn new(
         py: Python,
         dctx: Arc<DCtx<'static>>,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         read_size: usize,
         read_across_frames: bool,
         closefd: bool,
@@ -93,18 +93,18 @@ impl ZstdDecompressionReader {
 
     fn __iter__(slf: PyRef<Self>) -> PyResult<()> {
         let py = slf.py();
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn __next__(slf: PyRef<Self>) -> PyResult<Option<()>> {
         let py = slf.py();
-        let io = py.import("io")?;
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn __enter__<'p>(mut slf: PyRefMut<'p, Self>, _py: Python<'p>) -> PyResult<PyRefMut<'p, Self>> {
@@ -122,9 +122,9 @@ impl ZstdDecompressionReader {
     fn __exit__<'p>(
         mut slf: PyRefMut<'p, Self>,
         py: Python<'p>,
-        exc_type: &PyAny,
-        exc_value: &PyAny,
-        exc_tb: &PyAny,
+        exc_type: &Bound<'_, PyAny>,
+        exc_value: &Bound<'_, PyAny>,
+        exc_tb: &Bound<'_, PyAny>,
     ) -> PyResult<bool> {
         slf.entered = false;
         // TODO release decompressor and source?
@@ -147,38 +147,38 @@ impl ZstdDecompressionReader {
 
     #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
-    fn readline(&self, py: Python, size: Option<&PyAny>) -> PyResult<()> {
-        let io = py.import("io")?;
+    fn readline(&self, py: Python, size: Option<&Bound<'_, PyAny>>) -> PyResult<()> {
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     #[pyo3(signature = (hint=None))]
     #[allow(unused_variables)]
-    fn readlines(&self, py: Python, hint: Option<&PyAny>) -> PyResult<()> {
-        let io = py.import("io")?;
+    fn readlines(&self, py: Python, hint: Option<&Bound<'_, PyAny>>) -> PyResult<()> {
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     #[pyo3(signature = (data))]
     #[allow(unused_variables)]
-    fn write(&self, py: Python, data: &PyAny) -> PyResult<()> {
-        let io = py.import("io")?;
+    fn write(&self, py: Python, data: &Bound<'_, PyAny>) -> PyResult<()> {
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     #[pyo3(signature = (lines))]
     #[allow(unused_variables)]
-    fn writelines(&self, py: Python, lines: &PyAny) -> PyResult<()> {
-        let io = py.import("io")?;
+    fn writelines(&self, py: Python, lines: &Bound<'_, PyAny>) -> PyResult<()> {
+        let io = py.import_bound("io")?;
         let exc = io.getattr("UnsupportedOperation")?;
 
-        Err(PyErr::from_value(exc))
+        Err(PyErr::from_value_bound(exc))
     }
 
     fn isatty(&self) -> bool {
@@ -214,8 +214,8 @@ impl ZstdDecompressionReader {
         self.bytes_decompressed
     }
 
-    fn readall<'p>(&mut self, py: Python<'p>) -> PyResult<&'p PyAny> {
-        let chunks = PyList::empty(py);
+    fn readall<'p>(&mut self, py: Python<'p>) -> PyResult<Bound<'p, PyAny>> {
+        let chunks = PyList::empty_bound(py);
 
         loop {
             let chunk = self.read(py, Some(1048576))?;
@@ -226,13 +226,13 @@ impl ZstdDecompressionReader {
             chunks.append(chunk)?;
         }
 
-        let empty = PyBytes::new(py, &[]);
+        let empty = PyBytes::new_bound(py, &[]);
 
         empty.call_method1("join", (chunks,))
     }
 
     #[pyo3(signature = (size=None))]
-    fn read<'p>(&mut self, py: Python<'p>, size: Option<isize>) -> PyResult<&'p PyAny> {
+    fn read<'p>(&mut self, py: Python<'p>, size: Option<isize>) -> PyResult<Bound<'p, PyAny>> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
         }
@@ -250,7 +250,7 @@ impl ZstdDecompressionReader {
         }
 
         if self.finished_output || size == 0 {
-            return Ok(PyBytes::new(py, &[]));
+            return Ok(PyBytes::new_bound(py, &[]).into_any());
         }
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(size as _);
@@ -267,8 +267,8 @@ impl ZstdDecompressionReader {
             }
 
             // TODO avoid buffer copy.
-            let chunk = PyBytes::new(py, &dest_buffer);
-            return Ok(chunk);
+            let chunk = PyBytes::new_bound(py, &dest_buffer);
+            return Ok(chunk.into_any());
         }
 
         while !self.source.finished() {
@@ -279,8 +279,8 @@ impl ZstdDecompressionReader {
                 }
 
                 // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &dest_buffer);
-                return Ok(chunk);
+                let chunk = PyBytes::new_bound(py, &dest_buffer);
+                return Ok(chunk.into_any());
             }
         }
 
@@ -290,8 +290,8 @@ impl ZstdDecompressionReader {
         }
 
         // TODO avoid buffer copy.
-        let chunk = PyBytes::new(py, &dest_buffer);
-        return Ok(chunk);
+        let chunk = PyBytes::new_bound(py, &dest_buffer);
+        return Ok(chunk.into_any());
     }
 
     fn readinto(&mut self, py: Python, buffer: PyBuffer<u8>) -> PyResult<usize> {
@@ -333,7 +333,7 @@ impl ZstdDecompressionReader {
     }
 
     #[pyo3(signature = (size=None))]
-    fn read1<'p>(&mut self, py: Python<'p>, size: Option<isize>) -> PyResult<&'p PyAny> {
+    fn read1<'p>(&mut self, py: Python<'p>, size: Option<isize>) -> PyResult<Bound<'p, PyAny>> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
         }
@@ -347,7 +347,7 @@ impl ZstdDecompressionReader {
         }
 
         if self.finished_output || size == 0 {
-            return Ok(PyBytes::new(py, &[]));
+            return Ok(PyBytes::new_bound(py, &[]).into_any());
         }
 
         // -1 returns arbitrary number of bytes.
@@ -381,8 +381,8 @@ impl ZstdDecompressionReader {
         self.bytes_decompressed += out_buffer.pos;
 
         // TODO avoid buffer copy.
-        let chunk = PyBytes::new(py, &dest_buffer);
-        Ok(chunk)
+        let chunk = PyBytes::new_bound(py, &dest_buffer);
+        Ok(chunk.into_any())
     }
 
     fn readinto1(&mut self, py: Python, buffer: PyBuffer<u8>) -> PyResult<usize> {
@@ -423,7 +423,7 @@ impl ZstdDecompressionReader {
             return Err(PyValueError::new_err("stream is closed"));
         }
 
-        let os = py.import("os")?;
+        let os = py.import_bound("os")?;
 
         let seek_set = os.getattr("SEEK_SET")?.extract::<i32>()?;
         let seek_cur = os.getattr("SEEK_CUR")?.extract::<i32>()?;

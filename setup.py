@@ -7,15 +7,20 @@
 
 from __future__ import print_function
 
-from distutils.version import LooseVersion
 import platform
 import os
 import sys
 from setuptools import setup
 
+# Python 3.12 dropped distutils from the stdlib. Try to access it via
+# setuptools.
+try:
+    from setuptools._distutils.version import LooseVersion
+except ImportError:
+    from distutils.version import LooseVersion
 
-if sys.version_info[0:2] < (3, 7):
-    print("Python 3.7+ is required", file=sys.stderr)
+if sys.version_info[0:2] < (3, 8):
+    print("Python 3.8+ is required", file=sys.stderr)
     sys.exit(1)
 
 # Need change in 1.10 for ffi.from_buffer() to handle all buffer types
@@ -23,6 +28,10 @@ if sys.version_info[0:2] < (3, 7):
 # Need feature in 1.11 for ffi.gc() to declare size of objects so we avoid
 # garbage collection pitfalls.
 MINIMUM_CFFI_VERSION = "1.11"
+
+# Need 1.17+ on 3.13 to avoid deprecated and removed APIs.
+if sys.version_info[0:2] >= (3, 13):
+    MINIMUM_CFFI_VERSION = "1.17"
 
 try:
     import cffi
@@ -32,14 +41,16 @@ try:
     cffi_version = LooseVersion(cffi.__version__)
     if cffi_version < LooseVersion(MINIMUM_CFFI_VERSION):
         print(
-            "CFFI 1.11 or newer required (%s found); "
-            "not building CFFI backend" % cffi_version,
+            "CFFI %s or newer required (%s found); "
+            "not building CFFI backend" % (MINIMUM_CFFI_VERSION, cffi_version),
             file=sys.stderr,
         )
         cffi = None
 
 except ImportError:
     cffi = None
+
+sys.path.insert(0, ".")
 
 import setup_zstd
 
@@ -126,17 +137,18 @@ setup(
     author="Gregory Szorc",
     author_email="gregory.szorc@gmail.com",
     license="BSD",
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: C",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
     keywords=["zstandard", "zstd", "compression"],
     packages=["zstandard"],

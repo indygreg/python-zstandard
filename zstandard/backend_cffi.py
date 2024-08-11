@@ -1019,6 +1019,17 @@ class ZstdCompressionObj(object):
     >>> data = cobj.flush()
     """
 
+    def __init__(
+        self, compressor, write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE
+    ):
+        self._compressor = compressor
+        self._out = ffi.new("ZSTD_outBuffer *")
+        self._dst_buffer = ffi.new("char[]", write_size)
+        self._out.dst = self._dst_buffer
+        self._out.size = write_size
+        self._out.pos = 0
+        self._finished = False
+
     def compress(self, data):
         """Send data to the compressor.
 
@@ -1999,16 +2010,7 @@ class ZstdCompressor(object):
                 "error setting source size: %s" % _zstd_error(zresult)
             )
 
-        cobj = ZstdCompressionObj()
-        cobj._out = ffi.new("ZSTD_outBuffer *")
-        cobj._dst_buffer = ffi.new(
-            "char[]", COMPRESSION_RECOMMENDED_OUTPUT_SIZE
-        )
-        cobj._out.dst = cobj._dst_buffer
-        cobj._out.size = COMPRESSION_RECOMMENDED_OUTPUT_SIZE
-        cobj._out.pos = 0
-        cobj._compressor = self
-        cobj._finished = False
+        cobj = ZstdCompressionObj(self, COMPRESSION_RECOMMENDED_OUTPUT_SIZE)
 
         return cobj
 

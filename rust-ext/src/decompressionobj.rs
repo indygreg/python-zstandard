@@ -41,7 +41,7 @@ impl ZstdDecompressionObj {
 
 #[pymethods]
 impl ZstdDecompressionObj {
-    fn decompress<'p>(&mut self, py: Python<'p>, data: PyBuffer<u8>) -> PyResult<&'p PyAny> {
+    fn decompress<'p>(&mut self, py: Python<'p>, data: PyBuffer<u8>) -> PyResult<Bound<'p, PyAny>> {
         if self.finished {
             return Err(ZstdError::new_err(
                 "cannot use a decompressobj multiple times",
@@ -49,7 +49,7 @@ impl ZstdDecompressionObj {
         }
 
         if data.len_bytes() == 0 {
-            return Ok(PyBytes::new(py, &[]));
+            return Ok(PyBytes::new_bound(py, &[]).into_any());
         }
 
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
@@ -60,7 +60,7 @@ impl ZstdDecompressionObj {
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(self.write_size);
 
-        let chunks = PyList::empty(py);
+        let chunks = PyList::empty_bound(py);
 
         loop {
             let zresult = self
@@ -70,7 +70,7 @@ impl ZstdDecompressionObj {
 
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &dest_buffer);
+                let chunk = PyBytes::new_bound(py, &dest_buffer);
                 chunks.append(chunk)?;
             }
 
@@ -98,23 +98,23 @@ impl ZstdDecompressionObj {
             }
         }
 
-        let empty = PyBytes::new(py, &[]);
+        let empty = PyBytes::new_bound(py, &[]);
         empty.call_method1("join", (chunks,))
     }
 
     #[allow(unused_variables)]
-    fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<&'p PyBytes> {
-        Ok(PyBytes::new(py, &[]))
+    fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<Bound<'p, PyBytes>> {
+        Ok(PyBytes::new_bound(py, &[]))
     }
 
     #[getter]
-    fn unused_data<'p>(&self, py: Python<'p>) -> &'p PyBytes {
-        PyBytes::new(py, &self.unused_data)
+    fn unused_data<'p>(&self, py: Python<'p>) -> Bound<'p, PyBytes> {
+        PyBytes::new_bound(py, &self.unused_data)
     }
 
     #[getter]
-    fn unconsumed_tail<'p>(&self, py: Python<'p>) -> &'p PyBytes {
-        PyBytes::new(py, &[])
+    fn unconsumed_tail<'p>(&self, py: Python<'p>) -> Bound<'p, PyBytes> {
+        PyBytes::new_bound(py, &[])
     }
 
     #[getter]

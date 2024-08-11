@@ -56,7 +56,7 @@ impl ZstdCompressorIterator {
             // Emit compressed data, if available.
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy
-                let chunk = PyBytes::new(py, &dest_buffer);
+                let chunk = PyBytes::new_bound(py, &dest_buffer);
 
                 return Ok(Some(chunk.into_py(py)));
             }
@@ -90,7 +90,7 @@ impl ZstdCompressorIterator {
 
         if !dest_buffer.is_empty() {
             // TODO avoid buffer copy.
-            let chunk = PyBytes::new(py, &dest_buffer);
+            let chunk = PyBytes::new_bound(py, &dest_buffer);
 
             return Ok(Some(chunk.into_py(py)));
         }
@@ -103,7 +103,7 @@ impl ZstdCompressorIterator {
     pub fn new(
         py: Python,
         cctx: Arc<CCtx<'static>>,
-        reader: &PyAny,
+        reader: &Bound<'_, PyAny>,
         size: u64,
         read_size: usize,
         write_size: usize,

@@ -12,7 +12,6 @@ use {
         ffi::Py_buffer,
         prelude::*,
         types::{PyBytes, PyTuple},
-        AsPyPointer,
     },
 };
 
@@ -81,8 +80,8 @@ impl ZstdBufferSegment {
         self.offset
     }
 
-    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<&'p PyBytes> {
-        Ok(PyBytes::new(py, self.as_slice()))
+    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<Bound<'p, PyBytes>> {
+        Ok(PyBytes::new_bound(py, self.as_slice()))
     }
 }
 
@@ -97,7 +96,7 @@ impl ZstdBufferSegments {
     fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
         let py = slf.py();
 
-        let parent: &PyCell<ZstdBufferWithSegments> = slf.parent.extract(py)?;
+        let parent = slf.parent.downcast_bound::<ZstdBufferWithSegments>(py)?;
 
         if unsafe {
             pyo3::ffi::PyBuffer_FillInfo(
@@ -174,7 +173,7 @@ impl ZstdBufferWithSegments {
 
         Ok(ZstdBufferSegment {
             _parent: self.source.clone_ref(py),
-            buffer: PyBuffer::get(self.source.extract(py)?)?,
+            buffer: PyBuffer::get_bound(self.source.downcast_bound(py)?)?,
             offset: segment.offset as _,
             len: segment.length as _,
         })
@@ -205,8 +204,8 @@ impl ZstdBufferWithSegments {
     // Our methods.
 
     #[new]
-    pub fn new(py: Python, data: &PyAny, segments: PyBuffer<u8>) -> PyResult<Self> {
-        let data_buffer = PyBuffer::get(data)?;
+    pub fn new(py: Python, data: &Bound<'_, PyAny>, segments: PyBuffer<u8>) -> PyResult<Self> {
+        let data_buffer = PyBuffer::get_bound(&data.as_borrowed())?;
 
         if segments.len_bytes() % std::mem::size_of::<BufferSegment>() != 0 {
             return Err(PyValueError::new_err(format!(
@@ -255,8 +254,8 @@ impl ZstdBufferWithSegments {
         })
     }
 
-    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<&'p PyBytes> {
-        Ok(PyBytes::new(py, self.as_slice()))
+    fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<Bound<'p, PyBytes>> {
+        Ok(PyBytes::new_bound(py, self.as_slice()))
     }
 }
 
@@ -301,7 +300,7 @@ impl ZstdBufferWithSegmentsCollection {
                     offset = self.first_elements[buffer_index - 1];
                 }
 
-                let item: &PyCell<ZstdBufferWithSegments> = segment.extract(py)?;
+                let item = segment.downcast_bound::<ZstdBufferWithSegments>(py)?;
 
                 return item.borrow().__getitem__((key - offset) as isize);
             }
@@ -313,8 +312,8 @@ impl ZstdBufferWithSegmentsCollection {
     }
 
     #[new]
-    #[pyo3(signature = (*py_args))]
-    pub fn new(py: Python, py_args: &PyTuple) -> PyResult<Self> {
+    #[pyo3(signature = (* py_args))]
+    pub fn new(py: Python, py_args: &Bound<'_, PyTuple>) -> PyResult<Self> {
         if py_args.is_empty() {
             return Err(PyValueError::new_err("must pass at least 1 argument"));
         }
@@ -324,7 +323,7 @@ impl ZstdBufferWithSegmentsCollection {
         let mut offset = 0;
 
         for item in py_args {
-            let item: &PyCell<ZstdBufferWithSegments> = item.extract().map_err(|_| {
+            let item = item.downcast::<ZstdBufferWithSegments>().map_err(|_| {
                 PyTypeError::new_err("arguments must be BufferWithSegments instances")
             })?;
             let segment = item.borrow();
@@ -351,7 +350,7 @@ impl ZstdBufferWithSegmentsCollection {
         let mut size = 0;
 
         for buffer in &self.buffers {
-            let item: &PyCell<ZstdBufferWithSegments> = buffer.extract(py)?;
+            let item = buffer.downcast_bound::<ZstdBufferWithSegments>(py)?;
 
             for segment in &item.borrow().segments {
                 size += segment.length as usize;
@@ -362,7 +361,7 @@ impl ZstdBufferWithSegmentsCollection {
     }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<ZstdBufferSegment>()?;
     module.add_class::<ZstdBufferSegments>()?;
     module.add_class::<ZstdBufferWithSegments>()?;

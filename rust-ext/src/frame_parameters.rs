@@ -102,7 +102,7 @@ fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FramePa
     }
 }
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(crate) fn init_module(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<FrameParameters>()?;
     module.add_function(wrap_pyfunction!(frame_content_size, module)?)?;
     module.add_function(wrap_pyfunction!(frame_header_size, module)?)?;

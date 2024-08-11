@@ -10,38 +10,41 @@ jobs:
 
       matrix:
         image:
-          - 'quay.io/pypa/manylinux2010_i686'
-          - 'quay.io/pypa/manylinux2010_x86_64'
-          - 'quay.io/pypa/manylinux2014_aarch64'
-          - 'quay.io/pypa/manylinux2014_i686'
-          - 'quay.io/pypa/manylinux2014_x86_64'
+          - 'manylinux2014_aarch64'
+          - 'musllinux_1_1_aarch64'
+          - 'musllinux_1_2_aarch64'
+          - 'manylinux2014_i686'
+          - 'musllinux_1_2_i686'
+          - 'manylinux2014_ppc64le'
+          - 'musllinux_1_2_ppc64le'
+          - 'manylinux2014_s390x'
+          - 'musllinux_1_2_s390x'
+          - 'manylinux2014_x86_64'
+          - 'musllinux_1_1_x86_64'
+          - 'musllinux_1_2_x86_64'
         py:
-          - 'cp37-cp37m'
           - 'cp38-cp38'
           - 'cp39-cp39'
           - 'cp310-cp310'
           - 'cp311-cp311'
-        exclude:
-          # manylinux2010 dropped in Python 3.11.
-          - image: 'quay.io/pypa/manylinux2010_i686'
-            py: 'cp311-cp311'
-          - image: 'quay.io/pypa/manylinux2010_x86_64'
-            py: 'cp311-cp311'
+          - 'cp312-cp312'
+          - 'cp313-cp313'
     runs-on: 'ubuntu-22.04'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
-        if: ${{ matrix.image == 'quay.io/pypa/manylinux2014_aarch64' }}
-        uses: docker/setup-qemu-action@v1
+        if: ${{ endsWith(matrix.image, 'aarch64') || endsWith(matrix.image, 'ppc64le') || endsWith(matrix.image, 's390x') }}
+        uses: docker/setup-qemu-action@v3
 
       - name: Build Wheel
         run: |
-          docker run -e PYPATH=/opt/python/${{ matrix.py }} -e ZSTD_WARNINGS_AS_ERRORS=1 --rm -v `pwd`:/project ${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
+          docker run -e PYPATH=/opt/python/${{ matrix.py }} -e ZSTD_WARNINGS_AS_ERRORS=1 --rm -v `pwd`:/project quay.io/pypa/${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
+          name: linux-${{ matrix.py }}-${{ matrix.image }}
           path: dist
 
   macos:
@@ -49,66 +52,42 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - 'cp37-*'
-          - 'cp38-*'
-          - 'cp39-*'
-          - 'cp310-*'
-          - 'cp311-*'
-        arch: ['x86_64']
-        include:
-          - py: 'cp38-*'
-            arch: 'arm64'
-          - py: 'cp39-*'
-            arch: 'arm64'
-          - py: 'cp310-*'
-            arch: 'arm64'
-          - py: 'cp311-*'
-            arch: 'arm64'
-    runs-on: 'macos-12'
+          - 'cp38'
+          - 'cp39'
+          - 'cp310'
+          - 'cp311'
+          - 'cp312'
+          - 'cp313'
+        arch:
+          - 'arm64'
+          - 'x86_64'
+    runs-on: 'macos-13'
     env:
       CIBW_ARCHS: ${{ matrix.arch }}
-      CIBW_BUILD: ${{ matrix.py }}
+      CIBW_BUILD: ${{ matrix.py }}-*
       CIBW_BUILD_VERBOSITY: '1'
       CIBW_PRERELEASE_PYTHONS: '1'
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
-        if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
+          python-version: '3.11'
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Dependencies
         run: |
           python -m pip install --require-hashes -r ci/requirements.macoswheels.txt
-        if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
-
-      - name: Install Dependencies
-        run: |
-          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/pip3 install --user --require-hashes -r ci/requirements.macoswheels.txt
-          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/pip3 install --user wheel
-        if: ${{ matrix.py == 'cp38-*' && matrix.arch == 'arm64' }}
 
       - name: Build Wheel
         run: |
           cibuildwheel --output-dir dist
-        if: ${{ matrix.py != 'cp38-*' || matrix.arch != 'arm64' }}
-
-      - name: Build Wheel
-        run: |
-          /Applications/Xcode_13.2.1.app/Contents/Developer/usr/bin/python3 setup.py bdist_wheel
-        env:
-          _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
-          ARCHFLAGS: '-arch arm64'
-          MACOSX_DEPLOYMENT_TARGET: '11.0'
-          SDKROOT: '/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk'
-        if: ${{ matrix.py == 'cp38-*' && matrix.arch == 'arm64' }}
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
+          name: macos-${{ matrix.py }}-${{ matrix.arch }}
           path: dist
 
   windows:
@@ -116,11 +95,12 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - '3.7'
           - '3.8'
           - '3.9'
           - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
         arch:
           - 'x86'
           - 'x64'
@@ -129,23 +109,20 @@ jobs:
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
+          allow-prereleases: ${{ matrix.py == '3.13' && true || false }}
 
-      - uses: actions/checkout@v3
-
-      - name: Install Dependencies
-        shell: bash
-        run: |
-          python -m pip install --require-hashes -r ci/requirements.txt
+      - uses: actions/checkout@v4
 
       - name: Build Wheel
         run: |
-          python setup.py bdist_wheel
+          python -m pip wheel -w dist .
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
+          name: windows-${{ matrix.py }}-${{ matrix.arch }}
           path: dist
