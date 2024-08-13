@@ -48,7 +48,11 @@ Other Actions Not Blocking Release
 0.24.0 (not yet released)
 =========================
 
-Nothing yet.
+Changes
+-------
+
+* We now use a non-rc version of cffi 1.17 on all Python versions. Python
+  <=3.12 have cffi upgraded from cffi 1.16 -> 1.17.
 
 0.23.0 (released 2024-07-14)
 ============================
