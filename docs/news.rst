@@ -45,6 +45,11 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.24.0 (not yet released)
+=========================
+
+Nothing yet.
+
 0.23.0 (released 2024-07-14)
 ============================
 
