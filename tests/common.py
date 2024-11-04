@@ -1,7 +1,7 @@
 import io
 import os
 
-from typing import List
+from typing import List  # noqa: F401
 
 
 class NonClosingBytesIO(io.BytesIO):
