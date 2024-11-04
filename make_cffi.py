@@ -71,7 +71,7 @@ def preprocess(path):
         lines = []
         it = iter(fh)
 
-        for l in it:
+        for line in it:
             # zstd.h includes <stddef.h>, which is also included by cffi's
             # boilerplate. This can lead to duplicate declarations. So we strip
             # this include from the preprocessor invocation.
@@ -82,7 +82,7 @@ def preprocess(path):
             # We define ZSTD_STATIC_LINKING_ONLY, which is redundant with the inline
             # #define in zstdmt_compress.h and results in a compiler warning. So drop
             # the inline #define.
-            if l.startswith(
+            if line.startswith(
                 (
                     b"#include <stddef.h>",
                     b'#include "zstd.h"',
@@ -97,8 +97,8 @@ def preprocess(path):
             # a bit hacky. But it gets the job done.
             # TODO make limits.h work on Windows so we ensure INT_MAX is
             # correct.
-            if l.startswith(b"#include <limits.h>"):
-                l = b"#define INT_MAX 2147483647\n"
+            if line.startswith(b"#include <limits.h>"):
+                line = b"#define INT_MAX 2147483647\n"
 
             # ZSTDLIB_API may not be defined if we dropped zstd.h. It isn't
             # important so just filter it out. Ditto for ZSTDLIB_STATIC_API and
@@ -108,10 +108,10 @@ def preprocess(path):
                 b"ZSTDLIB_STATIC_API",
                 b"ZDICTLIB_STATIC_API",
             ):
-                if l.startswith(prefix):
-                    l = l[len(prefix) :]
+                if line.startswith(prefix):
+                    line = line[len(prefix) :]
 
-            lines.append(l)
+            lines.append(line)
 
     fd, input_file = tempfile.mkstemp(suffix=".h")
     os.write(fd, b"".join(lines))
@@ -209,7 +209,7 @@ for header in HEADERS:
             sources.append(m.group(0) + b" ...")
 
 cdeflines = b"\n".join(sources).splitlines()
-cdeflines = [l for l in cdeflines if l.strip()]
+cdeflines = [line for line in cdeflines if line.strip()]
 ffi.cdef(b"\n".join(cdeflines).decode("latin1"))
 
 if __name__ == "__main__":
