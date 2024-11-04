@@ -1,3 +1,31 @@
+[project]
+name = "zstandard"
+dynamic = ["version"]
+description = "Zstandard bindings for Python"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+authors = [
+    { name = "Gregory Szorc", email = "gregory.szorc@gmail.com" },
+]
+license = { text = "BSD" }
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+keywords = ["zstandard", "zstd", "compression"]
+
+[project.urls]
+Homepage = "https://github.com/indygreg/python-zstandard"
+Documentation = "https://python-zstandard.readthedocs.io/en/latest/"
+
 [build-system]
 requires = [
     "cffi>=1.17.0",
