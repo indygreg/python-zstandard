@@ -14,12 +14,10 @@ from __future__ import absolute_import, unicode_literals
 #
 # 1) Export the C or CFFI "backend" through a central module.
 # 2) Implement additional functionality built on top of C or CFFI backend.
-
 import builtins
 import io
 import os
 import platform
-
 from typing import ByteString
 
 # Some Python implementations don't support C extensions. That's why we have

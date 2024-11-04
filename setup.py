@@ -7,9 +7,10 @@
 
 from __future__ import print_function
 
-import platform
 import os
+import platform
 import sys
+
 from setuptools import setup
 
 # Python 3.12 dropped distutils from the stdlib. Try to access it via

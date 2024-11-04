@@ -9,7 +9,6 @@ except ImportError:
 
 import zstandard as zstd
 
-
 s_windowlog = strategies.integers(
     min_value=zstd.WINDOWLOG_MIN, max_value=zstd.WINDOWLOG_MAX
 )

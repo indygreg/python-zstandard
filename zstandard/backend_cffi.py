@@ -91,7 +91,6 @@ from ._cffi import (  # type: ignore
     lib,
 )
 
-
 backend_features = set()  # type: ignore
 
 COMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_CStreamInSize()

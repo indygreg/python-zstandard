@@ -4,8 +4,8 @@ import unittest
 import zstandard as zstd
 
 from .common import (
-    NonClosingBytesIO,
     CustomBytesIO,
+    NonClosingBytesIO,
 )
 
 

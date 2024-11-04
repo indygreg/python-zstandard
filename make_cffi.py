@@ -6,7 +6,6 @@
 
 from __future__ import absolute_import
 
-import cffi
 import distutils.ccompiler
 import distutils.sysconfig
 import os
@@ -14,6 +13,7 @@ import re
 import subprocess
 import tempfile
 
+import cffi
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
