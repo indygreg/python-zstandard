@@ -17,7 +17,7 @@ class TestCompressor_stream_reader(unittest.TestCase):
             with self.assertRaisesRegex(
                 ValueError, "cannot __enter__ multiple times"
             ):
-                with reader as reader2:
+                with reader:
                     pass
 
     def test_no_context_manager(self):

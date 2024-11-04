@@ -110,4 +110,4 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
             target_length=targetlength,
             strategy=strategy,
         )
-        size = p.estimated_compression_context_size()
+        p.estimated_compression_context_size()

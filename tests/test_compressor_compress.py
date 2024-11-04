@@ -69,7 +69,7 @@ class TestCompressor_compress(unittest.TestCase):
 
     def test_negative_level(self):
         cctx = zstd.ZstdCompressor(level=-4)
-        result = cctx.compress(b"foo" * 256)
+        cctx.compress(b"foo" * 256)
 
     def test_no_magic(self):
         params = zstd.ZstdCompressionParameters.from_level(
