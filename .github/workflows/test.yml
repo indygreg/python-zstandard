@@ -63,7 +63,6 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
-          allow-prereleases: ${{ matrix.py == '3.13' && true || false }}
 
       - name: Install Rust
         if: matrix.arch == 'x64'
