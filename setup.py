@@ -52,7 +52,7 @@ except ImportError:
 
 sys.path.insert(0, ".")
 
-import setup_zstd
+import setup_zstd  # noqa: E402
 
 SUPPORT_LEGACY = False
 SYSTEM_ZSTD = False
