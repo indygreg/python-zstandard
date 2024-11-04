@@ -10,5 +10,5 @@ requires = [
 # Need to use legacy backend because setup_zstd.py breaks build isolation.
 build-backend = "setuptools.build_meta:__legacy__"
 
-[tool.black]
+[tool.ruff]
 line-length = 80
