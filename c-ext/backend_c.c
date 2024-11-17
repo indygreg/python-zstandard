@@ -210,6 +210,10 @@ void zstd_module_init(PyObject *m) {
     Py_DECREF(feature);
 #endif
 
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
+
     if (PyObject_SetAttrString(m, "backend_features", features) == -1) {
         return;
     }
@@ -313,7 +317,7 @@ size_t roundpow2(size_t i) {
 int safe_pybytes_resize(PyObject **obj, Py_ssize_t size) {
     PyObject *tmp;
 
-    if ((*obj)->ob_refcnt == 1) {
+    if (Py_REFCNT(*obj) == 1) {
         return _PyBytes_Resize(obj, size);
     }
 

@@ -531,7 +531,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
         ),
         read_sizes=strategies.data(),
     )
-    def test_read_across_frames_false(
+    def test_read_across_frames_false(  # fails
         self, chunks, level, write_size, read_sizes
     ):
         cctx = zstd.ZstdCompressor(level=level)
