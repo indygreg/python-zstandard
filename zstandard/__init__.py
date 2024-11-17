@@ -4,6 +4,8 @@
 # This software may be modified and distributed under the terms
 # of the BSD license. See the LICENSE file for details.
 
+# ruff: noqa: F403, F405
+
 """Python interface to the Zstandard (zstd) compression library."""
 
 from __future__ import absolute_import, unicode_literals
@@ -12,12 +14,10 @@ from __future__ import absolute_import, unicode_literals
 #
 # 1) Export the C or CFFI "backend" through a central module.
 # 2) Implement additional functionality built on top of C or CFFI backend.
-
 import builtins
 import io
 import os
 import platform
-
 from typing import ByteString
 
 # Some Python implementations don't support C extensions. That's why we have
@@ -80,7 +80,7 @@ else:
     )
 
 # Keep this in sync with python-zstandard.h, rust-ext/src/lib.rs, and debian/changelog.
-__version__ = "0.23.0"
+__version__ = "0.24.0.dev0"
 
 _MODE_CLOSED = 0
 _MODE_READ = 1

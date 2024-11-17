@@ -113,7 +113,6 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
-          allow-prereleases: ${{ matrix.py == '3.13' && true || false }}
 
       - uses: actions/checkout@v4
 

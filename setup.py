@@ -7,9 +7,10 @@
 
 from __future__ import print_function
 
-import platform
 import os
+import platform
 import sys
+
 from setuptools import setup
 
 # Python 3.12 dropped distutils from the stdlib. Try to access it via
@@ -52,7 +53,7 @@ except ImportError:
 
 sys.path.insert(0, ".")
 
-import setup_zstd
+import setup_zstd  # noqa: E402
 
 SUPPORT_LEGACY = False
 SYSTEM_ZSTD = False
@@ -131,26 +132,6 @@ if not version:
 setup(
     name="zstandard",
     version=version,
-    description="Zstandard bindings for Python",
-    long_description=open("README.rst", "r").read(),
-    url="https://github.com/indygreg/python-zstandard",
-    author="Gregory Szorc",
-    author_email="gregory.szorc@gmail.com",
-    license="BSD",
-    python_requires=">=3.8",
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: BSD License",
-        "Programming Language :: C",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
-    ],
-    keywords=["zstandard", "zstd", "compression"],
     packages=["zstandard"],
     package_data={"zstandard": ["__init__.pyi", "py.typed"]},
     ext_modules=extensions,

@@ -1,7 +1,34 @@
+[project]
+name = "zstandard"
+dynamic = ["version"]
+description = "Zstandard bindings for Python"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+authors = [
+    { name = "Gregory Szorc", email = "gregory.szorc@gmail.com" },
+]
+license = { text = "BSD" }
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+keywords = ["zstandard", "zstd", "compression"]
+
+[project.urls]
+Homepage = "https://github.com/indygreg/python-zstandard"
+Documentation = "https://python-zstandard.readthedocs.io/en/latest/"
+
 [build-system]
 requires = [
-    "cffi>=1.16.0; python_version <= '3.12'",
-    # "cffi==1.17.0rc1; python_version >= '3.13'",  # ok for default, nok for free-threading
+    # "cffi>=1.17.0",  # ok for default, nok for free-threading
     # 69.0.0 breaks handling of --config-settings=--build-option, which our CI
     # relies on. So constrained to an older version until we figure out a
     # workaround. See comment at
@@ -11,5 +38,8 @@ requires = [
 # Need to use legacy backend because setup_zstd.py breaks build isolation.
 build-backend = "setuptools.build_meta:__legacy__"
 
-[tool.black]
+[tool.ruff]
 line-length = 80
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

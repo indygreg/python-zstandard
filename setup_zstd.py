@@ -14,7 +14,6 @@ import shutil
 import subprocess
 import sys
 
-
 ext_includes = [
     "c-ext",
 ]

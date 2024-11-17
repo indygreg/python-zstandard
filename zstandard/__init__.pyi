@@ -5,12 +5,11 @@
 # of the BSD license. See the LICENSE file for details.
 
 import os
-
 from typing import (
+    IO,
     BinaryIO,
     ByteString,
     Generator,
-    IO,
     Iterable,
     List,
     Optional,
