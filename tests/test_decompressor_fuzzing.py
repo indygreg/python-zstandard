@@ -1,6 +1,7 @@
 import io
 import os
 import unittest
+import pytest
 
 try:
     import hypothesis
@@ -15,6 +16,7 @@ from .common import random_input_data
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -58,6 +60,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         self.assertEqual(b"".join(chunks), original)
 
     # Similar to above except we have a constant read() size.
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[hypothesis.HealthCheck.large_base_example]
     )
@@ -99,6 +102,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -141,6 +145,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         self.assertEqual(b"".join(chunks), original)
 
     # Similar to above except we have a constant read() size.
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[hypothesis.HealthCheck.large_base_example]
     )
@@ -181,6 +186,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[hypothesis.HealthCheck.large_base_example]
     )
@@ -210,6 +216,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
         data = dctx.stream_reader(source, read_size=source_read_size).readall()
         self.assertEqual(data, original)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -252,6 +259,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -296,6 +304,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.data_too_large,
@@ -332,6 +341,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
                 self.assertEqual(original[offset : offset + len(chunk)], chunk)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -381,6 +391,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 class TestDecompressor_stream_writer_fuzzing(unittest.TestCase):
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -419,6 +430,7 @@ class TestDecompressor_stream_writer_fuzzing(unittest.TestCase):
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 class TestDecompressor_copy_stream_fuzzing(unittest.TestCase):
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -450,6 +462,7 @@ class TestDecompressor_copy_stream_fuzzing(unittest.TestCase):
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -481,6 +494,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -518,6 +532,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @pytest.mark.thread_unsafe
     @hypothesis.given(
         chunks=strategies.lists(
             strategies.sampled_from(random_input_data()),
@@ -570,6 +585,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
         self.assertEqual(decompressed.getvalue(), source_chunks[0])
 
+    @pytest.mark.thread_unsafe
     @hypothesis.settings(
         suppress_health_check=[
             hypothesis.HealthCheck.large_base_example,
@@ -624,6 +640,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 class TestDecompressor_read_to_iter_fuzzing(unittest.TestCase):
+    @pytest.mark.thread_unsafe
     @hypothesis.given(
         original=strategies.sampled_from(random_input_data()),
         level=strategies.integers(min_value=1, max_value=5),
@@ -654,6 +671,7 @@ class TestDecompressor_read_to_iter_fuzzing(unittest.TestCase):
     "multi_decompress_to_buffer not available",
 )
 class TestDecompressor_multi_decompress_to_buffer_fuzzing(unittest.TestCase):
+    @pytest.mark.thread_unsafe
     @hypothesis.given(
         original=strategies.lists(
             strategies.sampled_from(random_input_data()),
