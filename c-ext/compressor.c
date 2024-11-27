@@ -7,6 +7,7 @@
  */
 
 #include "python-zstandard.h"
+#include "_pyzstd_atomics.h"
 
 extern PyObject *ZstdError;
 
@@ -237,6 +238,8 @@ static int ZstdCompressor_init(ZstdCompressor *self, PyObject *args,
         self->dict = (ZstdCompressionDict *)dict;
         Py_INCREF(dict);
     }
+
+    self->in_use = 0;
 
     if (setup_cctx(self)) {
         return -1;
@@ -522,6 +525,14 @@ static PyObject *ZstdCompressor_compress(ZstdCompressor *self, PyObject *args,
         return NULL;
     }
 
+    if (pyzstd_atomic_load_int8(&self->in_use)) {
+        goto concurrent_use;
+    }
+
+    if (!pyzstd_atomic_compare_exchange_int8(&self->in_use, 0, 1)) {
+        goto concurrent_use;
+    }
+
     ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
     destSize = ZSTD_compressBound(source.len);
@@ -569,8 +580,16 @@ static PyObject *ZstdCompressor_compress(ZstdCompressor *self, PyObject *args,
     Py_SET_SIZE(output, outBuffer.pos);
 
 finally:
+    pyzstd_atomic_store_int8(&self->in_use, 0);
     PyBuffer_Release(&source);
     return output;
+
+concurrent_use:
+    PyErr_SetString(ZstdError, "concurrent use is not allowed. "
+                               "See https://python-zstandard.readthedocs.io"
+                               "/en/latest/api_usage.html"
+                               "#thread-and-object-reuse-safety");
+    return NULL;
 }
 
 static ZstdCompressionObj *ZstdCompressor_compressobj(ZstdCompressor *self,

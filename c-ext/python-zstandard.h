@@ -104,6 +104,8 @@ typedef struct {
     ZSTD_CCtx *cctx;
     /* Compression parameters in use. */
     ZSTD_CCtx_params *params;
+    /* Is this compressor being used by a thread? */
+    int8_t in_use;
 } ZstdCompressor;
 
 extern PyTypeObject *ZstdCompressorType;
