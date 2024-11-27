@@ -1,4 +1,3 @@
-import io
 import unittest
 from threading import Barrier, Thread
 
@@ -18,7 +17,7 @@ class TestCompressor_threadsafe(unittest.TestCase):
             barrier.wait()
             with self.assertRaises(zstd.ZstdError):
                 for _ in range(1_000):
-                    cctx.compress(io.BytesIO(b"t" * 1048576).getvalue())
+                    cctx.compress(b"t" * 1048576)
 
         threads = [
             Thread(target=thread)
