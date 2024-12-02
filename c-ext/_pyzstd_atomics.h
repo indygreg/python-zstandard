@@ -37,7 +37,7 @@
 static inline int8_t
 pyzstd_atomic_load_int8(const int8_t *obj) {
 #ifdef STDC_ATOMICS
-    return (int8_t)atomic_load((const _Atomic(int8_t)*)obj);
+    return (int8_t)atomic_load_explicit((const _Atomic(int8_t)*)obj, memory_order_relaxed);
 #elif defined(MSC_ATOMICS)
 #if defined(_M_X64) || defined(_M_IX86)
     return *(volatile int8_t *)obj;
@@ -45,7 +45,7 @@ pyzstd_atomic_load_int8(const int8_t *obj) {
     return (int8_t)__ldar8((unsigned __int8 volatile *)obj);
 #endif
 #elif defined(GCC_ATOMICS)
-    return __atomic_load_n(obj, __ATOMIC_SEQ_CST);
+    return __atomic_load_n(obj, __ATOMIC_RELAXED);
 #endif
 }
 
