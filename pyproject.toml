@@ -33,7 +33,11 @@ requires = [
     # relies on. So constrained to an older version until we figure out a
     # workaround. See comment at
     # https://github.com/pypa/pip/issues/11859#issuecomment-2132287974.
-    "setuptools<69.0.0",
+    "setuptools<69.0.0; sys_platform != 'win32' or platform_machine != 'ARM64'",
+    # building for ARM64 windows requires setuptools 74, which unfortunately
+    # means --config-settings=--build-option won't work with it, but it's better
+    # than not building at all.
+    "setuptools>=74.0.0; sys_platform == 'win32' and platform_machine == 'ARM64'",
 ]
 # Need to use legacy backend because setup_zstd.py breaks build isolation.
 build-backend = "setuptools.build_meta:__legacy__"
