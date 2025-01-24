@@ -112,7 +112,7 @@ if RUST_BACKEND:
 if CFFI_BACKEND and cffi:
     import make_cffi
 
-    extensions.append(make_cffi.ffi.distutils_extension())
+    extensions.append(make_cffi.get_ffi().distutils_extension())
 
 version = None
 

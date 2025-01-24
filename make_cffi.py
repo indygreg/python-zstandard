@@ -15,19 +15,6 @@ import tempfile
 
 import cffi
 
-HERE = os.path.abspath(os.path.dirname(__file__))
-
-SOURCES = [
-    "zstd/zstd.c",
-]
-
-# Headers whose preprocessed output will be fed into cdef().
-HEADERS = [os.path.join(HERE, "zstd", p) for p in ("zstd.h", "zdict.h")]
-
-INCLUDE_DIRS = [
-    os.path.join(HERE, "zstd"),
-]
-
 # cffi can't parse some of the primitives in zstd.h. So we invoke the
 # preprocessor and feed its output into cffi.
 compiler = distutils.ccompiler.new_compiler()
@@ -158,59 +145,75 @@ def normalize_output(output):
     return b"\n".join(lines)
 
 
-ffi = cffi.FFI()
-# zstd.h uses a possible undefined MIN(). Define it until
-# https://github.com/facebook/zstd/issues/976 is fixed.
-# *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
-# when cffi uses the function. Since we statically link against zstd, even
-# if we use the deprecated functions it shouldn't be a huge problem.
-ffi.set_source(
-    "zstandard._cffi",
-    """
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-#define ZSTD_STATIC_LINKING_ONLY
-#define ZSTD_DISABLE_DEPRECATE_WARNINGS
-#include <zstd.h>
-#define ZDICT_STATIC_LINKING_ONLY
-#define ZDICT_DISABLE_DEPRECATE_WARNINGS
-#include <zdict.h>
-""",
-    sources=SOURCES,
-    include_dirs=INCLUDE_DIRS,
-)
+def get_ffi():
+    here = os.path.abspath(os.path.dirname(__file__))
 
-DEFINE = re.compile(b"^\\#define ([a-zA-Z0-9_]+) ")
+    zstd_sources = [
+        "zstd/zstd.c",
+    ]
 
-sources = []
+    # Headers whose preprocessed output will be fed into cdef().
+    headers = [os.path.join(here, "zstd", p) for p in ("zstd.h", "zdict.h")]
 
-# Feed normalized preprocessor output for headers into the cdef parser.
-for header in HEADERS:
-    preprocessed = preprocess(header)
-    sources.append(normalize_output(preprocessed))
+    include_dirs = [
+        os.path.join(here, "zstd"),
+    ]
 
-    # #define's are effectively erased as part of going through preprocessor.
-    # So perform a manual pass to re-add those to the cdef source.
-    with open(header, "rb") as fh:
-        for line in fh:
-            line = line.strip()
-            m = DEFINE.match(line)
-            if not m:
-                continue
+    ffi = cffi.FFI()
+    # zstd.h uses a possible undefined MIN(). Define it until
+    # https://github.com/facebook/zstd/issues/976 is fixed.
+    # *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
+    # when cffi uses the function. Since we statically link against zstd, even
+    # if we use the deprecated functions it shouldn't be a huge problem.
+    ffi.set_source(
+        "zstandard._cffi",
+        """
+    #define MIN(a,b) ((a)<(b) ? (a) : (b))
+    #define ZSTD_STATIC_LINKING_ONLY
+    #define ZSTD_DISABLE_DEPRECATE_WARNINGS
+    #include <zstd.h>
+    #define ZDICT_STATIC_LINKING_ONLY
+    #define ZDICT_DISABLE_DEPRECATE_WARNINGS
+    #include <zdict.h>
+    """,
+        sources=zstd_sources,
+        include_dirs=include_dirs,
+    )
 
-            if m.group(1) == b"ZSTD_STATIC_LINKING_ONLY":
-                continue
+    DEFINE = re.compile(b"^\\#define ([a-zA-Z0-9_]+) ")
 
-            # The parser doesn't like some constants with complex values.
-            if m.group(1) in (b"ZSTD_LIB_VERSION", b"ZSTD_VERSION_STRING"):
-                continue
+    sources = []
 
-            # The ... is magic syntax by the cdef parser to resolve the
-            # value at compile time.
-            sources.append(m.group(0) + b" ...")
+    # Feed normalized preprocessor output for headers into the cdef parser.
+    for header in headers:
+        preprocessed = preprocess(header)
+        sources.append(normalize_output(preprocessed))
 
-cdeflines = b"\n".join(sources).splitlines()
-cdeflines = [line for line in cdeflines if line.strip()]
-ffi.cdef(b"\n".join(cdeflines).decode("latin1"))
+        # #define's are effectively erased as part of going through preprocessor.
+        # So perform a manual pass to re-add those to the cdef source.
+        with open(header, "rb") as fh:
+            for line in fh:
+                line = line.strip()
+                m = DEFINE.match(line)
+                if not m:
+                    continue
+
+                if m.group(1) == b"ZSTD_STATIC_LINKING_ONLY":
+                    continue
+
+                # The parser doesn't like some constants with complex values.
+                if m.group(1) in (b"ZSTD_LIB_VERSION", b"ZSTD_VERSION_STRING"):
+                    continue
+
+                # The ... is magic syntax by the cdef parser to resolve the
+                # value at compile time.
+                sources.append(m.group(0) + b" ...")
+
+    cdeflines = b"\n".join(sources).splitlines()
+    cdeflines = [line for line in cdeflines if line.strip()]
+    ffi.cdef(b"\n".join(cdeflines).decode("latin1"))
+    return ffi
+
 
 if __name__ == "__main__":
-    ffi.compile()
+    get_ffi().compile()
