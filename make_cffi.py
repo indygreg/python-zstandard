@@ -145,19 +145,39 @@ def normalize_output(output):
     return b"\n".join(lines)
 
 
-def get_ffi():
-    here = os.path.abspath(os.path.dirname(__file__))
+def get_ffi(system_zstd = False):
+    zstd_sources = []
+    include_dirs = []
+    libraries = []
 
-    zstd_sources = [
-        "zstd/zstd.c",
-    ]
+    if not system_zstd:
+        here = os.path.abspath(os.path.dirname(__file__))
 
-    # Headers whose preprocessed output will be fed into cdef().
-    headers = [os.path.join(here, "zstd", p) for p in ("zstd.h", "zdict.h")]
+        zstd_sources += [
+            "zstd/zstd.c",
+        ]
 
-    include_dirs = [
-        os.path.join(here, "zstd"),
-    ]
+        # Headers whose preprocessed output will be fed into cdef().
+        headers = [os.path.join(here, "zstd", p) for p in ("zstd.h", "zdict.h")]
+
+        include_dirs += [
+            os.path.join(here, "zstd"),
+        ]
+    else:
+        libraries += ["zstd"]
+
+        # Locate headers using the preprocessor.
+        include_re = re.compile(r'^# \d+ "([^"]+/(?:zstd|zdict)\.h)"')
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(os.path.join(temp_dir, "input.h"), "w") as f:
+                f.write("#include <zstd.h>\n#include <zdict.h>\n")
+            compiler.preprocess(os.path.join(temp_dir, "input.h"),
+                                os.path.join(temp_dir, "output.h"))
+            with open(os.path.join(temp_dir, "output.h"), "r") as f:
+                headers = list({
+                    m.group(1) for m in map(include_re.match, f)
+                    if m is not None
+                })
 
     ffi = cffi.FFI()
     # zstd.h uses a possible undefined MIN(). Define it until
@@ -178,6 +198,7 @@ def get_ffi():
     """,
         sources=zstd_sources,
         include_dirs=include_dirs,
+        libraries=libraries,
     )
 
     DEFINE = re.compile(b"^\\#define ([a-zA-Z0-9_]+) ")
