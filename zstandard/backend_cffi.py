@@ -91,7 +91,6 @@ from ._cffi import (  # type: ignore
     lib,
 )
 
-
 backend_features = set()  # type: ignore
 
 COMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_CStreamInSize()
@@ -2867,10 +2866,10 @@ def train_dictionary(
         if not isinstance(sample, bytes):
             raise ValueError("samples must be bytes")
 
-        l = len(sample)
-        ffi.memmove(samples_buffer + offset, sample, l)
-        offset += l
-        sample_sizes[i] = l
+        sample_len = len(sample)
+        ffi.memmove(samples_buffer + offset, sample, sample_len)
+        offset += sample_len
+        sample_sizes[i] = sample_len
 
     dict_data = new_nonzero("char[]", dict_size)
 

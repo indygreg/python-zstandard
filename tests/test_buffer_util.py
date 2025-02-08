@@ -33,13 +33,13 @@ class TestBufferWithSegments(unittest.TestCase):
         b = zstd.BufferWithSegments(b"foo", ss.pack(0, 3))
 
         with self.assertRaisesRegex(IndexError, "offset must be non-negative"):
-            test = b[-10]
+            b[-10]
 
         with self.assertRaisesRegex(IndexError, "offset must be less than 1"):
-            test = b[1]
+            b[1]
 
         with self.assertRaisesRegex(IndexError, "offset must be less than 1"):
-            test = b[2]
+            b[2]
 
     def test_single(self):
         b = zstd.BufferWithSegments(b"foo", ss.pack(0, 3))

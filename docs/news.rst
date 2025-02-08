@@ -45,6 +45,16 @@ Other Actions Not Blocking Release
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
 
+0.24.0 (not yet released)
+=========================
+
+Changes
+-------
+
+* We now use a non-rc version of cffi 1.17 on all Python versions. Python
+  <=3.12 have cffi upgraded from cffi 1.16 -> 1.17.
+ * The `pyproject.toml` file now defines a `[project]` section.
+
 0.23.0 (released 2024-07-14)
 ============================
 
