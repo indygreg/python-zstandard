@@ -34,6 +34,27 @@ MINIMUM_CFFI_VERSION = "1.11"
 if sys.version_info[0:2] >= (3, 13):
     MINIMUM_CFFI_VERSION = "1.17"
 
+ext_suffix = os.environ.get("SETUPTOOLS_EXT_SUFFIX")
+if ext_suffix:
+    import sysconfig
+    # setuptools._distutils.command.build_ext doesn't use
+    # SETUPTOOLS_EXT_SUFFIX like setuptools.command.build_ext does.
+    # Work around the issue so that cross-compilation can work
+    # properly.
+    sysconfig.get_config_vars()["EXT_SUFFIX"] = ext_suffix
+    try:
+        # Older versions of python didn't have EXT_SUFFIX, and setuptools
+        # sets its own value, but since we've already set one, we don't
+        # want setuptools to overwrite it.
+        import setuptools._distutils.compat.py39 as py39compat
+    except ImportError:
+        try:
+            import setuptools._distutils.py39compat as py39compat
+        except ImportError:
+            pass
+    if py39compat:
+        py39compat.add_ext_suffix = lambda vars: None
+
 try:
     import cffi
 
