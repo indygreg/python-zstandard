@@ -88,6 +88,8 @@ jobs:
       # TODO enable once PyO3 supports 3.13.
       - name: Build (Rust)
         if: matrix.arch == 'x64' && !startsWith(matrix.py, '3.13')
+        env:
+          PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
           python -m pip install --config-settings='--build-option=--rust-backend' -e .
 

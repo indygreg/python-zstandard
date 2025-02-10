@@ -25,6 +25,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build
+        env:
+          PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
           python -m pip install --config-settings=--build-option=--system-zstd .
 
@@ -50,5 +52,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build
+        env:
+          PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
           python -m pip install --config-settings=--build-option=--system-zstd .
