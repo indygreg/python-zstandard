@@ -1,6 +1,9 @@
 import os
 import unittest
 
+import pytest
+
+
 try:
     import hypothesis
     import hypothesis.strategies as strategies
@@ -44,6 +47,7 @@ s_strategy = strategies.sampled_from(
 
 @unittest.skipUnless("ZSTD_SLOW_TESTS" in os.environ, "ZSTD_SLOW_TESTS not set")
 class TestCompressionParametersHypothesis(unittest.TestCase):
+    @pytest.mark.thread_unsafe
     @hypothesis.given(
         s_windowlog,
         s_chainlog,
@@ -73,6 +77,7 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
             strategy=strategy,
         )
 
+    @pytest.mark.thread_unsafe
     @hypothesis.given(
         s_windowlog,
         s_chainlog,
