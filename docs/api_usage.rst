@@ -65,6 +65,7 @@ this is often not feasible.
 
 The *one-shot* APIs also perform all work as a single operation. So, if you
 feed it large input, it could take a long time for the function to return.
+See :ref:`one_shot_apis` for reference.
 
 The streaming APIs do not have the limitations of the simple API. But the
 price you pay for this flexibility is that they are more complex than a
@@ -145,5 +146,3 @@ example, the difference between *context* reuse and non-reuse for 100,000
 100 byte inputs will be significant (possibly over 10x faster to reuse contexts)
 whereas 10 100,000,000 byte inputs will be more similar in speed (because the
 time spent doing compression dwarfs time spent creating new *contexts*).
-
-
