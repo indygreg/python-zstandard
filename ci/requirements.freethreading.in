@@ -7,6 +7,5 @@ hypothesis
 mypy
 pycparser
 pytest-xdist
-pytest-run-parallel
 pytest
 wheel

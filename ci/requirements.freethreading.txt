@@ -108,12 +108,7 @@ pytest==8.3.3 \
     --hash=sha256:a6853c7375b2663155079443d2e45de913a911a11d669df02a50814944db57b2
     # via
     #   -r ci/requirements.freethreading.in
-    #   pytest-run-parallel
     #   pytest-xdist
-pytest-run-parallel==0.1.0 \
-    --hash=sha256:13d8579d39d60d5d77695e6bc292daa3352a5974eb446819f52fba4e20bb0d0f \
-    --hash=sha256:271854a2919aaff4e2a39bc2094bd2f96aa32fba9e51a995405ead35b74cc062
-    # via -r ci/requirements.freethreading.in
 pytest-xdist==3.6.1 \
     --hash=sha256:9ed4adfb68a016610848639bb7e02c9352d5d9f03d04809919e2dafc3be4cca7 \
     --hash=sha256:ead156a4db231eec769737f57668ef58a2084a34b2e55c4a8fa20d861107300d
