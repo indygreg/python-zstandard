@@ -28,7 +28,7 @@ Documentation = "https://python-zstandard.readthedocs.io/en/latest/"
 
 [build-system]
 requires = [
-    # "cffi>=1.17.0",  # ok for default, nok for free-threading
+    "cffi>=1.17.0",
     "setuptools",
 ]
 # Need to use legacy backend because setup_zstd.py breaks build isolation.
