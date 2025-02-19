@@ -60,10 +60,14 @@ jobs:
       PYTHONDEVMODE: '1'
     steps:
       - name: Set up Python
-        uses: Quansight-Labs/setup-python@v5
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
+
+      - name: install pip
+        run: |
+          uv pip install pip
 
       - name: Install Rust
         if: matrix.arch == 'x64' && !startsWith(matrix.py, '3.13')
