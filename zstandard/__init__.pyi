@@ -8,7 +8,6 @@ import os
 from typing import (
     IO,
     BinaryIO,
-    ByteString,
     Generator,
     Iterable,
     List,
@@ -17,6 +16,9 @@ from typing import (
     Tuple,
     Union,
 )
+
+# ByteString has been removed from typing in Python 3.14
+ByteString: Union[bytes, bytearray, memoryview]
 
 FLUSH_BLOCK: int
 FLUSH_FRAME: int

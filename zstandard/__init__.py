@@ -18,7 +18,10 @@ import builtins
 import io
 import os
 import platform
-from typing import ByteString
+from typing import Union
+
+# ByteString has been removed from typing in Python 3.14
+ByteString = Union[bytes, bytearray, memoryview]
 
 # Some Python implementations don't support C extensions. That's why we have
 # a CFFI implementation in the first place. The code here import one of our
