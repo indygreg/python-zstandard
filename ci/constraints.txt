@@ -1,0 +1,5 @@
+# 69.0.0 breaks handling of --config-settings=--build-option, which our CI
+# relies on. So constrained to an older version until we figure out a
+# workaround. See comment at
+# https://github.com/pypa/pip/issues/11859#issuecomment-2132287974.
+setuptools<69.0.0
