@@ -39,7 +39,7 @@ class TestCompressor_compressobj(unittest.TestCase):
         cobj = cctx.compressobj()
 
         result = cobj.compress(b"".join(chunks)) + cobj.flush()
-        self.assertEqual(len(result), 999)
+        self.assertEqual(len(result), 1029)
         self.assertEqual(result[0:4], b"\x28\xb5\x2f\xfd")
 
         params = zstd.get_frame_parameters(result)

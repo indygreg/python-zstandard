@@ -52,7 +52,7 @@ class TestCompressor_compress(unittest.TestCase):
 
         cctx = zstd.ZstdCompressor(level=3, write_content_size=False)
         result = cctx.compress(b"".join(chunks))
-        self.assertEqual(len(result), 999)
+        self.assertEqual(len(result), 1029)
         self.assertEqual(result[0:4], b"\x28\xb5\x2f\xfd")
 
         # This matches the test for read_to_iter() below.

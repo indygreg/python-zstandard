@@ -256,11 +256,11 @@ impl ZstdDecompressor {
         }
 
         let chunk_buffer: PyBuffer<u8> = PyBuffer::get(&chunk.as_borrowed())?;
-        let mut params = zstd_sys::ZSTD_frameHeader {
+        let mut params = zstd_sys::ZSTD_FrameHeader {
             frameContentSize: 0,
             windowSize: 0,
             blockSizeMax: 0,
-            frameType: zstd_sys::ZSTD_frameType_e::ZSTD_frame,
+            frameType: zstd_sys::ZSTD_FrameType_e::ZSTD_frame,
             headerSize: 0,
             dictID: 0,
             checksumFlag: 0,

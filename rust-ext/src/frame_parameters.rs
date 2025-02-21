@@ -12,7 +12,7 @@ use {
 
 #[pyclass(module = "zstandard.backend_rust")]
 struct FrameParameters {
-    header: zstd_sys::ZSTD_frameHeader,
+    header: zstd_sys::ZSTD_FrameHeader,
 }
 
 unsafe impl Sync for FrameParameters {}
@@ -75,11 +75,11 @@ fn get_frame_parameters(py: Python, buffer: PyBuffer<u8>) -> PyResult<Py<FramePa
         std::slice::from_raw_parts::<u8>(buffer.buf_ptr() as *const _, buffer.len_bytes())
     };
 
-    let mut header = zstd_sys::ZSTD_frameHeader {
+    let mut header = zstd_sys::ZSTD_FrameHeader {
         frameContentSize: 0,
         windowSize: 0,
         blockSizeMax: 0,
-        frameType: zstd_sys::ZSTD_frameType_e::ZSTD_frame,
+        frameType: zstd_sys::ZSTD_FrameType_e::ZSTD_frame,
         headerSize: 0,
         dictID: 0,
         checksumFlag: 0,

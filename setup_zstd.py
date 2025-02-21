@@ -14,6 +14,8 @@ import shutil
 import subprocess
 import sys
 
+import packaging.tags
+
 ext_includes = [
     "c-ext",
 ]
@@ -88,6 +90,13 @@ def get_c_extension(
 
     if not system_zstd and support_legacy:
         extra_args.append("-DZSTD_LEGACY_SUPPORT=1")
+
+    # musl 1.1 doesn't define qsort_r. We need to force using the C90
+    # variant. ZDICT_QSORT officially introduced in 1.5.8. But our
+    # vendored copy backported to 1.5.7.
+    for tag in packaging.tags.platform_tags():
+        if tag.startswith("musllinux_1_1_"):
+            extra_args.append("-DZDICT_QSORT=ZDICT_QSORT_C90")
 
     if warnings_as_errors:
         if compiler_type in ("unix", "mingw32"):
