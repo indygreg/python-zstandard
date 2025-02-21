@@ -301,7 +301,7 @@ class TestCompressor_stream_writer(unittest.TestCase):
         d = zstd.train_dictionary(8192, samples)
 
         h = hashlib.sha1(d.as_bytes()).hexdigest()
-        self.assertEqual(h, "a46d2f7a3bc3357c9d717d3dadf9a26fde23e93d")
+        self.assertEqual(h, "f32ddfbe0878bbd428afc00b17810387c6752191")
 
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor(level=9, dict_data=d)

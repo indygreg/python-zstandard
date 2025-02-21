@@ -50,7 +50,7 @@ class TestCompressor_copy_stream(unittest.TestCase):
         r, w = cctx.copy_stream(source, dest)
 
         self.assertEqual(r, 255 * 16384)
-        self.assertEqual(w, 999)
+        self.assertEqual(w, 1029)
 
         params = zstd.get_frame_parameters(dest.getvalue())
         self.assertEqual(params.content_size, zstd.CONTENTSIZE_UNKNOWN)
