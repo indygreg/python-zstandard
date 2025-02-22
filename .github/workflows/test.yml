@@ -106,20 +106,16 @@ jobs:
         run: |
           pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
-      - name: Test in Parallel
-        if: "endsWith(matrix.py, 't')"
-        run: |
-          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} --parallel-threads=10 -v tests/
-
       - name: Test CFFI Backend
-        if: "!startsWith(matrix.py, '3.13')"  # see pyproject.toml:4
+        # CFFI doesn't yet support the free-threaded build of CPython
+        if: matrix.py != '3.13t'
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
         run: |
           pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test Rust Backend
-        if: matrix.arch == 'x64' && !startsWith(matrix.py, '3.13')
+        if: matrix.arch == 'x64'
         # Rust backend is currently experimental. So ignore failures in it.
         continue-on-error: true
         env:
