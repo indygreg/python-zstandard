@@ -21,6 +21,13 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 keywords = ["zstandard", "zstd", "compression"]
+dependencies = []
+
+[project.optional-dependencies]
+cffi = [
+  'cffi>=1.11 ; python_version < "3.13" and platform_python_implementation != "PyPy"',
+  'cffi>=1.17 ; python_version >= "3.13" and platform_python_implementation != "PyPy"',
+]
 
 [project.urls]
 Homepage = "https://github.com/indygreg/python-zstandard"
@@ -28,7 +35,7 @@ Documentation = "https://python-zstandard.readthedocs.io/en/latest/"
 
 [build-system]
 requires = [
-    "cffi>=1.17.0",
+    "cffi>=1.17.0 ; platform_python_implementation != 'PyPy'",
     "setuptools",
 ]
 # Need to use legacy backend because setup_zstd.py breaks build isolation.
