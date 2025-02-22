@@ -85,7 +85,7 @@ impl ZstdCompressionChunker {
 
         let source = make_in_buffer_source(py, data, zstd_safe::CCtx::in_size())?;
 
-        let it = Py::new(
+        let it = Bound::new(
             py,
             ZstdCompressionChunkerIterator {
                 cctx: self.cctx.clone(),
@@ -96,9 +96,9 @@ impl ZstdCompressionChunker {
             },
         )?;
 
-        self.iterator = Some(it.clone());
+        self.iterator = Some(it.clone().unbind());
 
-        Ok(it)
+        Ok(it.unbind())
     }
 
     fn flush<'p>(&mut self, py: Python<'p>) -> PyResult<Py<ZstdCompressionChunkerIterator>> {
@@ -119,7 +119,7 @@ impl ZstdCompressionChunker {
         let source =
             make_in_buffer_source(py, &PyBytes::new_bound(py, &[]), zstd_safe::CCtx::in_size())?;
 
-        let it = Py::new(
+        let it = Bound::new(
             py,
             ZstdCompressionChunkerIterator {
                 cctx: self.cctx.clone(),
@@ -130,9 +130,9 @@ impl ZstdCompressionChunker {
             },
         )?;
 
-        self.iterator = Some(it.clone());
+        self.iterator = Some(it.clone().unbind());
 
-        Ok(it)
+        Ok(it.unbind())
     }
 
     fn finish<'p>(&mut self, py: Python<'p>) -> PyResult<Py<ZstdCompressionChunkerIterator>> {
@@ -153,7 +153,7 @@ impl ZstdCompressionChunker {
         let source =
             make_in_buffer_source(py, &PyBytes::new_bound(py, &[]), zstd_safe::CCtx::in_size())?;
 
-        let it = Py::new(
+        let it = Bound::new(
             py,
             ZstdCompressionChunkerIterator {
                 cctx: self.cctx.clone(),
@@ -164,9 +164,9 @@ impl ZstdCompressionChunker {
             },
         )?;
 
-        self.iterator = Some(it.clone());
+        self.iterator = Some(it.clone().unbind());
 
-        Ok(it)
+        Ok(it.unbind())
     }
 }
 

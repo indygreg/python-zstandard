@@ -68,7 +68,7 @@ pub fn multi_compress_to_buffer(
                 total_source_size += slice.len();
             }
         }
-    } else if let Ok(list) = data.extract::<&PyList>() {
+    } else if let Ok(list) = data.extract::<Bound<'_, PyList>>() {
         sources.reserve_exact(list.len());
 
         for (i, item) in list.iter().enumerate() {
