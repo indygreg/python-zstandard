@@ -99,7 +99,7 @@ pub fn multi_decompress_to_buffer(
                 offset += 1;
             }
         }
-    } else if let Ok(list) = frames.extract::<&PyList>() {
+    } else if let Ok(list) = frames.extract::<Bound<'_, PyList>>() {
         if decompressed_sizes.is_some() && frame_sizes.len() != list.len() {
             return Err(PyValueError::new_err(format!(
                 "decompressed_sizes size mismatch; expected {}; got {}",

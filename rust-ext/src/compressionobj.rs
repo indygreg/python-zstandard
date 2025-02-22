@@ -66,6 +66,7 @@ impl ZstdCompressionObj {
         Ok(PyBytes::new_bound(py, &compressed))
     }
 
+    #[pyo3(signature = (flush_mode=None))]
     fn flush<'p>(
         &mut self,
         py: Python<'p>,
