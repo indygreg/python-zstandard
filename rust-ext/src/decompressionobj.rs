@@ -102,6 +102,7 @@ impl ZstdDecompressionObj {
         empty.call_method1("join", (chunks,))
     }
 
+    #[pyo3(signature = (length=None))]
     #[allow(unused_variables)]
     fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<Bound<'p, PyBytes>> {
         Ok(PyBytes::new_bound(py, &[]))

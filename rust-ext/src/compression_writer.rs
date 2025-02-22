@@ -184,6 +184,7 @@ impl ZstdCompressionWriter {
         false
     }
 
+    #[pyo3(signature = (size=None))]
     #[allow(unused_variables)]
     fn truncate(&self, py: Python, size: Option<&Bound<'_, PyAny>>) -> PyResult<()> {
         let io = py.import_bound("io")?;
