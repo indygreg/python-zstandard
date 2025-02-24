@@ -2573,7 +2573,7 @@ def get_frame_parameters(data):
     :return:
        :py:class:`FrameParameters`
     """
-    params = ffi.new("ZSTD_frameHeader *")
+    params = ffi.new("ZSTD_FrameHeader *")
 
     data_buffer = ffi.from_buffer(data)
     zresult = lib.ZSTD_getFrameHeader(params, data_buffer, len(data_buffer))
@@ -4288,7 +4288,7 @@ class ZstdDecompressor(object):
 
         # All chunks should be zstd frames and should have content size set.
         chunk_buffer = ffi.from_buffer(chunk)
-        params = ffi.new("ZSTD_frameHeader *")
+        params = ffi.new("ZSTD_FrameHeader *")
         zresult = lib.ZSTD_getFrameHeader(
             params, chunk_buffer, len(chunk_buffer)
         )
