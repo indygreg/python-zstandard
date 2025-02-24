@@ -179,7 +179,7 @@ ffi.set_source(
     include_dirs=INCLUDE_DIRS,
 )
 
-DEFINE = re.compile(b"^\\#define ([a-zA-Z0-9_]+) ")
+DEFINE = re.compile(rb"^#define\s+([a-zA-Z0-9_]+)\s+(\S+)")
 
 sources = []
 
@@ -204,9 +204,14 @@ for header in HEADERS:
             if m.group(1) in (b"ZSTD_LIB_VERSION", b"ZSTD_VERSION_STRING"):
                 continue
 
+            # These defines create aliases from old (camelCase) type names
+            # to the new PascalCase names, which breaks CFFI.
+            if m.group(1).lower() == m.group(2).lower():
+                continue
+
             # The ... is magic syntax by the cdef parser to resolve the
             # value at compile time.
-            sources.append(m.group(0) + b" ...")
+            sources.append(b"#define " + m.group(1) + b" ...")
 
 cdeflines = b"\n".join(sources).splitlines()
 cdeflines = [line for line in cdeflines if line.strip()]
