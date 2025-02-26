@@ -59,22 +59,22 @@ jobs:
       # Activate Python development mode so we get warnings.
       PYTHONDEVMODE: '1'
     steps:
+      - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.py }}
 
-      - name: install pip
+      - name: Install pip
         run: |
-          uv pip install pip
+          uv pip install --python=${{ matrix.py }} pip
 
       - name: Install Rust
         if: matrix.arch == 'x64' && !startsWith(matrix.py, '3.13')
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-
-      - uses: actions/checkout@v4
 
       - name: Install Dependencies
         shell: bash
