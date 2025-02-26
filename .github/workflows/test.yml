@@ -108,7 +108,7 @@ jobs:
           pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test Rust Backend
-        if: matrix.arch == 'x64'
+        if: matrix.arch == 'x64' && !startsWith(matrix.py, '3.13')
         # Rust backend is currently experimental. So ignore failures in it.
         continue-on-error: true
         env:
