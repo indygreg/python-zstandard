@@ -2,9 +2,6 @@ import io
 import os
 import unittest
 
-import pytest
-
-
 try:
     import hypothesis
     import hypothesis.strategies as strategies

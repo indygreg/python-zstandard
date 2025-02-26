@@ -1,7 +1,6 @@
 import io
 import os
 import unittest
-import pytest
 
 try:
     import hypothesis
@@ -532,7 +531,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
         ),
         read_sizes=strategies.data(),
     )
-    def test_read_across_frames_false(  # fails
+    def test_read_across_frames_false(
         self, chunks, level, write_size, read_sizes
     ):
         cctx = zstd.ZstdCompressor(level=level)

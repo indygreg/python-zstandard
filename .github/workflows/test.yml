@@ -78,16 +78,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Dependencies
-        if: "!endsWith(matrix.py, 't')"
         shell: bash
         run: |
           python -m pip install --require-hashes -r ci/requirements.txt
-
-      - name: Install Dependencies (free-threading)
-        if: "endsWith(matrix.py, 't')"
-        shell: bash
-        run: |
-          python -m pip install --require-hashes -r ci/requirements.freethreading.txt
 
       # TODO enable once PyO3 supports 3.13.
       - name: Build (Rust)
