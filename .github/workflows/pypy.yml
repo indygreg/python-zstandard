@@ -13,7 +13,6 @@ jobs:
           - 'macos-13'
           - 'windows-2022'
         py:
-          - 'pypy-3.9'
           - 'pypy-3.10'
         arch:
           - 'x86'
@@ -51,7 +50,6 @@ jobs:
           - 'macos-13'
           - 'windows-2022'
         py:
-          - 'pypy-3.9'
           - 'pypy-3.10'
         arch:
           - 'x86'
