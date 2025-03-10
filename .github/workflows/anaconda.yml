@@ -37,7 +37,7 @@ jobs:
         run: |
           source $CONDA/bin/activate env
           $CONDA/bin/conda install --yes --quiet --name env conda-build pip
-          pip install --require-hashes -r ci/requirements.txt
+          pip install --require-hashes -r ci/requirements.txt -c ci/constraints.txt
 
       - name: Build and Test
         run: |

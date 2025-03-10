@@ -40,7 +40,7 @@ jobs:
 
       - name: Build
         run: |
-          python -m pip wheel -w wheelhouse .
+          python -m pip wheel -w wheelhouse . -c ci/constraints.txt
 
   test:
     strategy:
@@ -82,7 +82,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install --require-hashes -r ci/requirements.pypy.txt
+          pip install --require-hashes -r ci/requirements.pypy.txt -c ci/constraints.txt
 
       - name: Build
         run: |
