@@ -59,6 +59,8 @@ Changes
   and we didn't run tests on this platform.
 * We now use `Py_REFCNT(obj)` instead of accessing `(*obj)->ob_refcnt` directly.
   This fixes a nogil / multi-threaded compile error. (#201)
+* We now `collections.abs.Buffer` on Python 3.12+ instead of `typing.ByteString`,
+  as `typing.ByteString` was deprecated and later removed. (#238, #262)
 
 Backwards Compatibility Notes
 -----------------------------
