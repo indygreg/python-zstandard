@@ -18,7 +18,11 @@ import builtins
 import io
 import os
 import platform
-from typing import ByteString
+import sys
+if sys.version_info >= (3, 12):
+    from collections.abc import Buffer
+else:
+    from typing import ByteString as Buffer
 
 # Some Python implementations don't support C extensions. That's why we have
 # a CFFI implementation in the first place. The code here import one of our
@@ -174,7 +178,7 @@ def open(
         return fh
 
 
-def compress(data: ByteString, level: int = 3) -> bytes:
+def compress(data: Buffer, level: int = 3) -> bytes:
     """Compress source data using the zstd compression format.
 
     This performs one-shot compression using basic/default compression
@@ -192,7 +196,7 @@ def compress(data: ByteString, level: int = 3) -> bytes:
     return cctx.compress(data)
 
 
-def decompress(data: ByteString, max_output_size: int = 0) -> bytes:
+def decompress(data: Buffer, max_output_size: int = 0) -> bytes:
     """Decompress a zstd frame into its original data.
 
     This performs one-shot decompression using basic/default compression
