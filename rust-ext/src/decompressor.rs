@@ -151,7 +151,7 @@ impl ZstdDecompressor {
 
                 if !dest_buffer.is_empty() {
                     // TODO avoid buffer copy.
-                    let data = PyBytes::new_bound(py, &dest_buffer);
+                    let data = PyBytes::new(py, &dest_buffer);
 
                     ofh.call_method1("write", (data,))?;
                     total_write += dest_buffer.len();
@@ -190,7 +190,7 @@ impl ZstdDecompressor {
                     "error determining content size from frame header",
                 ));
             } else if output_size == 0 {
-                return Ok(PyBytes::new_bound(py, &[]));
+                return Ok(PyBytes::new(py, &[]));
             } else if output_size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as c_ulonglong {
                 if max_output_size == 0 {
                     return Err(ZstdError::new_err(
@@ -235,7 +235,7 @@ impl ZstdDecompressor {
             )))
         } else {
             // TODO avoid memory copy
-            Ok(PyBytes::new_bound(py, &dest_buffer))
+            Ok(PyBytes::new(py, &dest_buffer))
         }
     }
 
@@ -255,7 +255,7 @@ impl ZstdDecompressor {
             return Err(PyValueError::new_err("chunk 0 must be bytes"));
         }
 
-        let chunk_buffer: PyBuffer<u8> = PyBuffer::get_bound(&chunk.as_borrowed())?;
+        let chunk_buffer: PyBuffer<u8> = PyBuffer::get(&chunk.as_borrowed())?;
         let mut params = zstd_sys::ZSTD_frameHeader {
             frameContentSize: 0,
             windowSize: 0,
@@ -310,7 +310,7 @@ impl ZstdDecompressor {
         // Special case of chain length 1.
         if frames.len() == 1 {
             // TODO avoid buffer copy.
-            let chunk = PyBytes::new_bound(py, &last_buffer);
+            let chunk = PyBytes::new(py, &last_buffer);
             return Ok(chunk);
         }
 
@@ -319,7 +319,7 @@ impl ZstdDecompressor {
                 return Err(PyValueError::new_err(format!("chunk {} must be bytes", i)));
             }
 
-            let chunk_buffer: PyBuffer<u8> = PyBuffer::get_bound(&chunk.as_borrowed())?;
+            let chunk_buffer: PyBuffer<u8> = PyBuffer::get(&chunk.as_borrowed())?;
 
             let zresult = unsafe {
                 zstd_sys::ZSTD_getFrameHeader(
@@ -373,7 +373,7 @@ impl ZstdDecompressor {
         }
 
         // TODO avoid buffer copy.
-        Ok(PyBytes::new_bound(py, &last_buffer))
+        Ok(PyBytes::new(py, &last_buffer))
     }
 
     #[pyo3(signature = (write_size=None, read_across_frames=false))]

@@ -173,7 +173,7 @@ impl ZstdCompressor {
             .allow_threads(|| cctx.compress(source))
             .or_else(|msg| Err(ZstdError::new_err(format!("cannot compress: {}", msg))))?;
 
-        Ok(PyBytes::new_bound(py, &data))
+        Ok(PyBytes::new(py, &data))
     }
 
     #[pyo3(signature = (size=None, chunk_size=None))]
@@ -298,7 +298,7 @@ impl ZstdCompressor {
 
                 if !chunk.is_empty() {
                     // TODO avoid buffer copy.
-                    let data = PyBytes::new_bound(py, chunk);
+                    let data = PyBytes::new(py, chunk);
                     ofh.call_method("write", (data,), None)?;
                     total_write += chunk.len();
                 }
@@ -321,7 +321,7 @@ impl ZstdCompressor {
 
             if !chunk.is_empty() {
                 // TODO avoid buffer copy.
-                let data = PyBytes::new_bound(py, &chunk);
+                let data = PyBytes::new(py, &chunk);
                 ofh.call_method("write", (data,), None)?;
                 total_write += chunk.len();
             }

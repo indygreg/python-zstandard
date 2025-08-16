@@ -120,7 +120,7 @@ impl ZstdCompressionDict {
     }
 
     fn as_bytes<'p>(&self, py: Python<'p>) -> PyResult<Bound<'p, PyBytes>> {
-        Ok(PyBytes::new_bound(py, &self.data))
+        Ok(PyBytes::new(py, &self.data))
     }
 
     fn dict_id(&self) -> u32 {

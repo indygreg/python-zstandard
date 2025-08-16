@@ -65,7 +65,7 @@ impl ZstdCompressionObj {
             source = result.1;
         }
 
-        Ok(PyBytes::new_bound(py, &compressed))
+        Ok(PyBytes::new(py, &compressed))
     }
 
     #[pyo3(signature = (flush_mode=None))]
@@ -111,7 +111,7 @@ impl ZstdCompressionObj {
             result.extend(&chunk);
 
             if !call_again {
-                return Ok(PyBytes::new_bound(py, &result));
+                return Ok(PyBytes::new(py, &result));
             }
         }
     }

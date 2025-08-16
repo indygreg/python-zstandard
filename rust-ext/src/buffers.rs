@@ -83,7 +83,7 @@ impl ZstdBufferSegment {
     }
 
     fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<Bound<'p, PyBytes>> {
-        Ok(PyBytes::new_bound(py, self.as_slice()))
+        Ok(PyBytes::new(py, self.as_slice()))
     }
 }
 
@@ -179,7 +179,7 @@ impl ZstdBufferWithSegments {
 
         Ok(ZstdBufferSegment {
             _parent: self.source.clone_ref(py),
-            buffer: PyBuffer::get_bound(self.source.downcast_bound(py)?)?,
+            buffer: PyBuffer::get(self.source.downcast_bound(py)?)?,
             offset: segment.offset as _,
             len: segment.length as _,
         })
@@ -211,7 +211,7 @@ impl ZstdBufferWithSegments {
 
     #[new]
     pub fn new(py: Python, data: &Bound<'_, PyAny>, segments: PyBuffer<u8>) -> PyResult<Self> {
-        let data_buffer = PyBuffer::get_bound(&data.as_borrowed())?;
+        let data_buffer = PyBuffer::get(&data.as_borrowed())?;
 
         if segments.len_bytes() % std::mem::size_of::<BufferSegment>() != 0 {
             return Err(PyValueError::new_err(format!(
@@ -261,7 +261,7 @@ impl ZstdBufferWithSegments {
     }
 
     fn tobytes<'p>(&self, py: Python<'p>) -> PyResult<Bound<'p, PyBytes>> {
-        Ok(PyBytes::new_bound(py, self.as_slice()))
+        Ok(PyBytes::new(py, self.as_slice()))
     }
 }
 

@@ -51,7 +51,7 @@ impl ZstdDecompressionObj {
         }
 
         if data.len_bytes() == 0 {
-            return Ok(PyBytes::new_bound(py, &[]).into_any());
+            return Ok(PyBytes::new(py, &[]).into_any());
         }
 
         let mut in_buffer = zstd_sys::ZSTD_inBuffer {
@@ -62,7 +62,7 @@ impl ZstdDecompressionObj {
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(self.write_size);
 
-        let chunks = PyList::empty_bound(py);
+        let chunks = PyList::empty(py);
 
         loop {
             let zresult = self
@@ -72,7 +72,7 @@ impl ZstdDecompressionObj {
 
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
-                let chunk = PyBytes::new_bound(py, &dest_buffer);
+                let chunk = PyBytes::new(py, &dest_buffer);
                 chunks.append(chunk)?;
             }
 
@@ -100,24 +100,24 @@ impl ZstdDecompressionObj {
             }
         }
 
-        let empty = PyBytes::new_bound(py, &[]);
+        let empty = PyBytes::new(py, &[]);
         empty.call_method1("join", (chunks,))
     }
 
     #[pyo3(signature = (length=None))]
     #[allow(unused_variables)]
     fn flush<'p>(&self, py: Python<'p>, length: Option<usize>) -> PyResult<Bound<'p, PyBytes>> {
-        Ok(PyBytes::new_bound(py, &[]))
+        Ok(PyBytes::new(py, &[]))
     }
 
     #[getter]
     fn unused_data<'p>(&self, py: Python<'p>) -> Bound<'p, PyBytes> {
-        PyBytes::new_bound(py, &self.unused_data)
+        PyBytes::new(py, &self.unused_data)
     }
 
     #[getter]
     fn unconsumed_tail<'p>(&self, py: Python<'p>) -> Bound<'p, PyBytes> {
-        PyBytes::new_bound(py, &[])
+        PyBytes::new(py, &[])
     }
 
     #[getter]

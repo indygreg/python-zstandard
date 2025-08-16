@@ -72,7 +72,7 @@ pub fn multi_compress_to_buffer(
         sources.reserve_exact(list.len());
 
         for (i, item) in list.iter().enumerate() {
-            let buffer: PyBuffer<u8> = PyBuffer::get_bound(&item.as_borrowed())
+            let buffer: PyBuffer<u8> = PyBuffer::get(&item.as_borrowed())
                 .map_err(|_| PyTypeError::new_err(format!("item {} not a bytes like object", i)))?;
 
             let slice = unsafe {
@@ -178,7 +178,7 @@ fn compress_from_datasources(
         .sort_by(|a, b| a.source_offset.cmp(&b.source_offset));
 
     // TODO this is horribly inefficient due to memory copies.
-    let els = PyTuple::new_bound(
+    let els = PyTuple::new(
         py,
         results
             .lock()
@@ -193,20 +193,20 @@ fn compress_from_datasources(
                 }
 
                 let data = result.data.as_ref().unwrap();
-                let chunk = PyBytes::new_bound(py, data);
+                let chunk = PyBytes::new(py, data);
                 let segments = vec![BufferSegment {
                     offset: 0,
                     length: data.len() as _,
                 }];
 
                 let segments = unsafe {
-                    PyBytes::bound_from_ptr(
+                    PyBytes::from_ptr(
                         py,
                         segments.as_ptr() as *const _,
                         segments.len() * std::mem::size_of::<BufferSegment>(),
                     )
                 };
-                let segments_buffer = PyBuffer::get_bound(&segments)?;
+                let segments_buffer = PyBuffer::get(&segments)?;
 
                 Py::new(
                     py,
@@ -214,7 +214,7 @@ fn compress_from_datasources(
                 )
             })
             .collect::<PyResult<Vec<_>>>()?,
-    );
+    )?;
 
     ZstdBufferWithSegmentsCollection::new(py, &els)
 }

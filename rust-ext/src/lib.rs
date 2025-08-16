@@ -36,7 +36,7 @@ const VERSION: &'static str = "0.24.0.dev0";
 
 #[pymodule]
 fn backend_rust(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
-    let features = PySet::new_bound(
+    let features = PySet::new(
         py,
         &[
             "buffer_types",
