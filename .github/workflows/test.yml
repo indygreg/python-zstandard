@@ -77,7 +77,7 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - name: Install Rust
-        if: matrix.arch == 'x64'
+        if: matrix.arch != 'x86'
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
@@ -86,20 +86,24 @@ jobs:
 
       - name: Install Dependencies
         shell: bash
+        env:
+          PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
           python -m pip install --require-hashes -r ci/requirements.txt
 
       - name: Build (Rust)
-        if: matrix.arch == 'x64'
+        if: matrix.arch != 'x86'
         env:
           PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
-          python -m pip install --config-settings='--build-option=--rust-backend' -e .
+          python -m pip -v install --config-settings='--build-option=--rust-backend' -e .
 
       - name: Build (No Rust)
-        if: matrix.arch != 'x64'
+        if: matrix.arch == 'x86'
+        env:
+          PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
-          python -m pip install -e .
+          python -m pip -v install -e .
 
       - name: Test C Backend
         run: |
@@ -112,7 +116,7 @@ jobs:
           pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test Rust Backend
-        if: matrix.arch == 'x64'
+        if: matrix.arch != 'x86'
         # Rust backend is currently experimental. So ignore failures in it.
         continue-on-error: true
         env:
