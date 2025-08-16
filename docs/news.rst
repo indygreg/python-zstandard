@@ -67,6 +67,8 @@ Changes
 * Added CI coverage for PyPy 3.11.
 * Anaconda Windows CI builds have been disabled because we're running into
   an apparant conda bug.
+* Added CI coverage for Anaconda 3.12 and 3.13 on Linux and Windows x86-64
+  (but the Windows builds no-op due to above issue).
 
 Backwards Compatibility Notes
 -----------------------------

@@ -12,6 +12,8 @@ jobs:
           - '3.9'
           - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
     runs-on: 'ubuntu-22.04'
     env:
       # Enable fuzzing tests, other expensive tests.
@@ -58,6 +60,8 @@ jobs:
           - '3.9'
           - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
     runs-on: 'windows-2022'
     env:
       # Enable fuzzing tests, other expensive tests.

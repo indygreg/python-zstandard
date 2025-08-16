@@ -11,7 +11,7 @@ if not os.path.exists(dest_dir):
 
 print("scanning %s for packages" % build_dir)
 for p in os.listdir(build_dir):
-    if not p.endswith(".tar.bz2"):
+    if not p.endswith(".conda"):
         continue
 
     source = os.path.join(build_dir, p)
