@@ -10,6 +10,7 @@ from __future__ import print_function
 import os
 import platform
 import sys
+import sysconfig
 
 from setuptools import setup
 
@@ -36,7 +37,6 @@ if sys.version_info[0:2] >= (3, 13):
 
 ext_suffix = os.environ.get("SETUPTOOLS_EXT_SUFFIX")
 if ext_suffix:
-    import sysconfig
     # setuptools._distutils.command.build_ext doesn't use
     # SETUPTOOLS_EXT_SUFFIX like setuptools.command.build_ext does.
     # Work around the issue so that cross-compilation can work
@@ -55,22 +55,27 @@ if ext_suffix:
     if py39compat:
         py39compat.add_ext_suffix = lambda vars: None
 
-try:
-    import cffi
-
-    # PyPy (and possibly other distros) have CFFI distributed as part of
-    # them.
-    cffi_version = LooseVersion(cffi.__version__)
-    if cffi_version < LooseVersion(MINIMUM_CFFI_VERSION):
-        print(
-            "CFFI %s or newer required (%s found); "
-            "not building CFFI backend" % (MINIMUM_CFFI_VERSION, cffi_version),
-            file=sys.stderr,
-        )
-        cffi = None
-
-except ImportError:
+if bool(sysconfig.get_config_var("Py_GIL_DISABLED")):
+    # cffi does not yet support the free-threaded build so we
+    # disable the cffi backend
     cffi = None
+else:
+    try:
+        import cffi
+
+        # PyPy (and possibly other distros) have CFFI distributed as part of
+        # them.
+        cffi_version = LooseVersion(cffi.__version__)
+        if cffi_version < LooseVersion(MINIMUM_CFFI_VERSION):
+            print(
+                "CFFI %s or newer required (%s found); "
+                "not building CFFI backend" % (MINIMUM_CFFI_VERSION, cffi_version),
+                file=sys.stderr,
+            )
+            cffi = None
+
+    except ImportError:
+        cffi = None
 
 sys.path.insert(0, ".")
 

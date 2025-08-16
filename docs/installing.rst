@@ -44,6 +44,10 @@ One way to do this is to depend on the ``zstandard[cffi]`` dependency.
 e.g. ``pip install 'zstandard[cffi]'`` or add ``zstandard[cffi]`` to your
 pip requirements file.
 
+CFFI does not yet support the free-threaded build of CPython so the CFFI
+backend is disabled at build time for free-threaded Python regardless of
+whether or not the ``cffi`` is specified.
+
 Legacy Format Support
 =====================
 
@@ -84,7 +88,8 @@ All Install Arguments
    Do not compile the CFFI-based backend.
 
 ``--rust-backend``
-   Compile the Rust backend (not yet feature complete).
+   Compile the Rust backend (not yet feature complete and not supported
+   on the free-threaded build or Python 3.13).
 
 If you invoke ``setup.py``, simply pass the aforementioned arguments. e.g.
 ``python3.9 setup.py --no-cffi-backend``. If using ``pip``, use the
