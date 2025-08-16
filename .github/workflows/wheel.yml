@@ -28,12 +28,12 @@ jobs:
           - 'cp311-cp311'
           - 'cp312-cp312'
           - 'cp313-cp313'
-    runs-on: 'ubuntu-22.04'
+    runs-on: ${{ endsWith(matrix.image, 'aarch64') && 'ubuntu-22.04-arm' || 'ubuntu-22.04' }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up QEMU
-        if: ${{ endsWith(matrix.image, 'aarch64') || endsWith(matrix.image, 'ppc64le') || endsWith(matrix.image, 's390x') }}
+        if: ${{ endsWith(matrix.image, 'ppc64le') || endsWith(matrix.image, 's390x') }}
         uses: docker/setup-qemu-action@v3
 
       - name: Build Wheel
