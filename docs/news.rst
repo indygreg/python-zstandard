@@ -63,6 +63,8 @@ Changes
 * We now `collections.abs.Buffer` on Python 3.12+ instead of `typing.ByteString`,
   as `typing.ByteString` was deprecated and later removed. (#238, #262)
 * PyO3 Rust crate upgraded from 0.21 to 0.22 (#257) and later to 0.24.
+* Removed CI coverage for PyPy 3.9.
+* Added CI coverage for PyPy 3.11.
 
 Backwards Compatibility Notes
 -----------------------------

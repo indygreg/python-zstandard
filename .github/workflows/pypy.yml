@@ -13,8 +13,8 @@ jobs:
           - 'macos-13'
           - 'windows-2022'
         py:
-          - 'pypy-3.9'
           - 'pypy-3.10'
+          - 'pypy-3.11'
         arch:
           - 'x86'
           - 'x64'
@@ -22,6 +22,9 @@ jobs:
           - os: 'ubuntu-22.04'
             arch: 'x86'
           - os: 'macos-13'
+            arch: 'x86'
+          - os: 'windows-2022'
+            py: 'pypy-3.11'
             arch: 'x86'
     runs-on: ${{ matrix.os }}
     env:
@@ -51,8 +54,8 @@ jobs:
           - 'macos-13'
           - 'windows-2022'
         py:
-          - 'pypy-3.9'
           - 'pypy-3.10'
+          - 'pypy-3.11'
         arch:
           - 'x86'
           - 'x64'
@@ -60,6 +63,9 @@ jobs:
           - os: 'ubuntu-22.04'
             arch: 'x86'
           - os: 'macos-13'
+            arch: 'x86'
+          - os: 'windows-2022'
+            py: 'pypy-3.11'
             arch: 'x86'
     runs-on: ${{ matrix.os }}
     env:
