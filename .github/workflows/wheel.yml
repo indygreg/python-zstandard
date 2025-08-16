@@ -129,7 +129,7 @@ jobs:
         if: matrix.arch == 'arm64'
         shell: bash
         run: |
-          python -m pip install cibuildwheel
+          python -m pip install --require-hashes -r ci/requirements.txt
           export CIBW_ARCHS=ARM64
           export CIBW_BUILD=cp$(echo ${{ matrix.py }} | tr -d .)-*
           export CIBW_BUILD_VERBOSITY=1
