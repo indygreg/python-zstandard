@@ -55,8 +55,11 @@ Changes
   <=3.12 have cffi upgraded from cffi 1.16 -> 1.17.
  * The `pyproject.toml` file now defines a `[project]` section.
 * We now use GitHub's native ARM Linux runners to build wheels and run tests.
-  Previously Linux ARM wheels were built inside a QEMU virtualized environment
+  Previously, Linux ARM wheels were built inside a QEMU virtualized environment
   and we didn't run tests on this platform.
+* We now use GitHub's native ARM Windows runners to build wheels and run tests.
+  Previously, Windows ARM wheels were cross-compiled from an x86-64 runner and
+  we never ran tests for the Windows ARM platform.
 * We now `collections.abs.Buffer` on Python 3.12+ instead of `typing.ByteString`,
   as `typing.ByteString` was deprecated and later removed. (#238, #262)
 

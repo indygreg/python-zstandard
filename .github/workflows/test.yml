@@ -14,6 +14,7 @@ jobs:
           - 'macos-13'
           - 'macos-14'
           - 'windows-2022'
+          - 'windows-11-arm'
         py:
           - '3.9'
           - '3.10'
@@ -46,6 +47,16 @@ jobs:
             py: '3.9'
           - os: 'windows-2022'
             arch: 'arm64'
+          - os: 'windows-11-arm'
+            arch: 'x86'
+          - os: 'windows-11-arm'
+            arch: 'x64'
+          - os: 'windows-11-arm'
+            py: '3.8'
+          - os: 'windows-11-arm'
+            py: '3.9'
+          - os: 'windows-11-arm'
+            py: '3.10'
 
     runs-on: ${{ matrix.os }}
     env:
