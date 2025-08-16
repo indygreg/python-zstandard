@@ -313,7 +313,7 @@ size_t roundpow2(size_t i) {
 int safe_pybytes_resize(PyObject **obj, Py_ssize_t size) {
     PyObject *tmp;
 
-    if (Py_REFCNT(obj) == 1) {
+    if ((*obj)->ob_refcnt == 1) {
         return _PyBytes_Resize(obj, size);
     }
 
