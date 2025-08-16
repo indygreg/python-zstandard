@@ -23,7 +23,6 @@ jobs:
           - 'musllinux_1_1_x86_64'
           - 'musllinux_1_2_x86_64'
         py:
-          - 'cp38-cp38'
           - 'cp39-cp39'
           - 'cp310-cp310'
           - 'cp311-cp311'
@@ -52,7 +51,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - 'cp38'
           - 'cp39'
           - 'cp310'
           - 'cp311'
@@ -95,7 +93,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - '3.8'
           - '3.9'
           - '3.10'
           - '3.11'
@@ -105,9 +102,6 @@ jobs:
           - 'x86'
           - 'x64'
           - 'arm64'
-        exclude:
-          - py: '3.8'
-            arch: 'arm64'
     runs-on: 'windows-2022'
     env:
       ZSTD_WARNINGS_AS_ERRORS: '1'

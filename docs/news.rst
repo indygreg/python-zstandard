@@ -55,6 +55,14 @@ Changes
   <=3.12 have cffi upgraded from cffi 1.16 -> 1.17.
  * The `pyproject.toml` file now defines a `[project]` section.
 
+Backwards Compatibility Notes
+-----------------------------
+
+* Support for Python 3.8 has been dropped because it reached end of life.
+  Python 3.9 is the minimum supported Python version. The code should still be
+  compatible with Python 3.7 and removing of version checks from ``setup.py``
+  will likely yield a working install. However, this is not officially supported.
+
 0.23.0 (released 2024-07-14)
 ============================
 

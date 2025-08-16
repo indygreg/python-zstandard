@@ -10,7 +10,7 @@ Build-Depends:
   python3-pytest,
   python3-setuptools
 Standards-Version: 3.9.1
-X-Python3-Version: >= 3.8
+X-Python3-Version: >= 3.9
 Homepage: https://github.com/indygreg/python-zstandard
 Vcs-Browser: https://github.com/indygreg/python-zstandard.git
 Vcs-Git: https://github.com/indygreg/python-zstandard.git

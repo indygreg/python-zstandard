@@ -20,8 +20,8 @@ try:
 except ImportError:
     from distutils.version import LooseVersion
 
-if sys.version_info[0:2] < (3, 8):
-    print("Python 3.8+ is required", file=sys.stderr)
+if sys.version_info[0:2] < (3, 9):
+    print("Python 3.9+ is required", file=sys.stderr)
     sys.exit(1)
 
 # Need change in 1.10 for ffi.from_buffer() to handle all buffer types

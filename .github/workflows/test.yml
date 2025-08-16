@@ -14,7 +14,6 @@ jobs:
           - 'macos-14'
           - 'windows-2022'
         py:
-          - '3.8'
           - '3.9'
           - '3.10'
           - '3.11'
@@ -37,9 +36,6 @@ jobs:
             arch: 'x86'
           - os: 'macos-14'
             arch: 'x64'
-          - os: 'macos-14'
-            arch: 'arm64'
-            py: '3.8'
           - os: 'macos-14'
             arch: 'arm64'
             py: '3.9'
