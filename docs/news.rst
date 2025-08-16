@@ -65,6 +65,8 @@ Changes
 * PyO3 Rust crate upgraded from 0.21 to 0.22 (#257) and later to 0.24.
 * Removed CI coverage for PyPy 3.9.
 * Added CI coverage for PyPy 3.11.
+* Anaconda Windows CI builds have been disabled because we're running into
+  an apparant conda bug.
 
 Backwards Compatibility Notes
 -----------------------------
