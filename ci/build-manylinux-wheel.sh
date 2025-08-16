@@ -19,6 +19,8 @@ fi
 
 mkdir -p /tmp/wheels
 
+export PIP_CONSTRAINT=ci/constraints.txt
+
 ${PYPATH}/bin/python -m pip wheel -v /project -w /tmp/wheels --no-deps
 wheel=$(ls /tmp/wheels/*.whl)
 
