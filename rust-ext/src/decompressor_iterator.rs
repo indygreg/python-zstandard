@@ -22,6 +22,8 @@ pub struct ZstdDecompressorIterator {
     finished_output: bool,
 }
 
+unsafe impl Sync for ZstdDecompressorIterator {}
+
 #[pymethods]
 impl ZstdDecompressorIterator {
     // PyIterProtocol.

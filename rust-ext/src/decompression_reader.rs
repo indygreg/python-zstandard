@@ -31,6 +31,8 @@ pub struct ZstdDecompressionReader {
     finished_output: bool,
 }
 
+unsafe impl Sync for ZstdDecompressionReader {}
+
 impl ZstdDecompressionReader {
     pub fn new(
         py: Python,

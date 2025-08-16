@@ -20,6 +20,8 @@ pub struct ZstdCompressionObj {
     finished: bool,
 }
 
+unsafe impl Sync for ZstdCompressionObj {}
+
 impl ZstdCompressionObj {
     pub fn new(cctx: Arc<CCtx<'static>>) -> PyResult<Self> {
         Ok(ZstdCompressionObj {

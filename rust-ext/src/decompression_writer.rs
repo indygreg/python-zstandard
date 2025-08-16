@@ -27,6 +27,8 @@ pub struct ZstdDecompressionWriter {
     closed: bool,
 }
 
+unsafe impl Sync for ZstdDecompressionWriter {}
+
 impl ZstdDecompressionWriter {
     pub fn new(
         py: Python,

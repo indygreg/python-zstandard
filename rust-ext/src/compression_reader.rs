@@ -30,6 +30,8 @@ pub struct ZstdCompressionReader {
     finished_output: bool,
 }
 
+unsafe impl Sync for ZstdCompressionReader {}
+
 impl ZstdCompressionReader {
     pub fn new(
         py: Python,

@@ -207,6 +207,8 @@ pub struct ZstdCompressionParameters {
     pub(crate) params: *mut zstd_sys::ZSTD_CCtx_params,
 }
 
+unsafe impl Sync for ZstdCompressionParameters {}
+
 impl Drop for ZstdCompressionParameters {
     fn drop(&mut self) {
         unsafe {

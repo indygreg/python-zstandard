@@ -23,6 +23,8 @@ pub struct ZstdCompressionChunker {
     partial_buffer: Option<Vec<u8>>,
 }
 
+unsafe impl Sync for ZstdCompressionChunker {}
+
 impl ZstdCompressionChunker {
     pub fn new(cctx: Arc<CCtx<'static>>, chunk_size: usize) -> PyResult<Self> {
         Ok(Self {
@@ -185,6 +187,8 @@ struct ZstdCompressionChunkerIterator {
     dest_buffer: Vec<u8>,
     finished: bool,
 }
+
+unsafe impl Sync for ZstdCompressionChunkerIterator {}
 
 #[pymethods]
 impl ZstdCompressionChunkerIterator {

@@ -34,6 +34,8 @@ pub struct ZstdBufferSegment {
     len: usize,
 }
 
+unsafe impl Sync for ZstdBufferSegment {}
+
 impl ZstdBufferSegment {
     pub fn as_slice(&self) -> &[u8] {
         unsafe {
@@ -90,6 +92,8 @@ pub struct ZstdBufferSegments {
     parent: PyObject,
 }
 
+unsafe impl Sync for ZstdBufferSegments {}
+
 #[pymethods]
 impl ZstdBufferSegments {
     // PyBufferProtocol.
@@ -125,6 +129,8 @@ pub struct ZstdBufferWithSegments {
     pub(crate) buffer: PyBuffer<u8>,
     pub(crate) segments: Vec<BufferSegment>,
 }
+
+unsafe impl Sync for ZstdBufferWithSegments {}
 
 impl ZstdBufferWithSegments {
     fn as_slice(&self) -> &[u8] {
@@ -268,6 +274,8 @@ pub struct ZstdBufferWithSegmentsCollection {
     pub(crate) buffers: Vec<PyObject>,
     first_elements: Vec<usize>,
 }
+
+unsafe impl Sync for ZstdBufferWithSegmentsCollection {}
 
 #[pymethods]
 impl ZstdBufferWithSegmentsCollection {

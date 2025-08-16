@@ -19,7 +19,10 @@ use {
         types::{PyBytes, PyList},
         wrap_pyfunction,
     },
-    std::sync::Arc,
+    std::{
+        ffi::c_ulonglong,
+        sync::Arc
+    },
 };
 
 #[pyclass(module = "zstandard.backend_rust")]
@@ -29,6 +32,8 @@ struct ZstdDecompressor {
     format: zstd_sys::ZSTD_format_e,
     dctx: Arc<DCtx<'static>>,
 }
+
+unsafe impl Sync for ZstdDecompressor {}
 
 impl ZstdDecompressor {
     fn setup_dctx(&self, py: Python, load_dict: bool) -> PyResult<()> {
@@ -67,9 +72,9 @@ impl ZstdDecompressor {
         max_window_size: usize,
         format: u32,
     ) -> PyResult<Self> {
-        let format = if format == zstd_sys::ZSTD_format_e::ZSTD_f_zstd1 as _ {
+        let format = if format == zstd_sys::ZSTD_format_e::ZSTD_f_zstd1 as u32 {
             zstd_sys::ZSTD_format_e::ZSTD_f_zstd1
-        } else if format == zstd_sys::ZSTD_format_e::ZSTD_f_zstd1_magicless as _ {
+        } else if format == zstd_sys::ZSTD_format_e::ZSTD_f_zstd1_magicless as u32 {
             zstd_sys::ZSTD_format_e::ZSTD_f_zstd1_magicless
         } else {
             return Err(PyValueError::new_err(format!("invalid format value")));
@@ -180,13 +185,13 @@ impl ZstdDecompressor {
             unsafe { zstd_sys::ZSTD_getFrameContentSize(buffer.buf_ptr(), buffer.len_bytes()) };
 
         let (output_buffer_size, output_size) =
-            if output_size == zstd_sys::ZSTD_CONTENTSIZE_ERROR as _ {
+            if output_size == zstd_sys::ZSTD_CONTENTSIZE_ERROR as c_ulonglong {
                 return Err(ZstdError::new_err(
                     "error determining content size from frame header",
                 ));
             } else if output_size == 0 {
                 return Ok(PyBytes::new_bound(py, &[]));
-            } else if output_size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _ {
+            } else if output_size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as c_ulonglong {
                 if max_output_size == 0 {
                     return Err(ZstdError::new_err(
                         "could not determine content size in frame header",
@@ -218,7 +223,7 @@ impl ZstdDecompressor {
             Err(ZstdError::new_err(
                 "decompression error: did not decompress full frame",
             ))
-        } else if output_size != 0 && dest_buffer.len() != output_size as _ {
+        } else if output_size != 0 && dest_buffer.len() != output_size as usize {
             Err(ZstdError::new_err(format!(
                 "decompression error: decompressed {} bytes; expected {}",
                 zresult, output_size

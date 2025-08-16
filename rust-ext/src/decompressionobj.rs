@@ -23,6 +23,8 @@ pub struct ZstdDecompressionObj {
     unused_data: Vec<u8>,
 }
 
+unsafe impl Sync for ZstdDecompressionObj {}
+
 impl ZstdDecompressionObj {
     pub fn new(
         dctx: Arc<DCtx<'static>>,

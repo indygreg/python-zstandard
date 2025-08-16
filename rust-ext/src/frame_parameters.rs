@@ -7,12 +7,15 @@
 use {
     crate::ZstdError,
     pyo3::{buffer::PyBuffer, prelude::*, wrap_pyfunction},
+    std::ffi::c_ulonglong,
 };
 
 #[pyclass(module = "zstandard.backend_rust")]
 struct FrameParameters {
     header: zstd_sys::ZSTD_frameHeader,
 }
+
+unsafe impl Sync for FrameParameters {}
 
 #[pymethods]
 impl FrameParameters {
@@ -44,9 +47,9 @@ impl FrameParameters {
 fn frame_content_size(data: PyBuffer<u8>) -> PyResult<i64> {
     let size = unsafe { zstd_sys::ZSTD_getFrameContentSize(data.buf_ptr(), data.len_bytes()) };
 
-    if size == zstd_sys::ZSTD_CONTENTSIZE_ERROR as _ {
+    if size == zstd_sys::ZSTD_CONTENTSIZE_ERROR as c_ulonglong {
         Err(ZstdError::new_err("error when determining content size"))
-    } else if size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as _ {
+    } else if size == zstd_sys::ZSTD_CONTENTSIZE_UNKNOWN as c_ulonglong {
         Ok(-1)
     } else {
         Ok(size as _)

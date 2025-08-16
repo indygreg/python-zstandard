@@ -30,6 +30,8 @@ struct ZstdCompressor {
     cctx: Arc<CCtx<'static>>,
 }
 
+unsafe impl Sync for ZstdCompressor {}
+
 impl ZstdCompressor {
     pub(crate) fn setup_cctx(&self, py: Python) -> PyResult<()> {
         self.cctx

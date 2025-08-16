@@ -62,7 +62,7 @@ Changes
   we never ran tests for the Windows ARM platform.
 * We now `collections.abs.Buffer` on Python 3.12+ instead of `typing.ByteString`,
   as `typing.ByteString` was deprecated and later removed. (#238, #262)
-* PyO3 Rust crate upgraded from 0.21 to 0.22. (#257)
+* PyO3 Rust crate upgraded from 0.21 to 0.22 (#257) and later to 0.23.
 
 Backwards Compatibility Notes
 -----------------------------

@@ -44,6 +44,8 @@ pub struct ZstdCompressionDict {
     ddict: Option<DDict<'static>>,
 }
 
+unsafe impl Sync for ZstdCompressionDict {}
+
 impl ZstdCompressionDict {
     pub(crate) fn load_into_cctx(&self, cctx: &CCtx) -> PyResult<()> {
         if let Some(cdict) = &self.cdict {

@@ -31,6 +31,8 @@ pub struct ZstdCompressionWriter {
     dest_buffer: Vec<u8>,
 }
 
+unsafe impl Sync for ZstdCompressionWriter {}
+
 impl ZstdCompressionWriter {
     pub fn new(
         py: Python,
