@@ -4,47 +4,6 @@
 Version History
 ===============
 
-1.0.0 (not yet released)
-========================
-
-Actions Blocking Release
-------------------------
-
-* Properly handle non-blocking I/O and partial writes for objects implementing
-  ``io.RawIOBase``.
-* Consider making reads across frames configurable behavior.
-* Overall API design review.
-* Use Python allocator where possible.
-* Figure out what to do about experimental APIs not implemented by CFFI.
-* APIs for auto adjusting compression parameters based on input size. e.g.
-  clamping the window log so it isn't too large for input.
-* Consider allowing compressor and decompressor instances to be thread safe,
-  support concurrent operations. Or track when an operation is in progress and
-  refuse to let concurrent operations use the same instance.
-* Support for magic-less frames for all decompression operations (``decompress()``
-  doesn't work due to sniffing the content size and the lack of a ZSTD API to
-  sniff magic-less frames - this should be fixed in 1.3.5.).
-* Audit for complete flushing when ending compression streams.
-* Deprecate legacy APIs.
-* Audit for ability to control read/write sizes on all APIs.
-* Detect memory leaks via bench.py.
-* Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
-  require use of ``ZstdCompressionParameters``.
-* Consider a ``chunker()`` API for decompression.
-* Consider stats for ``chunker()`` API, including finding the last consumed
-  offset of input data.
-* Consider controls over resetting compression contexts (session only, parameters,
-  or session and parameters).
-* Utilize ``ZSTD_getDictID_fromCDict()``?
-* Stop relying on private libzstd headers and symbols (namely ``pool.h``).
-
-Other Actions Not Blocking Release
----------------------------------------
-
-* Support for block compression APIs.
-* API for ensuring max memory ceiling isn't exceeded.
-* Move off nose for testing.
-
 0.24.0 (not yet released)
 =========================
 
