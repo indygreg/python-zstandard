@@ -49,3 +49,10 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.cibuildwheel]
 enable = ["cpython-prerelease"]
+
+# This is needed to suppress generation of license-file, which isn't
+# compatible with metadata version 2.1, which our pinned setuptools
+# version currently uses.
+# TODO delete this after we adopt modern setuptools.
+[tool.setuptools]
+license-files = []
