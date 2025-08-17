@@ -65,7 +65,9 @@ jobs:
           - 'cp311'
           - 'cp312'
           - 'cp313'
+          - 'cp313t'
           - 'cp314'
+          - 'cp314t'
         arch:
           - 'arm64'
           - 'x86_64'
@@ -74,7 +76,9 @@ jobs:
       CIBW_ARCHS: ${{ matrix.arch }}
       CIBW_BUILD: ${{ matrix.py }}-*
       CIBW_BUILD_VERBOSITY: '1'
+      CIBW_ENABLE: cpython-prerelease cpython-freethreading
       ZSTD_WARNINGS_AS_ERRORS: '1'
+
     steps:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
@@ -109,7 +113,9 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
-          - '3.14.0-rc.2'
+          - '3.13t'
+          - '3.14'
+          - '3.14t'
         arch:
           - 'x86'
           - 'x64'
