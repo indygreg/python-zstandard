@@ -3,6 +3,7 @@ on:
   pull_request:
   schedule:
     - cron: '30 13 * * *'
+permissions: { }
 jobs:
   test:
     strategy:

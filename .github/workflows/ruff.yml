@@ -3,6 +3,7 @@ on:
   pull_request:
   schedule:
     - cron: '30 13 * * *'
+permissions: { }
 jobs:
   ruff:
     runs-on: ubuntu-latest
