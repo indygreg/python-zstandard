@@ -36,20 +36,20 @@ jobs:
             py: 'cp314-cp314'
     runs-on: ${{ endsWith(matrix.image, 'aarch64') && 'ubuntu-22.04-arm' || 'ubuntu-22.04' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           persist-credentials: false
 
       - name: Set up QEMU
         if: ${{ endsWith(matrix.image, 'ppc64le') || endsWith(matrix.image, 's390x') }}
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
 
       - name: Build Wheel
         run: |
           docker run -e PYPATH=/opt/python/${{ matrix.py }} -e ZSTD_WARNINGS_AS_ERRORS=1 --rm -v `pwd`:/project quay.io/pypa/${{ matrix.image }} /project/ci/build-manylinux-wheel.sh
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: linux-${{ matrix.py }}-${{ matrix.image }}
           path: dist
@@ -76,11 +76,11 @@ jobs:
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.13'
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           persist-credentials: false
 
@@ -93,7 +93,7 @@ jobs:
           cibuildwheel --output-dir dist
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: macos-${{ matrix.py }}-${{ matrix.arch }}
           path: dist
@@ -125,12 +125,12 @@ jobs:
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           persist-credentials: false
 
@@ -139,7 +139,7 @@ jobs:
           python -m pip wheel -w dist .
 
       - name: Upload Wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-${{ matrix.py }}-${{ matrix.arch }}
           path: dist
