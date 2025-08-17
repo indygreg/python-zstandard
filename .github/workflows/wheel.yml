@@ -28,6 +28,12 @@ jobs:
           - 'cp311-cp311'
           - 'cp312-cp312'
           - 'cp313-cp313'
+          - 'cp314-cp314'
+        exclude:
+          - image: 'musllinux_1_1_aarch64'
+            py: 'cp314-cp314'
+          - image: 'musllinux_1_1_x86_64'
+            py: 'cp314-cp314'
     runs-on: ${{ endsWith(matrix.image, 'aarch64') && 'ubuntu-22.04-arm' || 'ubuntu-22.04' }}
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +62,7 @@ jobs:
           - 'cp311'
           - 'cp312'
           - 'cp313'
+          - 'cp314'
         arch:
           - 'arm64'
           - 'x86_64'
@@ -64,7 +71,6 @@ jobs:
       CIBW_ARCHS: ${{ matrix.arch }}
       CIBW_BUILD: ${{ matrix.py }}-*
       CIBW_BUILD_VERBOSITY: '1'
-      CIBW_PRERELEASE_PYTHONS: '1'
       ZSTD_WARNINGS_AS_ERRORS: '1'
     steps:
       - name: Set up Python
@@ -98,6 +104,7 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          - '3.14.0-rc.2'
         arch:
           - 'x86'
           - 'x64'

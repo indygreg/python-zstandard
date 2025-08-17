@@ -74,6 +74,7 @@ Changes
   defining the zstandard frame type. You can pass e.g.
   ``zstandard.FORMAT_ZSTD1_MAGICLESS`` to decode frames without header magic.
   (#217)
+* Initial Python 3.14 support. We build wheels and have CI test coverage.
 
 Backwards Compatibility Notes
 -----------------------------
