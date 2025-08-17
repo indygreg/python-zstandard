@@ -23,6 +23,8 @@ jobs:
           python-version: '3.9'
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Build
         env:
@@ -50,6 +52,8 @@ jobs:
           python -m pip install cffi
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Build
         env:

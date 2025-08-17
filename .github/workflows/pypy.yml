@@ -40,6 +40,8 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Build
         run: |
@@ -85,6 +87,8 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Dependencies
         run: |

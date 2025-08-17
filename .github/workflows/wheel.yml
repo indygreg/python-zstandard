@@ -37,6 +37,8 @@ jobs:
     runs-on: ${{ endsWith(matrix.image, 'aarch64') && 'ubuntu-22.04-arm' || 'ubuntu-22.04' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up QEMU
         if: ${{ endsWith(matrix.image, 'ppc64le') || endsWith(matrix.image, 's390x') }}
@@ -79,6 +81,8 @@ jobs:
           python-version: '3.13'
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Dependencies
         run: |
@@ -127,6 +131,8 @@ jobs:
           architecture: ${{ matrix.arch }}
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Build Wheel
         run: |

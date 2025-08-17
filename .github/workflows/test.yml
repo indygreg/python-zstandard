@@ -84,6 +84,8 @@ jobs:
           toolchain: stable
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Dependencies
         shell: bash

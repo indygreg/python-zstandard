@@ -29,6 +29,8 @@ jobs:
           python-version: ${{ matrix.py }}
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Create Anaconda Environment
         run: |
@@ -77,6 +79,8 @@ jobs:
           python-version: ${{ matrix.py }}
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Create Anaconda Environment
         run: |
