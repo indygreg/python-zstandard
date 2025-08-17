@@ -7,7 +7,7 @@ Version History
 0.25.0 (not yet released)
 =========================
 
-Nothing yet.
+* PyO3 Rust created upgraded from 0.24 to 0.25. (#273)
 
 0.24.0 (released 2025-08-17)
 ============================

@@ -12,6 +12,7 @@ use {
         ffi::Py_buffer,
         prelude::*,
         types::{PyBytes, PyTuple},
+        IntoPyObjectExt,
     },
 };
 
@@ -242,7 +243,7 @@ impl ZstdBufferWithSegments {
         }
 
         Ok(Self {
-            source: data.into_py(py),
+            source: data.into_py_any(py)?,
             buffer: data_buffer,
             segments,
         })
@@ -344,7 +345,7 @@ impl ZstdBufferWithSegmentsCollection {
 
             offset += segment.segments.len();
 
-            buffers.push(item.to_object(py));
+            buffers.push(item.into_py_any(py)?);
             first_elements.push(offset);
         }
 
