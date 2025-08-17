@@ -85,7 +85,7 @@ else:
     )
 
 # Keep this in sync with python-zstandard.h, rust-ext/src/lib.rs, and debian/changelog.
-__version__ = "0.24.0"
+__version__ = "0.25.0.dev0"
 
 _MODE_CLOSED = 0
 _MODE_READ = 1
