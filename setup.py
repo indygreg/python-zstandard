@@ -28,15 +28,14 @@ if sys.version_info[0:2] < (3, 9):
 # (like memoryview).
 # Need feature in 1.11 for ffi.gc() to declare size of objects so we avoid
 # garbage collection pitfalls.
-MINIMUM_CFFI_VERSION = "1.11"
-
-# Need 1.17+ on 3.13 to avoid deprecated and removed APIs.
-if sys.version_info[0:2] >= (3, 13):
-    MINIMUM_CFFI_VERSION = "1.17"
+# Require 1.17 everywhere so we don't have to think about supporting older
+# versions.
+MINIMUM_CFFI_VERSION = "1.17"
 
 ext_suffix = os.environ.get("SETUPTOOLS_EXT_SUFFIX")
 if ext_suffix:
     import sysconfig
+
     # setuptools._distutils.command.build_ext doesn't use
     # SETUPTOOLS_EXT_SUFFIX like setuptools.command.build_ext does.
     # Work around the issue so that cross-compilation can work

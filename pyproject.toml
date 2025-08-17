@@ -25,7 +25,6 @@ dependencies = []
 
 [project.optional-dependencies]
 cffi = [
-    'cffi>=1.11 ; python_version < "3.13" and platform_python_implementation != "PyPy"',
     'cffi>=1.17 ; python_version >= "3.13" and platform_python_implementation != "PyPy"',
 ]
 

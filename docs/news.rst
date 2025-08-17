@@ -11,9 +11,9 @@ Changes
 -------
 
 * Bundled zstd library upgraded from 1.5.6 to 1.5.7. (#255)
-* We now use a non-rc version of cffi 1.17 on all Python versions. Python
-  <=3.12 have cffi upgraded from cffi 1.16 -> 1.17.
- * The ``pyproject.toml`` file now defines a ``[project]`` section.
+* We now use and require cffi 1.17.0 or newer. Previously, the constraint
+  was >=1.11.0 on Python <3.13.
+* The ``pyproject.toml`` file now defines a ``[project]`` section.
 * We now use GitHub's native ARM Linux runners to build wheels and run tests.
   Previously, Linux ARM wheels were built inside a QEMU virtualized environment
   and we didn't run tests on this platform.
