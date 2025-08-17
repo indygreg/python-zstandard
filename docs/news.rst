@@ -8,6 +8,8 @@ Version History
 =========================
 
 * PyO3 Rust created upgraded from 0.24 to 0.25. (#273)
+* We now use `Py_REFCNT(obj)` instead of accessing `(*obj)->ob_refcnt` directly.
+  This fixes a nogil / multi-threaded compile error. (#201, #275)
 
 0.24.0 (released 2025-08-17)
 ============================
