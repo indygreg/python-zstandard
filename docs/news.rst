@@ -41,6 +41,11 @@ Version History
   13.10 through 18.04, Fedora 19 to 28, and RHEL/Centos 7. However, in
   practice most platforms don't container newer glibc symbols and are still
   ABI compatible with ``manylinux2014`` and glibc 2.17.
+* We now require cffi >= 2.0.0b on Python 3.14. <3.14 still requires 1.17.
+  (#274)
+* The cffi backend is now automatically disabled for free-threaded builds
+  on Python <3.14, as cffi didn't implement free-threaded support until
+  the 2.0 release. (#274)
 
 0.24.0 (released 2025-08-17)
 ============================
