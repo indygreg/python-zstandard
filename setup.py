@@ -30,7 +30,8 @@ if sys.version_info[0:2] < (3, 9):
 # garbage collection pitfalls.
 # Require 1.17 everywhere so we don't have to think about supporting older
 # versions.
-MINIMUM_CFFI_VERSION = "1.17"
+# Require 2.0 for improved free-threading support
+MINIMUM_CFFI_VERSION = "2.0"
 
 ext_suffix = os.environ.get("SETUPTOOLS_EXT_SUFFIX")
 if ext_suffix:
