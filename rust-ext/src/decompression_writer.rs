@@ -10,7 +10,7 @@ use {
         buffer::PyBuffer,
         exceptions::{PyOSError, PyValueError},
         prelude::*,
-        types::PyBytes,
+        types::PyBytes, IntoPyObjectExt,
     },
     std::sync::Arc,
 };
@@ -40,7 +40,7 @@ impl ZstdDecompressionWriter {
     ) -> PyResult<Self> {
         Ok(Self {
             dctx,
-            writer: writer.into_py(py),
+            writer: writer.into_py_any(py).unwrap(),
             write_size,
             write_return_read,
             closefd,

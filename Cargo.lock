@@ -312,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "python-zstandard"
-version = "0.24.0-pre"
+version = "0.25.0-pre"
 dependencies = [
  "libc",
  "num_cpus",

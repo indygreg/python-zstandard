@@ -5,7 +5,7 @@
 // of the BSD license. See the LICENSE file for details.
 
 use {
-    pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*},
+    pyo3::{buffer::PyBuffer, exceptions::PyValueError, prelude::*, IntoPyObjectExt},
     zstd_sys::ZSTD_inBuffer,
 };
 
@@ -139,7 +139,7 @@ pub(crate) fn make_in_buffer_source(
 ) -> PyResult<Box<dyn InBufferSource + Send>> {
     if source.hasattr("read")? {
         Ok(Box::new(ReadSource {
-            source: source.into_py(py),
+            source: source.into_py_any(py).unwrap(),
             buffer: None,
             read_size,
             finished: false,
@@ -153,7 +153,7 @@ pub(crate) fn make_in_buffer_source(
         })?;
 
         Ok(Box::new(BufferSource {
-            source: source.into_py(py),
+            source: source.into_py_any(py).unwrap(),
             buffer,
             offset: 0,
         }))
