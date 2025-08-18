@@ -10,7 +10,7 @@ use {
         stream::{make_in_buffer_source, InBufferSource},
         zstd_safe::CCtx,
     },
-    pyo3::{prelude::*, types::PyBytes},
+    pyo3::{prelude::*, types::PyBytes, IntoPyObjectExt},
     std::sync::Arc,
 };
 
@@ -225,7 +225,7 @@ impl ZstdCompressionChunkerIterator {
                 let chunk = PyBytes::new(py, &slf.dest_buffer);
                 slf.dest_buffer.clear();
 
-                return Ok(Some(chunk.into_py(py)));
+                return Ok(Some(chunk.into_py_any(py).unwrap()));
             }
 
             // Else continue to compress available input data.
@@ -278,6 +278,6 @@ impl ZstdCompressionChunkerIterator {
         let chunk = PyBytes::new(py, &slf.dest_buffer);
         slf.dest_buffer.clear();
 
-        Ok(Some(chunk.into_py(py)))
+        Ok(Some(chunk.into_py_any(py).unwrap()))
     }
 }

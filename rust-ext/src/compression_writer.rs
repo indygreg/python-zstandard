@@ -10,7 +10,7 @@ use {
         buffer::PyBuffer,
         exceptions::{PyNotImplementedError, PyOSError, PyValueError},
         prelude::*,
-        types::PyBytes,
+        types::PyBytes, IntoPyObjectExt,
     },
     std::sync::Arc,
 };
@@ -48,7 +48,7 @@ impl ZstdCompressionWriter {
 
         Ok(Self {
             cctx,
-            writer: writer.into_py(py),
+            writer: writer.into_py_any(py).unwrap(),
             write_return_read,
             closefd,
             entered: false,

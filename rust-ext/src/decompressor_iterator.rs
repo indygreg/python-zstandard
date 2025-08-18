@@ -10,7 +10,7 @@ use {
         stream::{make_in_buffer_source, InBufferSource},
         zstd_safe::DCtx,
     },
-    pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes},
+    pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes, IntoPyObjectExt},
     std::{cmp::min, sync::Arc},
 };
 
@@ -60,7 +60,7 @@ impl ZstdDecompressorIterator {
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &dest_buffer);
-                return Ok(Some(chunk.into_py(py)));
+                return Ok(Some(chunk.into_py_any(py).unwrap()));
             }
 
             // Repeat loop to collect more input data.
@@ -71,7 +71,7 @@ impl ZstdDecompressorIterator {
         if !dest_buffer.is_empty() {
             // TODO avoid buffer copy.
             let chunk = PyBytes::new(py, &dest_buffer);
-            Ok(Some(chunk.into_py(py)))
+            Ok(Some(chunk.into_py_any(py).unwrap()))
         } else {
             Ok(None)
         }
