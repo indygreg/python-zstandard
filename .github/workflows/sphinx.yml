@@ -19,9 +19,8 @@ jobs:
         env:
           PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
-          uv venv --python 3.12 venv
-          source venv/bin/activate
-          uv pip install -r ci/requirements.txt
+          uv venv --python 3.13 venv
+          uv pip install -r ci/requirements.docs.txt
           uv pip install --config-settings=--build-option=--no-c-backend .
-          uv pip install Sphinx==5.3.0
+          source venv/bin/activate
           make -C docs html
