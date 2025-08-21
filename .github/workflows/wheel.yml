@@ -29,7 +29,9 @@ jobs:
           - 'cp311-cp311'
           - 'cp312-cp312'
           - 'cp313-cp313'
+          - 'cp313-cp313t'
           - 'cp314-cp314'
+          - 'cp313-cp314t'
         exclude:
           - image: 'musllinux_1_1_aarch64'
             py: 'cp314-cp314'

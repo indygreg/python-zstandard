@@ -10,6 +10,7 @@ from __future__ import print_function
 import os
 import platform
 import sys
+import sysconfig
 
 from setuptools import setup
 
@@ -30,8 +31,8 @@ if sys.version_info[0:2] < (3, 9):
 # garbage collection pitfalls.
 # Require 1.17 everywhere so we don't have to think about supporting older
 # versions.
-# Require 2.0 for improved free-threading support
-MINIMUM_CFFI_VERSION = "2.0"
+# Require 2.0 for Python 3.14+ to add improved free-threading support
+MINIMUM_CFFI_VERSION = "2.0" if sys.version_info[0:2] >= (3, 14) else "1.17"
 
 ext_suffix = os.environ.get("SETUPTOOLS_EXT_SUFFIX")
 if ext_suffix:
@@ -89,6 +90,10 @@ if os.environ.get("ZSTD_WARNINGS_AS_ERRORS", ""):
 # PyPy doesn't support the C backend.
 if platform.python_implementation() == "PyPy":
     C_BACKEND = False
+
+# cffi 2.0 only introduced no-GIL support for 3.14+.
+if platform.python_implementation() == "CPython" and sys.version_info[0:2] == (3, 13) and sysconfig.get_config_var("Py_GIL_DISABLED"):
+    CFFI_BACKEND = False
 
 if "--legacy" in sys.argv:
     SUPPORT_LEGACY = True

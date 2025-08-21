@@ -117,6 +117,7 @@ jobs:
           pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test CFFI Backend
+        if: matrix.py != '3.13t'
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
         run: |
