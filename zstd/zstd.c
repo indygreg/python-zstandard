@@ -85,9 +85,8 @@
  * header and the script 'combine.sh' combines the whole zstd source code
  * in a single file.
  */
-#if defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) || \
-    defined(__CYGWIN__) || defined(__MSYS__)
-#if !defined(_GNU_SOURCE) && !defined(__ANDROID__) /* NDK doesn't ship qsort_r(). */
+#if (defined(__linux__) && !defined(__ANDROID__)) || defined(__CYGWIN__) || defined(__MSYS__)
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 #endif
@@ -47866,10 +47865,12 @@ size_t ZSTD_decompressBlock(ZSTD_DCtx* dctx,
 /*-*************************************
 *  Dependencies
 ***************************************/
-/* qsort_r is an extension. */
-#if defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) || \
-    defined(__CYGWIN__) || defined(__MSYS__)
-# if !defined(_GNU_SOURCE) && !defined(__ANDROID__) /* NDK doesn't ship qsort_r(). */
+/* qsort_r is an extension.
+ *
+ * Android NDK does not ship qsort_r().
+ */
+#if (defined(__linux__) && !defined(__ANDROID__)) || defined(__CYGWIN__) || defined(__MSYS__)
+# ifndef _GNU_SOURCE
 #   define _GNU_SOURCE
 # endif
 #endif
@@ -48557,7 +48558,7 @@ void COVER_dictSelectionFree(COVER_dictSelection_t selection);
 #ifndef ZDICT_QSORT
 # if defined(__APPLE__)
 #   define ZDICT_QSORT ZDICT_QSORT_APPLE /* uses qsort_r() with a different order for parameters */
-# elif defined(_GNU_SOURCE)
+# elif (defined(__linux__) && !defined(__ANDROID__)) || defined(__CYGWIN__) || defined(__MSYS__)
 #   define ZDICT_QSORT ZDICT_QSORT_GNU /* uses qsort_r() */
 # elif defined(_WIN32) && defined(_MSC_VER)
 #   define ZDICT_QSORT ZDICT_QSORT_MSVC /* uses qsort_s() with a different order for parameters */
