@@ -22,7 +22,9 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          - '3.13t'
           - '3.14'
+          - '3.14t'
         arch:
           - 'arm64'
           - 'x86'
@@ -99,6 +101,7 @@ jobs:
           uv -v run --locked pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
 
       - name: Test CFFI Backend
+        if: matrix.py != '3.13t'
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
         run: |

@@ -46,6 +46,8 @@ Version History
 * The cffi backend is now automatically disabled for free-threaded builds
   on Python <3.14, as cffi didn't implement free-threaded support until
   the 2.0 release. (#274)
+* Added CI coverage for free-threaded CPython 3.13 and 3.14. We do not yet
+  formally support free-threaded builds. (#276)
 
 0.24.0 (released 2025-08-17)
 ============================

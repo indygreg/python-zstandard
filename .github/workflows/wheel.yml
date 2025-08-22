@@ -16,7 +16,9 @@ jobs:
           - 'cp311'
           - 'cp312'
           - 'cp313'
+          - 'cp313t'
           - 'cp314'
+          - 'cp314t'
         arch:
           - 'aarch64'
           - 'i686'
@@ -61,8 +63,12 @@ jobs:
             image: 'manylinux_2_28'
           - py: 'cp314'
             image: 'manylinux2014'
+          - py: 'cp314t'
+            image: 'manylinux2014'
           # Drop support for musllinux_1_1 on 3.14+
           - py: 'cp314'
+            image: 'musllinux_1_1'
+          - py: 'cp314t'
             image: 'musllinux_1_1'
     runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-22.04-arm' || 'ubuntu-22.04' }}
     env:
@@ -100,6 +106,7 @@ jobs:
           uvx -p 3.13 cibuildwheel@3.1.4
 
       - name: Upload Wheel
+        if: ${{ !endsWith(matrix.py, 't') }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: linux-${{ matrix.py }}-${{ matrix.arch }}-${{ matrix.abi }}-${{ matrix.image }}
@@ -115,7 +122,9 @@ jobs:
           - 'cp311'
           - 'cp312'
           - 'cp313'
+          - 'cp313t'
           - 'cp314'
+          - 'cp314t'
         arch:
           - 'arm64'
           - 'x86_64'
@@ -139,6 +148,7 @@ jobs:
           uvx -p 3.13 cibuildwheel@3.1.4
 
       - name: Upload Wheel
+        if: ${{ !endsWith(matrix.py, 't') }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: macos-${{ matrix.py }}-${{ matrix.arch }}
@@ -154,7 +164,9 @@ jobs:
           - 'cp311'
           - 'cp312'
           - 'cp313'
+          - 'cp313t'
           - 'cp314'
+          - 'cp314t'
         arch:
           - 'win32'
           - 'win_amd64'
@@ -184,6 +196,7 @@ jobs:
           uvx -p 3.13 cibuildwheel@3.1.4
 
       - name: Upload Wheel
+        if: ${{ !endsWith(matrix.py, 't') }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-${{ matrix.py }}-${{ matrix.arch }}
