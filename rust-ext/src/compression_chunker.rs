@@ -225,7 +225,7 @@ impl ZstdCompressionChunkerIterator {
                 let chunk = PyBytes::new(py, &slf.dest_buffer);
                 slf.dest_buffer.clear();
 
-                return Ok(Some(chunk.into_py_any(py).unwrap()));
+                return Ok(Some(chunk.into_py_any(py)?));
             }
 
             // Else continue to compress available input data.
@@ -278,6 +278,6 @@ impl ZstdCompressionChunkerIterator {
         let chunk = PyBytes::new(py, &slf.dest_buffer);
         slf.dest_buffer.clear();
 
-        Ok(Some(chunk.into_py_any(py).unwrap()))
+        Ok(Some(chunk.into_py_any(py)?))
     }
 }

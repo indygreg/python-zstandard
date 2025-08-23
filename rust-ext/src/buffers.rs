@@ -242,7 +242,7 @@ impl ZstdBufferWithSegments {
         }
 
         Ok(Self {
-            source: data.into_py_any(py).unwrap(),
+            source: data.into_py_any(py)?,
             buffer: data_buffer,
             segments,
         })
@@ -344,7 +344,7 @@ impl ZstdBufferWithSegmentsCollection {
 
             offset += segment.segments.len();
 
-            buffers.push(item.into_py_any(py).unwrap());
+            buffers.push(item.into_py_any(py)?);
             first_elements.push(offset);
         }
 

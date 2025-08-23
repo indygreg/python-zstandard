@@ -40,7 +40,7 @@ impl ZstdDecompressionWriter {
     ) -> PyResult<Self> {
         Ok(Self {
             dctx,
-            writer: writer.into_py_any(py).unwrap(),
+            writer: writer.into_py_any(py)?,
             write_size,
             write_return_read,
             closefd,

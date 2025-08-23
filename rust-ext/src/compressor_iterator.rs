@@ -60,7 +60,7 @@ impl ZstdCompressorIterator {
                 // TODO avoid buffer copy
                 let chunk = PyBytes::new(py, &dest_buffer);
 
-                return Ok(Some(chunk.into_py_any(py).unwrap()));
+                return Ok(Some(chunk.into_py_any(py)?));
             }
 
             // Else read another chunk in hopes of producing output data.
@@ -94,7 +94,7 @@ impl ZstdCompressorIterator {
             // TODO avoid buffer copy.
             let chunk = PyBytes::new(py, &dest_buffer);
 
-            return Ok(Some(chunk.into_py_any(py).unwrap()));
+            return Ok(Some(chunk.into_py_any(py)?));
         }
 
         Ok(None)

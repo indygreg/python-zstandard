@@ -60,7 +60,7 @@ impl ZstdDecompressorIterator {
             if !dest_buffer.is_empty() {
                 // TODO avoid buffer copy.
                 let chunk = PyBytes::new(py, &dest_buffer);
-                return Ok(Some(chunk.into_py_any(py).unwrap()));
+                return Ok(Some(chunk.into_py_any(py)?));
             }
 
             // Repeat loop to collect more input data.
@@ -71,7 +71,7 @@ impl ZstdDecompressorIterator {
         if !dest_buffer.is_empty() {
             // TODO avoid buffer copy.
             let chunk = PyBytes::new(py, &dest_buffer);
-            Ok(Some(chunk.into_py_any(py).unwrap()))
+            Ok(Some(chunk.into_py_any(py)?))
         } else {
             Ok(None)
         }

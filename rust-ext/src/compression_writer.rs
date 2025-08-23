@@ -48,7 +48,7 @@ impl ZstdCompressionWriter {
 
         Ok(Self {
             cctx,
-            writer: writer.into_py_any(py).unwrap(),
+            writer: writer.into_py_any(py)?,
             write_return_read,
             closefd,
             entered: false,
