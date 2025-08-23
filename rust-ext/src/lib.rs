@@ -34,7 +34,7 @@ use exceptions::ZstdError;
 // and debian/changelog as well.
 const VERSION: &'static str = "0.25.0.dev0";
 
-#[pymodule]
+#[pymodule(gil_used = false)]
 fn backend_rust(py: Python, module: &Bound<'_, PyModule>) -> PyResult<()> {
     let features = PySet::new(
         py,

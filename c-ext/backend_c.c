@@ -134,6 +134,10 @@ void decompressoriterator_module_init(PyObject *mod);
 void frameparams_module_init(PyObject *mod);
 
 void zstd_module_init(PyObject *m) {
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
+
     /* python-zstandard relies on unstable zstd C API features. This means
        that changes in zstd may break expectations in python-zstandard.
 
