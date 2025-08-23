@@ -22,7 +22,7 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
-          - '3.14.0-rc.2'
+          - '3.14'
         arch:
           - 'arm64'
           - 'x86'
@@ -77,9 +77,10 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
           architecture: ${{ matrix.arch }}
+          allow-prereleases: true
 
       - name: Install Rust
-        if: matrix.arch != 'x86' && matrix.py != '3.14.0-rc.2'
+        if: matrix.arch != 'x86' && matrix.py != '3.14'
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # v1
         with:
           toolchain: stable
@@ -96,14 +97,14 @@ jobs:
           python -m pip install --require-hashes -r ci/requirements.txt
 
       - name: Build (Rust)
-        if: matrix.arch != 'x86' && matrix.py != '3.14.0-rc.2'
+        if: matrix.arch != 'x86' && matrix.py != '3.14'
         env:
           PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
           python -m pip -v install --config-settings='--build-option=--rust-backend' -e .
 
       - name: Build (No Rust)
-        if: matrix.arch == 'x86' || matrix.py == '3.14.0-rc.2'
+        if: matrix.arch == 'x86' || matrix.py == '3.14'
         env:
           PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
@@ -120,7 +121,7 @@ jobs:
           pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test Rust Backend
-        if: matrix.arch != 'x86' && matrix.py != '3.14.0-rc.2'
+        if: matrix.arch != 'x86' && matrix.py != '3.14'
         # Rust backend is currently experimental. So ignore failures in it.
         continue-on-error: true
         env:
