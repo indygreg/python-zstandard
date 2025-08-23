@@ -23,7 +23,10 @@ SOURCES = [
 ]
 
 # Headers whose preprocessed output will be fed into cdef().
-HEADERS = [os.path.join(HERE, "zstd", p) for p in ("zstd_errors.h", "zstd.h", "zdict.h")]
+HEADERS = [
+    os.path.join(HERE, "zstd", p)
+    for p in ("zstd_errors.h", "zstd.h", "zdict.h")
+]
 
 INCLUDE_DIRS = [
     os.path.join(HERE, "zstd"),
@@ -95,7 +98,7 @@ def preprocess(path):
 
             # There's a naked `static` before the declaration of ZSTD_customMem that
             # confuses the cffi parser. Strip it.
-            if line == b'static\n':
+            if line == b"static\n":
                 continue
 
             # The preprocessor environment on Windows doesn't define include
@@ -164,6 +167,7 @@ def normalize_output(output):
 
     return b"\n".join(lines)
 
+
 # musl 1.1 doesn't define qsort_r. We need to force using the C90
 # variant.
 define_macros = []
@@ -189,7 +193,7 @@ ffi.set_source(
 """,
     sources=SOURCES,
     include_dirs=INCLUDE_DIRS,
-    define_macros=define_macros
+    define_macros=define_macros,
 )
 
 DEFINE = re.compile(rb"^#define\s+([a-zA-Z0-9_]+)\s+(\S+)")

@@ -81,7 +81,7 @@ def bench(
     def wrapper(fn):
         if not fn.__name__.startswith(("compress_", "decompress_")):
             raise ValueError(
-                "benchmark function must begin with " "compress_ or decompress_"
+                "benchmark function must begin with compress_ or decompress_"
             )
 
         fn.mode = mode
@@ -789,18 +789,17 @@ if __name__ == "__main__":
     group.add_argument(
         "--stream",
         action="store_true",
-        help="Feed each input into a stream and emit " "flushed blocks",
+        help="Feed each input into a stream and emit flushed blocks",
     )
     group.add_argument(
         "--content-dict",
         action="store_true",
-        help="Compress each input using the previous as a "
-        "content dictionary",
+        help="Compress each input using the previous as a content dictionary",
     )
     group.add_argument(
         "--discrete-dict",
         action="store_true",
-        help="Compress each input independently with a " "dictionary",
+        help="Compress each input independently with a dictionary",
     )
 
     group = parser.add_argument_group("Benchmark Selection")
@@ -854,7 +853,7 @@ if __name__ == "__main__":
     group.add_argument(
         "--compress-threads",
         type=int,
-        help="Use multi-threaded compression with this many " "threads",
+        help="Use multi-threaded compression with this many threads",
     )
     group.add_argument(
         "--batch-threads",
@@ -885,7 +884,7 @@ if __name__ == "__main__":
     group.add_argument(
         "--dict-sample-limit",
         type=int,
-        help="limit how many samples are fed into dictionary " "training",
+        help="limit how many samples are fed into dictionary training",
     )
     group.add_argument(
         "--chunk-encoding",
@@ -897,7 +896,7 @@ if __name__ == "__main__":
     group.add_argument(
         "--split-input-size",
         type=int,
-        help="Split inputs into chunks so they are at most this " "many bytes",
+        help="Split inputs into chunks so they are at most this many bytes",
     )
 
     parser.add_argument("path", metavar="PATH", nargs="+")

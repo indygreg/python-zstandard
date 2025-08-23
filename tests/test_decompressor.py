@@ -7,14 +7,14 @@ class TestFrameHeaderSize(unittest.TestCase):
     def test_empty(self):
         with self.assertRaisesRegex(
             zstd.ZstdError,
-            "could not determine frame header size: Src size " "is incorrect",
+            "could not determine frame header size: Src size is incorrect",
         ):
             zstd.frame_header_size(b"")
 
     def test_too_small(self):
         with self.assertRaisesRegex(
             zstd.ZstdError,
-            "could not determine frame header size: Src size " "is incorrect",
+            "could not determine frame header size: Src size is incorrect",
         ):
             zstd.frame_header_size(b"foob")
 

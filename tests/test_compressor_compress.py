@@ -198,8 +198,7 @@ class TestCompressor_compress(unittest.TestCase):
 
         self.assertEqual(
             result,
-            b"\x28\xb5\x2f\xfd\x23\x27\x42\xfc\x42\x03\x19\x00\x00"
-            b"\x66\x6f\x6f",
+            b"\x28\xb5\x2f\xfd\x23\x27\x42\xfc\x42\x03\x19\x00\x00\x66\x6f\x6f",
         )
 
     def test_multithreaded_compression_params(self):

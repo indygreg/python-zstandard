@@ -146,7 +146,7 @@ with open("c-ext/python-zstandard.h", "r") as fh:
 
 if not version:
     raise Exception(
-        "could not resolve package version; " "this should never happen"
+        "could not resolve package version; this should never happen"
     )
 
 setup(
