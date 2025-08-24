@@ -21,6 +21,10 @@ Version History
   fragile and there may be unwanted changes. We're optimistic that standardizing
   on uv (except for musllinux ppc64le and s390x where uv isn't available)
   will lead to more stability over time.
+* CI now runs tests against the wheels we distribute. Previously, we ran
+  tests against a separate build that was theoretically identical. But the
+  builds may have been subtly different, leading to preventable bugs in our
+  wheels. (Enabling this test coverage did not uncover any failures.)
 
 0.24.0 (released 2025-08-17)
 ============================

@@ -65,8 +65,24 @@ build-frontend = "build[uv]"
 # Turn compiler warnings into errors.
 environment = "ZSTD_WARNINGS_AS_ERRORS=1"
 
+test-command = [
+    "pytest -v --numprocesses=auto",
+    "PYTHON_ZSTANDARD_IMPORT_POLICY=cffi pytest -v --numprocesses=auto",
+]
+test-groups = ["dev"]
+test-requires = ["cffi"]
+test-sources = ["tests"]
+
 [tool.cibuildwheel.linux]
 before-all = "if [ -x /usr/bin/yum ]; then yum install -y libffi-devel; fi"
+
+[tool.cibuildwheel.windows]
+# Environment variable syntax is different on Windows.
+test-command = [
+    "pytest -v --numprocesses=auto",
+    "set PYTHON_ZSTANDARD_IMPORT_POLICY=cffi",
+    "pytest -v --numprocesses=auto",
+]
 
 # This is needed to suppress generation of license-file, which isn't
 # compatible with metadata version 2.1, which our pinned setuptools
