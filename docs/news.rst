@@ -8,15 +8,15 @@ Version History
 =========================
 
 * PyO3 Rust created upgraded from 0.24 to 0.25. (#273)
-* We now use `Py_REFCNT(obj)` instead of accessing `(*obj)->ob_refcnt` directly.
+* We now use ``Py_REFCNT(obj)`` instead of accessing ``(*obj)->ob_refcnt`` directly.
   This fixes a nogil / multi-threaded compile error. (#201, #275)
 * A zstandard commit to fix qsort detection on BSD operating systems
   has been backported. (#272)
-* The `PYTHON_ZSTANDARD_IMPORT_POLICY` environment variable now has leading
-  and trailing whitespace stripped. Values like ` cffi` and `cffi ` are
-  now equivalent to `cffi`.
+* The ``PYTHON_ZSTANDARD_IMPORT_POLICY`` environment variable now has leading
+  and trailing whitespace stripped. Values like `` cffi`` and ``cffi `` are
+  now equivalent to ``cffi``.
 * The CI jobs for building wheels have been overhauled to always use
-  `cibuildwheel` and `uv` (where possible). This change should be backwards
+  ``cibuildwheel`` and ``uv`` (where possible). This change should be backwards
   compatible. But wheel building for this project has historically been
   fragile and there may be unwanted changes. We're optimistic that standardizing
   on uv (except for musllinux ppc64le and s390x where uv isn't available)
