@@ -28,6 +28,7 @@ jobs:
           - 'musllinux'
         image:
           - 'manylinux2014'
+          - 'manylinux_2_28'
           - 'musllinux_1_1'
           - 'musllinux_1_2'
         exclude:
@@ -38,6 +39,8 @@ jobs:
             image: 'musllinux_1_2'
           - abi: 'musllinux'
             image: 'manylinux2014'
+          - abi: 'musllinux'
+            image: 'manylinux_2_28'
           # Remove some older ABIs that don't need to exist.
           - arch: 'i686'
             image: 'musllinux_1_1'
@@ -45,6 +48,19 @@ jobs:
             image: 'musllinux_1_1'
           - arch: 's390x'
             image: 'musllinux_1_1'
+          # Switch to manylinux_2_28 on 3.14+.
+          - py: 'cp39'
+            image: 'manylinux_2_28'
+          - py: 'cp310'
+            image: 'manylinux_2_28'
+          - py: 'cp311'
+            image: 'manylinux_2_28'
+          - py: 'cp312'
+            image: 'manylinux_2_28'
+          - py: 'cp313'
+            image: 'manylinux_2_28'
+          - py: 'cp314'
+            image: 'manylinux2014'
           # Drop support for musllinux_1_1 on 3.14+
           - py: 'cp314'
             image: 'musllinux_1_1'

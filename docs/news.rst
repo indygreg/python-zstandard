@@ -35,6 +35,12 @@ Version History
   to figure out how to thread config settings into ``setup.py`` invocations.
   (`--build-option`` is sent to the ``build_wheel`` command but not the
   ``build_editable`` command.)
+* Python 3.14 wheels are now built with ``manylinux_2_28`` (versus
+  ``manylinux2014``) for older Python versions. This may raise the minimum
+  glibc version, effectively dropping support for Debian 8 and 9, Ubuntu
+  13.10 through 18.04, Fedora 19 to 28, and RHEL/Centos 7. However, in
+  practice most platforms don't container newer glibc symbols and are still
+  ABI compatible with ``manylinux2014`` and glibc 2.17.
 
 0.24.0 (released 2025-08-17)
 ============================
