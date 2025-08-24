@@ -12,6 +12,9 @@ Version History
   This fixes a nogil / multi-threaded compile error. (#201, #275)
 * A zstandard commit to fix qsort detection on BSD operating systems
   has been backported. (#272)
+* The `PYTHON_ZSTANDARD_IMPORT_POLICY` environment variable now has leading
+  and trailing whitespace stripped. Values like ` cffi` and `cffi ` are
+  now equivalent to `cffi`.
 * The CI jobs for building wheels have been overhauled to always use
   `cibuildwheel` and `uv` (where possible). This change should be backwards
   compatible. But wheel building for this project has historically been

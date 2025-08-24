@@ -37,7 +37,9 @@ else:
 # defining a variable and `setup.py` could write the file with whatever
 # policy was specified at build time. Until someone needs it, we go with
 # the hacky but simple environment variable approach.
-_module_policy = os.environ.get("PYTHON_ZSTANDARD_IMPORT_POLICY", "default")
+_module_policy = os.environ.get(
+    "PYTHON_ZSTANDARD_IMPORT_POLICY", "default"
+).strip()
 
 if _module_policy == "default":
     if platform.python_implementation() in ("CPython",):
