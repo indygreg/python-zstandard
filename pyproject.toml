@@ -25,7 +25,8 @@ dependencies = []
 
 [project.optional-dependencies]
 cffi = [
-    'cffi>=2.0.0b1 ; python_version >= "3.13" and platform_python_implementation != "PyPy"',
+    "cffi~=1.17; platform_python_implementation != 'PyPy' and python_version < '3.14'",
+    "cffi>=2.0.0b; platform_python_implementation != 'PyPy' and python_version >= '3.14'",
 ]
 
 [project.urls]
@@ -34,7 +35,8 @@ Documentation = "https://python-zstandard.readthedocs.io/en/latest/"
 
 [build-system]
 requires = [
-    "cffi>=2.0.0b1 ; platform_python_implementation != 'PyPy'",
+    "cffi~=1.17; platform_python_implementation != 'PyPy' and python_version < '3.14'",
+    "cffi>=2.0.0b; platform_python_implementation != 'PyPy' and python_version >= '3.14'",
     "packaging",
     "setuptools",
 ]
