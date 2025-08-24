@@ -60,6 +60,13 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.cibuildwheel]
 enable = ["cpython-prerelease"]
+build-frontend = "build[uv]"
+
+# Turn compiler warnings into errors.
+environment = "ZSTD_WARNINGS_AS_ERRORS=1"
+
+[tool.cibuildwheel.linux]
+before-all = "if [ -x /usr/bin/yum ]; then yum install -y libffi-devel; fi"
 
 # This is needed to suppress generation of license-file, which isn't
 # compatible with metadata version 2.1, which our pinned setuptools

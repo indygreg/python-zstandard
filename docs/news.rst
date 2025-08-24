@@ -12,6 +12,12 @@ Version History
   This fixes a nogil / multi-threaded compile error. (#201, #275)
 * A zstandard commit to fix qsort detection on BSD operating systems
   has been backported. (#272)
+* The CI jobs for building wheels have been overhauled to always use
+  `cibuildwheel` and `uv` (where possible). This change should be backwards
+  compatible. But wheel building for this project has historically been
+  fragile and there may be unwanted changes. We're optimistic that standardizing
+  on uv (except for musllinux ppc64le and s390x where uv isn't available)
+  will lead to more stability over time.
 
 0.24.0 (released 2025-08-17)
 ============================
