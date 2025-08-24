@@ -25,6 +25,8 @@ Version History
   tests against a separate build that was theoretically identical. But the
   builds may have been subtly different, leading to preventable bugs in our
   wheels. (Enabling this test coverage did not uncover any failures.)
+* The ``pyproject.toml`` build backend has been switched from
+  ``setuptools.build_meta:__legacy__`` to ``setuptools.build_meta``.
 
 0.24.0 (released 2025-08-17)
 ============================
