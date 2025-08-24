@@ -1,10 +1,2 @@
-# This is a dependency of pytest on Windows but isn't picked up by pip-compile.
-atomicwrites
 cffi
-colorama
-hypothesis
-mypy
-pycparser
-pytest-xdist
-pytest
 wheel

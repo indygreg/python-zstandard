@@ -26,12 +26,6 @@ jobs:
         with:
           version: "0.8.11"
 
-      - name: Install Dependencies
-        run: |
-          uv venv --python ${{ matrix.py }} venv
-          source venv/bin/activate
-          uv pip install -r ci/requirements.txt
-
       - name: Run mypy
         run: |
-          venv/bin/mypy tests/*.py zstandard/*.py
+          uv run --locked mypy tests/*.py zstandard/*.py

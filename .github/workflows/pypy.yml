@@ -91,14 +91,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Dependencies
-        run: |
-          pip install --require-hashes -r ci/requirements.pypy.txt
-
-      - name: Build
-        run: |
-          python -m pip -v install --constraint ci/constraints.txt -e .
+      - name: Install uv
+        uses: astral-sh/setup-uv@d9e0f98d3fc6adb07d1e3d37f3043649ddad06a1 # v6.5.0
+        with:
+          version: "0.8.11"
 
       - name: Test
         run: |
-          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
+          uv -v run --locked pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/

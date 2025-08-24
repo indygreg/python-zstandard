@@ -89,36 +89,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Dependencies
-        shell: bash
-        env:
-          PIP_CONSTRAINT: 'ci/constraints.txt'
-        run: |
-          python -m pip install --require-hashes -r ci/requirements.txt
-
-      - name: Build (Rust)
-        if: matrix.arch != 'x86'
-        env:
-          PIP_CONSTRAINT: 'ci/constraints.txt'
-        run: |
-          python -m pip -v install --config-settings='--build-option=--rust-backend' -e .
-
-      - name: Build (No Rust)
-        if: matrix.arch == 'x86'
-        env:
-          PIP_CONSTRAINT: 'ci/constraints.txt'
-        run: |
-          python -m pip -v install -e .
+      - name: Install uv
+        uses: astral-sh/setup-uv@d9e0f98d3fc6adb07d1e3d37f3043649ddad06a1 # v6.5.0
+        with:
+          version: "0.8.11"
 
       - name: Test C Backend
         run: |
-          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
+          uv -v run --locked pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test CFFI Backend
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
         run: |
-          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
+          uv -v run --locked -w cffi pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
 
       - name: Test Rust Backend
         if: matrix.arch != 'x86'
@@ -127,4 +111,6 @@ jobs:
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'rust'
         run: |
-          pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
+          # We need --reinstall to get uv to pick up the config settings change.
+          # Unsure if this is a bug.
+          uv -v run --locked --config-settings-package 'zstandard:--build-option=--rust-backend' --reinstall pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v tests/
