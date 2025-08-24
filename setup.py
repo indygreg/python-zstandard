@@ -12,14 +12,8 @@ import platform
 import sys
 import sysconfig
 
+from packaging.version import Version
 from setuptools import setup
-
-# Python 3.12 dropped distutils from the stdlib. Try to access it via
-# setuptools.
-try:
-    from setuptools._distutils.version import LooseVersion
-except ImportError:
-    from distutils.version import LooseVersion
 
 if sys.version_info[0:2] < (3, 9):
     print("Python 3.9+ is required", file=sys.stderr)
@@ -61,8 +55,8 @@ try:
 
     # PyPy (and possibly other distros) have CFFI distributed as part of
     # them.
-    cffi_version = LooseVersion(cffi.__version__)
-    if cffi_version < LooseVersion(MINIMUM_CFFI_VERSION):
+    cffi_version = Version(Version(cffi.__version__).base_version)
+    if cffi_version < Version(MINIMUM_CFFI_VERSION):
         print(
             "CFFI %s or newer required (%s found); "
             "not building CFFI backend" % (MINIMUM_CFFI_VERSION, cffi_version),
