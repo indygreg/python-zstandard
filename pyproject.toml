@@ -41,6 +41,14 @@ requires = [
 # Need to use legacy backend because setup_zstd.py breaks build isolation.
 build-backend = "setuptools.build_meta:__legacy__"
 
+[dependency-groups]
+dev = [
+    "hypothesis==6.111.0",
+    "mypy>=1.17.1",
+    "pytest>=8.4.1",
+    "pytest-xdist>=3.8.0",
+]
+
 [tool.ruff]
 line-length = 80
 
@@ -56,3 +64,12 @@ enable = ["cpython-prerelease"]
 # TODO delete this after we adopt modern setuptools.
 [tool.setuptools]
 license-files = []
+
+[tool.uv]
+build-constraint-dependencies = [
+    # 69.0.0 breaks handling of --config-settings=--build-option, which our CI
+    # relies on. So constrained to an older version until we figure out a
+    # workaround. See comment at
+    # https://github.com/pypa/pip/issues/11859#issuecomment-2132287974.
+    "setuptools<69.0.0",
+]
