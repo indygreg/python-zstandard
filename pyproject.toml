@@ -43,6 +43,7 @@ build-backend = "setuptools.build_meta:__legacy__"
 
 [dependency-groups]
 dev = [
+    "cffi>=1.17.0 ; platform_python_implementation != 'PyPy'",
     "hypothesis==6.111.0",
     "mypy>=1.17.1",
     "pytest>=8.4.1",
@@ -70,7 +71,6 @@ test-command = [
     "PYTHON_ZSTANDARD_IMPORT_POLICY=cffi pytest -v --numprocesses=auto",
 ]
 test-groups = ["dev"]
-test-requires = ["cffi"]
 test-sources = ["tests"]
 
 [tool.cibuildwheel.linux]
