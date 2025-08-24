@@ -16,11 +16,9 @@ jobs:
         with:
           version: "0.8.11"
       - name: Run Sphinx
-        env:
-          PIP_CONSTRAINT: 'ci/constraints.txt'
         run: |
           uv venv --python 3.13 venv
           source venv/bin/activate
           uv pip install -r ci/requirements.docs.txt
-          uv pip install --config-settings=--build-option=--no-c-backend .
+          uv pip install --config-settings=--global-option=--no-c-backend .
           make -C docs html

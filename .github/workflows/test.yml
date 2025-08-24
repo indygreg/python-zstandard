@@ -113,4 +113,4 @@ jobs:
         run: |
           # We need --reinstall to get uv to pick up the config settings change.
           # Unsure if this is a bug.
-          uv -v run --locked --config-settings-package 'zstandard:--build-option=--rust-backend' --reinstall pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
+          uv -v run --locked --config-settings-package 'zstandard:--global-option=--rust-backend' --reinstall pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v

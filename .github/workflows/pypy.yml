@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         run: |
-          python -m pip -v wheel --constraint ci/constraints.txt -w wheelhouse .
+          python -m pip -v wheel -w wheelhouse .
 
   test:
     strategy:

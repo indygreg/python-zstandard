@@ -50,12 +50,7 @@ Legacy Format Support
 To enable legacy zstd format support which is needed to handle files compressed
 with zstd < 1.0 you need to provide an installation option::
 
-   $ pip install zstandard --install-option="--legacy"
-
-and since pip 7.0 it is possible to have the following line in your
-requirements.txt::
-
-   zstandard --install-option="--legacy"
+   $ pip install zstandard --config-settings='--global-option=--legacy'
 
 All Install Arguments
 =====================
@@ -86,11 +81,14 @@ All Install Arguments
 ``--rust-backend``
    Compile the Rust backend (not yet feature complete).
 
-If you invoke ``setup.py``, simply pass the aforementioned arguments. e.g.
-``python3.9 setup.py --no-cffi-backend``. If using ``pip``, use the
-``--install-option`` argument. e.g.
-``python3.9 -m pip install zstandard --install-option --warning-as-errors``.
-Or in a pip requirements file: ``zstandard --install-option="--rust-backend"``.
+Packaging tools newer than ~2023 likely require using a PEP 517
+build backend instead of invoking ``setup.py`` directly. In order to send
+custom arguments to our ``setup.py``, you need to use ``--config-settings``.
+e.g. ``python3 -m pip install zstandard --config-settings='--global-option=--no-cffi-backend'``.
+
+Older packaging tools allowed you to use e.g.
+``python3 -m pip install zstandard --install-option --no-cffi-backend`` or
+just ``python3 setup.py --no-cffi-backend`` directly.
 
 In addition, the following environment variables are recognized:
 

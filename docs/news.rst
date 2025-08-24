@@ -27,6 +27,14 @@ Version History
   wheels. (Enabling this test coverage did not uncover any failures.)
 * The ``pyproject.toml`` build backend has been switched from
   ``setuptools.build_meta:__legacy__`` to ``setuptools.build_meta``.
+* The setuptools build dependency has been upgraded from <69.0.0 to >=77.0.0.
+  Modern versions of setuptools broke
+  ``--config-settings=--build-option=...`` as part of implementing PEP 660.
+  A workaround is to use `--config-settings=--global-option=...`` instead.
+  `--global-option`` apparently is deprecated and the setuptools folks have yet
+  to figure out how to thread config settings into ``setup.py`` invocations.
+  (`--build-option`` is sent to the ``build_wheel`` command but not the
+  ``build_editable`` command.)
 
 0.24.0 (released 2025-08-17)
 ============================

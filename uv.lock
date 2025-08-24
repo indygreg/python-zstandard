@@ -6,9 +6,6 @@ resolution-markers = [
     "python_full_version < '3.13' or platform_python_implementation == 'PyPy'",
 ]
 
-[manifest]
-build-constraints = [{ name = "setuptools", specifier = "<69.0.0" }]
-
 [[package]]
 name = "attrs"
 version = "25.3.0"
