@@ -27,19 +27,20 @@ ensure behavior parity.
 Comparison to Other Python Bindings
 ===================================
 
-https://pypi.python.org/pypi/zstd is an alternate Python binding to
-Zstandard. At the time this was written, the latest release of that
-package (1.4.8) only exposed the simple APIs for compression and decompression.
-This package exposes much more of the zstd API, including streaming and
-dictionary compression. This package also has CFFI support.
+https://pypi.python.org/pypi/zstd offers very simple Python bindings 
+for the Zstandard algorithm (version 1.5.7.2 as of June 23, 2025), supporting 
+only basic compression and decompression. It does not support CFFI, streaming, 
+or dictionaries—making it the most minimal among available Zstandard bindings.
 
-https://github.com/animalize/pyzstd is an alternate Python binding to
-Zstandard. At the time this was written, the latest release of that
-package (0.14.1) exposed a fraction of the functionality in this
-package. There may be some minor features in ``pyzstd`` not found in
-this package. But those features could be added easily if someone made
-a feature request. Also, ``pyzstd`` lacks CFFI support, so it won't run
-on PyPy.
+https://pypi.org/project/pyzstd/ is an alternative binding. As of version 0.17.0 
+(May 10, 2025), it provides both C and CFFI backends (PyPy-compatible), streaming 
+compression/decompression, dictionary use and training, and seekable file support. 
+Its API mimics the Python standard library with ease of use and portability in 
+mind. By comparison, ``python-zstandard`` offers broader access to the Zstandard 
+C API, including multiple streaming interfaces, precomputed dictionaries, 
+advanced tuning, buffer-protocol / zero-copy support, inspection tools, and CFFI 
+or C backend options—making it the most feature-rich binding available.
+
 
 Performance
 ===========
