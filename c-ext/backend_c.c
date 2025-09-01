@@ -317,7 +317,7 @@ size_t roundpow2(size_t i) {
 int safe_pybytes_resize(PyObject **obj, Py_ssize_t size) {
     PyObject *tmp;
 
-    if (Py_REFCNT(*obj) == 1) {
+    if (PyUnstable_Object_IsUniquelyReferenced(*obj)) {
         return _PyBytes_Resize(obj, size);
     }
 
