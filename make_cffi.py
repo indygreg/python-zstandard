@@ -16,22 +16,6 @@ import tempfile
 import cffi
 import packaging.tags
 
-HERE = os.path.abspath(os.path.dirname(__file__))
-
-SOURCES = [
-    "zstd/zstd.c",
-]
-
-# Headers whose preprocessed output will be fed into cdef().
-HEADERS = [
-    os.path.join(HERE, "zstd", p)
-    for p in ("zstd_errors.h", "zstd.h", "zdict.h")
-]
-
-INCLUDE_DIRS = [
-    os.path.join(HERE, "zstd"),
-]
-
 # cffi can't parse some of the primitives in zstd.h. So we invoke the
 # preprocessor and feed its output into cffi.
 compiler = distutils.ccompiler.new_compiler()
@@ -168,21 +152,38 @@ def normalize_output(output):
     return b"\n".join(lines)
 
 
-# musl 1.1 doesn't define qsort_r. We need to force using the C90
-# variant.
-define_macros = []
-for tag in packaging.tags.platform_tags():
-    if tag.startswith("musllinux_1_1_"):
-        define_macros.append(("ZDICT_QSORT", "ZDICT_QSORT_C90"))
+def get_ffi(system_zstd = False):
+    here = os.path.abspath(os.path.dirname(__file__))
+
+    zstd_sources = [
+        "zstd/zstd.c",
+    ]
+
+    # Headers whose preprocessed output will be fed into cdef().
+    headers = [
+        os.path.join(here, "zstd", p)
+        for p in ("zstd_errors.h", "zstd.h", "zdict.h")
+    ]
+
+    include_dirs = [
+        os.path.join(here, "zstd"),
+    ]
+
+    # musl 1.1 doesn't define qsort_r. We need to force using the C90
+    # variant.
+    define_macros = []
+    for tag in packaging.tags.platform_tags():
+        if tag.startswith("musllinux_1_1_"):
+            define_macros.append(("ZDICT_QSORT", "ZDICT_QSORT_C90"))
 
 
-ffi = cffi.FFI()
-# *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
-# when cffi uses the function. Since we statically link against zstd, even
-# if we use the deprecated functions it shouldn't be a huge problem.
-ffi.set_source(
-    "zstandard._cffi",
-    """
+    ffi = cffi.FFI()
+    # *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
+    # when cffi uses the function. Since we statically link against zstd, even
+    # if we use the deprecated functions it shouldn't be a huge problem.
+    ffi.set_source(
+        "zstandard._cffi",
+        """
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZSTD_DISABLE_DEPRECATE_WARNINGS
 #include <zstd_errors.h>
@@ -191,48 +192,50 @@ ffi.set_source(
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
 #include <zdict.h>
 """,
-    sources=SOURCES,
-    include_dirs=INCLUDE_DIRS,
-    define_macros=define_macros,
-)
+        sources=zstd_sources,
+        include_dirs=include_dirs,
+        define_macros=define_macros,
+    )
 
-DEFINE = re.compile(rb"^#define\s+([a-zA-Z0-9_]+)\s+(\S+)")
+    define = re.compile(rb"^#define\s+([a-zA-Z0-9_]+)\s+(\S+)")
 
-sources = []
+    sources = []
 
-# Feed normalized preprocessor output for headers into the cdef parser.
-for header in HEADERS:
-    preprocessed = preprocess(header)
-    sources.append(normalize_output(preprocessed))
+    # Feed normalized preprocessor output for headers into the cdef parser.
+    for header in headers:
+        preprocessed = preprocess(header)
+        sources.append(normalize_output(preprocessed))
 
-    # #define's are effectively erased as part of going through preprocessor.
-    # So perform a manual pass to re-add those to the cdef source.
-    with open(header, "rb") as fh:
-        for line in fh:
-            line = line.strip()
-            m = DEFINE.match(line)
-            if not m:
-                continue
+        # #define's are effectively erased as part of going through preprocessor.
+        # So perform a manual pass to re-add those to the cdef source.
+        with open(header, "rb") as fh:
+            for line in fh:
+                line = line.strip()
+                m = define.match(line)
+                if not m:
+                    continue
 
-            if m.group(1) == b"ZSTD_STATIC_LINKING_ONLY":
-                continue
+                if m.group(1) == b"ZSTD_STATIC_LINKING_ONLY":
+                    continue
 
-            # The parser doesn't like some constants with complex values.
-            if m.group(1) in (b"ZSTD_LIB_VERSION", b"ZSTD_VERSION_STRING"):
-                continue
+                # The parser doesn't like some constants with complex values.
+                if m.group(1) in (b"ZSTD_LIB_VERSION", b"ZSTD_VERSION_STRING"):
+                    continue
 
-            # These defines create aliases from old (camelCase) type names
-            # to the new PascalCase names, which breaks CFFI.
-            if m.group(1).lower() == m.group(2).lower():
-                continue
+                # These defines create aliases from old (camelCase) type names
+                # to the new PascalCase names, which breaks CFFI.
+                if m.group(1).lower() == m.group(2).lower():
+                    continue
 
-            # The ... is magic syntax by the cdef parser to resolve the
-            # value at compile time.
-            sources.append(b"#define " + m.group(1) + b" ...")
+                # The ... is magic syntax by the cdef parser to resolve the
+                # value at compile time.
+                sources.append(b"#define " + m.group(1) + b" ...")
 
-cdeflines = b"\n".join(sources).splitlines()
-cdeflines = [line for line in cdeflines if line.strip()]
-ffi.cdef(b"\n".join(cdeflines).decode("latin1"))
+    cdeflines = b"\n".join(sources).splitlines()
+    cdeflines = [line for line in cdeflines if line.strip()]
+    ffi.cdef(b"\n".join(cdeflines).decode("latin1"))
+    return ffi
+
 
 if __name__ == "__main__":
-    ffi.compile()
+    get_ffi().compile()
