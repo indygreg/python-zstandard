@@ -73,6 +73,7 @@ import setup_zstd  # noqa: E402
 
 SUPPORT_LEGACY = False
 SYSTEM_ZSTD = False
+SYSTEM_ZSTD_CFFI = False
 WARNINGS_AS_ERRORS = False
 C_BACKEND = True
 CFFI_BACKEND = True
@@ -102,6 +103,10 @@ if "--legacy" in sys.argv:
 if "--system-zstd" in sys.argv:
     SYSTEM_ZSTD = True
     sys.argv.remove("--system-zstd")
+
+if "--system-zstd-cffi" in sys.argv:
+    SYSTEM_ZSTD_CFFI = True
+    sys.argv.remove("--system-zstd-cffi")
 
 if "--warnings-as-errors" in sys.argv:
     WARNINGS_AS_ERRORS = True
@@ -138,7 +143,7 @@ if RUST_BACKEND:
 if CFFI_BACKEND and cffi:
     import make_cffi
 
-    extensions.append(make_cffi.get_ffi(system_zstd=SYSTEM_ZSTD).distutils_extension())
+    extensions.append(make_cffi.get_ffi(system_zstd=SYSTEM_ZSTD_CFFI).distutils_extension())
 
 version = None
 
