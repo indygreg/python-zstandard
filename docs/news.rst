@@ -7,8 +7,6 @@ Version History
 next (not yet released)
 =======================
 
-* PyO3 Rust crate upgraded from 0.25 to 0.30.
-
 Backwards Compatibility Notes
 -----------------------------
 
@@ -18,6 +16,13 @@ Backwards Compatibility Notes
   will likely yield a working install. However, this is not officially supported.
 * cibuildwheel upgrade required us to drop generating the CPython 3.13 free-threaded
   wheels.
+
+Changes
+-------
+
+* PyO3 Rust crate upgraded from 0.25 to 0.30.
+* ``BufferWithSegmentsCollection_init`` signature changed to match ``tp_init``
+  requirements. (#282)
 
 0.25.0 (released 2025-09-14)
 ============================
