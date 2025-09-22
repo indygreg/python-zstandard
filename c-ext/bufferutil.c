@@ -382,7 +382,7 @@ BufferWithSegmentsCollection_dealloc(ZstdBufferWithSegmentsCollection *self) {
 
 static int
 BufferWithSegmentsCollection_init(ZstdBufferWithSegmentsCollection *self,
-                                  PyObject *args) {
+                                  PyObject *args, PyObject *kwargs) {
     Py_ssize_t size;
     Py_ssize_t i;
     Py_ssize_t offset = 0;
