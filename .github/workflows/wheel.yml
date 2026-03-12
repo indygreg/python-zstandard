@@ -81,6 +81,7 @@ jobs:
       CIBW_MANYLINUX_I686_IMAGE: quay.io/pypa/${{ matrix.image }}_i686:latest
       CIBW_MANYLINUX_PPC64LE_IMAGE: quay.io/pypa/${{ matrix.image }}_ppc64le:latest
       CIBW_MANYLINUX_S390X_IMAGE: quay.io/pypa/${{ matrix.image }}_s390x:latest
+      CIBW_MANYLINUX_RISCV64_IMAGE: quay.io/pypa/${{ matrix.image }}_riscv64:latest
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/${{ matrix.image }}_x86_64:latest
       CIBW_MUSLLINUX_AARCH64_IMAGE: quay.io/pypa/${{ matrix.image }}_aarch64:latest
       CIBW_MUSLLINUX_I686_IMAGE: quay.io/pypa/${{ matrix.image }}_i686:latest
@@ -98,7 +99,7 @@ jobs:
           version: "0.8.11"
 
       - name: Set up QEMU
-        if: ${{ matrix.arch == 'ppc64le' || matrix.arch == 's390x' }}
+        if: ${{ matrix.arch == 'ppc64le' || matrix.arch == 's390x' || matrix.arch == 'riscv64' }}
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
 
       - name: Build wheels
