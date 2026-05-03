@@ -70,6 +70,33 @@ jobs:
             image: 'musllinux_1_1'
           - py: 'cp314t'
             image: 'musllinux_1_1'
+        include:
+          # riscv64 only has manylinux_2_39 (no manylinux2014, no musllinux).
+          # Using include entries to bypass the manylinux_2_28 excludes above.
+          - py: 'cp310'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp311'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp312'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp313'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp314'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp314t'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
     runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-22.04-arm' || 'ubuntu-22.04' }}
     env:
       CIBW_ARCHS: ${{ matrix.arch }}
@@ -81,6 +108,7 @@ jobs:
       CIBW_MANYLINUX_I686_IMAGE: quay.io/pypa/${{ matrix.image }}_i686:latest
       CIBW_MANYLINUX_PPC64LE_IMAGE: quay.io/pypa/${{ matrix.image }}_ppc64le:latest
       CIBW_MANYLINUX_S390X_IMAGE: quay.io/pypa/${{ matrix.image }}_s390x:latest
+      CIBW_MANYLINUX_RISCV64_IMAGE: quay.io/pypa/${{ matrix.image }}_riscv64:latest
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/${{ matrix.image }}_x86_64:latest
       CIBW_MUSLLINUX_AARCH64_IMAGE: quay.io/pypa/${{ matrix.image }}_aarch64:latest
       CIBW_MUSLLINUX_I686_IMAGE: quay.io/pypa/${{ matrix.image }}_i686:latest
@@ -98,8 +126,8 @@ jobs:
           version: "0.8.11"
 
       - name: Set up QEMU
-        if: ${{ matrix.arch == 'ppc64le' || matrix.arch == 's390x' }}
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        if: ${{ matrix.arch == 'ppc64le' || matrix.arch == 's390x' || matrix.arch == 'riscv64' }}
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
 
       - name: Build wheels
         run: |
