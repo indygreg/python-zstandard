@@ -32,6 +32,11 @@ Changes
   GitHub Actions runners.
 * cffi backend now correctly interpolates string error messages in
   ``ZstdCompressionReader``'s read APIs. (#368)
+* Stream reader and writer methods have their advertised type signature
+  for ``reader`` and ``writer`` arguments loosed from ``IO[bytes]`` to
+  a custom ``Protocol`` that only requires a ``read()`` or ``write()``
+  method. This should mitigate type checking failures in cases where the
+  argument didn't implement the full IO interface. (#304)
 
 0.25.0 (released 2025-09-14)
 ============================
