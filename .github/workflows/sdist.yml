@@ -5,6 +5,9 @@ on:
   pull_request:
   schedule:
     - cron: '30 13 * * *'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions: { }
 jobs:
   sdist:
