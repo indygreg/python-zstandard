@@ -4,6 +4,17 @@
 Version History
 ===============
 
+next (not yet released)
+=======================
+
+Backwards Compatibility Notes
+-----------------------------
+
+* Support for Python 3.9 has been dropped because it reached end of life.
+  Python 3.10 is the minimum supported Python version. The code should still be
+  compatible with Python 3.10 and removing of version checks from ``setup.py``
+  will likely yield a working install. However, this is not officially supported.
+
 0.25.0 (released 2025-09-14)
 ============================
 

@@ -11,7 +11,6 @@ jobs:
 
       matrix:
         py:
-          - 'cp39'
           - 'cp310'
           - 'cp311'
           - 'cp312'
@@ -51,8 +50,6 @@ jobs:
           - arch: 's390x'
             image: 'musllinux_1_1'
           # Switch to manylinux_2_28 on 3.14+.
-          - py: 'cp39'
-            image: 'manylinux_2_28'
           - py: 'cp310'
             image: 'manylinux_2_28'
           - py: 'cp311'
@@ -117,7 +114,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - 'cp39'
           - 'cp310'
           - 'cp311'
           - 'cp312'
@@ -159,7 +155,6 @@ jobs:
       fail-fast: false
       matrix:
         py:
-          - 'cp39'
           - 'cp310'
           - 'cp311'
           - 'cp312'
@@ -172,8 +167,6 @@ jobs:
           - 'win_amd64'
           - 'win_arm64'
         exclude:
-          - py: 'cp39'
-            arch: 'win_arm64'
           - py: 'cp310'
             arch: 'win_arm64'
     runs-on: ${{ matrix.arch == 'win_arm64' && 'windows-11-arm' || 'windows-2022' }}

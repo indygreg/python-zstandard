@@ -15,8 +15,8 @@ import sysconfig
 from packaging.version import Version
 from setuptools import setup
 
-if sys.version_info[0:2] < (3, 9):
-    print("Python 3.9+ is required", file=sys.stderr)
+if sys.version_info[0:2] < (3, 10):
+    print("Python 3.10+ is required", file=sys.stderr)
     sys.exit(1)
 
 # Need change in 1.10 for ffi.from_buffer() to handle all buffer types
@@ -87,7 +87,7 @@ if platform.python_implementation() == "PyPy":
 
 # cffi 2.0 only introduced no-GIL support for 3.14+.
 if sys.version_info[0:2] < (3, 14) and sysconfig.get_config_var(
-    "Py_GIL_DISABLED"
+        "Py_GIL_DISABLED"
 ):
     print(
         "cffi backend requires 3.14+ for nogil Python; disabling cffi",
