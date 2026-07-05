@@ -14,6 +14,8 @@ Backwards Compatibility Notes
   Python 3.10 is the minimum supported Python version. The code should still be
   compatible with Python 3.10 and removing of version checks from ``setup.py``
   will likely yield a working install. However, this is not officially supported.
+* cibuildwheel upgrade required us to drop generating the CPython 3.13 free-threaded
+  wheels.
 
 0.25.0 (released 2025-09-14)
 ============================
