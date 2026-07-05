@@ -19,6 +19,7 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          - '3.14'
     runs-on: 'ubuntu-24.04'
     env:
       # Enable fuzzing tests, other expensive tests.
@@ -37,20 +38,22 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Create Anaconda Environment
-        run: |
-          $CONDA/bin/conda create --yes --quiet --name env python=${{ matrix.py }}
+      - name: Setup Miniconda and Create Environment
+        uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
+        with:
+          activate-environment: env
+          python-version: "${{ matrix.py }}"
+          channels: conda-forge,defaults
 
       - name: Install Dependencies
         run: |
-          source $CONDA/bin/activate env
-          $CONDA/bin/conda install --yes --quiet --name env conda-build pip
+          conda install --yes --quiet --name base conda-build
+          conda install --yes --quiet --name env pip
           pip install --require-hashes -r ci/requirements.txt
 
       - name: Build and Test
         run: |
-          source $CONDA/bin/activate env
-          $CONDA/bin/conda build ci/conda
+          conda build ci/conda
           python ci/copy-conda-package.py
 
       - name: Upload Package
@@ -68,6 +71,7 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          - '3.14'
     runs-on: 'windows-2022'
     env:
       # Enable fuzzing tests, other expensive tests.
@@ -86,21 +90,23 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Create Anaconda Environment
-        run: |
-          C:\Miniconda\condabin\conda.bat create --yes --quiet --name env python=${{ matrix.py }}
+      - name: Setup Miniconda and Create Environment
+        uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
+        with:
+          activate-environment: env
+          python-version: "${{ matrix.py }}"
+          channels: conda-forge,defaults
 
       - name: Install Dependencies
         run: |
-          C:\Miniconda\condabin\conda.bat install --yes --quiet --name env conda-build pip
-          C:\Miniconda\envs\env\python.exe -m pip install --user --require-hashes -r ci/requirements.txt
+          conda install --yes --quiet --name base conda-build
+          conda install --yes --quiet --name env pip
+          python -m pip install --user --require-hashes -r ci/requirements.txt
 
-      # Disabled because we appear to be hitting https://github.com/conda/conda-build/issues/4835
-      # and we're not sure how to work around.
-      #- name: Build and Test
-      #  run: |
-      #    C:\Miniconda\envs\env\Scripts\conda-build.exe ci/conda
-      #    C:\Miniconda\envs\env\python.exe ci/copy-conda-package.py
+      - name: Build and Test
+        run: |
+          conda build ci/conda
+          python ci/copy-conda-package.py
 
       - name: Upload Package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
