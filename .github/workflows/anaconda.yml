@@ -19,7 +19,7 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
-    runs-on: 'ubuntu-22.04'
+    runs-on: 'ubuntu-24.04'
     env:
       # Enable fuzzing tests, other expensive tests.
       ZSTD_SLOW_TESTS: '1'

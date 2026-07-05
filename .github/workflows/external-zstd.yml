@@ -11,7 +11,7 @@ concurrency:
 permissions: { }
 jobs:
   linux:
-    runs-on: 'ubuntu-22.04'
+    runs-on: 'ubuntu-24.04'
     env:
       # Make all compile warnings fatal.
       ZSTD_WARNINGS_AS_ERRORS: '1'
