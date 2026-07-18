@@ -80,7 +80,7 @@ jobs:
 
       - name: Install Rust
         if: matrix.arch != 'x86'
-        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88 # v1
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # v1
         with:
           toolchain: stable
 
