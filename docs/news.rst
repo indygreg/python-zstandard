@@ -23,6 +23,9 @@ Changes
 * PyO3 Rust crate upgraded from 0.25 to 0.30.
 * ``BufferWithSegmentsCollection_init`` signature changed to match ``tp_init``
   requirements. (#282)
+* ``ZstdDecompressor.multi_decompress_to_buffer()`` now raises ``ValueError``
+  when empty input is given. This can avoid a division by 0 and crash. (#348,
+  #335)
 
 0.25.0 (released 2025-09-14)
 ============================
