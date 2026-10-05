@@ -6,7 +6,6 @@
 
 import os
 from typing import (
-    IO,
     BinaryIO,
     ByteString,
     Generator,
@@ -16,6 +15,11 @@ from typing import (
     Set,
     Tuple,
     Union,
+)
+
+from _typeshed import (
+    SupportsRead,
+    SupportsWrite,
 )
 
 FLUSH_BLOCK: int
@@ -278,15 +282,15 @@ class ZstdCompressor(object):
     ) -> ZstdCompressionChunker: ...
     def copy_stream(
         self,
-        ifh: IO[bytes],
-        ofh: IO[bytes],
+        ifh: SupportsRead[bytes],
+        ofh: SupportsWrite[bytes],
         size: int = ...,
         read_size: int = ...,
         write_size: int = ...,
     ) -> Tuple[int, int]: ...
     def stream_reader(
         self,
-        source: Union[IO[bytes], ByteString],
+        source: Union[SupportsRead[bytes], ByteString],
         size: int = ...,
         read_size: int = ...,
         *,
@@ -294,7 +298,7 @@ class ZstdCompressor(object):
     ) -> ZstdCompressionReader: ...
     def stream_writer(
         self,
-        writer: IO[bytes],
+        writer: SupportsWrite[bytes],
         size: int = ...,
         write_size: int = ...,
         write_return_read: bool = ...,
@@ -303,7 +307,7 @@ class ZstdCompressor(object):
     ) -> ZstdCompressionWriter: ...
     def read_to_iter(
         self,
-        reader: Union[IO[bytes], ByteString],
+        reader: Union[SupportsRead[bytes], ByteString],
         size: int = ...,
         read_size: int = ...,
         write_size: int = ...,
@@ -396,7 +400,7 @@ class ZstdDecompressor(object):
     ) -> bytes: ...
     def stream_reader(
         self,
-        source: Union[IO[bytes], ByteString],
+        source: Union[SupportsRead[bytes], ByteString],
         read_size: int = ...,
         read_across_frames: bool = ...,
         *,
@@ -407,14 +411,14 @@ class ZstdDecompressor(object):
     ) -> ZstdDecompressionObj: ...
     def read_to_iter(
         self,
-        reader: Union[IO[bytes], ByteString],
+        reader: Union[SupportsRead[bytes], ByteString],
         read_size: int = ...,
         write_size: int = ...,
         skip_bytes: int = ...,
     ) -> Generator[bytes, None, None]: ...
     def stream_writer(
         self,
-        writer: IO[bytes],
+        writer: SupportsWrite[bytes],
         write_size: int = ...,
         write_return_read: bool = ...,
         *,
@@ -422,8 +426,8 @@ class ZstdDecompressor(object):
     ) -> ZstdDecompressionWriter: ...
     def copy_stream(
         self,
-        ifh: IO[bytes],
-        ofh: IO[bytes],
+        ifh: SupportsRead[bytes],
+        ofh: SupportsWrite[bytes],
         read_size: int = ...,
         write_size: int = ...,
     ) -> Tuple[int, int]: ...
