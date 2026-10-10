@@ -71,7 +71,36 @@ jobs:
             image: 'musllinux_1_1'
           - py: 'cp314t'
             image: 'musllinux_1_1'
-    runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+        include:
+          # riscv64 has manylinux_2_39 only: no manylinux2014, no musllinux.
+          # The excludes above rule manylinux_2_28 out for everything below
+          # 3.14, so these go in as include entries rather than another image
+          # value on the main matrix.
+          - py: 'cp310'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp311'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp312'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp313'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp314'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+          - py: 'cp314t'
+            arch: 'riscv64'
+            abi: 'manylinux'
+            image: 'manylinux_2_39'
+    runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-24.04-arm' || matrix.arch == 'riscv64' && 'ubuntu-24.04-riscv' || 'ubuntu-24.04' }}
     env:
       CIBW_ARCHS: ${{ matrix.arch }}
       CIBW_BUILD: ${{ matrix.py }}-${{ matrix.abi }}_${{ matrix.arch }}
@@ -81,6 +110,7 @@ jobs:
       CIBW_MANYLINUX_AARCH64_IMAGE: quay.io/pypa/${{ matrix.image }}_aarch64:latest
       CIBW_MANYLINUX_I686_IMAGE: quay.io/pypa/${{ matrix.image }}_i686:latest
       CIBW_MANYLINUX_PPC64LE_IMAGE: quay.io/pypa/${{ matrix.image }}_ppc64le:latest
+      CIBW_MANYLINUX_RISCV64_IMAGE: quay.io/pypa/${{ matrix.image }}_riscv64:latest
       CIBW_MANYLINUX_S390X_IMAGE: quay.io/pypa/${{ matrix.image }}_s390x:latest
       CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/${{ matrix.image }}_x86_64:latest
       CIBW_MUSLLINUX_AARCH64_IMAGE: quay.io/pypa/${{ matrix.image }}_aarch64:latest
