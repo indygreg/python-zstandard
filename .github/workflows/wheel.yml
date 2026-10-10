@@ -10,7 +10,32 @@ concurrency:
   cancel-in-progress: true
 permissions: { }
 jobs:
-  linux:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-15-intel is an Intel runner, macos-14 is Apple silicon
+        os: [ubuntu-24.04, ubuntu-24.04-arm, ubuntu-24.04-riscv, windows-latest, windows-11-arm, macos-15-intel, macos-14]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v4.1.1
+        with:
+          extras: uv
+
+      - name: Upload Wheel
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  linux-musl:
+    if: false # temporary
     strategy:
       fail-fast: false
 
@@ -114,6 +139,7 @@ jobs:
           path: ./wheelhouse/*.whl
 
   macos:
+    if: false # temporary
     strategy:
       fail-fast: false
       matrix:
@@ -154,6 +180,7 @@ jobs:
           path: ./wheelhouse/*.whl
 
   windows:
+    if: false # temporary
     strategy:
       fail-fast: false
       matrix:
