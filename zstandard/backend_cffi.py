@@ -6,7 +6,7 @@
 
 """Python interface to the Zstandard (zstd) compression library."""
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import annotations
 
 # This should match what the C extension exports.
 __all__ = [
@@ -85,77 +85,100 @@ __all__ = [
 
 import io
 import os
+from typing import TYPE_CHECKING, Final, Literal
+
+if TYPE_CHECKING:
+    from types import TracebackType
+    from typing import Iterable, Iterator, NoReturn, Protocol, type_check_only
+
+    from _typeshed import (
+        ReadableBuffer,
+        SupportsLenAndGetItem,
+        SupportsRead,
+        SupportsWrite,
+        WriteableBuffer,
+    )
+    from typing_extensions import Self
+
+
+    @type_check_only
+    class _FrameParametersObject(Protocol):
+        frameContentSize: int
+        windowSize: int
+        dictID: int
+        checksumFlag: Literal[0, 1]
+
 
 from ._cffi import (  # type: ignore
     ffi,
     lib,
 )
 
-backend_features = set()  # type: ignore
+backend_features: Final[set[str]] = set()
 
-COMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_CStreamInSize()
-COMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_CStreamOutSize()
-DECOMPRESSION_RECOMMENDED_INPUT_SIZE = lib.ZSTD_DStreamInSize()
-DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE = lib.ZSTD_DStreamOutSize()
+COMPRESSION_RECOMMENDED_INPUT_SIZE: Final[int] = lib.ZSTD_CStreamInSize()
+COMPRESSION_RECOMMENDED_OUTPUT_SIZE: Final[int] = lib.ZSTD_CStreamOutSize()
+DECOMPRESSION_RECOMMENDED_INPUT_SIZE: Final[int] = lib.ZSTD_DStreamInSize()
+DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE: Final[int] = lib.ZSTD_DStreamOutSize()
 
 new_nonzero = ffi.new_allocator(should_clear_after_alloc=False)
 
-MAX_COMPRESSION_LEVEL = lib.ZSTD_maxCLevel()
-MAGIC_NUMBER = lib.ZSTD_MAGICNUMBER
-FRAME_HEADER = b"\x28\xb5\x2f\xfd"
-CONTENTSIZE_UNKNOWN = lib.ZSTD_CONTENTSIZE_UNKNOWN
-CONTENTSIZE_ERROR = lib.ZSTD_CONTENTSIZE_ERROR
-ZSTD_VERSION = (
+MAX_COMPRESSION_LEVEL: Final[int] = lib.ZSTD_maxCLevel()
+MAGIC_NUMBER: Final[int] = lib.ZSTD_MAGICNUMBER
+FRAME_HEADER: Final[bytes] = b"\x28\xb5\x2f\xfd"
+CONTENTSIZE_UNKNOWN: Final[int] = lib.ZSTD_CONTENTSIZE_UNKNOWN
+CONTENTSIZE_ERROR: Final[int] = lib.ZSTD_CONTENTSIZE_ERROR
+ZSTD_VERSION: Final[tuple[int, int, int]] = (
     lib.ZSTD_VERSION_MAJOR,
     lib.ZSTD_VERSION_MINOR,
     lib.ZSTD_VERSION_RELEASE,
 )
 
-BLOCKSIZELOG_MAX = lib.ZSTD_BLOCKSIZELOG_MAX
-BLOCKSIZE_MAX = lib.ZSTD_BLOCKSIZE_MAX
-WINDOWLOG_MIN = lib.ZSTD_WINDOWLOG_MIN
-WINDOWLOG_MAX = lib.ZSTD_WINDOWLOG_MAX
-CHAINLOG_MIN = lib.ZSTD_CHAINLOG_MIN
-CHAINLOG_MAX = lib.ZSTD_CHAINLOG_MAX
-HASHLOG_MIN = lib.ZSTD_HASHLOG_MIN
-HASHLOG_MAX = lib.ZSTD_HASHLOG_MAX
-MINMATCH_MIN = lib.ZSTD_MINMATCH_MIN
-MINMATCH_MAX = lib.ZSTD_MINMATCH_MAX
-SEARCHLOG_MIN = lib.ZSTD_SEARCHLOG_MIN
-SEARCHLOG_MAX = lib.ZSTD_SEARCHLOG_MAX
-SEARCHLENGTH_MIN = lib.ZSTD_MINMATCH_MIN
-SEARCHLENGTH_MAX = lib.ZSTD_MINMATCH_MAX
-TARGETLENGTH_MIN = lib.ZSTD_TARGETLENGTH_MIN
-TARGETLENGTH_MAX = lib.ZSTD_TARGETLENGTH_MAX
-LDM_MINMATCH_MIN = lib.ZSTD_LDM_MINMATCH_MIN
-LDM_MINMATCH_MAX = lib.ZSTD_LDM_MINMATCH_MAX
-LDM_BUCKETSIZELOG_MAX = lib.ZSTD_LDM_BUCKETSIZELOG_MAX
+BLOCKSIZELOG_MAX: Final[int] = lib.ZSTD_BLOCKSIZELOG_MAX
+BLOCKSIZE_MAX: Final[int] = lib.ZSTD_BLOCKSIZE_MAX
+WINDOWLOG_MIN: Final[int] = lib.ZSTD_WINDOWLOG_MIN
+WINDOWLOG_MAX: Final[int] = lib.ZSTD_WINDOWLOG_MAX
+CHAINLOG_MIN: Final[int] = lib.ZSTD_CHAINLOG_MIN
+CHAINLOG_MAX: Final[int] = lib.ZSTD_CHAINLOG_MAX
+HASHLOG_MIN: Final[int] = lib.ZSTD_HASHLOG_MIN
+HASHLOG_MAX: Final[int] = lib.ZSTD_HASHLOG_MAX
+MINMATCH_MIN: Final[int] = lib.ZSTD_MINMATCH_MIN
+MINMATCH_MAX: Final[int] = lib.ZSTD_MINMATCH_MAX
+SEARCHLOG_MIN: Final[int] = lib.ZSTD_SEARCHLOG_MIN
+SEARCHLOG_MAX: Final[int] = lib.ZSTD_SEARCHLOG_MAX
+SEARCHLENGTH_MIN: Final[int] = lib.ZSTD_MINMATCH_MIN
+SEARCHLENGTH_MAX: Final[int] = lib.ZSTD_MINMATCH_MAX
+TARGETLENGTH_MIN: Final[int] = lib.ZSTD_TARGETLENGTH_MIN
+TARGETLENGTH_MAX: Final[int] = lib.ZSTD_TARGETLENGTH_MAX
+LDM_MINMATCH_MIN: Final[int] = lib.ZSTD_LDM_MINMATCH_MIN
+LDM_MINMATCH_MAX: Final[int] = lib.ZSTD_LDM_MINMATCH_MAX
+LDM_BUCKETSIZELOG_MAX: Final[int] = lib.ZSTD_LDM_BUCKETSIZELOG_MAX
 
-STRATEGY_FAST = lib.ZSTD_fast
-STRATEGY_DFAST = lib.ZSTD_dfast
-STRATEGY_GREEDY = lib.ZSTD_greedy
-STRATEGY_LAZY = lib.ZSTD_lazy
-STRATEGY_LAZY2 = lib.ZSTD_lazy2
-STRATEGY_BTLAZY2 = lib.ZSTD_btlazy2
-STRATEGY_BTOPT = lib.ZSTD_btopt
-STRATEGY_BTULTRA = lib.ZSTD_btultra
-STRATEGY_BTULTRA2 = lib.ZSTD_btultra2
+STRATEGY_FAST: Final[int] = lib.ZSTD_fast
+STRATEGY_DFAST: Final[int] = lib.ZSTD_dfast
+STRATEGY_GREEDY: Final[int] = lib.ZSTD_greedy
+STRATEGY_LAZY: Final[int] = lib.ZSTD_lazy
+STRATEGY_LAZY2: Final[int] = lib.ZSTD_lazy2
+STRATEGY_BTLAZY2: Final[int] = lib.ZSTD_btlazy2
+STRATEGY_BTOPT: Final[int] = lib.ZSTD_btopt
+STRATEGY_BTULTRA: Final[int] = lib.ZSTD_btultra
+STRATEGY_BTULTRA2: Final[int] = lib.ZSTD_btultra2
 
-DICT_TYPE_AUTO = lib.ZSTD_dct_auto
-DICT_TYPE_RAWCONTENT = lib.ZSTD_dct_rawContent
-DICT_TYPE_FULLDICT = lib.ZSTD_dct_fullDict
+DICT_TYPE_AUTO: Final[Literal[0]] = lib.ZSTD_dct_auto
+DICT_TYPE_RAWCONTENT: Final[Literal[1]] = lib.ZSTD_dct_rawContent
+DICT_TYPE_FULLDICT: Final[Literal[2]] = lib.ZSTD_dct_fullDict
 
-FORMAT_ZSTD1 = lib.ZSTD_f_zstd1
-FORMAT_ZSTD1_MAGICLESS = lib.ZSTD_f_zstd1_magicless
+FORMAT_ZSTD1: Final[Literal[0]] = lib.ZSTD_f_zstd1
+FORMAT_ZSTD1_MAGICLESS: Final[Literal[1]] = lib.ZSTD_f_zstd1_magicless
 
-FLUSH_BLOCK = 0
-FLUSH_FRAME = 1
+FLUSH_BLOCK: Final[Literal[0]] = 0
+FLUSH_FRAME: Final[Literal[1]] = 1
 
-COMPRESSOBJ_FLUSH_FINISH = 0
-COMPRESSOBJ_FLUSH_BLOCK = 1
+COMPRESSOBJ_FLUSH_FINISH: Final[Literal[0]] = 0
+COMPRESSOBJ_FLUSH_BLOCK: Final[Literal[1]] = 1
 
 
-def _cpu_count():
+def _cpu_count() -> int:
     # os.cpu_count() was introducd in Python 3.4.
     try:
         return os.cpu_count() or 0
@@ -182,15 +205,15 @@ class BufferSegment:
     """
 
     @property
-    def offset(self):
+    def offset(self) -> int:
         """The byte offset of this segment within its parent buffer."""
         raise NotImplementedError()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Obtain the length of the segment, in bytes."""
         raise NotImplementedError()
 
-    def tobytes(self):
+    def tobytes(self) -> bytes:
         """Obtain bytes copy of this segment."""
         raise NotImplementedError()
 
@@ -228,14 +251,14 @@ class BufferWithSegments:
     """
 
     @property
-    def size(self):
+    def size(self) -> int:
         """Total sizein bytes of the backing buffer."""
         raise NotImplementedError()
 
-    def __len__(self):
+    def __len__(self) -> int:
         raise NotImplementedError()
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> BufferSegment:
         """Obtains a segment within the buffer.
 
         The returned object references memory within this buffer.
@@ -247,7 +270,7 @@ class BufferWithSegments:
         """
         raise NotImplementedError()
 
-    def segments(self):
+    def segments(self) -> BufferSegments:
         """Obtain the array of ``(offset, length)`` segments in the buffer.
 
         :return:
@@ -255,7 +278,7 @@ class BufferWithSegments:
         """
         raise NotImplementedError()
 
-    def tobytes(self):
+    def tobytes(self) -> bytes:
         """Obtain bytes copy of this instance."""
         raise NotImplementedError()
 
@@ -273,11 +296,11 @@ class BufferWithSegmentsCollection:
     and ``b[4]`` access segments from the second.
     """
 
-    def __len__(self):
+    def __len__(self) -> int:
         """The number of segments within all ``BufferWithSegments``."""
         raise NotImplementedError()
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> BufferSegment:
         """Obtain the ``BufferSegment`` at an offset."""
         raise NotImplementedError()
 
@@ -286,7 +309,7 @@ class ZstdError(Exception):
     pass
 
 
-def _zstd_error(zresult):
+def _zstd_error(zresult) -> str:
     # Resolves to bytes on Python 2 and 3. We use the string for formatting
     # into error messages, which will be literal unicode. So convert it to
     # unicode.
@@ -330,7 +353,7 @@ def _make_cctx_params(params):
     return res
 
 
-class ZstdCompressionParameters(object):
+class ZstdCompressionParameters:
     """Low-level zstd compression parameters.
 
     This type represents a collection of parameters to control how zstd
@@ -368,7 +391,9 @@ class ZstdCompressionParameters(object):
     """
 
     @staticmethod
-    def from_level(level, source_size=0, dict_size=0, **kwargs):
+    def from_level(
+        level: int, source_size: int = 0, dict_size: int = 0, **kwargs: int
+    ) -> ZstdCompressionParameters:
         """Create compression parameters from a compression level.
 
         :param level:
@@ -400,28 +425,28 @@ class ZstdCompressionParameters(object):
 
     def __init__(
         self,
-        format=0,
-        compression_level=0,
-        window_log=0,
-        hash_log=0,
-        chain_log=0,
-        search_log=0,
-        min_match=0,
-        target_length=0,
-        strategy=-1,
-        write_content_size=1,
-        write_checksum=0,
-        write_dict_id=0,
-        job_size=0,
-        overlap_log=-1,
-        force_max_window=0,
-        enable_ldm=0,
-        ldm_hash_log=0,
-        ldm_min_match=0,
-        ldm_bucket_size_log=0,
-        ldm_hash_rate_log=-1,
-        threads=0,
-    ):
+        format: int = 0,
+        compression_level: int = 0,
+        window_log: int = 0,
+        hash_log: int = 0,
+        chain_log: int = 0,
+        search_log: int = 0,
+        min_match: int = 0,
+        target_length: int = 0,
+        strategy: int = -1,
+        write_content_size: int = 1,
+        write_checksum: int = 0,
+        write_dict_id: int = 0,
+        job_size: int = 0,
+        overlap_log: int = -1,
+        force_max_window: int = 0,
+        enable_ldm: int = 0,
+        ldm_hash_log: int = 0,
+        ldm_min_match: int = 0,
+        ldm_bucket_size_log: int = 0,
+        ldm_hash_rate_log: int = -1,
+        threads: int = 0,
+    ) -> None:
         params = lib.ZSTD_createCCtxParams()
         if params == ffi.NULL:
             raise MemoryError()
@@ -489,107 +514,107 @@ class ZstdCompressionParameters(object):
         )
 
     @property
-    def format(self):
+    def format(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_format)
 
     @property
-    def compression_level(self):
+    def compression_level(self) -> int:
         return _get_compression_parameter(
             self._params, lib.ZSTD_c_compressionLevel
         )
 
     @property
-    def window_log(self):
+    def window_log(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_windowLog)
 
     @property
-    def hash_log(self):
+    def hash_log(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_hashLog)
 
     @property
-    def chain_log(self):
+    def chain_log(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_chainLog)
 
     @property
-    def search_log(self):
+    def search_log(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_searchLog)
 
     @property
-    def min_match(self):
+    def min_match(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_minMatch)
 
     @property
-    def target_length(self):
+    def target_length(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_targetLength)
 
     @property
-    def strategy(self):
+    def strategy(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_strategy)
 
     @property
-    def write_content_size(self):
+    def write_content_size(self) -> int:
         return _get_compression_parameter(
             self._params, lib.ZSTD_c_contentSizeFlag
         )
 
     @property
-    def write_checksum(self):
+    def write_checksum(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_checksumFlag)
 
     @property
-    def write_dict_id(self):
+    def write_dict_id(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_dictIDFlag)
 
     @property
-    def job_size(self):
+    def job_size(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_jobSize)
 
     @property
-    def overlap_log(self):
+    def overlap_log(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_overlapLog)
 
     @property
-    def force_max_window(self):
+    def force_max_window(self) -> int:
         return _get_compression_parameter(
             self._params, lib.ZSTD_c_forceMaxWindow
         )
 
     @property
-    def enable_ldm(self):
+    def enable_ldm(self) -> int:
         return _get_compression_parameter(
             self._params, lib.ZSTD_c_enableLongDistanceMatching
         )
 
     @property
-    def ldm_hash_log(self):
+    def ldm_hash_log(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_ldmHashLog)
 
     @property
-    def ldm_min_match(self):
+    def ldm_min_match(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_ldmMinMatch)
 
     @property
-    def ldm_bucket_size_log(self):
+    def ldm_bucket_size_log(self) -> int:
         return _get_compression_parameter(
             self._params, lib.ZSTD_c_ldmBucketSizeLog
         )
 
     @property
-    def ldm_hash_rate_log(self):
+    def ldm_hash_rate_log(self) -> int:
         return _get_compression_parameter(
             self._params, lib.ZSTD_c_ldmHashRateLog
         )
 
     @property
-    def threads(self):
+    def threads(self) -> int:
         return _get_compression_parameter(self._params, lib.ZSTD_c_nbWorkers)
 
-    def estimated_compression_context_size(self):
+    def estimated_compression_context_size(self) -> int:
         """Estimated size in bytes needed to compress with these parameters."""
         return lib.ZSTD_estimateCCtxSize_usingCCtxParams(self._params)
 
 
-def estimate_decompression_context_size():
+def estimate_decompression_context_size() -> int:
     """Estimate the memory size requirements for a decompressor instance.
 
     :return:
@@ -598,7 +623,7 @@ def estimate_decompression_context_size():
     return lib.ZSTD_estimateDCtxSize()
 
 
-def _set_compression_parameter(params, param, value):
+def _set_compression_parameter(params, param: int, value: int) -> None:
     zresult = lib.ZSTD_CCtxParams_setParameter(params, param, value)
     if lib.ZSTD_isError(zresult):
         raise ZstdError(
@@ -607,7 +632,7 @@ def _set_compression_parameter(params, param, value):
         )
 
 
-def _get_compression_parameter(params, param):
+def _get_compression_parameter(params, param: int) -> int:
     result = ffi.new("int *")
 
     zresult = lib.ZSTD_CCtxParams_getParameter(params, param, result)
@@ -620,7 +645,7 @@ def _get_compression_parameter(params, param):
     return result[0]
 
 
-class ZstdCompressionWriter(object):
+class ZstdCompressionWriter:
     """Writable compressing stream wrapper.
 
     ``ZstdCompressionWriter`` is a write-only stream interface for writing
@@ -727,14 +752,14 @@ class ZstdCompressionWriter(object):
 
     def __init__(
         self,
-        compressor,
-        writer,
-        source_size,
-        write_size,
-        write_return_read,
-        closefd=True,
-    ):
-        self._compressor = compressor
+        compressor: ZstdCompressor,
+        writer: SupportsWrite,
+        source_size: int,
+        write_size: int,
+        write_return_read: bool,
+        closefd: bool = True,
+    ) -> None:
+        self._compressor: ZstdCompressor | None = compressor
         self._writer = writer
         self._write_size = write_size
         self._write_return_read = bool(write_return_read)
@@ -756,7 +781,7 @@ class ZstdCompressionWriter(object):
                 "error setting source size: %s" % _zstd_error(zresult)
             )
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -766,30 +791,35 @@ class ZstdCompressionWriter(object):
         self._entered = True
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type | None,
+        exc_value: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
         self._entered = False
         self.close()
         self._compressor = None
 
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def __next__(self):
+    def __next__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def memory_size(self):
-        return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)
+    def memory_size(self) -> int:
+        return lib.ZSTD_sizeof_CCtx(self._compressor._cctx)  # type: ignore[union-attr]
 
-    def fileno(self):
+    def fileno(self) -> int:
         f = getattr(self._writer, "fileno", None)
         if f:
             return f()
         else:
             raise OSError("fileno not available on underlying writer")
 
-    def close(self):
+    def close(self) -> None:
         if self._closed:
             return
 
@@ -806,46 +836,46 @@ class ZstdCompressionWriter(object):
             f()
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self._closed
 
-    def isatty(self):
+    def isatty(self) -> Literal[False]:
         return False
 
-    def readable(self):
+    def readable(self) -> Literal[False]:
         return False
 
-    def readline(self, size=-1):
+    def readline(self, size: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readlines(self, hint=-1):
+    def readlines(self, hint: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def seek(self, offset, whence=None):
+    def seek(self, offset: int, whence: int | None = None) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def seekable(self):
+    def seekable(self) -> Literal[False]:
         return False
 
-    def truncate(self, size=None):
+    def truncate(self, size: int | None = None) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def writable(self):
+    def writable(self) -> Literal[True]:
         return True
 
-    def writelines(self, lines):
+    def writelines(self, lines: Iterable[ReadableBuffer]) -> NoReturn:
         raise NotImplementedError("writelines() is not yet implemented")
 
-    def read(self, size=-1):
+    def read(self, size: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readall(self):
+    def readall(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readinto(self, b):
+    def readinto(self, b: WriteableBuffer) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def write(self, data):
+    def write(self, data: ReadableBuffer) -> int:
         """Send data to the compressor and possibly to the inner stream."""
         if self._closed:
             raise ValueError("stream is closed")
@@ -864,7 +894,7 @@ class ZstdCompressionWriter(object):
 
         while in_buffer.pos < in_buffer.size:
             zresult = lib.ZSTD_compressStream2(
-                self._compressor._cctx,
+                self._compressor._cctx,  # type: ignore[union-attr]
                 out_buffer,
                 in_buffer,
                 lib.ZSTD_e_continue,
@@ -887,7 +917,7 @@ class ZstdCompressionWriter(object):
         else:
             return total_write
 
-    def flush(self, flush_mode=FLUSH_BLOCK):
+    def flush(self, flush_mode: Literal[0, 1] = FLUSH_BLOCK) -> int:
         """Evict data from compressor's internal state and write it to inner stream.
 
         Calling this method may result in 0 or more ``write()`` calls to the
@@ -931,7 +961,10 @@ class ZstdCompressionWriter(object):
 
         while True:
             zresult = lib.ZSTD_compressStream2(
-                self._compressor._cctx, out_buffer, in_buffer, flush
+                self._compressor._cctx,  # type: ignore[union-attr]
+                out_buffer,
+                in_buffer,
+                flush,
             )
             if lib.ZSTD_isError(zresult):
                 raise ZstdError(
@@ -955,11 +988,11 @@ class ZstdCompressionWriter(object):
 
         return total_write
 
-    def tell(self):
+    def tell(self) -> int:
         return self._bytes_compressed
 
 
-class ZstdCompressionObj(object):
+class ZstdCompressionObj:
     """A compressor conforming to the API in Python's standard library.
 
     This type implements an API similar to compression types in Python's
@@ -1018,8 +1051,10 @@ class ZstdCompressionObj(object):
     """
 
     def __init__(
-        self, compressor, write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE
-    ):
+        self,
+        compressor: ZstdCompressor,
+        write_size: int = COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ) -> None:
         self._compressor = compressor
         self._out = ffi.new("ZSTD_outBuffer *")
         self._dst_buffer = ffi.new("char[]", write_size)
@@ -1028,7 +1063,7 @@ class ZstdCompressionObj(object):
         self._out.pos = 0
         self._finished = False
 
-    def compress(self, data):
+    def compress(self, data: bytes | bytearray | memoryview) -> bytes:
         """Send data to the compressor.
 
         This method receives bytes to feed to the compressor and returns
@@ -1070,7 +1105,7 @@ class ZstdCompressionObj(object):
 
         return b"".join(chunks)
 
-    def flush(self, flush_mode=COMPRESSOBJ_FLUSH_FINISH):
+    def flush(self, flush_mode: Literal[0, 1] = COMPRESSOBJ_FLUSH_FINISH) -> bytes:
         """Emit data accumulated in the compressor that hasn't been outputted yet.
 
         The ``flush_mode`` argument controls how to end the stream.
@@ -1138,7 +1173,7 @@ class ZstdCompressionObj(object):
         return b"".join(chunks)
 
 
-class ZstdCompressionChunker(object):
+class ZstdCompressionChunker:
     """Compress data to uniformly sized chunks.
 
     This type allows you to iteratively feed chunks of data into a compressor
@@ -1191,7 +1226,7 @@ class ZstdCompressionChunker(object):
     there is less memory allocation/copying overhead.
     """
 
-    def __init__(self, compressor, chunk_size):
+    def __init__(self, compressor: ZstdCompressor, chunk_size: int) -> None:
         self._compressor = compressor
         self._out = ffi.new("ZSTD_outBuffer *")
         self._dst_buffer = ffi.new("char[]", chunk_size)
@@ -1205,7 +1240,7 @@ class ZstdCompressionChunker(object):
         self._in.pos = 0
         self._finished = False
 
-    def compress(self, data):
+    def compress(self, data: ReadableBuffer) -> Iterator[bytes]:
         """Feed new input data into the compressor.
 
         :param data:
@@ -1250,7 +1285,7 @@ class ZstdCompressionChunker(object):
                 yield ffi.buffer(self._out.dst, self._out.pos)[:]
                 self._out.pos = 0
 
-    def flush(self):
+    def flush(self) -> Iterator[bytes]:
         """Flushes all data currently in the compressor.
 
         :return:
@@ -1281,7 +1316,7 @@ class ZstdCompressionChunker(object):
             if not zresult:
                 return
 
-    def finish(self):
+    def finish(self) -> Iterator[bytes]:
         """Signals the end of input data.
 
         No new data can be compressed after this method is called.
@@ -1318,7 +1353,7 @@ class ZstdCompressionChunker(object):
                 return
 
 
-class ZstdCompressionReader(object):
+class ZstdCompressionReader:
     """Readable compressing stream wrapper.
 
     ``ZstdCompressionReader`` is a read-only stream interface for obtaining
@@ -1385,9 +1420,15 @@ class ZstdCompressionReader(object):
     ...         ...
     """
 
-    def __init__(self, compressor, source, read_size, closefd=True):
-        self._compressor = compressor
-        self._source = source
+    def __init__(
+        self,
+        compressor: ZstdCompressor,
+        source: ReadableBuffer | SupportsRead[bytes],
+        read_size: int,
+        closefd: bool = True,
+    ) -> None:
+        self._compressor: ZstdCompressor | None = compressor
+        self._source: ReadableBuffer | SupportsRead[bytes] | None = source
         self._read_size = read_size
         self._closefd = closefd
         self._entered = False
@@ -1400,7 +1441,7 @@ class ZstdCompressionReader(object):
         # Holds a ref so backing bytes in self._in_buffer stay alive.
         self._source_buffer = None
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         if self._entered:
             raise ValueError("cannot __enter__ multiple times")
 
@@ -1410,7 +1451,12 @@ class ZstdCompressionReader(object):
         self._entered = True
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type | None,
+        exc_value: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
         self._entered = False
         self._compressor = None
         self.close()
@@ -1418,34 +1464,34 @@ class ZstdCompressionReader(object):
 
         return False
 
-    def readable(self):
+    def readable(self) -> Literal[True]:
         return True
 
-    def writable(self):
+    def writable(self) -> Literal[False]:
         return False
 
-    def seekable(self):
+    def seekable(self) -> Literal[False]:
         return False
 
-    def readline(self):
+    def readline(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readlines(self):
+    def readlines(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def write(self, data):
+    def write(self, data: object) -> NoReturn:
         raise OSError("stream is not writable")
 
-    def writelines(self, ignored):
+    def writelines(self, ignored: object) -> NoReturn:
         raise OSError("stream is not writable")
 
-    def isatty(self):
+    def isatty(self) -> Literal[False]:
         return False
 
-    def flush(self):
+    def flush(self) -> None:
         return None
 
-    def close(self):
+    def close(self) -> None:
         if self._closed:
             return
 
@@ -1456,13 +1502,13 @@ class ZstdCompressionReader(object):
             f()
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self._closed
 
-    def tell(self):
+    def tell(self) -> int:
         return self._bytes_compressed
 
-    def readall(self):
+    def readall(self) -> bytes:
         chunks = []
 
         while True:
@@ -1474,10 +1520,10 @@ class ZstdCompressionReader(object):
 
         return b"".join(chunks)
 
-    def __iter__(self):
+    def __iter__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def __next__(self):
+    def __next__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
     next = __next__
@@ -1510,7 +1556,7 @@ class ZstdCompressionReader(object):
         old_pos = out_buffer.pos
 
         zresult = lib.ZSTD_compressStream2(
-            self._compressor._cctx,
+            self._compressor._cctx,  # type: ignore[union-attr]
             out_buffer,
             self._in_buffer,
             lib.ZSTD_e_continue,
@@ -1532,7 +1578,7 @@ class ZstdCompressionReader(object):
 
         return out_buffer.pos and out_buffer.pos == out_buffer.size
 
-    def read(self, size=-1):
+    def read(self, size: int = -1) -> bytes:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -1565,7 +1611,10 @@ class ZstdCompressionReader(object):
         old_pos = out_buffer.pos
 
         zresult = lib.ZSTD_compressStream2(
-            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+            self._compressor._cctx,  # type: ignore[union-attr]
+            out_buffer,
+            self._in_buffer,
+            lib.ZSTD_e_end,
         )
 
         self._bytes_compressed += out_buffer.pos - old_pos
@@ -1580,7 +1629,7 @@ class ZstdCompressionReader(object):
 
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
-    def read1(self, size=-1):
+    def read1(self, size: int = -1) -> bytes:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -1631,7 +1680,10 @@ class ZstdCompressionReader(object):
         old_pos = out_buffer.pos
 
         zresult = lib.ZSTD_compressStream2(
-            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+            self._compressor._cctx,  # type: ignore[union-attr]
+            out_buffer,
+            self._in_buffer,
+            lib.ZSTD_e_end,
         )
 
         self._bytes_compressed += out_buffer.pos - old_pos
@@ -1646,7 +1698,7 @@ class ZstdCompressionReader(object):
 
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
-    def readinto(self, b):
+    def readinto(self, b: WriteableBuffer) -> int:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -1672,7 +1724,10 @@ class ZstdCompressionReader(object):
         # EOF.
         old_pos = out_buffer.pos
         zresult = lib.ZSTD_compressStream2(
-            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+            self._compressor._cctx,  # type: ignore[union-attr]
+            out_buffer,
+            self._in_buffer,
+            lib.ZSTD_e_end,
         )
 
         self._bytes_compressed += out_buffer.pos - old_pos
@@ -1687,7 +1742,7 @@ class ZstdCompressionReader(object):
 
         return out_buffer.pos
 
-    def readinto1(self, b):
+    def readinto1(self, b: WriteableBuffer) -> int:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -1720,7 +1775,10 @@ class ZstdCompressionReader(object):
         old_pos = out_buffer.pos
 
         zresult = lib.ZSTD_compressStream2(
-            self._compressor._cctx, out_buffer, self._in_buffer, lib.ZSTD_e_end
+            self._compressor._cctx,  # type: ignore[union-attr]
+            out_buffer,
+            self._in_buffer,
+            lib.ZSTD_e_end,
         )
 
         self._bytes_compressed += out_buffer.pos - old_pos
@@ -1736,7 +1794,7 @@ class ZstdCompressionReader(object):
         return out_buffer.pos
 
 
-class ZstdCompressor(object):
+class ZstdCompressor:
     """
     Create an object used to perform Zstandard compression.
 
@@ -1806,14 +1864,14 @@ class ZstdCompressor(object):
 
     def __init__(
         self,
-        level=3,
-        dict_data=None,
-        compression_params=None,
-        write_checksum=None,
-        write_content_size=None,
-        write_dict_id=None,
-        threads=0,
-    ):
+        level: int = 3,
+        dict_data: ZstdCompressionDict | None = None,
+        compression_params: ZstdCompressionParameters | None = None,
+        write_checksum: bool | None = None,
+        write_content_size: bool | None = None,
+        write_dict_id: bool | None = None,
+        threads: int = 0,
+    ) -> None:
         if level > lib.ZSTD_maxCLevel():
             raise ValueError(
                 "level must be less than %d" % lib.ZSTD_maxCLevel()
@@ -1893,7 +1951,7 @@ class ZstdCompressor(object):
                 cctx, lib.ZSTD_freeCCtx, size=lib.ZSTD_sizeof_CCtx(cctx)
             )
 
-    def _setup_cctx(self):
+    def _setup_cctx(self) -> None:
         zresult = lib.ZSTD_CCtx_setParametersUsingCCtxParams(
             self._cctx, self._params
         )
@@ -1923,7 +1981,7 @@ class ZstdCompressor(object):
                     % _zstd_error(zresult)
                 )
 
-    def memory_size(self):
+    def memory_size(self) -> int:
         """Obtain the memory usage of this compressor, in bytes.
 
         >>> cctx = zstandard.ZstdCompressor()
@@ -1931,7 +1989,7 @@ class ZstdCompressor(object):
         """
         return lib.ZSTD_sizeof_CCtx(self._cctx)
 
-    def compress(self, data):
+    def compress(self, data: ReadableBuffer) -> bytes:
         """
         Compress data in a single operation.
 
@@ -1986,7 +2044,7 @@ class ZstdCompressor(object):
 
         return ffi.buffer(out, out_buffer.pos)[:]
 
-    def compressobj(self, size=-1):
+    def compressobj(self, size: int = -1) -> ZstdCompressionObj:
         """
         Obtain a compressor exposing the Python standard library compression API.
 
@@ -2012,7 +2070,11 @@ class ZstdCompressor(object):
 
         return cobj
 
-    def chunker(self, size=-1, chunk_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE):
+    def chunker(
+        self,
+        size: int = -1,
+        chunk_size: int = COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ) -> ZstdCompressionChunker:
         """
         Create an object for iterative compressing to same-sized chunks.
 
@@ -2041,12 +2103,12 @@ class ZstdCompressor(object):
 
     def copy_stream(
         self,
-        ifh,
-        ofh,
-        size=-1,
-        read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
-        write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-    ):
+        ifh: SupportsRead[bytes],
+        ofh: SupportsWrite[bytes],
+        size: int = -1,
+        read_size: int = COMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size: int = COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ) -> tuple[int, int]:
         """
         Copy data between 2 streams while compressing it.
 
@@ -2163,11 +2225,11 @@ class ZstdCompressor(object):
 
     def stream_reader(
         self,
-        source,
-        size=-1,
-        read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
-        closefd=True,
-    ):
+        source: ReadableBuffer | SupportsRead[bytes],
+        size: int = -1,
+        read_size: int = COMPRESSION_RECOMMENDED_INPUT_SIZE,
+        closefd: bool = True,
+    ) -> ZstdCompressionReader:
         """
         Wrap a readable source with a stream that can read compressed data.
 
@@ -2196,7 +2258,7 @@ class ZstdCompressor(object):
         lib.ZSTD_CCtx_reset(self._cctx, lib.ZSTD_reset_session_only)
 
         try:
-            size = len(source)
+            size = len(source)  # type: ignore[arg-type]
         except Exception:
             pass
 
@@ -2213,12 +2275,12 @@ class ZstdCompressor(object):
 
     def stream_writer(
         self,
-        writer,
-        size=-1,
-        write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-        write_return_read=True,
-        closefd=True,
-    ):
+        writer: SupportsWrite[bytes],
+        size: int = -1,
+        write_size: int = COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        write_return_read: bool = True,
+        closefd: bool = True,
+    ) -> ZstdCompressionWriter:
         """
         Create a stream that will write compressed data into another stream.
 
@@ -2260,11 +2322,11 @@ class ZstdCompressor(object):
 
     def read_to_iter(
         self,
-        reader,
-        size=-1,
-        read_size=COMPRESSION_RECOMMENDED_INPUT_SIZE,
-        write_size=COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-    ):
+        reader: SupportsRead[bytes] | SupportsLenAndGetItem[bytes] | bytes,
+        size: int = -1,
+        read_size: int = COMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size: int = COMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ) -> Iterator[bytes]:
         """
         Read uncompressed data from a reader and return an iterator
 
@@ -2370,11 +2432,11 @@ class ZstdCompressor(object):
 
             # Collect input data.
             if have_read:
-                read_result = reader.read(read_size)
+                read_result = reader.read(read_size)  # type: ignore[union-attr]
             else:
-                remaining = len(reader) - buffer_offset
+                remaining = len(reader) - buffer_offset  # type: ignore[arg-type]
                 slice_size = min(remaining, read_size)
-                read_result = reader[buffer_offset : buffer_offset + slice_size]
+                read_result = reader[buffer_offset : buffer_offset + slice_size]  # type: ignore[index]
                 buffer_offset += slice_size
 
             # No new input data. Break out of the read loop.
@@ -2427,7 +2489,11 @@ class ZstdCompressor(object):
             if zresult == 0:
                 break
 
-    def multi_compress_to_buffer(self, data, threads=-1):
+    def multi_compress_to_buffer(
+        self,
+        data: BufferWithSegmentsCollection | BufferWithSegments | list[bytes],
+        threads: int = -1,
+    ) -> BufferWithSegmentsCollection:
         """
         Compress multiple pieces of data as a single function call.
 
@@ -2476,7 +2542,7 @@ class ZstdCompressor(object):
         """
         raise NotImplementedError()
 
-    def frame_progression(self):
+    def frame_progression(self) -> tuple[int, int, int]:
         """
         Return information on how much work the compressor has done.
 
@@ -2490,7 +2556,7 @@ class ZstdCompressor(object):
         return progression.ingested, progression.consumed, progression.produced
 
 
-class FrameParameters(object):
+class FrameParameters:
     """Information about a zstd frame.
 
     Instances have the following attributes:
@@ -2513,14 +2579,19 @@ class FrameParameters(object):
        of the frame.
     """
 
-    def __init__(self, fparams):
+    content_size: Final[int]
+    window_size: Final[int]
+    dict_id: Final[int]
+    has_checksum: Final[bool]
+
+    def __init__(self, fparams: _FrameParametersObject) -> None:
         self.content_size = fparams.frameContentSize
         self.window_size = fparams.windowSize
         self.dict_id = fparams.dictID
         self.has_checksum = bool(fparams.checksumFlag)
 
 
-def frame_content_size(data):
+def frame_content_size(data: ReadableBuffer) -> int:
     """Obtain the decompressed size of a frame.
 
     The returned value is usually accurate. But strictly speaking it should
@@ -2541,7 +2612,7 @@ def frame_content_size(data):
         return size
 
 
-def frame_header_size(data):
+def frame_header_size(data: ReadableBuffer) -> int:
     """Obtain the size of a frame header.
 
     :return:
@@ -2558,7 +2629,9 @@ def frame_header_size(data):
     return zresult
 
 
-def get_frame_parameters(data, format=FORMAT_ZSTD1):
+def get_frame_parameters(
+    data: ReadableBuffer, format: int = FORMAT_ZSTD1
+) -> FrameParameters:
     """
     Parse a zstd frame header into frame parameters.
 
@@ -2593,7 +2666,7 @@ def get_frame_parameters(data, format=FORMAT_ZSTD1):
     return FrameParameters(params[0])
 
 
-class ZstdCompressionDict(object):
+class ZstdCompressionDict:
     """Represents a computed compression dictionary.
 
     Instances are obtained by calling :py:func:`train_dictionary` or by
@@ -2674,7 +2747,16 @@ class ZstdCompressionDict(object):
        Type of dictionary. One of the ``DICT_TYPE_*`` constants.
     """
 
-    def __init__(self, data, dict_type=DICT_TYPE_AUTO, k=0, d=0):
+    k: int
+    d: int
+
+    def __init__(
+        self,
+        data: bytes,
+        dict_type: Literal[0, 1, 2] = DICT_TYPE_AUTO,
+        k: int = 0,
+        d: int = 0,
+    ) -> None:
         assert isinstance(data, bytes)
         self._data = data
         self.k = k
@@ -2693,18 +2775,22 @@ class ZstdCompressionDict(object):
         self._dict_type = dict_type
         self._cdict = None
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._data)
 
-    def dict_id(self):
+    def dict_id(self) -> int:
         """Obtain the integer ID of the dictionary."""
         return int(lib.ZDICT_getDictID(self._data, len(self._data)))
 
-    def as_bytes(self):
+    def as_bytes(self) -> bytes:
         """Obtain the ``bytes`` representation of the dictionary."""
         return self._data
 
-    def precompute_compress(self, level=0, compression_params=None):
+    def precompute_compress(
+        self,
+        level: int = 0,
+        compression_params: ZstdCompressionParameters | None = None,
+    ) -> None:
         """Precompute a dictionary os it can be used by multiple compressors.
 
         Calling this method on an instance that will be used by multiple
@@ -2721,6 +2807,7 @@ class ZstdCompressionDict(object):
         if level:
             cparams = lib.ZSTD_getCParams(level, 0, len(self._data))
         else:
+            assert compression_params is not None
             cparams = ffi.new("ZSTD_compressionParameters")
             cparams.chainLog = compression_params.chain_log
             cparams.hashLog = compression_params.hash_log
@@ -2767,19 +2854,19 @@ class ZstdCompressionDict(object):
 
 
 def train_dictionary(
-    dict_size,
-    samples,
-    k=0,
-    d=0,
-    f=0,
-    split_point=0.0,
-    accel=0,
-    notifications=0,
-    dict_id=0,
-    level=0,
-    steps=0,
-    threads=0,
-):
+    dict_size: int,
+    samples: list[bytes],
+    k: int = 0,
+    d: int = 0,
+    f: int = 0,
+    split_point: float = 0.0,
+    accel: int = 0,
+    notifications: Literal[0, 1, 2, 3, 4] = 0,
+    dict_id: int = 0,
+    level: int = 0,
+    steps: int = 0,
+    threads: int = 0,
+) -> ZstdCompressionDict:
     """Train a dictionary from sample data using the COVER algorithm.
 
     A compression dictionary of size ``dict_size`` will be created from the
@@ -2909,7 +2996,7 @@ def train_dictionary(
     )
 
 
-class ZstdDecompressionObj(object):
+class ZstdDecompressionObj:
     """A standard library API compatible decompressor.
 
     This type implements a compressor that conforms to the API by other
@@ -2946,14 +3033,19 @@ class ZstdDecompressionObj(object):
        efficient as other APIs.
     """
 
-    def __init__(self, decompressor, write_size, read_across_frames):
-        self._decompressor = decompressor
+    def __init__(
+        self,
+        decompressor: ZstdDecompressor,
+        write_size: int,
+        read_across_frames: bool,
+    ) -> None:
+        self._decompressor: ZstdDecompressor | None = decompressor
         self._write_size = write_size
         self._finished = False
         self._read_across_frames = read_across_frames
         self._unused_input = b""
 
-    def decompress(self, data):
+    def decompress(self, data: ReadableBuffer) -> bytes:
         """Send compressed data to the decompressor and obtain decompressed data.
 
         :param data:
@@ -2985,7 +3077,9 @@ class ZstdDecompressionObj(object):
 
         while True:
             zresult = lib.ZSTD_decompressStream(
-                self._decompressor._dctx, out_buffer, in_buffer
+                self._decompressor._dctx,  # type: ignore[union-attr]
+                out_buffer,
+                in_buffer,
             )
             if lib.ZSTD_isError(zresult):
                 raise ZstdError(
@@ -3004,7 +3098,7 @@ class ZstdDecompressionObj(object):
                 # for retrieval.
                 self._finished = True
                 self._decompressor = None
-                self._unused_input = data[in_buffer.pos : in_buffer.size]
+                self._unused_input = data[in_buffer.pos : in_buffer.size]  # type: ignore[index]
                 break
             elif zresult == 0 and self._read_across_frames:
                 # We're at the end of a fully flushed frame and we can read more.
@@ -3030,7 +3124,7 @@ class ZstdDecompressionObj(object):
 
         return b"".join(chunks)
 
-    def flush(self, length=0):
+    def flush(self, length: int = 0) -> Literal[b""]:
         """Effectively a no-op.
 
         Implemented for compatibility with the standard library APIs.
@@ -3043,7 +3137,7 @@ class ZstdDecompressionObj(object):
         return b""
 
     @property
-    def unused_data(self):
+    def unused_data(self) -> bytes:
         """Bytes past the end of compressed data.
 
         If ``decompress()`` is fed additional data beyond the end of a zstd
@@ -3053,17 +3147,17 @@ class ZstdDecompressionObj(object):
         return self._unused_input
 
     @property
-    def unconsumed_tail(self):
+    def unconsumed_tail(self) -> Literal[b""]:
         """Data that has not yet been fed into the decompressor."""
         return b""
 
     @property
-    def eof(self):
+    def eof(self) -> bool:
         """Whether the end of the compressed data stream has been reached."""
         return self._finished
 
 
-class ZstdDecompressionReader(object):
+class ZstdDecompressionReader:
     """Read only decompressor that pull uncompressed data from another stream.
 
     This type provides a read-only stream interface for performing transparent
@@ -3128,14 +3222,14 @@ class ZstdDecompressionReader(object):
 
     def __init__(
         self,
-        decompressor,
-        source,
-        read_size,
-        read_across_frames,
-        closefd=True,
-    ):
-        self._decompressor = decompressor
-        self._source = source
+        decompressor: ZstdDecompressor,
+        source: ReadableBuffer | SupportsRead[bytes],
+        read_size: int,
+        read_across_frames: bool,
+        closefd: bool = True,
+    ) -> None:
+        self._decompressor: ZstdDecompressor | None = decompressor
+        self._source: ReadableBuffer | SupportsRead[bytes] | None = source
         self._read_size = read_size
         self._read_across_frames = bool(read_across_frames)
         self._closefd = bool(closefd)
@@ -3148,7 +3242,7 @@ class ZstdDecompressionReader(object):
         # Holds a ref to self._in_buffer.src.
         self._source_buffer = None
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         if self._entered:
             raise ValueError("cannot __enter__ multiple times")
 
@@ -3158,7 +3252,12 @@ class ZstdDecompressionReader(object):
         self._entered = True
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type | None,
+        exc_value: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
         self._entered = False
         self._decompressor = None
         self.close()
@@ -3166,34 +3265,34 @@ class ZstdDecompressionReader(object):
 
         return False
 
-    def readable(self):
+    def readable(self) -> Literal[True]:
         return True
 
-    def writable(self):
+    def writable(self) -> Literal[False]:
         return False
 
-    def seekable(self):
+    def seekable(self) -> Literal[False]:
         return False
 
-    def readline(self, size=-1):
+    def readline(self, size: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readlines(self, hint=-1):
+    def readlines(self, hint: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def write(self, data):
+    def write(self, data: bytes) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def writelines(self, lines):
+    def writelines(self, lines: Iterable[bytes]) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def isatty(self):
+    def isatty(self) -> Literal[False]:
         return False
 
-    def flush(self):
+    def flush(self) -> None:
         return None
 
-    def close(self):
+    def close(self) -> None:
         if self._closed:
             return None
 
@@ -3204,13 +3303,13 @@ class ZstdDecompressionReader(object):
             f()
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self._closed
 
-    def tell(self):
+    def tell(self) -> int:
         return self._bytes_decompressed
 
-    def readall(self):
+    def readall(self) -> bytes:
         chunks = []
 
         while True:
@@ -3222,10 +3321,10 @@ class ZstdDecompressionReader(object):
 
         return b"".join(chunks)
 
-    def __iter__(self):
+    def __iter__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def __next__(self):
+    def __next__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
     next = __next__
@@ -3287,7 +3386,7 @@ class ZstdDecompressionReader(object):
             and not self._read_across_frames
         )
 
-    def read(self, size=-1):
+    def read(self, size: int = -1) -> bytes:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3323,7 +3422,7 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
-    def readinto(self, b):
+    def readinto(self, b: WriteableBuffer) -> int:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3352,7 +3451,7 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return out_buffer.pos
 
-    def read1(self, size=-1):
+    def read1(self, size: int = -1) -> bytes:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3386,7 +3485,7 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
 
-    def readinto1(self, b):
+    def readinto1(self, b: WriteableBuffer) -> int:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3412,7 +3511,7 @@ class ZstdDecompressionReader(object):
         self._bytes_decompressed += out_buffer.pos
         return out_buffer.pos
 
-    def seek(self, pos, whence=os.SEEK_SET):
+    def seek(self, pos: int, whence: int = os.SEEK_SET) -> int:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3450,7 +3549,7 @@ class ZstdDecompressionReader(object):
         return self._bytes_decompressed
 
 
-class ZstdDecompressionWriter(object):
+class ZstdDecompressionWriter:
     """
     Write-only stream wrapper that performs decompression.
 
@@ -3501,12 +3600,12 @@ class ZstdDecompressionWriter(object):
 
     def __init__(
         self,
-        decompressor,
-        writer,
-        write_size,
-        write_return_read,
-        closefd=True,
-    ):
+        decompressor: ZstdDecompressor,
+        writer: SupportsWrite[bytes],
+        write_size: int,
+        write_return_read: bool,
+        closefd: bool = True,
+    ) -> None:
         decompressor._ensure_dctx()
 
         self._decompressor = decompressor
@@ -3518,7 +3617,7 @@ class ZstdDecompressionWriter(object):
         self._closing = False
         self._closed = False
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3529,22 +3628,27 @@ class ZstdDecompressionWriter(object):
 
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type | None,
+        exc_value: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
         self._entered = False
         self.close()
 
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def __next__(self):
+    def __next__(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def memory_size(self):
+    def memory_size(self) -> int:
         return lib.ZSTD_sizeof_DCtx(self._decompressor._dctx)
 
-    def close(self):
+    def close(self) -> None:
         if self._closed:
             return
 
@@ -3560,17 +3664,17 @@ class ZstdDecompressionWriter(object):
             f()
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self._closed
 
-    def fileno(self):
+    def fileno(self) -> int:
         f = getattr(self._writer, "fileno", None)
         if f:
             return f()
         else:
             raise OSError("fileno not available on underlying writer")
 
-    def flush(self):
+    def flush(self) -> None:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3578,46 +3682,46 @@ class ZstdDecompressionWriter(object):
         if f and not self._closing:
             return f()
 
-    def isatty(self):
+    def isatty(self) -> Literal[False]:
         return False
 
-    def readable(self):
+    def readable(self) -> Literal[False]:
         return False
 
-    def readline(self, size=-1):
+    def readline(self, size: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readlines(self, hint=-1):
+    def readlines(self, hint: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def seek(self, offset, whence=None):
+    def seek(self, offset: int, whence: int | None = None) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def seekable(self):
+    def seekable(self) -> Literal[False]:
         return False
 
-    def tell(self):
+    def tell(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def truncate(self, size=None):
+    def truncate(self, size: int | None = None) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def writable(self):
+    def writable(self) -> Literal[True]:
         return True
 
-    def writelines(self, lines):
+    def writelines(self, lines: Iterable[bytes]) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def read(self, size=-1):
+    def read(self, size: int = -1) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readall(self):
+    def readall(self) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def readinto(self, b):
+    def readinto(self, b: WriteableBuffer) -> NoReturn:
         raise io.UnsupportedOperation()
 
-    def write(self, data):
+    def write(self, data: ReadableBuffer) -> int:
         if self._closed:
             raise ValueError("stream is closed")
 
@@ -3658,7 +3762,7 @@ class ZstdDecompressionWriter(object):
             return total_write
 
 
-class ZstdDecompressor(object):
+class ZstdDecompressor:
     """
     Context for performing zstandard decompression.
 
@@ -3700,7 +3804,12 @@ class ZstdDecompressor(object):
        the 4 byte magic header. Not all decompression APIs support this mode.
     """
 
-    def __init__(self, dict_data=None, max_window_size=0, format=FORMAT_ZSTD1):
+    def __init__(
+        self,
+        dict_data: ZstdCompressionDict | None = None,
+        max_window_size: int = 0,
+        format: Literal[0, 1] = FORMAT_ZSTD1,
+    ) -> None:
         self._dict_data = dict_data
         self._max_window_size = max_window_size
         self._format = format
@@ -3720,7 +3829,7 @@ class ZstdDecompressor(object):
                 dctx, lib.ZSTD_freeDCtx, size=lib.ZSTD_sizeof_DCtx(dctx)
             )
 
-    def memory_size(self):
+    def memory_size(self) -> int:
         """Size of decompression context, in bytes.
 
         >>> dctx = zstandard.ZstdDecompressor()
@@ -3730,11 +3839,11 @@ class ZstdDecompressor(object):
 
     def decompress(
         self,
-        data,
-        max_output_size=0,
-        read_across_frames=False,
-        allow_extra_data=True,
-    ):
+        data: ReadableBuffer,
+        max_output_size: int = 0,
+        read_across_frames: bool = False,
+        allow_extra_data: bool = True,
+    ) -> bytes:
         """
         Decompress data in a single operation.
 
@@ -3876,11 +3985,11 @@ class ZstdDecompressor(object):
 
     def stream_reader(
         self,
-        source,
-        read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
-        read_across_frames=False,
-        closefd=True,
-    ):
+        source: ReadableBuffer | SupportsRead[bytes],
+        read_size: int = DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+        read_across_frames: bool = False,
+        closefd: bool = True,
+    ) -> ZstdDecompressionReader:
         """
         Read-only stream wrapper that performs decompression.
 
@@ -3913,9 +4022,9 @@ class ZstdDecompressor(object):
 
     def decompressobj(
         self,
-        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-        read_across_frames=False,
-    ):
+        write_size: int = DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        read_across_frames: bool = False,
+    ) -> ZstdDecompressionObj:
         """Obtain a standard library compatible incremental decompressor.
 
         See :py:class:`ZstdDecompressionObj` for more documentation
@@ -3939,11 +4048,11 @@ class ZstdDecompressor(object):
 
     def read_to_iter(
         self,
-        reader,
-        read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
-        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-        skip_bytes=0,
-    ):
+        reader: ReadableBuffer | SupportsRead[bytes],
+        read_size: int = DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size: int = DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        skip_bytes: int = 0,
+    ) -> Iterator[bytes]:
         """Read compressed data to an iterator of uncompressed chunks.
 
         This method will read data from ``reader``, feed it to a decompressor,
@@ -4013,7 +4122,7 @@ class ZstdDecompressor(object):
         elif hasattr(reader, "__getitem__"):
             have_read = False
             buffer_offset = 0
-            size = len(reader)
+            size = len(reader)  # type: ignore[arg-type]
         else:
             raise ValueError(
                 "must pass an object with a read() method or "
@@ -4022,7 +4131,7 @@ class ZstdDecompressor(object):
 
         if skip_bytes:
             if have_read:
-                reader.read(skip_bytes)
+                reader.read(skip_bytes)  # type: ignore[union-attr]
             else:
                 if skip_bytes > size:
                     raise ValueError("skip_bytes larger than first input chunk")
@@ -4043,11 +4152,11 @@ class ZstdDecompressor(object):
             assert out_buffer.pos == 0
 
             if have_read:
-                read_result = reader.read(read_size)
+                read_result = reader.read(read_size)  # type: ignore[union-attr]
             else:
                 remaining = size - buffer_offset
                 slice_size = min(remaining, read_size)
-                read_result = reader[buffer_offset : buffer_offset + slice_size]
+                read_result = reader[buffer_offset : buffer_offset + slice_size]  # type: ignore[index]
                 buffer_offset += slice_size
 
             # No new input. Break out of read loop.
@@ -4087,11 +4196,11 @@ class ZstdDecompressor(object):
 
     def stream_writer(
         self,
-        writer,
-        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-        write_return_read=True,
-        closefd=True,
-    ):
+        writer: SupportsWrite[bytes],
+        write_size: int = DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+        write_return_read: bool = True,
+        closefd: bool = True,
+    ) -> ZstdDecompressionWriter:
         """
         Push-based stream wrapper that performs decompression.
 
@@ -4129,11 +4238,11 @@ class ZstdDecompressor(object):
 
     def copy_stream(
         self,
-        ifh,
-        ofh,
-        read_size=DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
-        write_size=DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
-    ):
+        ifh: SupportsRead[bytes],
+        ofh: SupportsWrite[bytes],
+        read_size: int = DECOMPRESSION_RECOMMENDED_INPUT_SIZE,
+        write_size: int = DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE,
+    ) -> tuple[int, int]:
         """
         Copy data between streams, decompressing in the process.
 
@@ -4222,7 +4331,7 @@ class ZstdDecompressor(object):
 
         return total_read, total_write
 
-    def decompress_content_dict_chain(self, frames):
+    def decompress_content_dict_chain(self, frames: list[bytes]) -> bytes:
         """
         Decompress a series of frames using the content dictionary chaining technique.
 
@@ -4372,8 +4481,15 @@ class ZstdDecompressor(object):
         return ffi.buffer(last_buffer, len(last_buffer))[:]
 
     def multi_decompress_to_buffer(
-        self, frames, decompressed_sizes=None, threads=0
-    ):
+        self,
+        frames: (
+            BufferWithSegments
+            | BufferWithSegmentsCollection
+            | list[ReadableBuffer]
+        ),
+        decompressed_sizes: ReadableBuffer | None = None,
+        threads: int = 0,
+    ) -> BufferWithSegmentsCollection:
         """
         Decompress multiple zstd frames to output buffers as a single operation.
 
