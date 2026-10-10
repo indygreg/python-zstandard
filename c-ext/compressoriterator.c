@@ -62,7 +62,7 @@ feedcompressor:
             self->input.src = NULL;
             self->input.pos = 0;
             self->input.size = 0;
-            Py_DECREF(self->readResult);
+            Py_XDECREF(self->readResult);
             self->readResult = NULL;
         }
 

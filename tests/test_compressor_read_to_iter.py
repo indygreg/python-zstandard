@@ -1,4 +1,5 @@
 import io
+import random
 import unittest
 
 import zstandard as zstd
@@ -104,6 +105,40 @@ class TestCompressor_read_to_iter(unittest.TestCase):
             self.assertEqual(len(chunk), 1)
 
         self.assertEqual(source._read_count, len(source.getvalue()) + 1)
+
+    def test_read_buffer_small_output(self):
+        # Incompressible input spanning a block forces the iterator to resume
+        # with a partially consumed input buffer when output chunks are small.
+        data = random.Random(303).randbytes(131073)
+        expected = zstd.ZstdCompressor(level=3).compress(data)
+
+        for source in (
+            data,
+            bytearray(data),
+            memoryview(data),
+            io.BytesIO(data),
+        ):
+            for write_size in (1, 1024):
+                with self.subTest(source=type(source), write_size=write_size):
+                    if hasattr(source, "seek"):
+                        source.seek(0)
+                    it = zstd.ZstdCompressor(level=3).read_to_iter(
+                        source,
+                        size=len(data),
+                        read_size=len(data),
+                        write_size=write_size,
+                    )
+                    chunks = list(it)
+                    self.assertGreater(len(chunks), 1)
+                    self.assertTrue(all(len(c) <= write_size for c in chunks))
+                    compressed = b"".join(chunks)
+                    self.assertEqual(compressed, expected)
+                    self.assertEqual(
+                        zstd.ZstdDecompressor().decompress(compressed), data
+                    )
+                    for _ in range(2):
+                        with self.assertRaises(StopIteration):
+                            next(it)
 
     def test_multithreaded(self):
         source = io.BytesIO()
