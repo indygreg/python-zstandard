@@ -20,7 +20,11 @@ Backwards Compatibility Notes
 Changes
 -------
 
-* PyO3 Rust crate upgraded from 0.25 to 0.29.
+* Python 3.15 support. We build wheels (including free-threaded ``cp315t``
+  wheels) and have CI test coverage. Like 3.14, Linux wheels are built with
+  ``manylinux_2_28`` and ``musllinux_1_2``.
+* PyO3 Rust crate upgraded from 0.25 to 0.29, which is required for
+  Python 3.15 support in the Rust backend.
 
 0.25.0 (released 2025-09-14)
 ============================
