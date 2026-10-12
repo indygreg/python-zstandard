@@ -11,8 +11,8 @@ use {
 
 /// Describes a type that can be resolved to a `zstd_sys::ZSTD_inBuffer`.
 pub trait InBufferSource {
-    /// Obtain the PyObject this instance is reading from.
-    fn source_object(&self) -> &PyObject;
+    /// Obtain the Py<PyAny> this instance is reading from.
+    fn source_object(&self) -> &Py<PyAny>;
 
     /// The size of the input object, if available.
     fn source_size(&self) -> Option<usize>;
@@ -29,7 +29,7 @@ pub trait InBufferSource {
 
 /// A data source where data is obtaine by calling `read()`.
 struct ReadSource {
-    source: PyObject,
+    source: Py<PyAny>,
     buffer: Option<PyBuffer<u8>>,
     read_size: usize,
     finished: bool,
@@ -37,7 +37,7 @@ struct ReadSource {
 }
 
 impl InBufferSource for ReadSource {
-    fn source_object(&self) -> &PyObject {
+    fn source_object(&self) -> &Py<PyAny> {
         &self.source
     }
 
@@ -94,16 +94,16 @@ impl InBufferSource for ReadSource {
     }
 }
 
-/// A data source where data is obtained from a `PyObject`
+/// A data source where data is obtained from a `Py<PyAny>`
 /// conforming to the buffer protocol.
 struct BufferSource {
-    source: PyObject,
+    source: Py<PyAny>,
     buffer: PyBuffer<u8>,
     offset: usize,
 }
 
 impl InBufferSource for BufferSource {
-    fn source_object(&self) -> &PyObject {
+    fn source_object(&self) -> &Py<PyAny> {
         &self.source
     }
 

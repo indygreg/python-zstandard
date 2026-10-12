@@ -170,7 +170,7 @@ impl ZstdCompressor {
 
         // TODO implement 0 copy via Py_SIZE().
         let data = py
-            .allow_threads(|| cctx.compress(source))
+            .detach(|| cctx.compress(source))
             .or_else(|msg| Err(ZstdError::new_err(format!("cannot compress: {}", msg))))?;
 
         Ok(PyBytes::new(py, &data))
@@ -264,7 +264,7 @@ impl ZstdCompressor {
             // Try to read from source stream.
             let read_object = ifh.call_method("read", (read_size,), None)?;
 
-            let read_bytes = read_object.downcast::<PyBytes>()?;
+            let read_bytes = read_object.cast::<PyBytes>()?;
             let read_data = read_bytes.as_bytes();
 
             // If no data was read we are at EOF.
@@ -281,7 +281,7 @@ impl ZstdCompressor {
 
             while !source.is_empty() {
                 let result = py
-                    .allow_threads(|| {
+                    .detach(|| {
                         cctx.compress_chunk(
                             source,
                             zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,

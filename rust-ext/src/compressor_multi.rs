@@ -43,7 +43,7 @@ pub fn multi_compress_to_buffer(
     let mut sources = vec![];
     let mut total_source_size = 0;
 
-    if let Ok(buffer) = data.downcast::<ZstdBufferWithSegments>() {
+    if let Ok(buffer) = data.cast::<ZstdBufferWithSegments>() {
         sources.reserve_exact(buffer.borrow().segments.len());
 
         let borrow = buffer.borrow();
@@ -54,11 +54,11 @@ pub fn multi_compress_to_buffer(
             sources.push(DataSource { data: slice });
             total_source_size += slice.len();
         }
-    } else if let Ok(collection) = data.downcast::<ZstdBufferWithSegmentsCollection>() {
+    } else if let Ok(collection) = data.cast::<ZstdBufferWithSegmentsCollection>() {
         sources.reserve_exact(collection.len()?);
 
         for buffer_obj in &collection.borrow().buffers {
-            let buffer = buffer_obj.downcast_bound::<ZstdBufferWithSegments>(py)?;
+            let buffer = buffer_obj.cast_bound::<ZstdBufferWithSegments>(py)?;
             let borrow = buffer.borrow();
 
             for i in 0..borrow.segments.len() {

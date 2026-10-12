@@ -145,9 +145,9 @@ impl ZstdCompressionReader {
     fn __exit__<'p>(
         mut slf: PyRefMut<'p, Self>,
         py: Python<'p>,
-        _exc_type: PyObject,
-        _exc_value: PyObject,
-        _exc_tb: PyObject,
+        _exc_type: Py<PyAny>,
+        _exc_value: Py<PyAny>,
+        _exc_tb: Py<PyAny>,
     ) -> PyResult<bool> {
         slf.entered = false;
         slf.close(py)?;

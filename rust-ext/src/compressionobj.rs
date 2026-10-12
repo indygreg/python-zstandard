@@ -52,7 +52,7 @@ impl ZstdCompressionObj {
         let cctx = &self.cctx;
         while !source.is_empty() {
             let result = py
-                .allow_threads(|| {
+                .detach(|| {
                     cctx.compress_chunk(
                         source,
                         zstd_sys::ZSTD_EndDirective::ZSTD_e_continue,
@@ -100,7 +100,7 @@ impl ZstdCompressionObj {
 
         loop {
             let (chunk, _, call_again) = py
-                .allow_threads(|| cctx.compress_chunk(&[], flush_mode, write_size))
+                .detach(|| cctx.compress_chunk(&[], flush_mode, write_size))
                 .or_else(|msg| {
                     Err(ZstdError::new_err(format!(
                         "error ending compression stream: {}",
