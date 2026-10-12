@@ -42,13 +42,19 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
-dev = [
+# Dependencies needed to run the test suite. cibuildwheel installs this group
+# unlocked inside its build containers, so keep it free of packages (like mypy)
+# without wheels for every platform we build.
+test = [
     "cffi~=1.17; platform_python_implementation != 'PyPy' and python_version < '3.14'",
     "cffi>=2.0.0b; platform_python_implementation != 'PyPy' and python_version >= '3.14'",
     "hypothesis==6.111.0",
-    "mypy>=1.17.1",
     "pytest>=8.4.1",
     "pytest-xdist>=3.8.0",
+]
+dev = [
+    { include-group = "test" },
+    "mypy>=1.17.1",
 ]
 
 [tool.pytest.ini_options]
@@ -71,7 +77,7 @@ test-command = [
     "pytest -v --numprocesses=auto",
     "PYTHON_ZSTANDARD_IMPORT_POLICY=cffi pytest -v --numprocesses=auto",
 ]
-test-groups = ["dev"]
+test-groups = ["test"]
 test-sources = ["tests"]
 
 [tool.cibuildwheel.linux]
