@@ -22,7 +22,7 @@ const FLUSH_FRAME: usize = 1;
 #[pyclass(module = "zstandard.backend_rust")]
 pub struct ZstdCompressionWriter {
     cctx: Arc<CCtx<'static>>,
-    writer: PyObject,
+    writer: Py<PyAny>,
     write_return_read: bool,
     closefd: bool,
     entered: bool,
@@ -111,7 +111,7 @@ impl ZstdCompressionWriter {
         self.cctx.memory_size()
     }
 
-    fn fileno(&self, py: Python) -> PyResult<PyObject> {
+    fn fileno(&self, py: Python) -> PyResult<Py<PyAny>> {
         if let Ok(fileno) = self.writer.getattr(py, "fileno") {
             fileno.call0(py)
         } else {

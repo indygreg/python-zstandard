@@ -196,12 +196,12 @@ impl ZstdCompressionChunkerIterator {
         slf
     }
 
-    fn __next__(mut slf: PyRefMut<Self>) -> PyResult<Option<PyObject>> {
+    fn __next__(mut slf: PyRefMut<Self>) -> PyResult<Option<Py<PyAny>>> {
         if slf.finished {
             return Ok(None);
         }
 
-        let py = unsafe { Python::assume_gil_acquired() };
+        let py = unsafe { Python::assume_attached() };
 
         // Consume any data left in the input.
         while let Some(mut in_buffer) = slf.source.input_buffer(py)? {

@@ -17,6 +17,11 @@ Backwards Compatibility Notes
 * cibuildwheel upgrade required us to drop generating the CPython 3.13 free-threaded
   wheels.
 
+Changes
+-------
+
+* PyO3 Rust crate upgraded from 0.25 to 0.29.
+
 0.25.0 (released 2025-09-14)
 ============================
 

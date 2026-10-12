@@ -19,7 +19,7 @@ use {
 #[pyclass(module = "zstandard.backend_rust")]
 pub struct ZstdDecompressionWriter {
     dctx: Arc<DCtx<'static>>,
-    writer: PyObject,
+    writer: Py<PyAny>,
     write_size: usize,
     write_return_read: bool,
     closefd: bool,
@@ -87,9 +87,9 @@ impl ZstdDecompressionWriter {
     fn __exit__<'p>(
         mut slf: PyRefMut<'p, Self>,
         py: Python<'p>,
-        exc_type: PyObject,
-        exc_value: PyObject,
-        exc_tb: PyObject,
+        exc_type: Py<PyAny>,
+        exc_value: Py<PyAny>,
+        exc_tb: Py<PyAny>,
     ) -> PyResult<bool> {
         slf.entered = false;
         slf.close(py)?;
@@ -129,7 +129,7 @@ impl ZstdDecompressionWriter {
         self.closed
     }
 
-    fn fileno(&self, py: Python) -> PyResult<PyObject> {
+    fn fileno(&self, py: Python) -> PyResult<Py<PyAny>> {
         if let Ok(fileno) = self.writer.getattr(py, "fileno") {
             fileno.call0(py)
         } else {
@@ -139,7 +139,7 @@ impl ZstdDecompressionWriter {
         }
     }
 
-    fn flush(&self, py: Python) -> PyResult<PyObject> {
+    fn flush(&self, py: Python) -> PyResult<Py<PyAny>> {
         if self.closed {
             return Err(PyValueError::new_err("stream is closed"));
         }
