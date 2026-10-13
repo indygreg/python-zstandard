@@ -1684,6 +1684,11 @@ Decompressor_multi_decompress_to_buffer(ZstdDecompressor *self, PyObject *args,
         goto finally;
     }
 
+    if (0 == frameCount) {
+        PyErr_SetString(PyExc_ValueError, "no source elements found");
+        goto finally;
+    }
+
     /* We now have an array with info about our inputs and outputs. Feed it into
        our generic decompression function. */
     frameSources.frames = framePointers;
