@@ -83,6 +83,11 @@ static PyObject *compressionreader_seekable(ZstdCompressionReader *self) {
     Py_RETURN_FALSE;
 }
 
+static PyObject *compressionreader_seek(PyObject *self, PyObject *args) {
+    PyErr_SetString(PyExc_OSError, "stream is not seekable");
+    return NULL;
+}
+
 static PyObject *compressionreader_readline(PyObject *self, PyObject *args) {
     set_io_unsupported_operation();
     return NULL;
@@ -760,6 +765,8 @@ static PyMethodDef compressionreader_methods[] = {
      PyDoc_STR("Not implemented")},
     {"readlines", (PyCFunction)compressionreader_readlines, METH_VARARGS,
      PyDoc_STR("Not implemented")},
+    {"seek", (PyCFunction)compressionreader_seek, METH_VARARGS,
+     PyDoc_STR("Raises OSError")},
     {"seekable", (PyCFunction)compressionreader_seekable, METH_NOARGS,
      PyDoc_STR("Returns False")},
     {"tell", (PyCFunction)compressionreader_tell, METH_NOARGS,

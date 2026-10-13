@@ -169,6 +169,10 @@ impl ZstdCompressionReader {
         false
     }
 
+    fn seek(&self, _data: &Bound<'_, PyAny>) -> PyResult<()> {
+        Err(PyOSError::new_err("stream is not seekable"))
+    }
+
     fn readline(&self, py: Python) -> PyResult<()> {
         let io = py.import("io")?;
         let exc = io.getattr("UnsupportedOperation")?;

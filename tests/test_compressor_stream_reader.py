@@ -54,6 +54,20 @@ class TestCompressor_stream_reader(unittest.TestCase):
             with self.assertRaises(OSError):
                 reader.write(b"foo")
 
+    def test_seek(self):
+        cctx = zstd.ZstdCompressor()
+
+        with cctx.stream_reader(b"foo" * 60) as reader:
+            with self.assertRaises(OSError):
+                reader.seek(0)
+
+            reader.read(1)
+            with self.assertRaises(OSError):
+                reader.seek(0)
+
+        with self.assertRaises(OSError):
+            reader.seek(0)
+
     def test_constant_methods(self):
         cctx = zstd.ZstdCompressor()
 

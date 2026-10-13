@@ -1427,6 +1427,9 @@ class ZstdCompressionReader(object):
     def seekable(self):
         return False
 
+    def seek(self, offset, whence=None):
+        raise io.UnsupportedOperation()
+
     def readline(self):
         raise io.UnsupportedOperation()
 
