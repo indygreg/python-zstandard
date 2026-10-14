@@ -105,6 +105,50 @@ class TestCompressionParameters(unittest.TestCase):
             p.estimated_compression_context_size(), 1303304, delta=4000
         )
 
+    def test_estimated_compression_context_size_ldm(self):
+        # Resolved LDM defaults for a 1 MiB window, including a hash-log
+        # override and a strategy with a different default match length.
+        cases = [
+            (zstd.STRATEGY_DFAST, {}, (13, 64, 4, 7)),
+            (zstd.STRATEGY_DFAST, {"ldm_hash_log": 16}, (16, 64, 4, 4)),
+            (zstd.STRATEGY_BTULTRA2, {}, (16, 32, 8, 4)),
+        ]
+        names = (
+            "ldm_hash_log",
+            "ldm_min_match",
+            "ldm_bucket_size_log",
+            "ldm_hash_rate_log",
+        )
+
+        for strategy, overrides, defaults in cases:
+            with self.subTest(strategy=strategy, overrides=overrides):
+                kwargs = {"window_log": 20, "strategy": strategy}
+                params = zstd.ZstdCompressionParameters.from_level(
+                    3, enable_ldm=True, **kwargs, **overrides
+                )
+                explicit = zstd.ZstdCompressionParameters.from_level(
+                    3, enable_ldm=True, **kwargs, **dict(zip(names, defaults))
+                )
+                disabled = zstd.ZstdCompressionParameters.from_level(
+                    3, enable_ldm=False, **kwargs
+                )
+                before = tuple(getattr(params, name) for name in names)
+
+                size = params.estimated_compression_context_size()
+                self.assertEqual(
+                    size, explicit.estimated_compression_context_size()
+                )
+                self.assertGreater(
+                    size, disabled.estimated_compression_context_size()
+                )
+                self.assertEqual(
+                    tuple(getattr(params, name) for name in names), before
+                )
+                self.assertEqual(params.enable_ldm, 1)
+                self.assertEqual(
+                    params.estimated_compression_context_size(), size
+                )
+
     def test_strategy(self):
         p = zstd.ZstdCompressionParameters(strategy=2)
         self.assertEqual(p.strategy, 2)
