@@ -7,6 +7,11 @@ Version History
 next (not yet released)
 =======================
 
+* Backported `zstd's LDM size-estimation fix
+  <https://github.com/facebook/zstd/commit/81cf153bce7c0ab41aeef574a70e32eaea7a8ba7>`_
+  so ``estimated_compression_context_size()`` resolves default LDM parameters
+  instead of dividing by zero when ``enable_ldm=True``. (#345)
+
 Backwards Compatibility Notes
 -----------------------------
 
