@@ -158,6 +158,35 @@ class TestDecompressor_decompress(unittest.TestCase):
             decompressed = dctx.decompress(compressed[i])
             self.assertEqual(decompressed, sources[i])
 
+    def test_dictionary_shared_by_decompressors(self):
+        samples = []
+        for i in range(128):
+            samples.append(b"foo" * 64)
+            samples.append(b"bar" * 64)
+            samples.append(b"foobar" * 64)
+            samples.append(b"qwert" * 64)
+            samples.append(b"yuiop" * 64)
+            samples.append(b"asdfg" * 64)
+            samples.append(b"hijkl" * 64)
+
+        d = zstd.train_dictionary(8192, samples)
+
+        orig = b"foobar" * 16384
+        cctx = zstd.ZstdCompressor(level=1, dict_data=d)
+        compressed = cctx.compress(orig)
+
+        for _ in range(8):
+            # The reader's decompression context is bound to the dictionary
+            # when the reader is created. Creating another decompressor for
+            # the same dictionary must not invalidate it.
+            reader = zstd.ZstdDecompressor(dict_data=d).stream_reader(
+                compressed
+            )
+            dctx = zstd.ZstdDecompressor(dict_data=d)
+
+            self.assertEqual(reader.read(), orig)
+            self.assertEqual(dctx.decompress(compressed), orig)
+
     def test_max_window_size(self):
         with open(__file__, "rb") as fh:
             source = fh.read()
