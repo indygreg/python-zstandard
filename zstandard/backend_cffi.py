@@ -1528,7 +1528,7 @@ class ZstdCompressionReader(object):
                 self._finished_input = True
 
         if lib.ZSTD_isError(zresult):
-            raise ZstdError("zstd compress error: %s", _zstd_error(zresult))
+            raise ZstdError("zstd compress error: %s" % _zstd_error(zresult))
 
         return out_buffer.pos and out_buffer.pos == out_buffer.size
 
@@ -1572,7 +1572,7 @@ class ZstdCompressionReader(object):
 
         if lib.ZSTD_isError(zresult):
             raise ZstdError(
-                "error ending compression stream: %s", _zstd_error(zresult)
+                "error ending compression stream: %s" % _zstd_error(zresult)
             )
 
         if zresult == 0:
@@ -1679,7 +1679,7 @@ class ZstdCompressionReader(object):
 
         if lib.ZSTD_isError(zresult):
             raise ZstdError(
-                "error ending compression stream: %s", _zstd_error(zresult)
+                "error ending compression stream: %s" % _zstd_error(zresult)
             )
 
         if zresult == 0:

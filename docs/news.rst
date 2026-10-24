@@ -30,6 +30,8 @@ Changes
   #335)
 * CI now runs on Ubuntu 26.04 (versus 24.04) and Windows 2025 (versus 2022)
   GitHub Actions runners.
+* cffi backend now correctly interpolates string error messages in
+  ``ZstdCompressionReader``'s read APIs. (#368)
 
 0.25.0 (released 2025-09-14)
 ============================
