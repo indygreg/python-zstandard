@@ -12,3 +12,5 @@ target/
 venv/
 venv3/
 zstandard.egg-info/
+config.bat
+node_modules

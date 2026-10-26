@@ -60,7 +60,6 @@ static PyObject *ZstdDecompressionWriter_write(ZstdDecompressionWriter *self,
     size_t zresult = 0;
     ZSTD_inBuffer input;
     ZSTD_outBuffer output;
-    PyObject *res;
     Py_ssize_t totalWrite = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:write", kwlist,
@@ -98,12 +97,10 @@ static PyObject *ZstdDecompressionWriter_write(ZstdDecompressionWriter *self,
         }
 
         if (output.pos) {
-            res = PyObject_CallMethod(self->writer, "write", "y#", output.dst,
-                                      output.pos);
-            if (NULL == res) {
+            if (stream_write_all(self->writer, output.dst, output.pos) < 0) {
+                PyMem_Free(output.dst);
                 goto finally;
             }
-            Py_XDECREF(res);
             totalWrite += output.pos;
             output.pos = 0;
         }

@@ -8,7 +8,11 @@ import zstandard as zstd
 
 from .common import (
     CustomBytesIO,
+    IndexWritingBytesIO,
+    NoCountBytesIO,
     NonClosingBytesIO,
+    ShortWritingBytesIO,
+    WriteResultSink,
 )
 
 
@@ -369,3 +373,64 @@ class TestDecompressor_stream_writer(unittest.TestCase):
 
         with self.assertRaisesRegex(IOError, "write"):
             writer.write(frame)
+
+
+class TestDecompressor_stream_writer_write_counts(unittest.TestCase):
+    def test_short_writes(self):
+        source = b"synthetic decompression output" * 3
+        compressed = zstd.ZstdCompressor().compress(source)
+        target = ShortWritingBytesIO()
+        with zstd.ZstdDecompressor().stream_writer(
+            target, write_size=7, closefd=False
+        ) as writer:
+            self.assertEqual(writer.write(compressed), len(compressed))
+        self.assertEqual(target.getvalue(), source)
+
+    def test_legacy_sink_without_write_count(self):
+        source = b"synthetic legacy sink"
+        compressed = zstd.ZstdCompressor().compress(source)
+        target = NoCountBytesIO()
+        with zstd.ZstdDecompressor().stream_writer(
+            target, closefd=False
+        ) as writer:
+            writer.write(compressed)
+        self.assertEqual(target.getvalue(), source)
+
+    def test_invalid_destination_write_results(self):
+        cases = [
+            (0, BlockingIOError),
+            (-1, ValueError),
+            (1 << 100, ValueError),
+            (1000, ValueError),
+            (1.5, TypeError),
+            ("3", TypeError),
+        ]
+        for result, error in cases:
+            with self.subTest(result=result):
+                target = WriteResultSink(result)
+                with self.assertRaises(error):
+                    self._write_to_destination(target)
+                self.assertEqual(target.calls, 1)
+
+    def test_destination_exception_is_preserved(self):
+        error = OSError("synthetic destination failure")
+        target = WriteResultSink(error)
+        with self.assertRaises(OSError) as raised:
+            self._write_to_destination(target)
+        self.assertIs(raised.exception, error)
+        self.assertEqual(target.calls, 1)
+
+    def _write_to_destination(self, target):
+        compressed = zstd.ZstdCompressor().compress(b"synthetic output")
+        writer = zstd.ZstdDecompressor().stream_writer(target, closefd=False)
+        writer.write(compressed)
+
+    def test_index_counts_and_output_accounting(self):
+        source = b"synthetic index-count destination" * 3
+        target = IndexWritingBytesIO()
+        compressed = zstd.ZstdCompressor().compress(source)
+        writer = zstd.ZstdDecompressor().stream_writer(
+            target, closefd=False, write_return_read=False
+        )
+        self.assertEqual(writer.write(compressed), len(source))
+        self.assertEqual(target.getvalue(), source)

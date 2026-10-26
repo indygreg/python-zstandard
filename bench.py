@@ -10,6 +10,7 @@
 Like most benchmarks, results should be treated with skepticism.
 """
 
+import utils.session
 import io
 import os
 import random

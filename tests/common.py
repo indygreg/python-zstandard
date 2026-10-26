@@ -118,3 +118,46 @@ def generate_samples():
         samples.append(inputs[-(i % 5)] * (i + 2))
 
     return samples
+
+
+class ShortWritingBytesIO(io.BytesIO):
+    """A binary sink that accepts at most three bytes per write."""
+
+    def write(self, data):
+        return super().write(data[:3])
+
+
+class NoCountBytesIO(io.BytesIO):
+    """A legacy callback-style sink that returns no byte count."""
+
+    def write(self, data):
+        super().write(data)
+
+
+class WriteResultSink:
+    """A bounded sink for write-result and exception tests."""
+
+    def __init__(self, result):
+        self.result = result
+        self.calls = 0
+
+    def write(self, data):
+        self.calls += 1
+        if self.calls > 8:
+            raise AssertionError("writer kept retrying without progress")
+        if isinstance(self.result, BaseException):
+            raise self.result
+        return self.result
+
+
+class IndexCount:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+
+class IndexWritingBytesIO(ShortWritingBytesIO):
+    def write(self, data):
+        return IndexCount(super().write(data))
