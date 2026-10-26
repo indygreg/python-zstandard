@@ -127,7 +127,7 @@ impl ZstdDecompressor {
         // Read all available input.
         loop {
             let read_object = ifh.call_method1("read", (read_size,))?;
-            let read_bytes = read_object.downcast::<PyBytes>()?;
+            let read_bytes = read_object.cast::<PyBytes>()?;
             let read_data = read_bytes.as_bytes();
 
             if read_data.len() == 0 {
