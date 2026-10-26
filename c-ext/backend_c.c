@@ -362,3 +362,43 @@ void set_io_unsupported_operation(void) {
     Py_DECREF(exc);
     Py_DECREF(iomod);
 }
+
+/* Write an output chunk, retaining legacy sinks that return None. */
+int stream_write_all(PyObject *writer, const char *data, Py_ssize_t size) {
+    Py_ssize_t offset = 0;
+    while (offset < size) {
+        PyObject *result = PyObject_CallMethod(writer, "write", "y#",
+                                               data + offset, size - offset);
+        if (NULL == result) {
+            return -1;
+        }
+        if (result == Py_None) {
+            Py_DECREF(result);
+            return 0;
+        }
+        PyObject *index = PyNumber_Index(result);
+        Py_DECREF(result);
+        if (NULL == index) {
+            return -1;
+        }
+        Py_ssize_t written = PyLong_AsSsize_t(index);
+        Py_DECREF(index);
+        if (written == -1 && PyErr_Occurred()) {
+            if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                return -1;
+            }
+            PyErr_Clear();
+        }
+        if (written < 0 || written > size - offset) {
+            PyErr_SetString(PyExc_ValueError,
+                            "write() returned an invalid byte count");
+            return -1;
+        }
+        if (written == 0) {
+            PyErr_SetString(PyExc_BlockingIOError, "write() made no progress");
+            return -1;
+        }
+        offset += written;
+    }
+    return 0;
+}

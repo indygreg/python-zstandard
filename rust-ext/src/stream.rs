@@ -159,3 +159,33 @@ pub(crate) fn make_in_buffer_source(
         }))
     }
 }
+
+/// Write an output chunk, retaining legacy sinks that return None.
+pub fn write_all(py: Python, writer: &PyObject, data: &[u8]) -> PyResult<()> {
+    use pyo3::{
+        exceptions::{PyBlockingIOError, PyValueError},
+        types::PyBytes,
+    };
+    let mut offset = 0;
+    while offset < data.len() {
+        let chunk = PyBytes::new(py, &data[offset..]);
+        let result = writer.call_method1(py, "write", (chunk,))?;
+        if result.is_none(py) {
+            return Ok(());
+        }
+        let index = py.import("operator")?.call_method1("index", (result,))?;
+        let written = index
+            .extract::<usize>()
+            .map_err(|_| PyValueError::new_err("write() returned an invalid byte count"))?;
+        if written > data.len() - offset {
+            return Err(PyValueError::new_err(
+                "write() returned an invalid byte count",
+            ));
+        }
+        if written == 0 {
+            return Err(PyBlockingIOError::new_err("write() made no progress"));
+        }
+        offset += written;
+    }
+    Ok(())
+}

@@ -84,6 +84,7 @@ __all__ = [
 ]
 
 import io
+import operator
 import os
 
 from ._cffi import (  # type: ignore
@@ -620,6 +621,22 @@ def _get_compression_parameter(params, param):
     return result[0]
 
 
+def _write_all(writer, data):
+    """Write a chunk, preserving callback sinks that return no count."""
+    offset = 0
+    while offset < len(data):
+        written = writer.write(data[offset:])
+        if written is None:
+            # Historically callback-style destinations need not return a count.
+            return
+        written = operator.index(written)
+        if written < 0 or written > len(data) - offset:
+            raise ValueError("write() returned an invalid byte count")
+        if not written:
+            raise BlockingIOError("write() made no progress")
+        offset += written
+
+
 class ZstdCompressionWriter(object):
     """Writable compressing stream wrapper.
 
@@ -875,8 +892,8 @@ class ZstdCompressionWriter(object):
                 )
 
             if out_buffer.pos:
-                self._writer.write(
-                    ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+                _write_all(
+                    self._writer, ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
                 )
                 total_write += out_buffer.pos
                 self._bytes_compressed += out_buffer.pos
@@ -939,8 +956,8 @@ class ZstdCompressionWriter(object):
                 )
 
             if out_buffer.pos:
-                self._writer.write(
-                    ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+                _write_all(
+                    self._writer, ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
                 )
                 total_write += out_buffer.pos
                 self._bytes_compressed += out_buffer.pos
@@ -2227,6 +2244,15 @@ class ZstdCompressor(object):
         compressed data as its argument. Many common Python types implement
         ``write()``, including open file handles and ``io.BytesIO``.
 
+        The destination may return an integer count smaller than the supplied
+        chunk; the remaining bytes will be written before continuing. A zero
+        count raises ``BlockingIOError`` and an invalid count raises
+        ``ValueError`` or ``TypeError``. For compatibility with callback-style
+        destinations, ``None`` means the entire chunk was accepted. Destinations
+        that use ``None`` to signal nonblocking backpressure are not supported.
+        Destination exceptions propagate; resuming after an output failure is
+        not supported.
+
         See :py:class:`ZstdCompressionWriter` for more documentation, including
         usage examples.
 
@@ -3460,6 +3486,9 @@ class ZstdDecompressionWriter(object):
     This type implements the ``io.RawIOBase`` interface. Only methods that
     involve writing will do useful things.
 
+    Destination write counts, legacy ``None`` returns and output failures follow
+    the contract documented by :py:meth:`ZstdCompressor.stream_writer`.
+
     Behavior is similar to :py:meth:`ZstdCompressor.stream_writer`: compressed
     data is sent to the decompressor by calling ``write(data)`` and decompressed
     output is written to the inner stream by calling its ``write(data)``
@@ -3646,8 +3675,8 @@ class ZstdDecompressionWriter(object):
                 )
 
             if out_buffer.pos:
-                self._writer.write(
-                    ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
+                _write_all(
+                    self._writer, ffi.buffer(out_buffer.dst, out_buffer.pos)[:]
                 )
                 total_write += out_buffer.pos
                 out_buffer.pos = 0
