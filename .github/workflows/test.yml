@@ -29,6 +29,8 @@ jobs:
           - '3.13t'
           - '3.14'
           - '3.14t'
+          - '3.15'
+          - '3.15t'
         arch:
           - 'arm64'
           - 'x86'
@@ -105,7 +107,8 @@ jobs:
           uv -v run --locked -w cffi pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
 
       - name: Test Rust Backend
-        if: matrix.arch != 'x86'
+        # PyO3 0.25 doesn't support Python 3.15.
+        if: matrix.arch != 'x86' && !startsWith(matrix.py, '3.15')
         # Rust backend is currently experimental. So ignore failures in it.
         continue-on-error: true
         env:

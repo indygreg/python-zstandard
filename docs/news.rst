@@ -17,6 +17,16 @@ Backwards Compatibility Notes
 * cibuildwheel upgrade required us to drop generating the CPython 3.13 free-threaded
   wheels.
 
+Changes
+-------
+
+* Python 3.15 support. We build ``cp315`` and free-threaded ``cp315t`` wheels
+  and have CI test coverage for the C and CFFI backends. Like 3.14, Linux wheels
+  are built with ``manylinux_2_28`` and ``musllinux_1_2``. The Rust backend
+  does not support 3.15 yet.
+* cibuildwheel upgraded from 4.1.0 to 4.3.4, which builds against the final
+  CPython 3.15.0 release instead of a beta.
+
 0.25.0 (released 2025-09-14)
 ============================
 
