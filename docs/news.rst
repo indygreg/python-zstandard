@@ -20,6 +20,7 @@ Backwards Compatibility Notes
 Changes
 -------
 
+* Python 3.15 support.
 * Bundled zstd library upgraded from 1.5.7 to 1.6.0.
 * PyO3 Rust crate upgraded from 0.25 to 0.30.
 * cffi dependency version updated to >= 2.1.0 (from 1.17 on Python <3.14 and
