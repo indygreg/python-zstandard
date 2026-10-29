@@ -7,6 +7,8 @@ Version History
 next (not yet released)
 =======================
 
+* PyO3 Rust crate upgraded from 0.25 to 0.26.
+
 Backwards Compatibility Notes
 -----------------------------
 
@@ -20,7 +22,7 @@ Backwards Compatibility Notes
 0.25.0 (released 2025-09-14)
 ============================
 
-* PyO3 Rust created upgraded from 0.24 to 0.25. (#273)
+* PyO3 Rust crate upgraded from 0.24 to 0.25. (#273)
 * We now use ``Py_REFCNT(obj)`` instead of accessing ``(*obj)->ob_refcnt`` directly.
   This fixes a nogil / multi-threaded compile error. (#201, #275)
 * A zstandard commit to fix qsort detection on BSD operating systems

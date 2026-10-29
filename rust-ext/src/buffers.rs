@@ -26,7 +26,7 @@ pub(crate) struct BufferSegment {
 #[pyclass(module = "zstandard.backend_rust", name = "BufferSegment")]
 pub struct ZstdBufferSegment {
     /// The object backing storage. For reference counting.
-    _parent: PyObject,
+    _parent: Py<PyAny>,
     /// PyBuffer into parent object.
     buffer: PyBuffer<u8>,
     /// Offset of segment within data.
@@ -53,7 +53,7 @@ impl ZstdBufferSegment {
     }
 
     // PyBufferProtocol.
-    fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
+    fn bf_getbuffer(slf: PyRefMut<Self>, view: Py<PyAny>, flags: i32) -> PyResult<()> {
         let slice = slf.as_slice();
 
         if unsafe {
@@ -74,7 +74,7 @@ impl ZstdBufferSegment {
     }
 
     #[allow(unused_variables)]
-    fn bf_releasebuffer(slf: PyRefMut<Self>, view: PyObject) {}
+    fn bf_releasebuffer(slf: PyRefMut<Self>, view: Py<PyAny>) {}
 
     // Our methods.
 
@@ -90,7 +90,7 @@ impl ZstdBufferSegment {
 
 #[pyclass(module = "zstandard.backend_rust", name = "BufferSegments")]
 pub struct ZstdBufferSegments {
-    parent: PyObject,
+    parent: Py<PyAny>,
 }
 
 unsafe impl Sync for ZstdBufferSegments {}
@@ -98,7 +98,7 @@ unsafe impl Sync for ZstdBufferSegments {}
 #[pymethods]
 impl ZstdBufferSegments {
     // PyBufferProtocol.
-    fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
+    fn bf_getbuffer(slf: PyRefMut<Self>, view: Py<PyAny>, flags: i32) -> PyResult<()> {
         let py = slf.py();
 
         let parent = slf.parent.downcast_bound::<ZstdBufferWithSegments>(py)?;
@@ -121,12 +121,12 @@ impl ZstdBufferSegments {
     }
 
     #[allow(unused_variables)]
-    fn bf_releasebuffer(slf: PyRefMut<Self>, view: PyObject) {}
+    fn bf_releasebuffer(slf: PyRefMut<Self>, view: Py<PyAny>) {}
 }
 
 #[pyclass(module = "zstandard.backend_rust", name = "BufferWithSegments")]
 pub struct ZstdBufferWithSegments {
-    source: PyObject,
+    source: Py<PyAny>,
     pub(crate) buffer: PyBuffer<u8>,
     pub(crate) segments: Vec<BufferSegment>,
 }
@@ -161,7 +161,7 @@ impl ZstdBufferWithSegments {
     }
 
     fn __getitem__(&self, key: isize) -> PyResult<ZstdBufferSegment> {
-        let py = unsafe { Python::assume_gil_acquired() };
+        let py = unsafe { Python::assume_attached() };
 
         if key < 0 {
             return Err(PyIndexError::new_err("offset must be non-negative"));
@@ -187,7 +187,7 @@ impl ZstdBufferWithSegments {
     }
 
     // PyBufferProtocol.
-    fn bf_getbuffer(slf: PyRefMut<Self>, view: PyObject, flags: i32) -> PyResult<()> {
+    fn bf_getbuffer(slf: PyRefMut<Self>, view: Py<PyAny>, flags: i32) -> PyResult<()> {
         if unsafe {
             pyo3::ffi::PyBuffer_FillInfo(
                 view.as_ptr() as *mut Py_buffer,
@@ -206,7 +206,7 @@ impl ZstdBufferWithSegments {
     }
 
     #[allow(unused_variables)]
-    fn bf_releasebuffer(slf: PyRefMut<Self>, view: PyObject) {}
+    fn bf_releasebuffer(slf: PyRefMut<Self>, view: Py<PyAny>) {}
 
     // Our methods.
 
@@ -272,7 +272,7 @@ impl ZstdBufferWithSegments {
 )]
 pub struct ZstdBufferWithSegmentsCollection {
     // Py<ZstdBufferWithSegments>.
-    pub(crate) buffers: Vec<PyObject>,
+    pub(crate) buffers: Vec<Py<PyAny>>,
     first_elements: Vec<usize>,
 }
 
@@ -287,7 +287,7 @@ impl ZstdBufferWithSegmentsCollection {
     }
 
     fn __getitem__(&self, key: isize) -> PyResult<ZstdBufferSegment> {
-        let py = unsafe { Python::assume_gil_acquired() };
+        let py = unsafe { Python::assume_attached() };
 
         if key < 0 {
             return Err(PyIndexError::new_err("offset must be non-negative"));

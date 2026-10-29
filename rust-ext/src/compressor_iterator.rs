@@ -32,12 +32,12 @@ impl ZstdCompressorIterator {
         slf
     }
 
-    fn __next__(mut slf: PyRefMut<Self>) -> PyResult<Option<PyObject>> {
+    fn __next__(mut slf: PyRefMut<Self>) -> PyResult<Option<Py<PyAny>>> {
         if slf.finished_output {
             return Ok(None);
         }
 
-        let py = unsafe { Python::assume_gil_acquired() };
+        let py = unsafe { Python::assume_attached() };
 
         let mut dest_buffer: Vec<u8> = Vec::with_capacity(slf.write_size);
 
