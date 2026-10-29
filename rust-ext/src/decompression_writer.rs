@@ -10,7 +10,6 @@ use {
         buffer::PyBuffer,
         exceptions::{PyOSError, PyValueError},
         prelude::*,
-        types::PyBytes,
         IntoPyObjectExt,
     },
     std::sync::Arc,
@@ -283,9 +282,7 @@ impl ZstdDecompressionWriter {
                 .map_err(|msg| ZstdError::new_err(format!("zstd decompress error: {}", msg)))?;
 
             if !dest_buffer.is_empty() {
-                // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &dest_buffer);
-                self.writer.call_method1(py, "write", (chunk,))?;
+                crate::stream::write_all(py, &self.writer, &dest_buffer)?;
                 total_write += dest_buffer.len();
                 dest_buffer.clear();
             }

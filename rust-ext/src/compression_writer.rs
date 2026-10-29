@@ -10,7 +10,6 @@ use {
         buffer::PyBuffer,
         exceptions::{PyNotImplementedError, PyOSError, PyValueError},
         prelude::*,
-        types::PyBytes,
         IntoPyObjectExt,
     },
     std::sync::Arc,
@@ -252,9 +251,7 @@ impl ZstdCompressionWriter {
                 .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
             if !self.dest_buffer.is_empty() {
-                // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &self.dest_buffer);
-                self.writer.call_method1(py, "write", (chunk,))?;
+                crate::stream::write_all(py, &self.writer, &self.dest_buffer)?;
 
                 total_write += self.dest_buffer.len();
                 self.bytes_compressed += self.dest_buffer.len();
@@ -299,9 +296,7 @@ impl ZstdCompressionWriter {
                 .map_err(|msg| ZstdError::new_err(format!("zstd compress error: {}", msg)))?;
 
             if !self.dest_buffer.is_empty() {
-                // TODO avoid buffer copy.
-                let chunk = PyBytes::new(py, &self.dest_buffer);
-                self.writer.call_method1(py, "write", (chunk,))?;
+                crate::stream::write_all(py, &self.writer, &self.dest_buffer)?;
 
                 total_write += self.dest_buffer.len();
                 self.bytes_compressed += self.dest_buffer.len();
