@@ -257,7 +257,7 @@ fn train_dictionary(
     // validated to be PyBytes.
     for sample in samples.iter() {
         let bytes = sample
-            .downcast::<PyBytes>()
+            .cast::<PyBytes>()
             .or_else(|_| Err(PyValueError::new_err("samples must be bytes")))?;
 
         samples_len += bytes.as_bytes().len();
@@ -267,7 +267,7 @@ fn train_dictionary(
     let mut sample_sizes: Vec<libc::size_t> = Vec::with_capacity(samples.len());
 
     for sample in samples.iter() {
-        let bytes = sample.downcast::<PyBytes>()?;
+        let bytes = sample.cast::<PyBytes>()?;
         let data = bytes.as_bytes();
         sample_sizes.push(data.len());
         samples_buffer.extend_from_slice(data);

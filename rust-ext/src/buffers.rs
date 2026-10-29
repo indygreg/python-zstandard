@@ -101,7 +101,7 @@ impl ZstdBufferSegments {
     fn bf_getbuffer(slf: PyRefMut<Self>, view: Py<PyAny>, flags: i32) -> PyResult<()> {
         let py = slf.py();
 
-        let parent = slf.parent.downcast_bound::<ZstdBufferWithSegments>(py)?;
+        let parent = slf.parent.cast_bound::<ZstdBufferWithSegments>(py)?;
 
         if unsafe {
             pyo3::ffi::PyBuffer_FillInfo(
@@ -180,7 +180,7 @@ impl ZstdBufferWithSegments {
 
         Ok(ZstdBufferSegment {
             _parent: self.source.clone_ref(py),
-            buffer: PyBuffer::get(self.source.downcast_bound(py)?)?,
+            buffer: PyBuffer::get(self.source.cast_bound(py)?)?,
             offset: segment.offset as _,
             len: segment.length as _,
         })
@@ -309,7 +309,7 @@ impl ZstdBufferWithSegmentsCollection {
                     offset = self.first_elements[buffer_index - 1];
                 }
 
-                let item = segment.downcast_bound::<ZstdBufferWithSegments>(py)?;
+                let item = segment.cast_bound::<ZstdBufferWithSegments>(py)?;
 
                 return item.borrow().__getitem__((key - offset) as isize);
             }
@@ -332,7 +332,7 @@ impl ZstdBufferWithSegmentsCollection {
         let mut offset = 0;
 
         for item in py_args {
-            let item = item.downcast::<ZstdBufferWithSegments>().map_err(|_| {
+            let item = item.cast::<ZstdBufferWithSegments>().map_err(|_| {
                 PyTypeError::new_err("arguments must be BufferWithSegments instances")
             })?;
             let segment = item.borrow();
@@ -359,7 +359,7 @@ impl ZstdBufferWithSegmentsCollection {
         let mut size = 0;
 
         for buffer in &self.buffers {
-            let item = buffer.downcast_bound::<ZstdBufferWithSegments>(py)?;
+            let item = buffer.cast_bound::<ZstdBufferWithSegments>(py)?;
 
             for segment in &item.borrow().segments {
                 size += segment.length as usize;

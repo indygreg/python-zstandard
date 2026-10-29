@@ -264,7 +264,7 @@ impl ZstdCompressor {
             // Try to read from source stream.
             let read_object = ifh.call_method("read", (read_size,), None)?;
 
-            let read_bytes = read_object.downcast::<PyBytes>()?;
+            let read_bytes = read_object.cast::<PyBytes>()?;
             let read_data = read_bytes.as_bytes();
 
             // If no data was read we are at EOF.
