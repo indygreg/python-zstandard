@@ -257,7 +257,7 @@ impl ZstdBufferWithSegments {
     fn segments(slf: PyRef<Self>, py: Python) -> PyResult<ZstdBufferSegments> {
         Ok(ZstdBufferSegments {
             // TODO surely there is a better way to cast self to PyObject?
-            parent: unsafe { Py::from_borrowed_ptr(py, slf.as_ptr()) },
+            parent: unsafe { Py::from(Bound::from_borrowed_ptr(py, slf.as_ptr())) },
         })
     }
 

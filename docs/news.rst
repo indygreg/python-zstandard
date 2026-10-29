@@ -7,7 +7,7 @@ Version History
 next (not yet released)
 =======================
 
-* PyO3 Rust crate upgraded from 0.25 to 0.27.
+* PyO3 Rust crate upgraded from 0.25 to 0.28.
 
 Backwards Compatibility Notes
 -----------------------------
