@@ -70,6 +70,10 @@ jobs:
       HYPOTHESIS_PROFILE: 'ci'
       # Activate Python development mode so we get warnings.
       PYTHONDEVMODE: '1'
+      # Make uv use the Python installed by setup-python. uv only uses a
+      # free-threaded interpreter when explicitly requested, and would otherwise
+      # silently fall back to a GIL-enabled Python found on the system.
+      UV_PYTHON: ${{ matrix.py }}
     steps:
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
