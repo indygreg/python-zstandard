@@ -184,6 +184,26 @@ class TestCompressor_stream_reader(unittest.TestCase):
         with cctx.stream_reader(source, size=42):
             pass
 
+    def test_bad_size_error_message(self):
+        for size, prefix in (
+            (2, "zstd compress error"),
+            (42, "error ending compression stream"),
+        ):
+            message = "%s: Src size is incorrect" % prefix
+            for method in ("read", "readinto", "read1", "readinto1"):
+                with self.subTest(size=size, method=method):
+                    cctx = zstd.ZstdCompressor()
+                    source = io.BytesIO(b"foobar")
+                    with cctx.stream_reader(source, size=size) as reader:
+                        argument = bytearray(10) if "into" in method else 10
+                        with self.assertRaises(zstd.ZstdError) as raised:
+                            getattr(reader, method)(argument)
+
+                    self.assertEqual(len(raised.exception.args), 1)
+                    self.assertNotIn("%s", str(raised.exception))
+                    self.assertEqual(raised.exception.args, (message,))
+                    self.assertEqual(str(raised.exception), message)
+
     def test_readall(self):
         cctx = zstd.ZstdCompressor()
         frame = cctx.compress(b"foo" * 1024)
