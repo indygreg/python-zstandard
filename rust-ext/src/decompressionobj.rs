@@ -80,9 +80,12 @@ impl ZstdDecompressionObj {
                 self.finished = true;
                 // TODO clear out decompressor?
 
-                if let Some(data) = data.as_slice(py) {
-                    let unused = &data[in_buffer.pos..in_buffer.size];
-                    self.unused_data = unused.iter().map(|x| x.get()).collect::<Vec<_>>();
+                if let Some(data) = data.as_slice_ptr() {
+                    unsafe {
+                        self.unused_data = Vec::with_capacity(in_buffer.size - in_buffer.pos);
+                        self.unused_data
+                            .extend_from_slice(&data.as_ref()[in_buffer.pos..in_buffer.size]);
+                    }
                 }
 
                 break;
