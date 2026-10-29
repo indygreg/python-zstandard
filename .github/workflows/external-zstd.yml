@@ -61,4 +61,11 @@ jobs:
 
       - name: Build
         run: |
+          # Homebrew's prefix (/opt/homebrew on Apple Silicon) isn't on the
+          # default compiler search paths, and its libzstd is arm64 only, so
+          # don't build the universal2 binary the Python framework asks for.
+          ZSTD_PREFIX="$(brew --prefix zstd)"
+          export CFLAGS="-I${ZSTD_PREFIX}/include"
+          export LDFLAGS="-L${ZSTD_PREFIX}/lib"
+          export ARCHFLAGS="-arch arm64"
           python -m pip install --config-settings=--global-option=--system-zstd .
