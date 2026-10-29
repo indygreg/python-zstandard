@@ -85,6 +85,7 @@ __all__ = [
 
 import io
 import os
+import threading
 
 from ._cffi import (  # type: ignore
     ffi,
@@ -2593,6 +2594,10 @@ def get_frame_parameters(data, format=FORMAT_ZSTD1):
     return FrameParameters(params[0])
 
 
+# Serializes the lazy creation of ZstdCompressionDict._ddict.
+_DDICT_LOCK = threading.Lock()
+
+
 class ZstdCompressionDict(object):
     """Represents a computed compression dictionary.
 
@@ -2747,21 +2752,35 @@ class ZstdCompressionDict(object):
 
     @property
     def _ddict(self):
-        ddict = lib.ZSTD_createDDict_advanced(
-            self._data,
-            len(self._data),
-            lib.ZSTD_dlm_byRef,
-            self._dict_type,
-            lib.ZSTD_defaultCMem,
-        )
+        # Like the C backend, create the DDict once and keep it as long as
+        # the dictionary: decompression contexts only reference it, so
+        # replacing it would free a DDict that another decompressor may
+        # still be using. The property takes precedence over the instance
+        # __dict__, so the cached value must be looked up explicitly.
+        ddict = self.__dict__.get("_ddict")
+        if ddict is not None:
+            return ddict
 
-        if ddict == ffi.NULL:
-            raise ZstdError("could not create decompression dict")
+        with _DDICT_LOCK:
+            ddict = self.__dict__.get("_ddict")
+            if ddict is not None:
+                return ddict
 
-        ddict = ffi.gc(
-            ddict, lib.ZSTD_freeDDict, size=lib.ZSTD_sizeof_DDict(ddict)
-        )
-        self.__dict__["_ddict"] = ddict
+            ddict = lib.ZSTD_createDDict_advanced(
+                self._data,
+                len(self._data),
+                lib.ZSTD_dlm_byRef,
+                self._dict_type,
+                lib.ZSTD_defaultCMem,
+            )
+
+            if ddict == ffi.NULL:
+                raise ZstdError("could not create decompression dict")
+
+            ddict = ffi.gc(
+                ddict, lib.ZSTD_freeDDict, size=lib.ZSTD_sizeof_DDict(ddict)
+            )
+            self.__dict__["_ddict"] = ddict
 
         return ddict
 

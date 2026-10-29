@@ -19,6 +19,15 @@ Backwards Compatibility Notes
 * cibuildwheel upgrade required us to drop generating the CPython 3.13 free-threaded
   wheels.
 
+Bug Fixes
+---------
+
+* The CFFI backend no longer crashes or fails with ``Dictionary mismatch``
+  when multiple ``ZstdDecompressor`` instances use the same
+  ``ZstdCompressionDict``. It used to create a new decompression dictionary for
+  every decompressor and operation, freeing the previous one while other
+  decompressors could still be using it. (#361)
+
 0.25.0 (released 2025-09-14)
 ============================
 
