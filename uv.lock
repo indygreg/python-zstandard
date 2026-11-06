@@ -420,6 +420,13 @@ dev = [
     { name = "pytest" },
     { name = "pytest-xdist" },
 ]
+test = [
+    { name = "cffi", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14' and platform_python_implementation != 'PyPy'" },
+    { name = "cffi", version = "2.0.0b1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14' and platform_python_implementation != 'PyPy'" },
+    { name = "hypothesis" },
+    { name = "pytest" },
+    { name = "pytest-xdist" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -434,6 +441,13 @@ dev = [
     { name = "cffi", marker = "python_full_version >= '3.14' and platform_python_implementation != 'PyPy'", specifier = ">=2.0.0b0" },
     { name = "hypothesis", specifier = "==6.111.0" },
     { name = "mypy", specifier = ">=1.17.1" },
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+]
+test = [
+    { name = "cffi", marker = "python_full_version < '3.14' and platform_python_implementation != 'PyPy'", specifier = "~=1.17" },
+    { name = "cffi", marker = "python_full_version >= '3.14' and platform_python_implementation != 'PyPy'", specifier = ">=2.0.0b0" },
+    { name = "hypothesis", specifier = "==6.111.0" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
