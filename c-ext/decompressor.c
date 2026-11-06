@@ -276,6 +276,7 @@ PyObject *Decompressor_decompress(ZstdDecompressor *self, PyObject *args,
     unsigned long long decompressedSize;
     PyObject *readAcrossFrames = NULL;
     PyObject *allowExtraData = NULL;
+    int allowExtraDataValue;
     size_t destCapacity;
     PyObject *result = NULL;
     size_t zresult;
@@ -379,8 +380,13 @@ PyObject *Decompressor_decompress(ZstdDecompressor *self, PyObject *args,
         }
     }
 
-    if ((allowExtraData ? PyObject_IsTrue(allowExtraData) : 1) == 0
-        && inBuffer.pos < inBuffer.size) {
+    allowExtraDataValue = allowExtraData ? PyObject_IsTrue(allowExtraData) : 1;
+    if (allowExtraDataValue < 0) {
+        Py_CLEAR(result);
+        goto finally;
+    }
+
+    if (allowExtraDataValue == 0 && inBuffer.pos < inBuffer.size) {
         PyErr_Format(
             ZstdError,
             "compressed input contains %zu bytes of unused data, which is disallowed",
