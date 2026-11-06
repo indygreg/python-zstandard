@@ -22,10 +22,10 @@ this package with ``conda``.
 Requirements
 ============
 
-This package is designed to run with Python 3.10, 3.11, 3.12, 3.13, and 3.14
-on common platforms (Linux, Windows, and OS X). On PyPy (both PyPy2 and PyPy3)
-we support version 6.0.0 and above. x86 and x86_64 are well-tested on Windows.
-Only x86_64 is well-tested on Linux and macOS.
+This package is designed to run with Python 3.10, 3.11, 3.12, 3.13, 3.14,
+and 3.15 on common platforms (Linux, Windows, and OS X). On PyPy (both PyPy2
+and PyPy3) we support version 6.0.0 and above. x86 and x86_64 are well-tested
+on Windows. Only x86_64 is well-tested on Linux and macOS.
 
 CFFI Backend
 ============
