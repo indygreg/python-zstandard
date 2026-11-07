@@ -234,7 +234,7 @@ fn train_dictionary(
         (d, steps, level)
     };
 
-    let params = zstd_sys::ZDICT_fastCover_params_t {
+    let mut params = zstd_sys::ZDICT_fastCover_params_t {
         k,
         d,
         f,
@@ -275,7 +275,7 @@ fn train_dictionary(
 
     let mut dict_data: Vec<u8> = Vec::with_capacity(dict_size);
 
-    train_dictionary_fastcover(&mut dict_data, &samples_buffer, &sample_sizes, &params)
+    train_dictionary_fastcover(&mut dict_data, &samples_buffer, &sample_sizes, &mut params)
         .map_err(|msg| ZstdError::new_err(format!("cannot train dict: {}", msg)))?;
 
     Ok(ZstdCompressionDict {

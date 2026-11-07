@@ -68,6 +68,19 @@ class TestTrainDictionary(unittest.TestCase):
         self.assertIn(d.k, (50, 2000))
         self.assertEqual(d.d, 6)
 
+    def test_optimize_d(self):
+        samples = generate_samples()
+        d = zstd.train_dictionary(
+            get_optimal_dict_size_heuristically(samples),
+            samples,
+            threads=-1,
+            steps=1,
+        )
+
+        # d isn't specified, so d = 6 and d = 8 are tried.
+        self.assertIn(d.k, (50, 2000))
+        self.assertIn(d.d, (6, 8))
+
 
 class TestCompressionDict(unittest.TestCase):
     def test_bad_mode(self):
