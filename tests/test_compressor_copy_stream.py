@@ -39,6 +39,52 @@ class TestCompressor_copy_stream(unittest.TestCase):
             dest.getvalue(), b"\x28\xb5\x2f\xfd\x00\x00\x01\x00\x00"
         )
 
+    def test_read_text(self):
+        cctx = zstd.ZstdCompressor()
+        dest = io.BytesIO()
+        with self.assertRaises(TypeError):
+            cctx.copy_stream(io.StringIO("compressed data"), dest)
+        self.assertEqual(dest.getvalue(), b"")
+
+    @unittest.skipUnless(zstd.backend == "cext", "C backend type validation")
+    def test_read_invalid_result(self):
+        class Source:
+            def __init__(self, value):
+                self.value = value
+
+            def read(self, size):
+                return self.value
+
+        for value in ("", None, 42):
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    zstd.ZstdCompressor().copy_stream(
+                        Source(value), io.BytesIO()
+                    )
+
+    def test_read_text_after_bytes(self):
+        class Source:
+            def __init__(self, prefix):
+                self.chunks = iter((prefix, "not bytes"))
+
+            def read(self, size):
+                return next(self.chunks)
+
+        data = b"source data" * 1024
+        cctx = zstd.ZstdCompressor()
+        with self.assertRaises(TypeError):
+            cctx.copy_stream(Source(data[:6]), io.BytesIO())
+
+        dest = io.BytesIO()
+        counts = cctx.copy_stream(io.BytesIO(data), dest)
+        self.assertEqual(counts, (len(data), len(dest.getvalue())))
+        self.assertEqual(
+            zstd.ZstdDecompressor().decompress(
+                dest.getvalue(), max_output_size=len(data)
+            ),
+            data,
+        )
+
     def test_large_data(self):
         source = io.BytesIO()
         for i in range(255):
