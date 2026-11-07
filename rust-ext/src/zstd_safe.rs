@@ -443,11 +443,12 @@ impl<'a> DCtx<'a> {
     }
 }
 
+/// zstd writes the parameters it selected (`k`, `d`, ...) back into `params`.
 pub fn train_dictionary_fastcover(
     dict_buffer: &mut Vec<u8>,
     samples_buffer: &[u8],
     samples_sizes: &[usize],
-    params: &zstd_sys::ZDICT_fastCover_params_t,
+    params: &mut zstd_sys::ZDICT_fastCover_params_t,
 ) -> Result<(), &'static str> {
     let zresult = unsafe {
         zstd_sys::ZDICT_optimizeTrainFromBuffer_fastCover(
@@ -456,7 +457,7 @@ pub fn train_dictionary_fastcover(
             samples_buffer.as_ptr() as *const _,
             samples_sizes.as_ptr(),
             samples_sizes.len() as _,
-            params as *const _ as *mut _,
+            params as *mut _,
         )
     };
     if unsafe { zstd_sys::ZDICT_isError(zresult) } != 0 {
