@@ -38,6 +38,48 @@ class TestDecompressor_copy_stream(unittest.TestCase):
         self.assertEqual(w, 0)
         self.assertEqual(dest.getvalue(), b"")
 
+    def test_read_text(self):
+        dctx = zstd.ZstdDecompressor()
+        dest = io.BytesIO()
+        with self.assertRaises(TypeError):
+            dctx.copy_stream(io.StringIO("compressed data"), dest)
+        self.assertEqual(dest.getvalue(), b"")
+
+    @unittest.skipUnless(zstd.backend == "cext", "C backend type validation")
+    def test_read_invalid_result(self):
+        class Source:
+            def __init__(self, value):
+                self.value = value
+
+            def read(self, size):
+                return self.value
+
+        for value in ("", None, 42):
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    zstd.ZstdDecompressor().copy_stream(
+                        Source(value), io.BytesIO()
+                    )
+
+    def test_read_text_after_bytes(self):
+        class Source:
+            def __init__(self, prefix):
+                self.chunks = iter((prefix, "not bytes"))
+
+            def read(self, size):
+                return next(self.chunks)
+
+        data = b"source data" * 1024
+        compressed = zstd.ZstdCompressor().compress(data)
+        dctx = zstd.ZstdDecompressor()
+        with self.assertRaises(TypeError):
+            dctx.copy_stream(Source(compressed[:6]), io.BytesIO())
+
+        dest = io.BytesIO()
+        counts = dctx.copy_stream(io.BytesIO(compressed), dest)
+        self.assertEqual(counts, (len(compressed), len(data)))
+        self.assertEqual(dest.getvalue(), data)
+
     def test_large_data(self):
         source = io.BytesIO()
         for i in range(255):
