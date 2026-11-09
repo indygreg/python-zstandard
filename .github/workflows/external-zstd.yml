@@ -34,7 +34,7 @@ jobs:
 
       - name: Build
         run: |
-          python -m pip install --config-settings=--global-option=--system-zstd .
+          python -m pip install --config-settings=--global-option=--system-zstd --config-settings=--global-option=--system-zstd-cffi .
 
   macOS:
     runs-on: 'macos-26'
