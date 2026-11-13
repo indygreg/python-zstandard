@@ -85,6 +85,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -118,6 +119,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -217,6 +219,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -252,6 +255,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -355,6 +359,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -388,6 +393,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -493,6 +499,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -528,6 +535,7 @@ class TestCompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -616,6 +624,7 @@ class TestCompressor_copy_stream_fuzzing(unittest.TestCase):
 class TestCompressor_compressobj_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -649,6 +658,7 @@ class TestCompressor_compressobj_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -813,6 +823,7 @@ class TestCompressor_chunker_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
