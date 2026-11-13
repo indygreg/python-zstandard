@@ -17,6 +17,7 @@ from .common import random_input_data
 class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -101,6 +102,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -212,6 +214,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -254,6 +257,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -334,6 +338,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -383,6 +388,7 @@ class TestDecompressor_stream_reader_fuzzing(unittest.TestCase):
 class TestDecompressor_stream_writer_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -452,6 +458,7 @@ class TestDecompressor_copy_stream_fuzzing(unittest.TestCase):
 class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -483,6 +490,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
             hypothesis.HealthCheck.too_slow,
         ]
@@ -518,6 +526,11 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
         self.assertEqual(b"".join(chunks), original)
 
+    @hypothesis.settings(
+        suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
+        ]
+    )
     @hypothesis.given(
         chunks=strategies.lists(
             strategies.sampled_from(random_input_data()),
@@ -572,6 +585,7 @@ class TestDecompressor_decompressobj_fuzzing(unittest.TestCase):
 
     @hypothesis.settings(
         suppress_health_check=[
+            hypothesis.HealthCheck.data_too_large,
             hypothesis.HealthCheck.large_base_example,
         ]
     )
