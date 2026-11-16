@@ -19,6 +19,8 @@ static void compressionreader_dealloc(ZstdCompressionReader *self) {
         memset(&self->buffer, 0, sizeof(self->buffer));
     }
 
+    Py_CLEAR(self->readResult);
+
     PyObject_Del(self);
 }
 
@@ -292,6 +294,7 @@ readinput:
     readResult = read_compressor_input(self);
 
     if (-1 == readResult) {
+        Py_DECREF(result);
         return NULL;
     }
     else if (0 == readResult) {
