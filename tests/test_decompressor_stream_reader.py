@@ -10,6 +10,39 @@ from .common import (
 
 
 class TestDecompressor_stream_reader(unittest.TestCase):
+    def test_close_attribute_lookup_error(self):
+        class Stream:
+            def read(self, size):
+                return b""
+
+            def write(self, data):
+                return len(data)
+
+            def __getattr__(self, name):
+                if name == "close":
+                    raise exception("close lookup failed")
+                raise AttributeError(name)
+
+        for exception in (MemoryError, KeyboardInterrupt):
+            with self.subTest(exception=exception):
+                stream = zstd.ZstdDecompressor().stream_reader(Stream())
+                with self.assertRaisesRegex(exception, "close lookup failed"):
+                    stream.close()
+                self.assertTrue(stream.closed)
+                stream.close()
+
+    def test_close_attribute_absent(self):
+        class Stream:
+            def read(self, size):
+                return b""
+
+            def write(self, data):
+                return len(data)
+
+        stream = zstd.ZstdDecompressor().stream_reader(Stream())
+        stream.close()
+        self.assertTrue(stream.closed)
+
     def test_context_manager(self):
         dctx = zstd.ZstdDecompressor()
 

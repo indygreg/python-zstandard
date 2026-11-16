@@ -83,15 +83,22 @@ static PyObject *decompressionreader_seekable(PyObject *self) {
 }
 
 static PyObject *decompressionreader_close(ZstdDecompressionReader *self) {
+    int hasClose;
+
     if (self->closed) {
         Py_RETURN_NONE;
     }
 
     self->closed = 1;
 
-    if (self->closefd && self->reader != NULL &&
-        PyObject_HasAttrString(self->reader, "close")) {
-        return PyObject_CallMethod(self->reader, "close", NULL);
+    if (self->closefd && self->reader != NULL) {
+        hasClose = PyObject_HasAttrStringWithError(self->reader, "close");
+        if (hasClose < 0) {
+            return NULL;
+        }
+        if (hasClose) {
+            return PyObject_CallMethod(self->reader, "close", NULL);
+        }
     }
 
     Py_RETURN_NONE;

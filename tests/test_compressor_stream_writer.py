@@ -14,6 +14,65 @@ from .common import (
 
 
 class TestCompressor_stream_writer(unittest.TestCase):
+    def test_close_attribute_lookup_error(self):
+        class Stream:
+            def read(self, size):
+                return b""
+
+            def write(self, data):
+                return len(data)
+
+            def __getattr__(self, name):
+                if name == "close":
+                    raise exception("close lookup failed")
+                raise AttributeError(name)
+
+        for exception in (MemoryError, KeyboardInterrupt):
+            with self.subTest(exception=exception):
+                stream = zstd.ZstdCompressor().stream_writer(Stream())
+                with self.assertRaisesRegex(exception, "close lookup failed"):
+                    stream.close()
+                self.assertTrue(stream.closed)
+                stream.close()
+
+    def test_close_attribute_absent(self):
+        class Stream:
+            def read(self, size):
+                return b""
+
+            def write(self, data):
+                return len(data)
+
+        stream = zstd.ZstdCompressor().stream_writer(Stream())
+        stream.close()
+        self.assertTrue(stream.closed)
+
+    def test_flush_attribute_lookup_error(self):
+        class Stream:
+            def write(self, data):
+                return len(data)
+
+            def __getattr__(self, name):
+                if name == "flush":
+                    raise exception("flush lookup failed")
+                raise AttributeError(name)
+
+        for exception in (MemoryError, KeyboardInterrupt):
+            with self.subTest(exception=exception):
+                stream = zstd.ZstdCompressor().stream_writer(Stream())
+                with self.assertRaisesRegex(exception, "flush lookup failed"):
+                    stream.flush()
+                self.assertFalse(stream.closed)
+
+    def test_flush_attribute_absent(self):
+        class Stream:
+            def write(self, data):
+                return len(data)
+
+        stream = zstd.ZstdCompressor().stream_writer(Stream())
+        stream.flush()
+        self.assertFalse(stream.closed)
+
     def test_io_api(self):
         buffer = io.BytesIO()
         cctx = zstd.ZstdCompressor()

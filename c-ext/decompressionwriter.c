@@ -124,6 +124,7 @@ finally:
 }
 
 static PyObject *ZstdDecompressionWriter_close(ZstdDecompressionWriter *self) {
+    int hasClose;
     PyObject *result;
 
     if (self->closed) {
@@ -140,8 +141,14 @@ static PyObject *ZstdDecompressionWriter_close(ZstdDecompressionWriter *self) {
     }
 
     /* Call close on underlying stream as well. */
-    if (self->closefd && PyObject_HasAttrString(self->writer, "close")) {
-        return PyObject_CallMethod(self->writer, "close", NULL);
+    if (self->closefd) {
+        hasClose = PyObject_HasAttrStringWithError(self->writer, "close");
+        if (hasClose < 0) {
+            return NULL;
+        }
+        if (hasClose) {
+            return PyObject_CallMethod(self->writer, "close", NULL);
+        }
     }
 
     Py_RETURN_NONE;
@@ -159,17 +166,24 @@ static PyObject *ZstdDecompressionWriter_fileno(ZstdDecompressionWriter *self) {
 }
 
 static PyObject *ZstdDecompressionWriter_flush(ZstdDecompressionWriter *self) {
+    int hasFlush;
+
     if (self->closed) {
         PyErr_SetString(PyExc_ValueError, "stream is closed");
         return NULL;
     }
 
-    if (!self->closing && PyObject_HasAttrString(self->writer, "flush")) {
-        return PyObject_CallMethod(self->writer, "flush", NULL);
+    if (!self->closing) {
+        hasFlush = PyObject_HasAttrStringWithError(self->writer, "flush");
+        if (hasFlush < 0) {
+            return NULL;
+        }
+        if (hasFlush) {
+            return PyObject_CallMethod(self->writer, "flush", NULL);
+        }
     }
-    else {
-        Py_RETURN_NONE;
-    }
+
+    Py_RETURN_NONE;
 }
 
 static PyObject *ZstdDecompressionWriter_iter(PyObject *self) {

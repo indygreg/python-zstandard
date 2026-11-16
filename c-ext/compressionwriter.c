@@ -132,6 +132,8 @@ static PyObject *ZstdCompressionWriter_flush(ZstdCompressionWriter *self,
                                              PyObject *args, PyObject *kwargs) {
     static char *kwlist[] = {"flush_mode", NULL};
 
+    int hasFlush;
+
     size_t zresult;
     ZSTD_inBuffer input;
     PyObject *res;
@@ -197,18 +199,25 @@ static PyObject *ZstdCompressionWriter_flush(ZstdCompressionWriter *self,
         }
     }
 
-    if (!self->closing && PyObject_HasAttrString(self->writer, "flush")) {
-        res = PyObject_CallMethod(self->writer, "flush", NULL);
-        if (NULL == res) {
+    if (!self->closing) {
+        hasFlush = PyObject_HasAttrStringWithError(self->writer, "flush");
+        if (hasFlush < 0) {
             return NULL;
         }
-        Py_XDECREF(res);
+        if (hasFlush) {
+            res = PyObject_CallMethod(self->writer, "flush", NULL);
+            if (NULL == res) {
+                return NULL;
+            }
+            Py_XDECREF(res);
+        }
     }
 
     return PyLong_FromSsize_t(totalWrite);
 }
 
 static PyObject *ZstdCompressionWriter_close(ZstdCompressionWriter *self) {
+    int hasClose;
     PyObject *result;
 
     if (self->closed) {
@@ -225,8 +234,14 @@ static PyObject *ZstdCompressionWriter_close(ZstdCompressionWriter *self) {
     }
 
     /* Call close on underlying stream as well. */
-    if (self->closefd && PyObject_HasAttrString(self->writer, "close")) {
-        return PyObject_CallMethod(self->writer, "close", NULL);
+    if (self->closefd) {
+        hasClose = PyObject_HasAttrStringWithError(self->writer, "close");
+        if (hasClose < 0) {
+            return NULL;
+        }
+        if (hasClose) {
+            return PyObject_CallMethod(self->writer, "close", NULL);
+        }
     }
 
     Py_RETURN_NONE;
