@@ -1,5 +1,9 @@
+import gc
 import io
+import os
+import sys
 import unittest
+import weakref
 
 import zstandard as zstd
 
@@ -10,6 +14,72 @@ from .common import (
 
 
 class TestCompressor_stream_reader(unittest.TestCase):
+    def test_read_result_released_on_error(self):
+        class ReadResult:
+            pass
+
+        refs = []
+
+        class Source:
+            def read(self, size):
+                result = ReadResult()
+                refs.append(weakref.ref(result))
+                return result
+
+        reader = zstd.ZstdCompressor().stream_reader(Source())
+        with self.assertRaises(TypeError):
+            reader.read(1)
+        del reader
+        gc.collect()
+        self.assertTrue(refs[0]() is None)
+
+    def test_read_result_released_on_destruction(self):
+        class ReadResult(bytearray):
+            pass
+
+        refs = []
+
+        class Source:
+            def read(self, size):
+                result = ReadResult(os.urandom(1024 * 1024))
+                refs.append(weakref.ref(result))
+                return result
+
+        reader = zstd.ZstdCompressor().stream_reader(Source())
+        self.assertEqual(len(reader.read(1)), 1)
+        self.assertIsNotNone(refs[0]())
+        del reader
+        gc.collect()
+        self.assertTrue(refs[0]() is None)
+
+    @unittest.skipUnless(
+        sys.implementation.name == "cpython", "tracemalloc requires CPython"
+    )
+    def test_read_error_releases_output(self):
+        import tracemalloc
+
+        class Source:
+            def read(self, size):
+                raise OSError("source read failed")
+
+        reader = zstd.ZstdCompressor().stream_reader(Source())
+        size = 1024 * 1024
+        already_tracing = tracemalloc.is_tracing()
+        if not already_tracing:
+            tracemalloc.start()
+        try:
+            gc.collect()
+            before = tracemalloc.get_traced_memory()[0]
+            for _ in range(8):
+                with self.assertRaisesRegex(OSError, "source read failed"):
+                    reader.read(size)
+            gc.collect()
+            retained = tracemalloc.get_traced_memory()[0] - before
+            self.assertLess(retained, size)
+        finally:
+            if not already_tracing:
+                tracemalloc.stop()
+
     def test_context_manager(self):
         cctx = zstd.ZstdCompressor()
 
