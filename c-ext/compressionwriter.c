@@ -82,7 +82,7 @@ static PyObject *ZstdCompressionWriter_write(ZstdCompressionWriter *self,
 
     if (self->closed) {
         PyErr_SetString(PyExc_ValueError, "stream is closed");
-        return NULL;
+        goto finally;
     }
 
     self->output.pos = 0;

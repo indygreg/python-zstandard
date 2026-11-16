@@ -22,6 +22,18 @@ def decompress_via_writer(data):
 
 
 class TestDecompressor_stream_writer(unittest.TestCase):
+    def test_closed_write_releases_buffer(self):
+        ctx = zstd.ZstdDecompressor()
+        writer = ctx.stream_writer(io.BytesIO())
+        writer.close()
+
+        for data in (bytearray(), bytearray(b"foo")):
+            with self.subTest(data=data):
+                for _ in range(2):
+                    with self.assertRaisesRegex(ValueError, "stream is closed"):
+                        writer.write(data)
+                    data.extend(b"bar")
+
     def test_io_api(self):
         buffer = io.BytesIO()
         dctx = zstd.ZstdDecompressor()
