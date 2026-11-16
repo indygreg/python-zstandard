@@ -70,7 +70,7 @@ static PyObject *ZstdDecompressionWriter_write(ZstdDecompressionWriter *self,
 
     if (self->closed) {
         PyErr_SetString(PyExc_ValueError, "stream is closed");
-        return NULL;
+        goto finally;
     }
 
     output.dst = PyMem_Malloc(self->outSize);
