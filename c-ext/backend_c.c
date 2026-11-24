@@ -162,7 +162,7 @@ void zstd_module_init(PyObject *m) {
     PyObject *features = NULL;
     PyObject *feature = NULL;
     unsigned zstd_version_no = ZSTD_versionNumber();
-    unsigned zstd_version_min = 10506;
+    unsigned zstd_version_min = 10600;
     // if either compile-time or runtime version of libzstd is lower than expected, abort initialization
     if (ZSTD_VERSION_NUMBER < zstd_version_min ||
         zstd_version_no < zstd_version_min) {
