@@ -7,6 +7,7 @@ Version History
 next (not yet released)
 =======================
 
+* Bundled zstd library upgraded from 1.5.7 to 1.6.0.
 * PyO3 Rust crate upgraded from 0.25 to 0.30.
 
 Backwards Compatibility Notes
