@@ -13,16 +13,16 @@ crate-type = ["cdylib"]
 path = "rust-ext/src/lib.rs"
 
 [dependencies]
-libc = "0.2.175"
+libc = "0.2.191"
 num_cpus = "1.17.0"
-rayon = "1.11.0"
+rayon = "1.12.0"
 
 [dependencies.zstd-safe]
-version = "7.2.4"
+version = "8.4.0"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.zstd-sys]
-version = "2.0.16"
+version = "2.2.0"
 features = ["experimental", "legacy", "zstdmt"]
 
 [dependencies.pyo3]

@@ -24,6 +24,7 @@ Changes
 * PyO3 Rust crate upgraded from 0.25 to 0.30.
 * ``BufferWithSegmentsCollection_init`` signature changed to match ``tp_init``
   requirements. (#282)
+* Rust backend upgraded zstd-safe 7.2 -> 8.4.
 * ``ZstdDecompressor.multi_decompress_to_buffer()`` now raises ``ValueError``
   when empty input is given. This can avoid a division by 0 and crash. (#348,
   #335)
