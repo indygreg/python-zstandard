@@ -40,13 +40,10 @@ class TestDecompressor_multi_decompress_to_buffer(unittest.TestCase):
         for frame in frames:
             for threads in (0, 2, -1):
                 for kwargs in ({}, {"decompressed_sizes": b""}):
-                    with self.subTest(
-                        frames=frame, threads=threads, kwargs=kwargs
-                    ):
-                        with self.assertRaises(ValueError):
-                            dctx.multi_decompress_to_buffer(
-                                frame, threads=threads, **kwargs
-                            )
+                    with self.assertRaises(ValueError):
+                        dctx.multi_decompress_to_buffer(
+                            frame, threads=threads, **kwargs
+                        )
 
     def test_list_input(self):
         cctx = zstd.ZstdCompressor()
