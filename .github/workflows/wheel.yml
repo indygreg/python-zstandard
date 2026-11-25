@@ -101,7 +101,7 @@ jobs:
 
       - name: Build wheels
         run: |
-          uvx -p 3.13 cibuildwheel@4.1.0
+          uvx -p 3.13 cibuildwheel@4.3.5
 
       - name: Upload Wheel
         if: ${{ !endsWith(matrix.py, 't') }}
@@ -140,7 +140,7 @@ jobs:
 
       - name: Build wheels
         run: |
-          uvx -p 3.13 cibuildwheel@4.1.0
+          uvx -p 3.13 cibuildwheel@4.3.5
 
       - name: Upload Wheel
         if: ${{ !endsWith(matrix.py, 't') }}
@@ -180,7 +180,7 @@ jobs:
 
       - name: Build wheels
         run: |
-          uvx -p 3.13 cibuildwheel@4.1.0
+          uvx -p 3.13 cibuildwheel@4.3.5
 
       - name: Upload Wheel
         if: ${{ !endsWith(matrix.py, 't') }}
