@@ -94,8 +94,6 @@ jobs:
 
       - name: Test Rust Backend
         if: matrix.arch != 'x86'
-        # Rust backend is currently experimental. So ignore failures in it.
-        continue-on-error: true
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'rust'
         run: |
