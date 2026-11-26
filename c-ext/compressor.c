@@ -346,7 +346,9 @@ static PyObject *ZstdCompressor_copy_stream(ZstdCompressor *self,
             goto finally;
         }
 
-        PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
+        if (PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize) < 0) {
+            goto finally;
+        }
 
         /* If no data was read, we're at EOF. */
         if (0 == readSize) {
