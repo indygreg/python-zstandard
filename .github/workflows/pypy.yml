@@ -15,20 +15,20 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - 'ubuntu-24.04'
+          - 'ubuntu-26.04'
           - 'macos-26'
-          - 'windows-2022'
+          - 'windows-2025'
         py:
           - 'pypy-3.11'
         arch:
           - 'x86'
           - 'x64'
         exclude:
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-26.04'
             arch: 'x86'
           - os: 'macos-26'
             arch: 'x86'
-          - os: 'windows-2022'
+          - os: 'windows-2025'
             py: 'pypy-3.11'
             arch: 'x86'
     runs-on: ${{ matrix.os }}
@@ -57,20 +57,20 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - 'ubuntu-24.04'
+          - 'ubuntu-26.04'
           - 'macos-26'
-          - 'windows-2022'
+          - 'windows-2025'
         py:
           - 'pypy-3.11'
         arch:
           - 'x86'
           - 'x64'
         exclude:
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-26.04'
             arch: 'x86'
           - os: 'macos-26'
             arch: 'x86'
-          - os: 'windows-2022'
+          - os: 'windows-2025'
             py: 'pypy-3.11'
             arch: 'x86'
     runs-on: ${{ matrix.os }}

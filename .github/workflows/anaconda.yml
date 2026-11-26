@@ -19,7 +19,7 @@ jobs:
           - '3.12'
           - '3.13'
           - '3.14'
-    runs-on: 'ubuntu-24.04'
+    runs-on: 'ubuntu-26.04'
     env:
       # Enable fuzzing tests, other expensive tests.
       ZSTD_SLOW_TESTS: '1'
@@ -70,7 +70,7 @@ jobs:
           - '3.12'
           - '3.13'
           - '3.14'
-    runs-on: 'windows-2022'
+    runs-on: 'windows-2025'
     env:
       # Enable fuzzing tests, other expensive tests.
       ZSTD_SLOW_TESTS: '1'

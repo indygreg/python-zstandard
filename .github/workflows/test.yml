@@ -15,11 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - 'ubuntu-24.04'
-          - 'ubuntu-24.04-arm'
+          - 'ubuntu-26.04'
+          - 'ubuntu-26.04-arm'
           - 'macos-26'
           - 'macos-26-intel'
-          - 'windows-2022'
+          - 'windows-2025'
           - 'windows-11-arm'
         py:
           - '3.11'
@@ -32,13 +32,13 @@ jobs:
           - 'x86'
           - 'x64'
         exclude:
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-26.04'
             arch: 'arm64'
-          - os: 'ubuntu-24.04'
+          - os: 'ubuntu-26.04'
             arch: 'x86'
-          - os: 'ubuntu-24.04-arm'
+          - os: 'ubuntu-26.04-arm'
             arch: 'x86'
-          - os: 'ubuntu-24.04-arm'
+          - os: 'ubuntu-26.04-arm'
             arch: 'x64'
           - os: 'macos-26-intel'
             arch: 'arm64'
@@ -48,7 +48,7 @@ jobs:
             arch: 'x86'
           - os: 'macos-26'
             arch: 'x64'
-          - os: 'windows-2022'
+          - os: 'windows-2025'
             arch: 'arm64'
           - os: 'windows-11-arm'
             arch: 'x86'

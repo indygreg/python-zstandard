@@ -11,7 +11,7 @@ concurrency:
 permissions: { }
 jobs:
   sdist:
-    runs-on: 'ubuntu-24.04'
+    runs-on: 'ubuntu-26.04'
     steps:
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0

@@ -28,6 +28,8 @@ Changes
 * ``ZstdDecompressor.multi_decompress_to_buffer()`` now raises ``ValueError``
   when empty input is given. This can avoid a division by 0 and crash. (#348,
   #335)
+* CI now runs on Ubuntu 26.04 (versus 24.04) and Windows 2025 (versus 2022)
+  GitHub Actions runners.
 
 0.25.0 (released 2025-09-14)
 ============================
