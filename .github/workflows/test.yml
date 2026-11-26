@@ -67,13 +67,6 @@ jobs:
       # Activate Python development mode so we get warnings.
       PYTHONDEVMODE: '1'
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: ${{ matrix.py }}
-          architecture: ${{ matrix.arch }}
-          allow-prereleases: true
-
       - name: Install Rust
         if: matrix.arch != 'x86'
         uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
@@ -91,13 +84,13 @@ jobs:
 
       - name: Test C Backend
         run: |
-          uv -v run --locked pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
+          uv -v run --python ${{ matrix.py }} --locked pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
 
       - name: Test CFFI Backend
         env:
           PYTHON_ZSTANDARD_IMPORT_POLICY: 'cffi'
         run: |
-          uv -v run --locked -w cffi pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
+          uv -v run --python ${{ matrix.py }} --locked -w cffi pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
 
       - name: Test Rust Backend
         if: matrix.arch != 'x86'
@@ -108,4 +101,4 @@ jobs:
         run: |
           # We need --reinstall to get uv to pick up the config settings change.
           # Unsure if this is a bug.
-          uv -v run --locked --config-settings-package 'zstandard:--global-option=--rust-backend' --reinstall pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
+          uv -v run --python ${{ matrix.py }} --locked --config-settings-package 'zstandard:--global-option=--rust-backend' --reinstall pytest --numprocesses=auto --hypothesis-profile=${HYPOTHESIS_PROFILE} -v
