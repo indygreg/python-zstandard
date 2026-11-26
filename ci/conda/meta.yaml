@@ -1,8 +1,12 @@
-{% set data = load_setup_py_data() %}
+# Don't use load_setup_py_data(): it runs setup.py inside the conda-build
+# process, and setup.py's sys.path.insert(0, ".") then makes the unbuilt
+# zstandard package in the source tree shadow the zstandard bindings that
+# conda-package-handling needs for .conda support.
+{% set version_match = load_file_regex(load_file="../../c-ext/python-zstandard.h", regex_pattern='PYTHON_ZSTANDARD_VERSION "([^"]+)"', from_recipe_dir=True) %}
 
 package:
   name: zstandard
-  version: "{{ data.get('version') }}"
+  version: "{{ version_match.group(1) }}"
 
 source:
   path: ../../
