@@ -22,6 +22,8 @@ Changes
 
 * Bundled zstd library upgraded from 1.5.7 to 1.6.0.
 * PyO3 Rust crate upgraded from 0.25 to 0.30.
+* cffi dependency version updated to >= 2.1.0 (from 1.17 on Python <3.14 and
+  2.0.0 on 3.15.) (Upgrade in support of Python 3.15 support.)
 * ``BufferWithSegmentsCollection_init`` signature changed to match ``tp_init``
   requirements. (#282)
 * Rust backend upgraded zstd-safe 7.2 -> 8.4.
