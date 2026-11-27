@@ -593,7 +593,7 @@ static PyObject *compressionreader_readinto(ZstdCompressionReader *self,
     zresult = ZSTD_compressStream2(self->compressor->cctx, &output,
                                    &self->input, ZSTD_e_end);
 
-    self->bytesCompressed += self->output.pos - oldPos;
+    self->bytesCompressed += output.pos - oldPos;
 
     if (ZSTD_isError(zresult)) {
         PyErr_Format(ZstdError, "error ending compression stream: %s",
@@ -703,7 +703,7 @@ static PyObject *compressionreader_readinto1(ZstdCompressionReader *self,
     zresult = ZSTD_compressStream2(self->compressor->cctx, &output,
                                    &self->input, ZSTD_e_end);
 
-    self->bytesCompressed += self->output.pos - oldPos;
+    self->bytesCompressed += output.pos - oldPos;
 
     if (ZSTD_isError(zresult)) {
         PyErr_Format(ZstdError, "error ending compression stream: %s",
