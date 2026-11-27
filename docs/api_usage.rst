@@ -120,19 +120,27 @@ parallel, you MUST construct multiple ``ZstdCompressor`` or ``ZstdDecompressor``
 instances so each independent operation has its own ``ZstdCompressor`` or
 ``ZstdDecompressor`` instance.
 
-The C extension releases the GIL during non-trivial calls into the zstd C
-API. Non-trivial calls are notably compression and decompression. Trivial
-calls are things like parsing frame parameters. Where the GIL is released
-is considered an implementation detail and can change in any release.
+On implementations of Python that rely on the GIL, The C extension releases the
+GIL during non-trivial calls into the zstd C API. Non-trivial calls are notably
+compression and decompression. Trivial calls are things like parsing frame
+parameters. Where the GIL is released is considered an implementation detail and
+can change in any release.
+
+On free-threaded builds of CPython, there is no GIL, and the C extension
+does not enforce any additional locking in situations where the GIL provides
+locking on the GIL-enabled build. It is still a programming error to use
+shared (de)compression contexts in more than one thread simultaneously.
 
 APIs that accept bytes-like objects don't enforce that the underlying object
 is read-only. However, it is assumed that the passed object is read-only for
 the duration of the function call. It is possible to pass a mutable object
 (like a ``bytearray``) to e.g. ``ZstdCompressor.compress()``, have the GIL
-released, and mutate the object from another thread. Such a race condition
-is a bug in the consumer of python-zstandard. Most Python data types are
-immutable, so unless you are doing something fancy, you don't need to
-worry about this.
+released, and mutate the object from another thread. Similarly,
+free-threaded builds of CPython can run into similar issues when
+(de)compressing a bytes that are mutated simultaneously by another thread.
+Such a race condition is a bug in the consumer of python-zstandard. Most
+Python data types are immutable, so unless you are doing something fancy,
+you don't need to worry about this.
 
 Performance Considerations
 ==========================
