@@ -224,3 +224,127 @@ class TestDecompressor_decompress(unittest.TestCase):
             zstd.ZstdError, "4 bytes of unused data, which is disallowed"
         ):
             dctx.decompress(frame + b"junk", allow_extra_data=False)
+
+    def test_unknown_content_size_rejects_extra_data(self):
+        tails = (b"junk", zstd.ZstdCompressor().compress(b"second frame"))
+        for source in (b"", b"foobar"):
+            frame = zstd.ZstdCompressor(write_content_size=False).compress(
+                source
+            )
+            self.assertEqual(
+                zstd.get_frame_parameters(frame).content_size,
+                zstd.CONTENTSIZE_UNKNOWN,
+            )
+            size = max(1, len(source))
+            for max_output_size in (size, size + 1, size * 64):
+                for tail in tails:
+                    with self.subTest(
+                        source=source,
+                        max_output_size=max_output_size,
+                        tail=tail,
+                    ):
+                        dctx = zstd.ZstdDecompressor()
+                        with self.assertRaisesRegex(
+                            zstd.ZstdError,
+                            "%d bytes of unused data, which is disallowed"
+                            % len(tail),
+                        ):
+                            dctx.decompress(
+                                frame + tail,
+                                max_output_size=max_output_size,
+                                allow_extra_data=False,
+                            )
+                        self.assertEqual(
+                            dctx.decompress(
+                                frame,
+                                max_output_size=max_output_size,
+                                allow_extra_data=False,
+                            ),
+                            source,
+                        )
+
+    def test_unknown_content_size_allows_extra_data(self):
+        tails = (b"junk", zstd.ZstdCompressor().compress(b"second frame"))
+        for source in (b"", b"foobar"):
+            frame = zstd.ZstdCompressor(write_content_size=False).compress(
+                source
+            )
+            size = max(1, len(source))
+            for max_output_size in (size, size + 1, size * 64):
+                for tail in tails:
+                    with self.subTest(
+                        source=source,
+                        max_output_size=max_output_size,
+                        tail=tail,
+                    ):
+                        dctx = zstd.ZstdDecompressor()
+                        self.assertEqual(
+                            dctx.decompress(
+                                frame + tail, max_output_size=max_output_size
+                            ),
+                            source,
+                        )
+                        self.assertEqual(
+                            dctx.decompress(
+                                frame + tail,
+                                max_output_size=max_output_size,
+                                allow_extra_data=True,
+                            ),
+                            source,
+                        )
+
+    @unittest.skipUnless(
+        zstd.backend in ("cext", "cffi"),
+        "requires a backend accepting objects for allow_extra_data",
+    )
+    def test_allow_extra_data_truth_error(self):
+        class BoolError:
+            def __init__(self, error):
+                self.error = error
+
+            def __bool__(self):
+                raise self.error
+
+        class LenError:
+            def __init__(self, error):
+                self.error = error
+
+            def __len__(self):
+                raise self.error
+
+        for source, write_content_size in (
+            (b"", False),
+            (b"foobar", False),
+            (b"foobar", True),
+        ):
+            frame = zstd.ZstdCompressor(
+                write_content_size=write_content_size
+            ).compress(source)
+            size = max(1, len(source))
+            for max_output_size in (size, size + 1):
+                for tail in (b"", b"junk"):
+                    for flag_type in (BoolError, LenError):
+                        with self.subTest(
+                            source=source,
+                            write_content_size=write_content_size,
+                            max_output_size=max_output_size,
+                            tail=tail,
+                            flag_type=flag_type.__name__,
+                        ):
+                            error = ValueError("cannot determine truth value")
+                            dctx = zstd.ZstdDecompressor()
+                            with self.assertRaises(ValueError) as raised:
+                                dctx.decompress(
+                                    frame + tail,
+                                    max_output_size=max_output_size,
+                                    allow_extra_data=flag_type(error),
+                                )
+                            self.assertIs(raised.exception, error)
+                            self.assertEqual(
+                                dctx.decompress(
+                                    frame,
+                                    max_output_size=max_output_size,
+                                    allow_extra_data=False,
+                                ),
+                                source,
+                            )
